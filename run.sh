@@ -4,6 +4,9 @@ export RELEASE_BODY="$(awk -v version="${NEW_VERSION}" -f scripts/show-changelog
 
 node scripts/update-package-version.js
 
+git config user.name github-actions
+git config user.email github-actions@github.com
+
 if ! (git add . && git commit -m "Release ${NEW_VERSION}" && git push);
 then
     echo "No changes"
