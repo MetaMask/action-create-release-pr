@@ -1,6 +1,6 @@
 export BRANCH_NAME="${GITHUB_REF##*}"
 export NEW_VERSION="${GITHUB_REF##*/${1}}"
-export RELEASE_BODY="$(awk -v version="${NEW_VERSION}" -f scripts/show-changelog.awk CHANGELOG.md)"
+export RELEASE_BODY="$(awk -v version="${NEW_VERSION}" -f ${2}/scripts/show-changelog.awk CHANGELOG.md)"
 
 node scripts/update-package-version.js
 

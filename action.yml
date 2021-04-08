@@ -11,4 +11,4 @@ runs:
     - shell: bash
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: ${{ github.action_path }}/run.sh ${{ inputs.branch-prefix }}
+      run: ${{ github.action_path }}/run.sh ${{ inputs.branch-prefix }} ${{ github.action_path }}
