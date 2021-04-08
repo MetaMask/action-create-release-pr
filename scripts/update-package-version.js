@@ -11,7 +11,7 @@ const changeVersion = async (filePath, version) => {
   json.version = version;
   return promisifiedFsWriteFile(filePath, JSON.stringify(json, null, 4) + "\n");
 };
-const p = path.resolve(__dirname, "..", "package.json");
+const p = path.resolve(process.cwd(), "package.json");
 
 changeVersion(p, process.env.NEW_VERSION).then(() => {
     console.log("wrote new version")
