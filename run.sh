@@ -2,7 +2,7 @@ export BRANCH_NAME="${GITHUB_REF##*}"
 export NEW_VERSION="${GITHUB_REF##*/${1}}"
 export RELEASE_BODY="$(awk -v version="${NEW_VERSION}" -f ${2}/scripts/show-changelog.awk CHANGELOG.md)"
 
-node scripts/update-package-version.js
+node "${2}/scripts/update-package-version.js"
 
 git config user.name github-actions
 git config user.email github-actions@github.com
