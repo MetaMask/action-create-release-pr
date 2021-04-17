@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "esModuleInterop": true,
+    "inlineSources": true,
+    "lib": ["ES2020"],
+    "module": "ES6",
+    "moduleResolution": "Node",
+    "outDir": "lib",
+    "rootDir": "src",
+    "sourceMap": true,
+    "strict": true,
+    "target": "ES2019"
+  },
+  "exclude": ["./src/**/*.test.ts"],
+  "include": ["./src/**/*.ts"]
+}

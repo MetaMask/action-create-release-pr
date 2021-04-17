@@ -1,0 +1,67 @@
+{
+  "name": "action-monorepo-release-pr",
+  "version": "0.0.1",
+  "description": "A GitHub Action for creating a monorepo release PR.",
+  "main": "lib/index.js",
+  "engines": {
+    "node": ">=12.10.0",
+    "yarn": ">=1.22.0 <2.0.0"
+  },
+  "scripts": {
+    "lint:eslint": "yarn eslint . --ext js,ts",
+    "lint:misc": "prettier '**/*.json' '**/*.md' '**/*.yml' --single-quote --ignore-path .gitignore",
+    "lint": "yarn lint:eslint && yarn lint:misc --check",
+    "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
+    "build:clean": "mkdir -p lib && rm -rf lib/* && mkdir -p dist && rm -rf dist/*",
+    "build:tsc": "tsc --project .",
+    "build:ncc": "ncc build lib/index.js --out dist",
+    "build": "yarn build:clean && yarn build:tsc && yarn build:ncc",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MetaMask/action-monorepo-release-pr.git"
+  },
+  "keywords": [
+    "GitHub",
+    "Actions",
+    "JavaScript",
+    "TypeScript",
+    "monorepo"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/MetaMask/action-monorepo-release-pr/issues"
+  },
+  "homepage": "https://github.com/MetaMask/action-monorepo-release-pr#readme",
+  "dependencies": {
+    "@actions/core": "^1.2.7",
+    "execa": "^4.1.0",
+    "semver": "^7.3.5"
+  },
+  "devDependencies": {
+    "@metamask/eslint-config": "^6.0.0",
+    "@metamask/eslint-config-jest": "^6.0.0",
+    "@metamask/eslint-config-nodejs": "^6.0.0",
+    "@metamask/eslint-config-typescript": "^6.0.0",
+    "@types/jest": "^26.0.22",
+    "@types/lodash.clonedeep": "^4.5.6",
+    "@types/node": "^14.14.41",
+    "@types/semver": "^7.3.4",
+    "@typescript-eslint/eslint-plugin": "^4.22.0",
+    "@typescript-eslint/parser": "^4.22.0",
+    "@vercel/ncc": "^0.28.3",
+    "eslint": "^7.24.0",
+    "eslint-config-prettier": "^8.2.0",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-jest": "^24.3.5",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^3.4.0",
+    "jest": "^26.6.3",
+    "lodash.clonedeep": "^4.5.0",
+    "prettier": "^2.2.1",
+    "ts-jest": "^26.5.5",
+    "typescript": "^4.2.4"
+  }
+}

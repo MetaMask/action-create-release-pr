@@ -1,11 +1,23 @@
-name: "Create Release PR"
-description: "Create Release Pull Request when new branch is created matching branch-prefix"
+name: 'Create Monorepo Release PR'
+description: 'Update the versions of monorepo packages and create a release PR.'
+
 inputs:
+  release-type:
+    description: 'A SemVer version diff, i.e. major, minor, patch, prerelease etc. Mutually exclusive with "release-version".'
+    required: false
   release-version:
-    description: 'A specific version to bump to.'
-    required: true
+    description: 'A specific version to bump to. Mutually exclusive with "release-type".'
+    required: false
+
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
-    - shell: bash
-      run: ${{ github.action_path }}/run.sh ${{ inputs.release-version }} ${{ github.action_path }}
+    - id: update-packages
+      shell: bash
+      run: node ${{ github.action_path }}/dist/index.js
+      env:
+        RELEASE_TYPE: ${{ inputs.release-type }}
+        RELEASE_VERSION: ${{ inputs.release-version }}
+    - id: create-release-pr
+      shell: bash
+      run: ${{ github.action_path }}/src/create-release-pr.sh ${{ steps.update-packages.outputs.NEW_VERSION }}
