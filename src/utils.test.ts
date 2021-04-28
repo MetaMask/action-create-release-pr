@@ -94,10 +94,6 @@ describe('getActionInputs', () => {
 });
 
 describe('readJsonFile', () => {
-  afterAll(() => {
-    jest.clearAllMocks();
-  });
-
   it('reads a JSON file and returns it as an object', async () => {
     const expectedResult = { foo: ['bar', 'baz'] };
     const path = 'arbitrary/path';
@@ -136,10 +132,6 @@ describe('readJsonFile', () => {
 });
 
 describe('writeJsonFile', () => {
-  afterAll(() => {
-    jest.clearAllMocks();
-  });
-
   const stringify = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 
   it('stringifies a JSON-like value and writes it to disk', async () => {

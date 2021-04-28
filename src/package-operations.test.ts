@@ -56,16 +56,8 @@ const getMockManifest = (
 };
 
 describe('package-operations', () => {
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
   describe('getPackageManifest', () => {
     const readJsonFileMock = jest.spyOn(utils, 'readJsonFile');
-
-    afterAll(() => {
-      jest.resetAllMocks();
-    });
 
     it('gets and returns a valid manifest', async () => {
       const validManifest = { name: 'fooName', version: '1.0.0' };
@@ -128,7 +120,6 @@ describe('package-operations', () => {
   describe('getMetadataForAllPackages', () => {
     const readdirMock = jest.spyOn(fs.promises, 'readdir');
 
-    let mockIndex = -1;
     const names = ['name1', 'name2', 'name3'];
     const dirs = ['dir1', 'dir2', 'dir3'];
     const version = '1.0.0';
@@ -142,23 +133,22 @@ describe('package-operations', () => {
       };
     };
 
-    beforeAll(() => {
+    function getMockReadJsonFile() {
+      let mockIndex = -1;
+      return async () => {
+        mockIndex += 1;
+        return getMockManifest(names[mockIndex], version);
+      };
+    }
+
+    beforeEach(() => {
       jest.spyOn(fs.promises, 'lstat').mockImplementation((async () => {
         return { isDirectory: async () => true };
       }) as any);
 
-      jest.spyOn(utils, 'readJsonFile').mockImplementation(async () => {
-        mockIndex += 1;
-        return getMockManifest(names[mockIndex], version);
-      });
-    });
-
-    afterEach(() => {
-      mockIndex = -1;
-    });
-
-    afterAll(() => {
-      jest.restoreAllMocks();
+      jest
+        .spyOn(utils, 'readJsonFile')
+        .mockImplementation(getMockReadJsonFile());
     });
 
     it('placeholder', async () => {
@@ -184,14 +174,6 @@ describe('package-operations', () => {
       [packageNames[1]]: {},
       [packageNames[2]]: {},
     };
-
-    afterEach(() => {
-      jest.clearAllMocks();
-    });
-
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
 
     it('returns all packages if synchronizeVersions is true', async () => {
       expect(
@@ -241,10 +223,6 @@ describe('package-operations', () => {
 
     const mockDirs = ['dir1', 'dir2', 'dir3'];
     const packageNames = ['name1', 'name2', 'name3'];
-
-    afterAll(() => {
-      jest.restoreAllMocks();
-    });
 
     describe('updatePackage (singular)', () => {
       it('updates a package without dependencies', async () => {

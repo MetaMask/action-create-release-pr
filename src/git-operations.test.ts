@@ -41,10 +41,6 @@ describe('didPackageChange', () => {
     [TAGS.C]: `packages/${PACKAGES.B.dir}/file.txt\n`,
   };
 
-  afterEach(() => {
-    execaMock.mockClear();
-  });
-
   it('first call, failure: Throws if repo has invalid tags', async () => {
     execaMock.mockImplementationOnce(() => {
       return { stdout: 'foo\nbar\n' };
