@@ -8,6 +8,7 @@ jobs:
       - uses: actions/checkout@v2
       - run: yarn install --frozen-lockfile --ignore-scripts
       - run: yarn build
+      - run: git diff --quiet || { echo 'working directory dirty after "yarn build"'; exit 1; }
       - run: yarn lint
       - run: yarn test
 
