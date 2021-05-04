@@ -5,7 +5,7 @@ set -e
 set -u
 
 export NEW_VERSION="${1}"
-export BRANCH_NAME="release-${1}"
+export BRANCH_NAME="release-v${NEW_VERSION}"
 export GITHUB_ACTION_PATH="${2}"
 export RELEASE_BODY="$(awk -v version="${NEW_VERSION}" -f ${GITHUB_ACTION_PATH}/scripts/show-changelog.awk CHANGELOG.md)"
 
