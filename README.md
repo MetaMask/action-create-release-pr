@@ -32,8 +32,6 @@ jobs:
               with:
                   node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
             - uses: MetaMask/action-monorepo-release-pr@0.0.8
-              with:
-                  release-version: ${{ github.event.inputs.release-version }}
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
