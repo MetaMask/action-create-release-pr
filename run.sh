@@ -13,7 +13,7 @@ fi
 
 BRANCH_NAME="release-v${NEW_VERSION}"
 GITHUB_ACTION_PATH="${2}"
-RELEASE_BODY="$(awk -v version="${NEW_VERSION}" -f "${GITHUB_ACTION_PATH}"/scripts/show-changelog.awk CHANGELOG.md)"
+RELEASE_BODY="$(awk -v version="${NEW_VERSION}" -f ${GITHUB_ACTION_PATH}/scripts/show-changelog.awk CHANGELOG.md)"
 
 git config user.name github-actions
 git config user.email github-actions@github.com
