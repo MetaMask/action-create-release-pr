@@ -16,7 +16,7 @@ node "${GITHUB_ACTION_PATH}/scripts/update-package-version.js"
 
 git checkout -b "${BRANCH_NAME}"
 
-if ! (git add . && git commit -m "${NEW_VERSION}");
+if ! (git add . && git commit -m "${NEW_VERSION}" && git push);
 then
     echo "Error: No changes detected."
     exit 1
