@@ -2,7 +2,6 @@
 
 set -x
 set -e
-set -u
 set -o pipefail
 
 NEW_VERSION="${1}"
