@@ -13,8 +13,8 @@ on:
     workflow_dispatch:
         inputs:
             release-version:
-                description: 'A specific version to bump to. Mutually exclusive with "release-type".'
-                required: false
+                description: 'A specific version to bump to.'
+                required: true
 
 jobs:
     monorepo-release-pr:
