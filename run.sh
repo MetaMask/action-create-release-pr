@@ -1,8 +1,8 @@
-export BRANCH_NAME="${GITHUB_REF##*}"
-export NEW_VERSION="${GITHUB_REF##*/${1}}"
-export RELEASE_BODY="$(awk -v version="${NEW_VERSION}" -f ${2}/scripts/show-changelog.awk CHANGELOG.md)"
+export NEW_VERSION="${1}"
+export GITHUB_ACTION_PATH="${2}"
+export RELEASE_BODY="$(awk -v version="${NEW_VERSION}" -f ${GITHUB_ACTION_PATH}/scripts/show-changelog.awk CHANGELOG.md)"
 
-node "${2}/scripts/update-package-version.js"
+node "${GITHUB_ACTION_PATH}/scripts/update-package-version.js"
 
 git config user.name github-actions
 git config user.email github-actions@github.com
@@ -16,4 +16,4 @@ hub pull-request \
     --draft \
     --message "${NEW_VERSION} RC" --message "${RELEASE_BODY}" \
     --base "main" \
-    --head "${BRANCH_NAME}";
+    --head "${NEW_VERSION}";
