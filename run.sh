@@ -3,11 +3,18 @@
 set -x
 set -e
 set -u
+set -o pipefail
 
-export NEW_VERSION="${1}"
-export BRANCH_NAME="release-v${NEW_VERSION}"
-export GITHUB_ACTION_PATH="${2}"
-export RELEASE_BODY="$(awk -v version="${NEW_VERSION}" -f ${GITHUB_ACTION_PATH}/scripts/show-changelog.awk CHANGELOG.md)"
+NEW_VERSION="${1}"
+
+if [[ -z $NEW_VERSION ]]; then
+  echo "Error: No new version specified."
+  exit 1
+fi
+
+BRANCH_NAME="release-v${NEW_VERSION}"
+GITHUB_ACTION_PATH="${2}"
+RELEASE_BODY="$(awk -v version="${NEW_VERSION}" -f "${GITHUB_ACTION_PATH}"/scripts/show-changelog.awk CHANGELOG.md)"
 
 git config user.name github-actions
 git config user.email github-actions@github.com
