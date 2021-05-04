@@ -25,7 +25,6 @@ const mockProcessEnv = ({
   releaseType?: string;
   releaseVersion?: string;
 }) => {
-  // process.env.GITHUB_WORKSPACE = require.resolve('..')
   if (releaseType !== undefined) {
     process.env[InputKeys.ReleaseType] = releaseType;
   }
@@ -35,8 +34,6 @@ const mockProcessEnv = ({
 };
 
 const unmockProcessEnv = () => {
-  // foo @ts-ignore
-  // delete process.env.GITHUB_WORKSPACE
   Object.values(InputKeys).forEach((key) => delete process.env[key]);
 };
 

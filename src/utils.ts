@@ -59,8 +59,9 @@ const TWO_SPACES = '  ';
 export function getActionInputs(): ActionInputs {
   const inputs: ActionInputs = {
     ReleaseType:
-      (process.env.RELEASE_TYPE as AcceptedSemverReleaseTypes) || null,
-    ReleaseVersion: process.env.RELEASE_VERSION || null,
+      (process.env[InputKeys.ReleaseType] as AcceptedSemverReleaseTypes) ||
+      null,
+    ReleaseVersion: process.env[InputKeys.ReleaseVersion] || null,
   };
   validateActionInputs(inputs);
   return inputs;
