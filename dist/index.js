@@ -4321,8 +4321,8 @@ async function getMetadataForAllPackages(rootDir = WORKSPACE_ROOT, packagesDir =
     const result = {};
     await Promise.all(packagesDirContents.map(async (packageDir) => {
         const packagePath = external_path_default().join(packagesPath, packageDir);
-        const manifest = await getPackageManifest(packagePath);
         if ((await external_fs_.promises.lstat(packagePath)).isDirectory()) {
+            const manifest = await getPackageManifest(packagePath);
             result[manifest.name] = {
                 dirName: packageDir,
                 manifest,
@@ -4489,8 +4489,9 @@ function validatePackageManifest(manifest, manifestDirPath, requiredFields = ['n
         throw new Error(`Manifest in "${legiblePath}" does not have a valid "name" field.`);
     }
     if (requiredFields.includes('version') && !isValidSemver(manifest.version)) {
-        throw new Error(`${`"${manifest.name}" manifest "version"` ||
-            `"version" of manifest in "${legiblePath}"`} is not a valid SemVer version: ${manifest.version}`);
+        throw new Error(`${manifest.name
+            ? `"${manifest.name}" manifest "version"`
+            : `"version" of manifest in "${legiblePath}"`} is not a valid SemVer version: ${manifest.version}`);
     }
 }
 //# sourceMappingURL=package-operations.js.map

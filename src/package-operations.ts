@@ -59,9 +59,9 @@ export async function getMetadataForAllPackages(
   await Promise.all(
     packagesDirContents.map(async (packageDir) => {
       const packagePath = pathUtils.join(packagesPath, packageDir);
-      const manifest = await getPackageManifest(packagePath);
 
       if ((await fs.lstat(packagePath)).isDirectory()) {
+        const manifest = await getPackageManifest(packagePath);
         result[manifest.name] = {
           dirName: packageDir,
           manifest,
@@ -295,8 +295,9 @@ function validatePackageManifest(
   if (requiredFields.includes('version') && !isValidSemver(manifest.version)) {
     throw new Error(
       `${
-        `"${manifest.name}" manifest "version"` ||
-        `"version" of manifest in "${legiblePath}"`
+        manifest.name
+          ? `"${manifest.name}" manifest "version"`
+          : `"version" of manifest in "${legiblePath}"`
       } is not a valid SemVer version: ${manifest.version}`,
     );
   }

@@ -32,11 +32,10 @@ jest.mock('./utils', () => {
   return {
     ...actualModule,
     readJsonFile: jest.fn(),
+    WORKSPACE_ROOT: 'root',
   };
 });
 
-// We don't actually use it, so it doesn't matter what it is.
-process.env.GITHUB_WORKSPACE = 'root';
 const MOCK_ROOT_DIR = 'root';
 const MOCK_PACKAGES_DIR = 'packages';
 
@@ -57,7 +56,11 @@ const getMockManifest = (
 
 describe('package-operations', () => {
   describe('getPackageManifest', () => {
-    const readJsonFileMock = jest.spyOn(utils, 'readJsonFile');
+    let readJsonFileMock: jest.SpyInstance;
+
+    beforeEach(() => {
+      readJsonFileMock = jest.spyOn(utils, 'readJsonFile');
+    });
 
     it('gets and returns a valid manifest', async () => {
       const validManifest = { name: 'fooName', version: '1.0.0' };
@@ -103,6 +106,9 @@ describe('package-operations', () => {
         })
         .mockImplementationOnce(async () => {
           return { name: 'fooName' };
+        })
+        .mockImplementationOnce(async () => {
+          return { version: 'badVersion' };
         });
 
       await expect(getPackageManifest('fooPath')).rejects.toThrow(/"name"/u);
@@ -114,15 +120,19 @@ describe('package-operations', () => {
       await expect(getPackageManifest('fooPath', ['version'])).rejects.toThrow(
         /"version"/u,
       );
+      await expect(getPackageManifest('fooPath', ['version'])).rejects.toThrow(
+        /"version"/u,
+      );
     });
   });
 
   describe('getMetadataForAllPackages', () => {
-    const readdirMock = jest.spyOn(fs.promises, 'readdir');
+    let readdirMock: jest.SpyInstance;
 
     const names = ['name1', 'name2', 'name3'];
     const dirs = ['dir1', 'dir2', 'dir3'];
     const version = '1.0.0';
+    const SOME_FILE = 'someFile';
 
     const getMockPackageMetadata = (index: number) => {
       return {
@@ -142,8 +152,14 @@ describe('package-operations', () => {
     }
 
     beforeEach(() => {
-      jest.spyOn(fs.promises, 'lstat').mockImplementation((async () => {
-        return { isDirectory: async () => true };
+      readdirMock = jest.spyOn(fs.promises, 'readdir');
+
+      jest.spyOn(fs.promises, 'lstat').mockImplementation((async (
+        path: string,
+      ) => {
+        return path.endsWith(SOME_FILE)
+          ? { isDirectory: () => false }
+          : { isDirectory: () => true };
       }) as any);
 
       jest
@@ -151,12 +167,12 @@ describe('package-operations', () => {
         .mockImplementation(getMockReadJsonFile());
     });
 
-    it('placeholder', async () => {
+    it('does not throw', async () => {
       readdirMock.mockImplementationOnce((async () => {
-        return [...dirs];
+        return [...dirs, SOME_FILE];
       }) as any);
 
-      expect(await getMetadataForAllPackages(MOCK_ROOT_DIR)).toStrictEqual({
+      expect(await getMetadataForAllPackages()).toStrictEqual({
         [names[0]]: getMockPackageMetadata(0),
         [names[1]]: getMockPackageMetadata(1),
         [names[2]]: getMockPackageMetadata(2),
@@ -165,7 +181,7 @@ describe('package-operations', () => {
   });
 
   describe('getPackagesToUpdate', () => {
-    const didPackageChangeMock = jest.spyOn(gitOps, 'didPackageChange');
+    let didPackageChangeMock: jest.SpyInstance;
 
     const packageNames = ['name1', 'name2', 'name3'];
 
@@ -174,6 +190,10 @@ describe('package-operations', () => {
       [packageNames[1]]: {},
       [packageNames[2]]: {},
     };
+
+    beforeEach(() => {
+      didPackageChangeMock = jest.spyOn(gitOps, 'didPackageChange');
+    });
 
     it('returns all packages if synchronizeVersions is true', async () => {
       expect(
