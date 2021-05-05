@@ -17,7 +17,7 @@ on:
         required: true
 
 jobs:
-  monorepo-release-pr:
+  release-pr:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
