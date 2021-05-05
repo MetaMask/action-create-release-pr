@@ -22,11 +22,13 @@ node "${GITHUB_ACTION_PATH}/scripts/update-package-version.js"
 
 git checkout -b "${BRANCH_NAME}"
 
-if ! (git add . && git commit -m "${NEW_VERSION}" && git push);
+if ! (git add . && git commit -m "${NEW_VERSION}");
 then
     echo "Error: No changes detected."
     exit 1
 fi
+
+git push --set-upstream origin "${BRANCH_NAME}"
 
 hub pull-request \
     --draft \
