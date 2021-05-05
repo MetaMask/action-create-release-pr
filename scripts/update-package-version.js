@@ -13,7 +13,7 @@ const changeVersion = async (filePath, version) => {
 };
 const p = path.resolve(process.cwd(), "package.json");
 
-changeVersion(p, process.env.NEW_VERSION).then(() => {
+changeVersion(p, process.argv[2]).then(() => {
     console.log("wrote new version")
 }).catch((err) => {
     console.error("error writing new version")
