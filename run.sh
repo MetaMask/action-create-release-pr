@@ -18,7 +18,7 @@ RELEASE_BODY="$(awk -v version="${NEW_VERSION}" -f ${GITHUB_ACTION_PATH}/scripts
 git config user.name github-actions
 git config user.email github-actions@github.com
 
-node "${GITHUB_ACTION_PATH}/scripts/update-package-version.js ${NEW_VERSION}"
+node "${GITHUB_ACTION_PATH}/scripts/update-package-version.js" $NEW_VERSION
 
 git checkout -b "${BRANCH_NAME}"
 
