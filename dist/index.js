@@ -4076,12 +4076,22 @@ const TWO_SPACES = '  ';
  */
 function getActionInputs() {
     const inputs = {
-        ReleaseType: process.env[InputKeys.ReleaseType] ||
-            null,
-        ReleaseVersion: process.env[InputKeys.ReleaseVersion] || null,
+        ReleaseType: getProcessEnvValue(InputKeys.ReleaseType) || null,
+        ReleaseVersion: getProcessEnvValue(InputKeys.ReleaseVersion) || null,
     };
     validateActionInputs(inputs);
     return inputs;
+}
+/**
+ * Utility function to get the trimmed value of a particular key of process.env.
+ *
+ * @param key - The key of process.env to access.
+ * @returns The trimmed string value of the process.env key. Returns an empty
+ * string if the key is not set.
+ */
+function getProcessEnvValue(key) {
+    var _a;
+    return ((_a = process.env[key]) === null || _a === void 0 ? void 0 : _a.trim()) || '';
 }
 /**
  * Validates the inputs to the Action, defined earlier in this file.
@@ -4190,91 +4200,8 @@ function tabs(numTabs, prefix) {
 
 
 const HEAD = 'HEAD';
-let INITIALIZED_GIT = false;
-let TAGS;
 const DIFFS = new Map();
 /**
- * ATTN: This function must be called before other git operations are performed.
- *
- * Executes "git tag" and caches the result. Throws an error if fetching tags
- * fails.
- *
- * Idempotent, but only if executed serially.
- */
-async function initializeGit() {
-    if (!INITIALIZED_GIT) {
-        [TAGS] = await getTags();
-        // eslint-disable-next-line require-atomic-updates
-        INITIALIZED_GIT = true;
-    }
-}
-/**
- * ATTN: Only execute serially. Not safely parallelizable.
- *
- * Using git, checks whether the package changed since it was last released.
- *
- * Assumes that initializeGit has been called. If it's not the
- * first release of the package, also assumes that:
- *
- * - The "version" field of the package's manifest corresponds to its latest
- * released version.
- * - The release commit of the package's most recent version is tagged with
- * "v<VERSION>", where <VERSION> is equal to the manifest's "version" field.
- *
- * @param packageData - The metadata of the package to diff.
- * @param packagesDir - The directory containing the monorepo's packages.
- * @returns Whether the package changed since its last release. `true` is
- * returned if there are no releases in the repository's history.
- */
-async function didPackageChange(packageData, packagesDir = 'packages', _tags = TAGS) {
-    const tags = _tags;
-    // In this case, we assume that it's the first release, and every package
-    // is implicitly considered to have "changed".
-    if (tags.size === 0) {
-        return true;
-    }
-    const { manifest: { name: packageName, version: currentVersion }, } = packageData;
-    const tagOfCurrentVersion = versionToTag(currentVersion);
-    if (!tags.has(tagOfCurrentVersion)) {
-        throw new Error(`Package "${packageName}" has version "${currentVersion}" in its manifest, but no corresponding tag "${tagOfCurrentVersion}" exists.`);
-    }
-    return hasDiff(packageData, tagOfCurrentVersion, packagesDir);
-}
-/**
- * Retrieves the diff for the given tag from the cache or performs the git diff
- * operation, caching the result and returning it.
- *
- * @param packageData - The metadata of the package to diff.
- * @param tag - The tag corresponding to the package's latest release.
- * @param packagesDir - The monorepo's packages directory.
- * @returns Whether the package changed since its last release.
- */
-async function hasDiff(packageData, tag, packagesDir) {
-    const { dirName: packageDirName } = packageData;
-    let diff;
-    if (DIFFS.has(tag)) {
-        diff = DIFFS.get(tag);
-    }
-    else {
-        diff = await performDiff(tag, packagesDir);
-        DIFFS.set(tag, diff);
-    }
-    const packagePathPrefix = external_path_default().join(packagesDir, packageDirName);
-    return diff.some((diffPath) => diffPath.startsWith(packagePathPrefix));
-}
-/**
- * Wrapper function for executing "git diff".
- *
- * @param tag - The tag to compare against HEAD.
- * @param packagesDir - The monorepo's packages directory. Used for narrowing
- * git diff results.
- */
-async function performDiff(tag, packagesDir) {
-    return (await performGitOperation('diff', tag, HEAD, '--name-only', '--', packagesDir)).split('\n');
-}
-/**
- * ATTN: Only exported for testing purposes. Consumers should use initializeGit.
- *
  * Utility function for executing "git tag" and parsing the result.
  * An error is thrown if no tags are found and the local git history is
  * incomplete.
@@ -4317,6 +4244,72 @@ async function hasCompleteGitHistory() {
         return true;
     }
     throw new Error(`"git rev-parse --is-shallow-repository" returned unrecognized value: ${isShallow}`);
+}
+/**
+ * ATTN: Only execute serially. Not safely parallelizable.
+ *
+ * Using git, checks whether the package changed since it was last released.
+ *
+ * Unless it's the first release of the package, assumes that:
+ *
+ * - The "version" field of the package's manifest corresponds to its latest
+ * released version.
+ * - The release commit of the package's most recent version is tagged with
+ * "v<VERSION>", where <VERSION> is equal to the manifest's "version" field.
+ *
+ * @param tags - All tags for the release's base git branch.
+ * @param packageData - The metadata of the package to diff.
+ * @param packagesDir - The directory containing the monorepo's packages.
+ * @returns Whether the package changed since its last release. `true` is
+ * returned if there are no releases in the repository's history.
+ */
+async function didPackageChange(tags, packageData, packagesDir = 'packages') {
+    // In this case, we assume that it's the first release, and every package
+    // is implicitly considered to have "changed".
+    if (tags.size === 0) {
+        return true;
+    }
+    const { manifest: { name: packageName, version: currentVersion }, } = packageData;
+    const tagOfCurrentVersion = versionToTag(currentVersion);
+    if (!tags.has(tagOfCurrentVersion)) {
+        throw new Error(`Package "${packageName}" has version "${currentVersion}" in its manifest, but no corresponding tag "${tagOfCurrentVersion}" exists.`);
+    }
+    return hasDiff(packageData, tagOfCurrentVersion, packagesDir);
+}
+/**
+ * Retrieves the diff for the given tag from the cache or performs the git diff
+ * operation, caching the result and returning it.
+ *
+ * @param packageData - The metadata of the package to diff.
+ * @param tag - The tag corresponding to the package's latest release.
+ * @param packagesDir - The monorepo's packages directory.
+ * @returns Whether the package changed since its last release.
+ */
+async function hasDiff(packageData, tag, packagesDir) {
+    const { dirName: packageDirName } = packageData;
+    let diff;
+    if (DIFFS.has(tag)) {
+        diff = DIFFS.get(tag);
+    }
+    else {
+        diff = await getDiff(tag, packagesDir);
+        DIFFS.set(tag, diff);
+    }
+    const packagePathPrefix = external_path_default().join(packagesDir, packageDirName);
+    return diff.some((diffPath) => diffPath.startsWith(packagePathPrefix));
+}
+/**
+ * Wrapper function for diffing packages between a particular tag and the
+ * current HEAD.
+ *
+ * @param tag - The tag to compare against HEAD.
+ * @param packagesDir - The monorepo's packages directory. Used for narrowing
+ * git diff results.
+ * @returns An array of paths to files in the packages directory that were
+ * changed between the tag and the current HEAD.
+ */
+async function getDiff(tag, packagesDir) {
+    return (await performGitOperation('diff', tag, HEAD, '--name-only', '--', packagesDir)).split('\n');
 }
 /**
  * Utility function for performing git operations via execa.
@@ -4383,9 +4376,10 @@ async function getMetadataForAllPackages(rootDir = WORKSPACE_ROOT, packagesDir =
  * @param allPackages - The metadata of all packages in the monorepo.
  * @param synchronizeVersions - Whether to synchronize the versions of all
  * packages.
+ * @param tags - All tags for the release's base git branch.
  * @returns The names of the packages to update.
  */
-async function getPackagesToUpdate(allPackages, synchronizeVersions) {
+async function getPackagesToUpdate(allPackages, synchronizeVersions, tags) {
     // In order to synchronize versions, we must update every package.
     if (synchronizeVersions) {
         return new Set(Object.keys(allPackages));
@@ -4395,7 +4389,7 @@ async function getPackagesToUpdate(allPackages, synchronizeVersions) {
     // We use a for-loop here instead of Promise.all because didPackageChange
     // must be called serially.
     for (const packageName of Object.keys(allPackages)) {
-        if (await didPackageChange(allPackages[packageName])) {
+        if (await didPackageChange(tags, allPackages[packageName])) {
             shouldBeUpdated.add(packageName);
         }
     }
@@ -4555,7 +4549,7 @@ async function main() {
     const actionInputs = getActionInputs();
     // Get all git tags. An error is thrown if "git tag" returns no tags and the
     // local git history is incomplete.
-    await initializeGit();
+    const [tags] = await getTags();
     const rootManifest = await getPackageManifest(WORKSPACE_ROOT, ['version']);
     const { version: currentVersion } = rootManifest;
     // Compute the new version and version diff from the inputs and root manifest
@@ -4574,7 +4568,7 @@ async function main() {
     const synchronizeVersions = isMajorSemverDiff(versionDiff);
     // Collect required information to perform updates
     const allPackages = await getMetadataForAllPackages();
-    const packagesToUpdate = await getPackagesToUpdate(allPackages, synchronizeVersions);
+    const packagesToUpdate = await getPackagesToUpdate(allPackages, synchronizeVersions, tags);
     const updateSpecification = {
         newVersion,
         packagesToUpdate,

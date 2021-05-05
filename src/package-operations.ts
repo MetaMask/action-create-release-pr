@@ -78,11 +78,13 @@ export async function getMetadataForAllPackages(
  * @param allPackages - The metadata of all packages in the monorepo.
  * @param synchronizeVersions - Whether to synchronize the versions of all
  * packages.
+ * @param tags - All tags for the release's base git branch.
  * @returns The names of the packages to update.
  */
 export async function getPackagesToUpdate(
   allPackages: Record<string, PackageMetadata>,
   synchronizeVersions: boolean,
+  tags: ReadonlySet<string>,
 ): Promise<Set<string>> {
   // In order to synchronize versions, we must update every package.
   if (synchronizeVersions) {
@@ -94,7 +96,7 @@ export async function getPackagesToUpdate(
   // We use a for-loop here instead of Promise.all because didPackageChange
   // must be called serially.
   for (const packageName of Object.keys(allPackages)) {
-    if (await didPackageChange(allPackages[packageName])) {
+    if (await didPackageChange(tags, allPackages[packageName])) {
       shouldBeUpdated.add(packageName);
     }
   }

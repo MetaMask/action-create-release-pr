@@ -197,7 +197,7 @@ describe('package-operations', () => {
 
     it('returns all packages if synchronizeVersions is true', async () => {
       expect(
-        await getPackagesToUpdate(mockMetadataRecord as any, true),
+        await getPackagesToUpdate(mockMetadataRecord as any, true, new Set()),
       ).toStrictEqual(new Set(packageNames));
       expect(didPackageChangeMock).not.toHaveBeenCalled();
     });
@@ -209,7 +209,7 @@ describe('package-operations', () => {
         .mockImplementationOnce(async () => false);
 
       expect(
-        await getPackagesToUpdate(mockMetadataRecord as any, false),
+        await getPackagesToUpdate(mockMetadataRecord as any, false, new Set()),
       ).toStrictEqual(new Set([packageNames[1]]));
       expect(didPackageChangeMock).toHaveBeenCalledTimes(3);
     });
@@ -218,7 +218,7 @@ describe('package-operations', () => {
       didPackageChangeMock.mockImplementation(async () => false);
 
       await expect(
-        getPackagesToUpdate(mockMetadataRecord as any, false),
+        getPackagesToUpdate(mockMetadataRecord as any, false, new Set()),
       ).rejects.toThrow(/no packages to update/u);
       expect(didPackageChangeMock).toHaveBeenCalledTimes(3);
     });

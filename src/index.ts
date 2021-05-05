@@ -13,7 +13,7 @@ import {
   getPackageManifest,
   updatePackage,
 } from './package-operations';
-import { initializeGit } from './git-operations';
+import { getTags } from './git-operations';
 import { getActionInputs, isMajorSemverDiff, WORKSPACE_ROOT } from './utils';
 
 main().catch((error) => {
@@ -25,7 +25,7 @@ async function main(): Promise<void> {
 
   // Get all git tags. An error is thrown if "git tag" returns no tags and the
   // local git history is incomplete.
-  await initializeGit();
+  const [tags] = await getTags();
 
   const rootManifest = await getPackageManifest(WORKSPACE_ROOT, ['version']);
   const { version: currentVersion } = rootManifest;
@@ -53,6 +53,7 @@ async function main(): Promise<void> {
   const packagesToUpdate = await getPackagesToUpdate(
     allPackages,
     synchronizeVersions,
+    tags,
   );
   const updateSpecification = {
     newVersion,

@@ -59,12 +59,24 @@ const TWO_SPACES = '  ';
 export function getActionInputs(): ActionInputs {
   const inputs: ActionInputs = {
     ReleaseType:
-      (process.env[InputKeys.ReleaseType] as AcceptedSemverReleaseTypes) ||
-      null,
-    ReleaseVersion: process.env[InputKeys.ReleaseVersion] || null,
+      (getProcessEnvValue(
+        InputKeys.ReleaseType,
+      ) as AcceptedSemverReleaseTypes) || null,
+    ReleaseVersion: getProcessEnvValue(InputKeys.ReleaseVersion) || null,
   };
   validateActionInputs(inputs);
   return inputs;
+}
+
+/**
+ * Utility function to get the trimmed value of a particular key of process.env.
+ *
+ * @param key - The key of process.env to access.
+ * @returns The trimmed string value of the process.env key. Returns an empty
+ * string if the key is not set.
+ */
+function getProcessEnvValue(key: string): string {
+  return process.env[key]?.trim() || '';
 }
 
 /**

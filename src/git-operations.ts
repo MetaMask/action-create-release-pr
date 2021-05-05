@@ -7,124 +7,9 @@ import { isValidSemver, WORKSPACE_ROOT } from './utils';
 const HEAD = 'HEAD';
 
 type DiffMap = Map<string, string[]>;
-
-let INITIALIZED_GIT = false;
-let TAGS: Readonly<Set<string>>;
 const DIFFS: DiffMap = new Map();
 
 /**
- * ATTN: This function must be called before other git operations are performed.
- *
- * Executes "git tag" and caches the result. Throws an error if fetching tags
- * fails.
- *
- * Idempotent, but only if executed serially.
- */
-export async function initializeGit(): Promise<void> {
-  if (!INITIALIZED_GIT) {
-    [TAGS] = await getTags();
-    // eslint-disable-next-line require-atomic-updates
-    INITIALIZED_GIT = true;
-  }
-}
-
-/**
- * ATTN: Only execute serially. Not safely parallelizable.
- *
- * Using git, checks whether the package changed since it was last released.
- *
- * Assumes that initializeGit has been called. If it's not the
- * first release of the package, also assumes that:
- *
- * - The "version" field of the package's manifest corresponds to its latest
- * released version.
- * - The release commit of the package's most recent version is tagged with
- * "v<VERSION>", where <VERSION> is equal to the manifest's "version" field.
- *
- * @param packageData - The metadata of the package to diff.
- * @param packagesDir - The directory containing the monorepo's packages.
- * @returns Whether the package changed since its last release. `true` is
- * returned if there are no releases in the repository's history.
- */
-export async function didPackageChange(
-  packageData: PackageMetadata,
-  packagesDir = 'packages',
-  _tags: never = TAGS as never, // for testing purposes
-): Promise<boolean> {
-  const tags = _tags as typeof TAGS;
-  // In this case, we assume that it's the first release, and every package
-  // is implicitly considered to have "changed".
-  if (tags.size === 0) {
-    return true;
-  }
-
-  const {
-    manifest: { name: packageName, version: currentVersion },
-  } = packageData;
-  const tagOfCurrentVersion = versionToTag(currentVersion);
-
-  if (!tags.has(tagOfCurrentVersion)) {
-    throw new Error(
-      `Package "${packageName}" has version "${currentVersion}" in its manifest, but no corresponding tag "${tagOfCurrentVersion}" exists.`,
-    );
-  }
-  return hasDiff(packageData, tagOfCurrentVersion, packagesDir);
-}
-
-/**
- * Retrieves the diff for the given tag from the cache or performs the git diff
- * operation, caching the result and returning it.
- *
- * @param packageData - The metadata of the package to diff.
- * @param tag - The tag corresponding to the package's latest release.
- * @param packagesDir - The monorepo's packages directory.
- * @returns Whether the package changed since its last release.
- */
-async function hasDiff(
-  packageData: PackageMetadata,
-  tag: string,
-  packagesDir: string,
-): Promise<boolean> {
-  const { dirName: packageDirName } = packageData;
-
-  let diff: string[];
-  if (DIFFS.has(tag)) {
-    diff = DIFFS.get(tag) as string[];
-  } else {
-    diff = await performDiff(tag, packagesDir);
-    DIFFS.set(tag, diff);
-  }
-
-  const packagePathPrefix = pathUtils.join(packagesDir, packageDirName);
-  return diff.some((diffPath) => diffPath.startsWith(packagePathPrefix));
-}
-
-/**
- * Wrapper function for executing "git diff".
- *
- * @param tag - The tag to compare against HEAD.
- * @param packagesDir - The monorepo's packages directory. Used for narrowing
- * git diff results.
- */
-async function performDiff(
-  tag: string,
-  packagesDir: string,
-): Promise<string[]> {
-  return (
-    await performGitOperation(
-      'diff',
-      tag,
-      HEAD,
-      '--name-only',
-      '--',
-      packagesDir,
-    )
-  ).split('\n');
-}
-
-/**
- * ATTN: Only exported for testing purposes. Consumers should use initializeGit.
- *
  * Utility function for executing "git tag" and parsing the result.
  * An error is thrown if no tags are found and the local git history is
  * incomplete.
@@ -133,7 +18,7 @@ async function performDiff(
  * The tuple is populated by an empty array and null if there are no tags.
  */
 export async function getTags(): Promise<
-  Readonly<[Set<string>, string | null]>
+  Readonly<[ReadonlySet<string>, string | null]>
 > {
   // The --merged flag ensures that we only get tags that are parents of or
   // equal to the current HEAD.
@@ -181,6 +66,99 @@ async function hasCompleteGitHistory(): Promise<boolean> {
   throw new Error(
     `"git rev-parse --is-shallow-repository" returned unrecognized value: ${isShallow}`,
   );
+}
+
+/**
+ * ATTN: Only execute serially. Not safely parallelizable.
+ *
+ * Using git, checks whether the package changed since it was last released.
+ *
+ * Unless it's the first release of the package, assumes that:
+ *
+ * - The "version" field of the package's manifest corresponds to its latest
+ * released version.
+ * - The release commit of the package's most recent version is tagged with
+ * "v<VERSION>", where <VERSION> is equal to the manifest's "version" field.
+ *
+ * @param tags - All tags for the release's base git branch.
+ * @param packageData - The metadata of the package to diff.
+ * @param packagesDir - The directory containing the monorepo's packages.
+ * @returns Whether the package changed since its last release. `true` is
+ * returned if there are no releases in the repository's history.
+ */
+export async function didPackageChange(
+  tags: ReadonlySet<string>,
+  packageData: PackageMetadata,
+  packagesDir = 'packages',
+): Promise<boolean> {
+  // In this case, we assume that it's the first release, and every package
+  // is implicitly considered to have "changed".
+  if (tags.size === 0) {
+    return true;
+  }
+
+  const {
+    manifest: { name: packageName, version: currentVersion },
+  } = packageData;
+  const tagOfCurrentVersion = versionToTag(currentVersion);
+
+  if (!tags.has(tagOfCurrentVersion)) {
+    throw new Error(
+      `Package "${packageName}" has version "${currentVersion}" in its manifest, but no corresponding tag "${tagOfCurrentVersion}" exists.`,
+    );
+  }
+  return hasDiff(packageData, tagOfCurrentVersion, packagesDir);
+}
+
+/**
+ * Retrieves the diff for the given tag from the cache or performs the git diff
+ * operation, caching the result and returning it.
+ *
+ * @param packageData - The metadata of the package to diff.
+ * @param tag - The tag corresponding to the package's latest release.
+ * @param packagesDir - The monorepo's packages directory.
+ * @returns Whether the package changed since its last release.
+ */
+async function hasDiff(
+  packageData: PackageMetadata,
+  tag: string,
+  packagesDir: string,
+): Promise<boolean> {
+  const { dirName: packageDirName } = packageData;
+
+  let diff: string[];
+  if (DIFFS.has(tag)) {
+    diff = DIFFS.get(tag) as string[];
+  } else {
+    diff = await getDiff(tag, packagesDir);
+    DIFFS.set(tag, diff);
+  }
+
+  const packagePathPrefix = pathUtils.join(packagesDir, packageDirName);
+  return diff.some((diffPath) => diffPath.startsWith(packagePathPrefix));
+}
+
+/**
+ * Wrapper function for diffing packages between a particular tag and the
+ * current HEAD.
+ *
+ * @param tag - The tag to compare against HEAD.
+ * @param packagesDir - The monorepo's packages directory. Used for narrowing
+ * git diff results.
+ * @returns An array of paths to files in the packages directory that were
+ * changed between the tag and the current HEAD.
+ */
+async function getDiff(tag: string, packagesDir: string): Promise<string[]> {
+  return (
+    await performGitOperation(
+      'diff',
+      tag,
+      HEAD,
+      '--name-only',
+      '--',
+      packagesDir,
+    )
+  ).split('\n');
 }
 
 /**
