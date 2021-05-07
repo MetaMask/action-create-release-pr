@@ -2,6 +2,9 @@
   "name": "action-monorepo-release-pr",
   "version": "0.0.1",
   "description": "A GitHub Action for creating a monorepo release PR.",
+  "files": [
+    "lib/"
+  ],
   "main": "lib/index.js",
   "engines": {
     "node": ">=12.10.0",
