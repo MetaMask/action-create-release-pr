@@ -4025,8 +4025,6 @@ var inc_default = /*#__PURE__*/__nccwpck_require__.n(inc);
 // EXTERNAL MODULE: ./node_modules/semver/functions/diff.js
 var diff = __nccwpck_require__(4297);
 var diff_default = /*#__PURE__*/__nccwpck_require__.n(diff);
-// EXTERNAL MODULE: external "fs"
-var external_fs_ = __nccwpck_require__(5747);
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(5622);
 var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
@@ -4036,6 +4034,8 @@ var clean_default = /*#__PURE__*/__nccwpck_require__.n(clean);
 // EXTERNAL MODULE: ./node_modules/execa/index.js
 var execa = __nccwpck_require__(5447);
 var execa_default = /*#__PURE__*/__nccwpck_require__.n(execa);
+// EXTERNAL MODULE: external "fs"
+var external_fs_ = __nccwpck_require__(5747);
 // EXTERNAL MODULE: ./node_modules/semver/functions/parse.js
 var parse = __nccwpck_require__(5925);
 var parse_default = /*#__PURE__*/__nccwpck_require__.n(parse);
@@ -4345,6 +4345,13 @@ var PackageDependencyFields;
     PackageDependencyFields["Bundled"] = "bundledDependencies";
     PackageDependencyFields["Optional"] = "optionalDependencies";
 })(PackageDependencyFields || (PackageDependencyFields = {}));
+var FieldNames;
+(function (FieldNames) {
+    FieldNames["Name"] = "name";
+    FieldNames["Private"] = "private";
+    FieldNames["Version"] = "version";
+    FieldNames["Workspaces"] = "workspaces";
+})(FieldNames || (FieldNames = {}));
 /**
  * Reads the contents of the monorepo's packages directory, and collects
  * metadata for each package therein. Assumes that all folders in the packages
@@ -4442,8 +4449,9 @@ async function updatePackage(packageMetadata, updateSpecification) {
  * @returns The updated manifest.
  */
 function getUpdatedManifest(currentManifest, updateSpecification) {
-    const { newVersion, synchronizeVersions } = updateSpecification;
-    if (synchronizeVersions) {
+    const { newVersion } = updateSpecification;
+    if (isMonorepoUpdateSpecification(updateSpecification) &&
+        updateSpecification.synchronizeVersions) {
         // If we're synchronizing the versions of our updated packages, we also
         // synchronize their versions whenever they appear as a dependency.
         return {
@@ -4500,58 +4508,100 @@ function getUpdatedDependencyField(dependencyObject, packagesToUpdate, newVersio
  *
  * @param containingDirPath - The path to the directory containing the
  * package.json file.
- * @param requiredFields - The manifest fields that will be required during
- * validation.
+ * @param fieldsToValidate - The manifest fields that will be validated.
  * @returns The object corresponding to the parsed package.json file.
  */
-async function getPackageManifest(containingDirPath, requiredFields) {
+async function getPackageManifest(containingDirPath, fieldsToValidate) {
     const manifest = await readJsonFile(external_path_default().join(containingDirPath, PACKAGE_JSON));
-    validatePackageManifest(manifest, containingDirPath, requiredFields);
+    validatePackageManifest(manifest, containingDirPath, fieldsToValidate);
     return manifest;
 }
 /**
- * Validates a manifest by ensuring that the given required fields are present
- * and properly formatted.
+ * Validates a manifest by ensuring that the given fields are properly formatted
+ * if present. Fields that are required by the `PackageManifest` interface must be
+ * present if specified.
  *
+ * @see PackageManifest - For fields that must be present if specified.
  * @param manifest - The manifest to validate.
  * @param manifestDirPath - The path to the directory containing the
  * package.json file.
- * @param requiredFields - The manifest fields that will be required during
- * validation.
+ * @param fieldsToValidate - The manifest fields that will be validated.
  */
-function validatePackageManifest(manifest, manifestDirPath, requiredFields = ['name', 'version']) {
-    if (requiredFields.length === 0) {
+function validatePackageManifest(manifest, manifestDirPath, fieldsToValidate = [
+    FieldNames.Name,
+    FieldNames.Version,
+]) {
+    if (fieldsToValidate.length === 0) {
         return;
     }
+    const _fieldsToValidate = new Set(fieldsToValidate);
     // Just for logging purposes
     const legiblePath = manifestDirPath.split('/').splice(-2).join('/');
-    if (requiredFields.includes('name') && !isTruthyString(manifest.name)) {
-        throw new Error(`Manifest in "${legiblePath}" does not have a valid "name" field.`);
+    const getErrorMessagePrefix = (fieldName) => {
+        return `${manifest[FieldNames.Name]
+            ? `"${manifest[FieldNames.Name]}" manifest "${fieldName}"`
+            : `"${fieldName}" of manifest in "${legiblePath}"`}`;
+    };
+    if (_fieldsToValidate.has(FieldNames.Name) &&
+        !isTruthyString(manifest[FieldNames.Name])) {
+        throw new Error(`Manifest in "${legiblePath}" does not have a valid "${FieldNames.Name}" field.`);
     }
-    if (requiredFields.includes('version') && !isValidSemver(manifest.version)) {
-        throw new Error(`${manifest.name
-            ? `"${manifest.name}" manifest "version"`
-            : `"version" of manifest in "${legiblePath}"`} is not a valid SemVer version: ${manifest.version}`);
+    if (_fieldsToValidate.has(FieldNames.Version) &&
+        !isValidSemver(manifest[FieldNames.Version])) {
+        throw new Error(`${getErrorMessagePrefix(FieldNames.Version)} is not a valid SemVer version: ${manifest[FieldNames.Version]}`);
+    }
+    if (_fieldsToValidate.has(FieldNames.Private) &&
+        FieldNames.Private in manifest &&
+        typeof manifest[FieldNames.Private] !== 'boolean') {
+        throw new Error(`${getErrorMessagePrefix(FieldNames.Private)} must be a boolean if present. Received: ${manifest[FieldNames.Private]}`);
+    }
+    if (_fieldsToValidate.has(FieldNames.Workspaces) &&
+        FieldNames.Workspaces in manifest &&
+        (!Array.isArray(manifest[FieldNames.Workspaces]) ||
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            manifest[FieldNames.Workspaces].length === 0)) {
+        throw new Error(`${getErrorMessagePrefix(FieldNames.Workspaces)} must be a non-empty array if present. Received: ${manifest[FieldNames.Workspaces]}`);
     }
 }
+/**
+ * Type guard for checking if an update specification is a monorepo update
+ * specification.
+ *
+ * @param specification - The update specification object to check.
+ * @returns Whether the given specification object is a monorepo update
+ * specification.
+ */
+function isMonorepoUpdateSpecification(specification) {
+    return ('packagesToUpdate' in specification &&
+        'synchronizeVersions' in specification);
+}
 //# sourceMappingURL=package-operations.js.map
-;// CONCATENATED MODULE: ./lib/index.js
+;// CONCATENATED MODULE: ./lib/update.js
 
 
 
 
 
 
-main().catch((error) => {
-    (0,core.setFailed)(error);
-});
-async function main() {
-    const actionInputs = getActionInputs();
+/**
+ * Action entry function. Gets git tags, reads the work space root package.json,
+ * and updates the package(s) of the repository per the Action inputs.
+ *
+ * @see updateMonorepo - For details on monorepo workflow.
+ * @see updatePolyrepo - For details on polyrepo (i.e. single-package
+ * repository) workflow.
+ */
+async function performUpdate(actionInputs) {
     // Get all git tags. An error is thrown if "git tag" returns no tags and the
     // local git history is incomplete.
     const [tags] = await getTags();
-    const rootManifest = await getPackageManifest(WORKSPACE_ROOT, ['version']);
+    const rootManifest = await getPackageManifest(WORKSPACE_ROOT, [
+        FieldNames.Version,
+        FieldNames.Private,
+        FieldNames.Workspaces,
+    ]);
     const { version: currentVersion } = rootManifest;
+    const isMonorepo = rootManifest.private === true && rootManifest.workspaces;
     // Compute the new version and version diff from the inputs and root manifest
     let newVersion, versionDiff;
     if (actionInputs.ReleaseType) {
@@ -4562,6 +4612,39 @@ async function main() {
         newVersion = actionInputs.ReleaseVersion;
         versionDiff = diff_default()(currentVersion, newVersion);
     }
+    if (isMonorepo) {
+        await updateMonorepo(newVersion, versionDiff, rootManifest, tags);
+    }
+    else {
+        await updatePolyrepo(newVersion, rootManifest);
+    }
+    (0,core.setOutput)('NEW_VERSION', newVersion);
+}
+/**
+ *
+ * Given that the package is a polyrepo (i.e., a "normal", single-package repo),
+ * updates the package.
+ *
+ * @param newVersion - The package's new version.
+ * @param manifest - The package's parsed package.json file.
+ */
+async function updatePolyrepo(newVersion, manifest) {
+    await updatePackage({ dirPath: WORKSPACE_ROOT, manifest }, { newVersion });
+}
+/**
+ * Given that the Action is run for a monorepo:
+ *
+ * If the semver diff is "major" or if it's the first release of the monorepo
+ * (inferred from the complete absence of tags), updates all packages.
+ * Otherwise, updates packages that changed since their previous release.
+ *
+ * @param newVersion - The new version of the package(s) to update.
+ * @param versionDiff - A SemVer version diff, e.g. "major" or "prerelease".
+ * @param rootManifest - The parsed root package.json file of the monorepo.
+ * @param tags - All tags reachable from the current git HEAD, as from "git
+ * tag --merged".
+ */
+async function updateMonorepo(newVersion, versionDiff, rootManifest, tags) {
     // If the version bump is major, we will synchronize the versions of all
     // monorepo packages, meaning the "version" field of their manifests and
     // their version range specified wherever they appear as a dependency.
@@ -4575,11 +4658,18 @@ async function main() {
         synchronizeVersions,
     };
     // Finally, bump the version of all packages and the root manifest, and add
-    // the new version an Action output
+    // the new version as an output of this Action
     await updatePackages(allPackages, updateSpecification);
     await updatePackage({ dirPath: WORKSPACE_ROOT, manifest: rootManifest }, updateSpecification);
-    (0,core.setOutput)('NEW_VERSION', newVersion);
 }
+//# sourceMappingURL=update.js.map
+;// CONCATENATED MODULE: ./lib/index.js
+
+
+
+performUpdate(getActionInputs()).catch((error) => {
+    (0,core.setFailed)(error);
+});
 //# sourceMappingURL=index.js.map
 })();
 

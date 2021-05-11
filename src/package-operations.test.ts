@@ -3,6 +3,7 @@ import cloneDeep from 'lodash.clonedeep';
 import * as gitOps from './git-operations';
 import * as utils from './utils';
 import {
+  FieldNames,
   getMetadataForAllPackages,
   getPackageManifest,
   getPackagesToUpdate,
@@ -73,18 +74,37 @@ describe('package-operations', () => {
     });
 
     it('gets and returns a valid manifest, with different fields specified', async () => {
-      const validManifest = { name: 'fooName', version: '1.0.0' };
+      const validManifest: Readonly<Record<string, unknown>> = {
+        name: 'fooName',
+        private: false,
+        version: '1.0.0',
+        workspaces: ['bar'],
+      };
 
       readJsonFileMock.mockImplementation(async () => {
         return { ...validManifest };
       });
 
-      expect(await getPackageManifest('fooPath', ['name'])).toStrictEqual(
-        validManifest,
-      );
-      expect(await getPackageManifest('fooPath', ['version'])).toStrictEqual(
-        validManifest,
-      );
+      expect(
+        await getPackageManifest('fooPath', [FieldNames.Name]),
+      ).toStrictEqual(validManifest);
+      expect(
+        await getPackageManifest('fooPath', [FieldNames.Version]),
+      ).toStrictEqual(validManifest);
+      expect(
+        await getPackageManifest('fooPath', [FieldNames.Private]),
+      ).toStrictEqual(validManifest);
+      expect(
+        await getPackageManifest('fooPath', [FieldNames.Workspaces]),
+      ).toStrictEqual(validManifest);
+      expect(
+        await getPackageManifest('fooPath', [
+          FieldNames.Name,
+          FieldNames.Private,
+          FieldNames.Version,
+          FieldNames.Workspaces,
+        ]),
+      ).toStrictEqual(validManifest);
       expect(await getPackageManifest('fooPath', [])).toStrictEqual(
         validManifest,
       );
@@ -100,7 +120,15 @@ describe('package-operations', () => {
         })
         .mockImplementationOnce(async () => {
           return { version: '1.0.0' };
-        })
+        });
+
+      await expect(getPackageManifest('fooPath')).rejects.toThrow(/"name"/u);
+      await expect(getPackageManifest('fooPath')).rejects.toThrow(/"name"/u);
+      await expect(
+        getPackageManifest('fooPath', [FieldNames.Name]),
+      ).rejects.toThrow(/"name"/u);
+
+      readJsonFileMock
         .mockImplementationOnce(async () => {
           return { name: 'fooName' };
         })
@@ -111,18 +139,36 @@ describe('package-operations', () => {
           return { version: 'badVersion' };
         });
 
-      await expect(getPackageManifest('fooPath')).rejects.toThrow(/"name"/u);
-      await expect(getPackageManifest('fooPath')).rejects.toThrow(/"name"/u);
-      await expect(getPackageManifest('fooPath', ['name'])).rejects.toThrow(
-        /"name"/u,
-      );
       await expect(getPackageManifest('fooPath')).rejects.toThrow(/"version"/u);
-      await expect(getPackageManifest('fooPath', ['version'])).rejects.toThrow(
-        /"version"/u,
-      );
-      await expect(getPackageManifest('fooPath', ['version'])).rejects.toThrow(
-        /"version"/u,
-      );
+      await expect(
+        getPackageManifest('fooPath', [FieldNames.Version]),
+      ).rejects.toThrow(/"version"/u);
+      await expect(
+        getPackageManifest('fooPath', [FieldNames.Version]),
+      ).rejects.toThrow(/"version"/u);
+
+      readJsonFileMock.mockImplementationOnce(async () => {
+        return { private: 'notABoolean' };
+      });
+
+      await expect(
+        getPackageManifest('fooPath', [FieldNames.Private]),
+      ).rejects.toThrow(/"private"/u);
+
+      readJsonFileMock
+        .mockImplementationOnce(async () => {
+          return { workspaces: 'notAnArray' };
+        })
+        .mockImplementationOnce(async () => {
+          return { workspaces: [] };
+        });
+
+      await expect(
+        getPackageManifest('fooPath', [FieldNames.Workspaces]),
+      ).rejects.toThrow(/"workspaces"/u);
+      await expect(
+        getPackageManifest('fooPath', [FieldNames.Workspaces]),
+      ).rejects.toThrow(/"workspaces"/u);
     });
   });
 

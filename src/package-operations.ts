@@ -20,10 +20,19 @@ export enum PackageDependencyFields {
   Optional = 'optionalDependencies',
 }
 
+export enum FieldNames {
+  Name = 'name',
+  Private = 'private',
+  Version = 'version',
+  Workspaces = 'workspaces',
+}
+
 export interface PackageManifest
   extends Partial<Record<PackageDependencyFields, Record<string, string>>> {
-  readonly name: string;
-  readonly version: string;
+  readonly [FieldNames.Name]: string;
+  readonly [FieldNames.Private]?: boolean;
+  readonly [FieldNames.Version]: string;
+  readonly [FieldNames.Workspaces]?: string[];
 }
 
 export interface PackageMetadata {
@@ -35,7 +44,10 @@ export interface PackageMetadata {
 
 interface UpdateSpecification {
   readonly newVersion: string;
-  readonly packagesToUpdate: Set<string>;
+}
+
+interface MonorepoUpdateSpecification extends UpdateSpecification {
+  readonly packagesToUpdate: ReadonlySet<string>;
   readonly synchronizeVersions: boolean;
 }
 
@@ -85,7 +97,7 @@ export async function getPackagesToUpdate(
   allPackages: Record<string, PackageMetadata>,
   synchronizeVersions: boolean,
   tags: ReadonlySet<string>,
-): Promise<Set<string>> {
+): Promise<ReadonlySet<string>> {
   // In order to synchronize versions, we must update every package.
   if (synchronizeVersions) {
     return new Set(Object.keys(allPackages));
@@ -121,7 +133,7 @@ export async function getPackagesToUpdate(
  */
 export async function updatePackages(
   allPackages: Record<string, Pick<PackageMetadata, 'dirPath' | 'manifest'>>,
-  updateSpecification: UpdateSpecification,
+  updateSpecification: MonorepoUpdateSpecification,
 ): Promise<void> {
   const { packagesToUpdate } = updateSpecification;
   await Promise.all(
@@ -145,7 +157,7 @@ export async function updatePackages(
  */
 export async function updatePackage(
   packageMetadata: { dirPath: string; manifest: Partial<PackageManifest> },
-  updateSpecification: UpdateSpecification,
+  updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
 ): Promise<void> {
   await writeJsonFile(
     pathUtils.join(packageMetadata.dirPath, PACKAGE_JSON),
@@ -167,10 +179,13 @@ export async function updatePackage(
  */
 function getUpdatedManifest(
   currentManifest: Partial<PackageManifest>,
-  updateSpecification: UpdateSpecification,
+  updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
 ) {
-  const { newVersion, synchronizeVersions } = updateSpecification;
-  if (synchronizeVersions) {
+  const { newVersion } = updateSpecification;
+  if (
+    isMonorepoUpdateSpecification(updateSpecification) &&
+    updateSpecification.synchronizeVersions
+  ) {
     // If we're synchronizing the versions of our updated packages, we also
     // synchronize their versions whenever they appear as a dependency.
     return {
@@ -195,7 +210,7 @@ function getUpdatedManifest(
  */
 function getUpdatedDependencyFields(
   manifest: Partial<PackageManifest>,
-  updateSpecification: UpdateSpecification,
+  updateSpecification: MonorepoUpdateSpecification,
 ): Partial<Pick<PackageManifest, PackageDependencyFields>> {
   const { newVersion, packagesToUpdate } = updateSpecification;
   return Object.values(PackageDependencyFields).reduce(
@@ -226,7 +241,7 @@ function getUpdatedDependencyFields(
  */
 function getUpdatedDependencyField(
   dependencyObject: Record<string, string>,
-  packagesToUpdate: Set<string>,
+  packagesToUpdate: ReadonlySet<string>,
   newVersion: string,
 ): Record<string, string> {
   const newVersionRange = `^${newVersion}`;
@@ -250,57 +265,119 @@ function getUpdatedDependencyField(
  *
  * @param containingDirPath - The path to the directory containing the
  * package.json file.
- * @param requiredFields - The manifest fields that will be required during
- * validation.
+ * @param fieldsToValidate - The manifest fields that will be validated.
  * @returns The object corresponding to the parsed package.json file.
  */
 export async function getPackageManifest<T extends keyof PackageManifest>(
   containingDirPath: string,
-  requiredFields?: T[],
+  fieldsToValidate?: T[],
 ): Promise<Pick<PackageManifest, T>> {
   const manifest = await readJsonFile(
     pathUtils.join(containingDirPath, PACKAGE_JSON),
   );
 
-  validatePackageManifest(manifest, containingDirPath, requiredFields);
+  validatePackageManifest(manifest, containingDirPath, fieldsToValidate);
   return manifest as Pick<PackageManifest, T>;
 }
 
 /**
- * Validates a manifest by ensuring that the given required fields are present
- * and properly formatted.
+ * Validates a manifest by ensuring that the given fields are properly formatted
+ * if present. Fields that are required by the `PackageManifest` interface must be
+ * present if specified.
  *
+ * @see PackageManifest - For fields that must be present if specified.
  * @param manifest - The manifest to validate.
  * @param manifestDirPath - The path to the directory containing the
  * package.json file.
- * @param requiredFields - The manifest fields that will be required during
- * validation.
+ * @param fieldsToValidate - The manifest fields that will be validated.
  */
 function validatePackageManifest(
-  manifest: Record<string, unknown>,
+  manifest: Partial<PackageManifest>,
   manifestDirPath: string,
-  requiredFields: (keyof PackageManifest)[] = ['name', 'version'],
+  fieldsToValidate: (keyof PackageManifest)[] = [
+    FieldNames.Name,
+    FieldNames.Version,
+  ],
 ): void {
-  if (requiredFields.length === 0) {
+  if (fieldsToValidate.length === 0) {
     return;
   }
+  const _fieldsToValidate = new Set(fieldsToValidate);
 
   // Just for logging purposes
   const legiblePath = manifestDirPath.split('/').splice(-2).join('/');
+  const getErrorMessagePrefix = (fieldName: FieldNames) => {
+    return `${
+      manifest[FieldNames.Name]
+        ? `"${manifest[FieldNames.Name]}" manifest "${fieldName}"`
+        : `"${fieldName}" of manifest in "${legiblePath}"`
+    }`;
+  };
 
-  if (requiredFields.includes('name') && !isTruthyString(manifest.name)) {
+  if (
+    _fieldsToValidate.has(FieldNames.Name) &&
+    !isTruthyString(manifest[FieldNames.Name])
+  ) {
     throw new Error(
-      `Manifest in "${legiblePath}" does not have a valid "name" field.`,
+      `Manifest in "${legiblePath}" does not have a valid "${FieldNames.Name}" field.`,
     );
   }
 
-  if (requiredFields.includes('version') && !isValidSemver(manifest.version)) {
+  if (
+    _fieldsToValidate.has(FieldNames.Version) &&
+    !isValidSemver(manifest[FieldNames.Version])
+  ) {
     throw new Error(
-      `${
-        manifest.name
-          ? `"${manifest.name}" manifest "version"`
-          : `"version" of manifest in "${legiblePath}"`
-      } is not a valid SemVer version: ${manifest.version}`,
+      `${getErrorMessagePrefix(
+        FieldNames.Version,
+      )} is not a valid SemVer version: ${manifest[FieldNames.Version]}`,
     );
   }
+
+  if (
+    _fieldsToValidate.has(FieldNames.Private) &&
+    FieldNames.Private in manifest &&
+    typeof manifest[FieldNames.Private] !== 'boolean'
+  ) {
+    throw new Error(
+      `${getErrorMessagePrefix(
+        FieldNames.Private,
+      )} must be a boolean if present. Received: ${
+        manifest[FieldNames.Private]
+      }`,
+    );
+  }
+
+  if (
+    _fieldsToValidate.has(FieldNames.Workspaces) &&
+    FieldNames.Workspaces in manifest &&
+    (!Array.isArray(manifest[FieldNames.Workspaces]) ||
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      manifest[FieldNames.Workspaces]!.length === 0)
+  ) {
+    throw new Error(
+      `${getErrorMessagePrefix(
+        FieldNames.Workspaces,
+      )} must be a non-empty array if present. Received: ${
+        manifest[FieldNames.Workspaces]
+      }`,
+    );
+  }
+}
+
+/**
+ * Type guard for checking if an update specification is a monorepo update
+ * specification.
+ *
+ * @param specification - The update specification object to check.
+ * @returns Whether the given specification object is a monorepo update
+ * specification.
+ */
+function isMonorepoUpdateSpecification(
+  specification: UpdateSpecification | MonorepoUpdateSpecification,
+): specification is MonorepoUpdateSpecification {
+  return (
+    'packagesToUpdate' in specification &&
+    'synchronizeVersions' in specification
+  );
 }
