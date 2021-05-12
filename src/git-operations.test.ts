@@ -1,5 +1,9 @@
 import execa from 'execa';
-import { didPackageChange, getTags } from './git-operations';
+import {
+  didPackageChange,
+  getRepositoryHttpsUrl,
+  getTags,
+} from './git-operations';
 
 // We don't actually use it, so it doesn't matter what it is.
 process.env.GITHUB_WORKSPACE = 'root';
@@ -35,6 +39,57 @@ const RAW_DIFFS: Readonly<Record<TAGS, string>> = {
   [TAGS.B]: `packages/${PACKAGES.A.dir}/file.txt\n`,
   [TAGS.C]: `packages/${PACKAGES.B.dir}/file.txt\n`,
 };
+
+describe('getRepositoryHttpsUrl', () => {
+  it('gets the repository https url (already https)', async () => {
+    const repoHttpsUrl = 'https://github.com/Foo/Bar';
+    // execa('git', ['config', '--get', ...])
+    execaMock.mockImplementationOnce(async () => {
+      return { stdout: repoHttpsUrl };
+    });
+
+    expect(await getRepositoryHttpsUrl()).toStrictEqual(repoHttpsUrl);
+    expect(execaMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('gets the repository https url (ssh)', async () => {
+    const repoHttpsUrl = 'https://github.com/Foo/Bar';
+    const repoSshUrl = 'git@github.com:Foo/Bar.git';
+    // execa('git', ['config', '--get', ...])
+    execaMock.mockImplementationOnce(async () => {
+      return { stdout: repoSshUrl };
+    });
+
+    expect(await getRepositoryHttpsUrl()).toStrictEqual(repoHttpsUrl);
+    expect(execaMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws on unrecognized urls', async () => {
+    // execa('git', ['config', '--get', ...])
+    execaMock
+      .mockImplementationOnce(async () => {
+        return { stdout: 'foo' };
+      })
+      .mockImplementationOnce(async () => {
+        return { stdout: 'http://github.com/Foo/Bar' };
+      })
+      .mockImplementationOnce(async () => {
+        return { stdout: 'https://gitbar.foo/Foo/Bar' };
+      })
+      .mockImplementationOnce(async () => {
+        return { stdout: 'git@gitbar.foo:Foo/Bar.git' };
+      })
+      .mockImplementationOnce(async () => {
+        return { stdout: 'git@github.com:Foo/Bar.foo' };
+      });
+
+    await expect(getRepositoryHttpsUrl()).rejects.toThrow(/^Unrecognized URL/u);
+    await expect(getRepositoryHttpsUrl()).rejects.toThrow(/^Unrecognized URL/u);
+    await expect(getRepositoryHttpsUrl()).rejects.toThrow(/^Unrecognized URL/u);
+    await expect(getRepositoryHttpsUrl()).rejects.toThrow(/^Unrecognized URL/u);
+    await expect(getRepositoryHttpsUrl()).rejects.toThrow(/^Unrecognized URL/u);
+  });
+});
 
 describe('getTags', () => {
   it('successfully parses tags', async () => {

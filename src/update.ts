@@ -3,7 +3,7 @@ import semverIncrement from 'semver/functions/inc';
 import semverDiff from 'semver/functions/diff';
 import type { ReleaseType as SemverReleaseType } from 'semver';
 
-import { getTags } from './git-operations';
+import { getRepositoryHttpsUrl, getTags } from './git-operations';
 import {
   FieldNames,
   getMetadataForAllPackages,
@@ -12,6 +12,7 @@ import {
   PackageManifest,
   updatePackage,
   updatePackages,
+  validatePackageManifest,
 } from './package-operations';
 import { ActionInputs, isMajorSemverDiff, WORKSPACE_ROOT } from './utils';
 
@@ -24,6 +25,8 @@ import { ActionInputs, isMajorSemverDiff, WORKSPACE_ROOT } from './utils';
  * repository) workflow.
  */
 export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
+  const repositoryUrl = await getRepositoryHttpsUrl();
+
   // Get all git tags. An error is thrown if "git tag" returns no tags and the
   // local git history is incomplete.
   const [tags] = await getTags();
@@ -51,45 +54,66 @@ export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
   }
 
   if (isMonorepo) {
-    await updateMonorepo(newVersion, versionDiff, rootManifest, tags);
+    await updateMonorepo(
+      newVersion,
+      versionDiff,
+      rootManifest,
+      repositoryUrl,
+      tags,
+    );
   } else {
-    await updatePolyrepo(newVersion, rootManifest);
+    validatePackageManifest(rootManifest, WORKSPACE_ROOT, [FieldNames.Name]);
+    await updatePolyrepo(
+      newVersion,
+      rootManifest as PackageManifest,
+      repositoryUrl,
+    );
   }
   setActionOutput('NEW_VERSION', newVersion);
 }
 
 /**
- *
- * Given that the package is a polyrepo (i.e., a "normal", single-package repo),
- * updates the package.
+ * Given that checked out git repository is a polyrepo (i.e., a "normal",
+ * single-package repo), updates the repository's package and its changelog.
  *
  * @param newVersion - The package's new version.
  * @param manifest - The package's parsed package.json file.
+ * @param repositoryUrl - The HTTPS URL of the repository.
  */
 async function updatePolyrepo(
   newVersion: string,
-  manifest: Partial<PackageManifest>,
+  manifest: PackageManifest,
+  repositoryUrl: string,
 ): Promise<void> {
-  await updatePackage({ dirPath: WORKSPACE_ROOT, manifest }, { newVersion });
+  await updatePackage(
+    { dirPath: WORKSPACE_ROOT, manifest },
+    { newVersion, repositoryUrl, shouldUpdateChangelog: true },
+  );
 }
 
 /**
- * Given that the Action is run for a monorepo:
+ * Given that the checked out repository is a monorepo:
  *
  * If the semver diff is "major" or if it's the first release of the monorepo
  * (inferred from the complete absence of tags), updates all packages.
  * Otherwise, updates packages that changed since their previous release.
+ * The changelog of any updated package will also be updated.
  *
  * @param newVersion - The new version of the package(s) to update.
  * @param versionDiff - A SemVer version diff, e.g. "major" or "prerelease".
  * @param rootManifest - The parsed root package.json file of the monorepo.
+ * @param repositoryUrl - The HTTPS URL of the repository.
  * @param tags - All tags reachable from the current git HEAD, as from "git
  * tag --merged".
  */
 async function updateMonorepo(
   newVersion: string,
   versionDiff: SemverReleaseType,
-  rootManifest: Partial<PackageManifest>,
+  rootManifest: Pick<
+    PackageManifest,
+    FieldNames.Version | FieldNames.Workspaces
+  >,
+  repositoryUrl: string,
   tags: ReadonlySet<string>,
 ): Promise<void> {
   // If the version bump is major, we will synchronize the versions of all
@@ -107,14 +131,17 @@ async function updateMonorepo(
   const updateSpecification = {
     newVersion,
     packagesToUpdate,
+    repositoryUrl,
     synchronizeVersions,
+    shouldUpdateChangelog: true,
   };
 
-  // Finally, bump the version of all packages and the root manifest, and add
-  // the new version as an output of this Action
+  // Finally, bump the version of all packages and the root manifest, update the
+  // changelogs of all updated packages, and add the new version as an output of
+  // this Action.
   await updatePackages(allPackages, updateSpecification);
   await updatePackage(
     { dirPath: WORKSPACE_ROOT, manifest: rootManifest },
-    updateSpecification,
+    { ...updateSpecification, shouldUpdateChangelog: false },
   );
 }

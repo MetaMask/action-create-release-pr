@@ -40,6 +40,7 @@
   "homepage": "https://github.com/MetaMask/action-monorepo-release-pr#readme",
   "dependencies": {
     "@actions/core": "^1.2.7",
+    "@metamask/auto-changelog": "^1.0.0",
     "execa": "^4.1.0",
     "semver": "^7.3.5"
   },

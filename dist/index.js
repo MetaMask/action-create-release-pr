@@ -395,6 +395,962 @@ exports.toCommandValue = toCommandValue;
 
 /***/ }),
 
+/***/ 4341:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const semver = __nccwpck_require__(1383);
+
+const { orderedChangeCategories, unreleased } = __nccwpck_require__(6379);
+
+const changelogTitle = '# Changelog';
+const changelogDescription = `All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).`;
+
+// Stringification helpers
+
+function stringifyCategory(category, changes) {
+  const categoryHeader = `### ${category}`;
+  if (changes.length === 0) {
+    return categoryHeader;
+  }
+  const changeDescriptions = changes
+    .map((description) => `- ${description}`)
+    .join('\n');
+  return `${categoryHeader}\n${changeDescriptions}`;
+}
+
+function stringifyRelease(version, categories, { date, status } = {}) {
+  const releaseHeader = `## [${version}]${date ? ` - ${date}` : ''}${
+    status ? ` [${status}]` : ''
+  }`;
+  const categorizedChanges = orderedChangeCategories
+    .filter((category) => categories[category])
+    .map((category) => {
+      const changes = categories[category];
+      return stringifyCategory(category, changes);
+    })
+    .join('\n\n');
+  if (categorizedChanges === '') {
+    return releaseHeader;
+  }
+  return `${releaseHeader}\n${categorizedChanges}`;
+}
+
+function stringifyReleases(releases, changes) {
+  const stringifiedUnreleased = stringifyRelease(
+    unreleased,
+    changes[unreleased],
+  );
+  const stringifiedReleases = releases.map(({ version, date, status }) => {
+    const categories = changes[version];
+    return stringifyRelease(version, categories, { date, status });
+  });
+
+  return [stringifiedUnreleased, ...stringifiedReleases].join('\n\n');
+}
+
+function withTrailingSlash(url) {
+  return url.endsWith('/') ? url : `${url}/`;
+}
+
+function getCompareUrl(repoUrl, firstRef, secondRef) {
+  return `${withTrailingSlash(repoUrl)}compare/${firstRef}...${secondRef}`;
+}
+
+function getTagUrl(repoUrl, tag) {
+  return `${withTrailingSlash(repoUrl)}releases/tag/${tag}`;
+}
+
+function stringifyLinkReferenceDefinitions(repoUrl, releases) {
+  const releasesOrderedByVersion = releases
+    .map(({ version }) => version)
+    .sort((a, b) => {
+      return semver.gt(a, b) ? -1 : 1;
+    });
+  const orderedReleases = releases.map(({ version }) => version);
+  const hasReleases = orderedReleases.length > 0;
+
+  // The "Unreleased" section represents all changes made since the *highest*
+  // release, not the most recent release. This is to accomodate patch releases
+  // of older versions that don't represent the latest set of changes.
+  //
+  // For example, if a library has a v2.0.0 but the v1.0.0 release needed a
+  // security update, the v1.0.1 release would then be the most recent, but the
+  // range of unreleased changes would remain `v2.0.0...HEAD`.
+  //
+  // If there have not been any releases yet, the repo URL is used directly as
+  // the link definition.
+  const unreleasedLinkReferenceDefinition = `[${unreleased}]: ${
+    hasReleases
+      ? getCompareUrl(repoUrl, `v${releasesOrderedByVersion[0]}`, 'HEAD')
+      : withTrailingSlash(repoUrl)
+  }`;
+
+  // The "previous" release that should be used for comparison is not always
+  // the most recent release chronologically. The _highest_ version that is
+  // lower than the current release is used as the previous release, so that
+  // patch releases on older releases can be accomodated.
+  const releaseLinkReferenceDefinitions = releases
+    .map(({ version }) => {
+      if (version === orderedReleases[orderedReleases.length - 1]) {
+        return `[${version}]: ${getTagUrl(repoUrl, `v${version}`)}`;
+      }
+      const versionIndex = orderedReleases.indexOf(version);
+      const previousVersion = orderedReleases
+        .slice(versionIndex)
+        .find((releaseVersion) => {
+          return semver.gt(version, releaseVersion);
+        });
+      return `[${version}]: ${getCompareUrl(
+        repoUrl,
+        `v${previousVersion}`,
+        `v${version}`,
+      )}`;
+    })
+    .join('\n');
+  return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${
+    releases.length > 0 ? '\n' : ''
+  }`;
+}
+
+/**
+ * @typedef {import('./constants.js').Unreleased} Unreleased
+ * @typedef {import('./constants.js').ChangeCategories ChangeCategories}
+ */
+/**
+ * @typedef {import('./constants.js').Version} Version
+ */
+/**
+ * Release metadata.
+ * @typedef {Object} ReleaseMetadata
+ * @property {string} date - An ISO-8601 formatted date, representing the
+ *   release date.
+ * @property {string} status -The status of the release (e.g. 'WITHDRAWN', 'DEPRECATED')
+ * @property {Version} version - The version of the current release.
+ */
+
+/**
+ * Category changes. A list of changes in a single category.
+ * @typedef {Array<string>} CategoryChanges
+ */
+
+/**
+ * Release changes, organized by category
+ * @typedef {Record<keyof ChangeCategories, CategoryChanges>} ReleaseChanges
+ */
+
+/**
+ * Changelog changes, organized by release and by category.
+ * @typedef {Record<Version|Unreleased, ReleaseChanges>} ChangelogChanges
+ */
+
+/**
+ * A changelog that complies with the ["keep a changelog" v1.1.0 guidelines]{@link https://keepachangelog.com/en/1.0.0/}.
+ *
+ * This changelog starts out completely empty, and allows new releases and
+ * changes to be added such that the changelog remains compliant at all times.
+ * This can be used to help validate the contents of a changelog, normalize
+ * formatting, update a changelog, or build one from scratch.
+ */
+class Changelog {
+  /**
+   * Construct an empty changelog
+   *
+   * @param {Object} options
+   * @param {string} options.repoUrl - The GitHub repository URL for the current project
+   */
+  constructor({ repoUrl }) {
+    this._releases = [];
+    this._changes = { [unreleased]: {} };
+    this._repoUrl = repoUrl;
+  }
+
+  /**
+   * Add a release to the changelog
+   *
+   * @param {Object} options
+   * @param {boolean} [options.addToStart] - Determines whether the release is
+   *   added to the top or bottom of the changelog. This defaults to 'true'
+   *   because new releases should be added to the top of the changelog. This
+   *   should be set to 'false' when parsing a changelog top-to-bottom.
+   * @param {string} [options.date] - An ISO-8601 formatted date, representing the
+   *   release date.
+   * @param {string} [options.status] - The status of the release (e.g.
+   *   'WITHDRAWN', 'DEPRECATED')
+   * @param {Version} options.version - The version of the current release,
+   *   which should be a [semver]{@link https://semver.org/spec/v2.0.0.html}-
+   *   compatible version.
+   */
+  addRelease({ addToStart = true, date, status, version }) {
+    if (!version) {
+      throw new Error('Version required');
+    } else if (semver.valid(version) === null) {
+      throw new Error(`Not a valid semver version: '${version}'`);
+    } else if (this._changes[version]) {
+      throw new Error(`Release already exists: '${version}'`);
+    }
+
+    this._changes[version] = {};
+    const newRelease = { version, date, status };
+    if (addToStart) {
+      this._releases.unshift(newRelease);
+    } else {
+      this._releases.push(newRelease);
+    }
+  }
+
+  /**
+   * Add a change to the changelog
+   *
+   * @param {Object} options
+   * @param {boolean} [options.addToStart] - Determines whether the change is
+   *   added to the top or bottom of the list of changes in this category. This
+   *   defaults to 'true' because changes should be in reverse-chronological
+   *   order. This should be set to 'false' when parsing a changelog top-to-
+   *   bottom.
+   * @param {string} options.category - The category of the change.
+   * @param {string} options.description - The description of the change.
+   * @param {Version} [options.version] - The version this change was released
+   *  in. If this is not given, the change is assumed to be unreleased.
+   */
+  addChange({ addToStart = true, category, description, version }) {
+    if (!category) {
+      throw new Error('Category required');
+    } else if (!orderedChangeCategories.includes(category)) {
+      throw new Error(`Unrecognized category: '${category}'`);
+    } else if (!description) {
+      throw new Error('Description required');
+    } else if (version !== undefined && !this._changes[version]) {
+      throw new Error(`Specified release version does not exist: '${version}'`);
+    }
+
+    const release = version
+      ? this._changes[version]
+      : this._changes[unreleased];
+
+    if (!release[category]) {
+      release[category] = [];
+    }
+    if (addToStart) {
+      release[category].unshift(description);
+    } else {
+      release[category].push(description);
+    }
+  }
+
+  /**
+   * Migrate all unreleased changes to a release section.
+   *
+   * Changes are migrated in their existing categories, and placed above any
+   * pre-existing changes in that category.
+   *
+   * @param {Version} version - The release version to migrate unreleased
+   *   changes to.
+   */
+  migrateUnreleasedChangesToRelease(version) {
+    const releaseChanges = this._changes[version];
+    if (!releaseChanges) {
+      throw new Error(`Specified release version does not exist: '${version}'`);
+    }
+
+    const unreleasedChanges = this._changes[unreleased];
+
+    for (const category of Object.keys(unreleasedChanges)) {
+      if (releaseChanges[category]) {
+        releaseChanges[category] = [
+          ...unreleasedChanges[category],
+          ...releaseChanges[category],
+        ];
+      } else {
+        releaseChanges[category] = unreleasedChanges[category];
+      }
+    }
+    this._changes[unreleased] = {};
+  }
+
+  /**
+   * Gets the metadata for all releases.
+   * @returns {Array<ReleaseMetadata>} The metadata for each release.
+   */
+  getReleases() {
+    return this._releases;
+  }
+
+  /**
+   * Gets the changes in the given release, organized by category.
+   * @param {Version} version - The version of the release being retrieved.
+   * @returns {ReleaseChanges} The changes included in the given released.
+   */
+  getReleaseChanges(version) {
+    return this._changes[version];
+  }
+
+  /**
+   * Gets all changes that have not yet been released
+   * @returns {ReleaseChanges} The changes that have not yet been released.
+   */
+  getUnreleasedChanges() {
+    return this._changes[unreleased];
+  }
+
+  /**
+   * The stringified changelog, formatted according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+   * @returns {string} The stringified changelog.
+   */
+  toString() {
+    return `${changelogTitle}
+${changelogDescription}
+
+${stringifyReleases(this._releases, this._changes)}
+
+${stringifyLinkReferenceDefinitions(this._repoUrl, this._releases)}`;
+  }
+}
+
+module.exports = Changelog;
+
+
+/***/ }),
+
+/***/ 6379:
+/***/ ((module) => {
+
+/**
+ * Version string
+ * @typedef {string} Version - A [SemVer]{@link https://semver.org/spec/v2.0.0.html}-
+ *   compatible version string.
+ */
+
+/**
+ * Change categories.
+ *
+ * Most of these categories are from [Keep a Changelog]{@link https://keepachangelog.com/en/1.0.0/}.
+ * The "Uncategorized" category was added because we have many changes from
+ * older releases that would be difficult to categorize.
+ *
+ * @typedef {Record<string, string>} ChangeCategories
+ * @property {'Added'} Added - for new features.
+ * @property {'Changed'} Changed - for changes in existing functionality.
+ * @property {'Deprecated'} Deprecated - for soon-to-be removed features.
+ * @property {'Fixed'} Fixed - for any bug fixes.
+ * @property {'Removed'} Removed - for now removed features.
+ * @property {'Security'} Security - in case of vulnerabilities.
+ * @property {'Uncategorized'} Uncategorized - for any changes that have not
+ *   yet been categorized.
+ */
+
+/**
+ * @type {ChangeCategories}
+ */
+const changeCategories = {
+  Added: 'Added',
+  Changed: 'Changed',
+  Deprecated: 'Deprecated',
+  Fixed: 'Fixed',
+  Removed: 'Removed',
+  Security: 'Security',
+  Uncategorized: 'Uncategorized',
+};
+
+/**
+ * Change categories in the order in which they should be listed in the
+ * changelog.
+ *
+ * @type {Array<keyof ChangeCategories>}
+ */
+const orderedChangeCategories = [
+  'Uncategorized',
+  'Added',
+  'Changed',
+  'Deprecated',
+  'Removed',
+  'Fixed',
+  'Security',
+];
+
+/**
+ * The header for the section of the changelog listing unreleased changes.
+ * @typedef {'Unreleased'} Unreleased
+ */
+
+/**
+ * @type {Unreleased}
+ */
+const unreleased = 'Unreleased';
+
+module.exports = {
+  changeCategories,
+  orderedChangeCategories,
+  unreleased,
+};
+
+
+/***/ }),
+
+/***/ 3439:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { updateChangelog } = __nccwpck_require__(6816);
+const {
+  ChangelogFormattingError,
+  validateChangelog,
+} = __nccwpck_require__(6311);
+
+module.exports = {
+  ChangelogFormattingError,
+  updateChangelog,
+  validateChangelog,
+};
+
+
+/***/ }),
+
+/***/ 6026:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const Changelog = __nccwpck_require__(4341);
+const { unreleased } = __nccwpck_require__(6379);
+
+function truncated(line) {
+  return line.length > 80 ? `${line.slice(0, 80)}...` : line;
+}
+
+/**
+ * Constructs a Changelog instance that represents the given changelog, which
+ * is parsed for release and change information.
+ * @param {Object} options
+ * @param {string} options.changelogContent - The changelog to parse
+ * @param {string} options.repoUrl - The GitHub repository URL for the current
+ *   project.
+ * @returns {Changelog} A changelog instance that reflects the changelog text
+ *   provided.
+ */
+function parseChangelog({ changelogContent, repoUrl }) {
+  const changelogLines = changelogContent.split('\n');
+  const changelog = new Changelog({ repoUrl });
+
+  const unreleasedHeaderIndex = changelogLines.indexOf(`## [${unreleased}]`);
+  if (unreleasedHeaderIndex === -1) {
+    throw new Error(`Failed to find ${unreleased} header`);
+  }
+  const unreleasedLinkReferenceDefinition = changelogLines.findIndex((line) => {
+    return line.startsWith(`[${unreleased}]: `);
+  });
+  if (unreleasedLinkReferenceDefinition === -1) {
+    throw new Error(`Failed to find ${unreleased} link reference definition`);
+  }
+
+  const contentfulChangelogLines = changelogLines.slice(
+    unreleasedHeaderIndex + 1,
+    unreleasedLinkReferenceDefinition,
+  );
+
+  let mostRecentRelease;
+  let mostRecentCategory;
+  let currentChangeEntry;
+
+  /**
+   * Finalize a change entry, adding it to the changelog.
+   *
+   * This is required because change entries can span multiple lines.
+   *
+   * @param {Object} [options]
+   * @param {boolean} [options.removeTrailingNewline] - Indicates that the
+   *   trailing newline is not a part of the change description, so should be
+   *   removed.
+   */
+  function finalizePreviousChange({ removeTrailingNewline = false } = {}) {
+    if (!currentChangeEntry) {
+      return;
+    }
+    if (removeTrailingNewline && currentChangeEntry.endsWith('\n')) {
+      currentChangeEntry = currentChangeEntry.slice(
+        0,
+        currentChangeEntry.length - 1,
+      );
+    }
+    changelog.addChange({
+      addToStart: false,
+      category: mostRecentCategory,
+      description: currentChangeEntry,
+      version: mostRecentRelease,
+    });
+    currentChangeEntry = undefined;
+  }
+
+  for (const line of contentfulChangelogLines) {
+    if (line.startsWith('## [')) {
+      const results = line.match(
+        /^## \[(\d+\.\d+\.\d+)\](?: - (\d\d\d\d-\d\d-\d\d))?(?: \[(\w+)\])?/u,
+      );
+      if (results === null) {
+        throw new Error(`Malformed release header: '${truncated(line)}'`);
+      }
+      // Trailing newline removed because the release section is expected to
+      // be prefixed by a newline.
+      finalizePreviousChange({ removeTrailingNewline: true });
+      mostRecentRelease = results[1];
+      mostRecentCategory = undefined;
+      const date = results[2];
+      const status = results[3];
+      changelog.addRelease({
+        addToStart: false,
+        date,
+        status,
+        version: mostRecentRelease,
+      });
+    } else if (line.startsWith('### ')) {
+      const results = line.match(/^### (\w+)$\b/u);
+      if (results === null) {
+        throw new Error(`Malformed category header: '${truncated(line)}'`);
+      }
+      const isFirstCategory = mostRecentCategory === null;
+      finalizePreviousChange({ removeTrailingNewline: !isFirstCategory });
+      mostRecentCategory = results[1];
+    } else if (line.startsWith('- ')) {
+      if (mostRecentCategory === undefined) {
+        throw new Error(`Category missing for change: '${truncated(line)}'`);
+      }
+      const description = line.slice(2);
+      finalizePreviousChange();
+      currentChangeEntry = description;
+    } else if (currentChangeEntry) {
+      currentChangeEntry += `\n${line}`;
+    } else if (line === '') {
+      continue;
+    } else {
+      throw new Error(`Unrecognized line: '${truncated(line)}'`);
+    }
+  }
+  // Trailing newline removed because the reference link definition section is
+  // expected to be separated by a newline.
+  finalizePreviousChange({ removeTrailingNewline: true });
+
+  return changelog;
+}
+
+module.exports = { parseChangelog };
+
+
+/***/ }),
+
+/***/ 606:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const spawn = __nccwpck_require__(2746);
+
+/**
+ * Run a command to completion using the system shell.
+ *
+ * This will run a command with the specified arguments, and resolve when the
+ * process has exited. The STDOUT stream is monitored for output, which is
+ * returned after being split into lines. All output is expected to be UTF-8
+ * encoded, and empty lines are removed from the output.
+ *
+ * Anything received on STDERR is assumed to indicate a problem, and is tracked
+ * as an error.
+ *
+ * @param {string} command - The command to run
+ * @param {Array<string>} [args] - The arguments to pass to the command
+ * @returns {Array<string>} Lines of output received via STDOUT
+ */
+async function runCommand(command, args) {
+  const output = [];
+  let mostRecentError;
+  let errorSignal;
+  let errorCode;
+  const internalError = new Error('Internal');
+  try {
+    await new Promise((resolve, reject) => {
+      const childProcess = spawn(command, args, { encoding: 'utf8' });
+      childProcess.stdout.setEncoding('utf8');
+      childProcess.stderr.setEncoding('utf8');
+
+      childProcess.on('error', (error) => {
+        mostRecentError = error;
+      });
+
+      childProcess.stdout.on('data', (message) => {
+        const nonEmptyLines = message.split('\n').filter((line) => line !== '');
+        output.push(...nonEmptyLines);
+      });
+
+      childProcess.stderr.on('data', (message) => {
+        mostRecentError = new Error(message.trim());
+      });
+
+      childProcess.once('exit', (code, signal) => {
+        if (code === 0) {
+          return resolve();
+        }
+        errorCode = code;
+        errorSignal = signal;
+        return reject(internalError);
+      });
+    });
+  } catch (error) {
+    /**
+     * The error is re-thrown here in an `async` context to preserve the stack trace. If this was
+     * was thrown inside the Promise constructor, the stack trace would show a few frames of
+     * Node.js internals then end, without indicating where `runCommand` was called.
+     */
+    if (error === internalError) {
+      let errorMessage;
+      if (errorCode !== null && errorSignal !== null) {
+        errorMessage = `Terminated by signal '${errorSignal}'; exited with code '${errorCode}'`;
+      } else if (errorSignal !== null) {
+        errorMessage = `Terminaled by signal '${errorSignal}'`;
+      } else if (errorCode === null) {
+        errorMessage = 'Exited with no code or signal';
+      } else {
+        errorMessage = `Exited with code '${errorCode}'`;
+      }
+      const improvedError = new Error(errorMessage);
+      if (mostRecentError) {
+        improvedError.cause = mostRecentError;
+      }
+      throw improvedError;
+    }
+  }
+  return output;
+}
+
+module.exports = runCommand;
+
+
+/***/ }),
+
+/***/ 6816:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const assert = __nccwpck_require__(2357).strict;
+const runCommand = __nccwpck_require__(606);
+const { parseChangelog } = __nccwpck_require__(6026);
+const { changeCategories } = __nccwpck_require__(6379);
+
+async function getMostRecentTag({ projectRootDirectory }) {
+  const revListArgs = ['rev-list', '--tags', '--max-count=1'];
+  if (projectRootDirectory) {
+    revListArgs.push(projectRootDirectory);
+  }
+  const results = await runCommand('git', revListArgs);
+  if (results.length === 0) {
+    return null;
+  }
+  const [mostRecentTagCommitHash] = results;
+  const [mostRecentTag] = await runCommand('git', [
+    'describe',
+    '--tags',
+    mostRecentTagCommitHash,
+  ]);
+  assert.equal(mostRecentTag[0], 'v', 'Most recent tag should start with v');
+  return mostRecentTag;
+}
+
+async function getCommits(commitHashes) {
+  const commits = [];
+  for (const commitHash of commitHashes) {
+    const [subject] = await runCommand('git', [
+      'show',
+      '-s',
+      '--format=%s',
+      commitHash,
+    ]);
+
+    let prNumber;
+    let description = subject;
+
+    // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
+    if (subject.match(/\(#\d+\)/u)) {
+      const matchResults = subject.match(/\(#(\d+)\)/u);
+      prNumber = matchResults[1];
+      description = subject.match(/^(.+)\s\(#\d+\)/u)[1];
+      // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
+      // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
+      // If no body is found, the description is set to the commit subject
+    } else if (subject.match(/#\d+\sfrom/u)) {
+      const matchResults = subject.match(/#(\d+)\sfrom/u);
+      prNumber = matchResults[1];
+      const [firstLineOfBody] = await runCommand('git', [
+        'show',
+        '-s',
+        '--format=%b',
+        commitHash,
+      ]);
+      description = firstLineOfBody || subject;
+    }
+    // Otherwise:
+    // Normal commits: The commit subject is the description, and the PR ID is omitted.
+
+    commits.push({ prNumber, description });
+  }
+  return commits;
+}
+
+function getAllChangeDescriptions(changelog) {
+  const releases = changelog.getReleases();
+  const changeDescriptions = Object.values(
+    changelog.getUnreleasedChanges(),
+  ).flat();
+  for (const release of releases) {
+    changeDescriptions.push(
+      ...Object.values(changelog.getReleaseChanges(release.version)).flat(),
+    );
+  }
+  return changeDescriptions;
+}
+
+function getAllLoggedPrNumbers(changelog) {
+  const changeDescriptions = getAllChangeDescriptions(changelog);
+
+  const prNumbersWithChangelogEntries = [];
+  for (const description of changeDescriptions) {
+    const matchResults = description.match(/^\[#(\d+)\]/u);
+    if (matchResults === null) {
+      continue;
+    }
+    const prNumber = matchResults[1];
+    prNumbersWithChangelogEntries.push(prNumber);
+  }
+
+  return prNumbersWithChangelogEntries;
+}
+
+async function getCommitHashesInRange(commitRange, rootDirectory) {
+  const revListArgs = ['rev-list', commitRange];
+  if (rootDirectory) {
+    revListArgs.push(rootDirectory);
+  }
+  return await runCommand('git', revListArgs);
+}
+
+/**
+ * @typedef {import('./constants.js').Version} Version
+ */
+
+/**
+ * Update a changelog with any commits made since the last release. Commits for
+ * PRs that are already included in the changelog are omitted.
+ * @param {Object} options
+ * @param {string} options.changelogContent - The current changelog
+ * @param {Version} [options.currentVersion] - The current version. Required if
+ *   `isReleaseCandidate` is set, but optional otherwise.
+ * @param {string} options.repoUrl - The GitHub repository URL for the current
+ *   project.
+ * @param {boolean} options.isReleaseCandidate - Denotes whether the current
+ *   project is in the midst of release preparation or not. If this is set, any
+ *   new changes are listed under the current release header. Otherwise, they
+ *   are listed under the 'Unreleased' section.
+ * @param {string} [options.projectRootDirectory] - The root project directory,
+ *   used to filter results from various git commands. This path is assumed to
+ *   be either absolute, or relative to the current directory. Defaults to the
+ *   root of the current git repository.
+ * @returns {string} The updated changelog text
+ */
+async function updateChangelog({
+  changelogContent,
+  currentVersion,
+  repoUrl,
+  isReleaseCandidate,
+  projectRootDirectory,
+}) {
+  if (isReleaseCandidate && !currentVersion) {
+    throw new Error(
+      `A version must be specified if 'isReleaseCandidate' is set.`,
+    );
+  }
+  const changelog = parseChangelog({ changelogContent, repoUrl });
+
+  // Ensure we have all tags on remote
+  await runCommand('git', ['fetch', '--tags']);
+  const mostRecentTag = await getMostRecentTag({ projectRootDirectory });
+
+  if (isReleaseCandidate && mostRecentTag === currentVersion) {
+    throw new Error(
+      `Current version already has tag, which is unexpected for a release candidate.`,
+    );
+  }
+
+  const commitRange =
+    mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
+  const commitsHashesSinceLastRelease = await getCommitHashesInRange(
+    commitRange,
+    projectRootDirectory,
+  );
+  const commits = await getCommits(commitsHashesSinceLastRelease);
+
+  const loggedPrNumbers = getAllLoggedPrNumbers(changelog);
+  const newCommits = commits.filter(
+    ({ prNumber }) => !loggedPrNumbers.includes(prNumber),
+  );
+
+  const hasUnreleasedChanges = changelog.getUnreleasedChanges().length !== 0;
+  if (
+    newCommits.length === 0 &&
+    (!isReleaseCandidate || hasUnreleasedChanges)
+  ) {
+    return undefined;
+  }
+
+  // Ensure release header exists, if necessary
+  if (
+    isReleaseCandidate &&
+    !changelog
+      .getReleases()
+      .find((release) => release.version === currentVersion)
+  ) {
+    changelog.addRelease({ version: currentVersion });
+  }
+
+  if (isReleaseCandidate && hasUnreleasedChanges) {
+    changelog.migrateUnreleasedChangesToRelease(currentVersion);
+  }
+
+  const newChangeEntries = newCommits.map(({ prNumber, description }) => {
+    if (prNumber) {
+      const prefix = `[#${prNumber}](${repoUrl}/pull/${prNumber})`;
+      return `${prefix}: ${description}`;
+    }
+    return description;
+  });
+
+  for (const description of newChangeEntries.reverse()) {
+    changelog.addChange({
+      version: isReleaseCandidate ? currentVersion : undefined,
+      category: changeCategories.Uncategorized,
+      description,
+    });
+  }
+
+  return changelog.toString();
+}
+
+module.exports = { updateChangelog };
+
+
+/***/ }),
+
+/***/ 6311:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const { parseChangelog } = __nccwpck_require__(6026);
+
+/**
+ * @typedef {import('./constants.js').Version} Version
+ */
+
+/**
+ * Indicates that the changelog is invalid.
+ */
+class InvalidChangelogError extends Error {}
+
+/**
+ * Indicates that unreleased changes are still present in the changelog.
+ */
+class UnreleasedChangesError extends InvalidChangelogError {
+  constructor() {
+    super('Unreleased changes present in the changelog');
+  }
+}
+
+/**
+ * Indicates that the release header for the current version is missing.
+ */
+class MissingCurrentVersionError extends InvalidChangelogError {
+  /**
+   * @param {Version} currentVersion - The current version
+   */
+  constructor(currentVersion) {
+    super(`Current version missing from changelog: '${currentVersion}'`);
+  }
+}
+
+/**
+ * Represents a formatting error in a changelog.
+ */
+class ChangelogFormattingError extends InvalidChangelogError {
+  /**
+   * @param {Object} options
+   * @param {string} options.validChangelog - The string contents of the well-
+   *   formatted changelog.
+   * @param {string} options.invalidChangelog - The string contents of the
+   *   malformed changelog.
+   */
+  constructor({ validChangelog, invalidChangelog }) {
+    super('Changelog is not well-formatted');
+    this.data = {
+      validChangelog,
+      invalidChangelog,
+    };
+  }
+}
+
+/**
+ * Validates that a changelog is well-formatted.
+ * @param {Object} options
+ * @param {string} options.changelogContent - The current changelog
+ * @param {Version} options.currentVersion - The current version
+ * @param {string} options.repoUrl - The GitHub repository URL for the current
+ *   project.
+ * @param {boolean} options.isReleaseCandidate - Denotes whether the current
+ *   project is in the midst of release preparation or not. If this is set, this
+ *   command will also ensure the current version is represented in the
+ *   changelog with a release header, and that there are no unreleased changes
+ *   present.
+ * @throws {InvalidChangelogError} Will throw if the changelog is invalid
+ * @throws {MissingCurrentVersionError} Will throw if `isReleaseCandidate` is
+ *   `true` and the changelog is missing the release header for the current
+ *   version.
+ * @throws {UnreleasedChangesError} Will throw if `isReleaseCandidate` is
+ *   `true` and the changelog contains unreleased changes.
+ * @throws {ChangelogFormattingError} Will throw if there is a formatting error.
+ */
+function validateChangelog({
+  changelogContent,
+  currentVersion,
+  repoUrl,
+  isReleaseCandidate,
+}) {
+  const changelog = parseChangelog({ changelogContent, repoUrl });
+
+  // Ensure release header exists, if necessary
+  if (
+    isReleaseCandidate &&
+    !changelog
+      .getReleases()
+      .find((release) => release.version === currentVersion)
+  ) {
+    throw new MissingCurrentVersionError(currentVersion);
+  }
+
+  const hasUnreleasedChanges =
+    Object.keys(changelog.getUnreleasedChanges()).length !== 0;
+  if (isReleaseCandidate && hasUnreleasedChanges) {
+    throw new UnreleasedChangesError();
+  }
+
+  const validChangelog = changelog.toString();
+  if (validChangelog !== changelogContent) {
+    throw new ChangelogFormattingError({
+      validChangelog,
+      invalidChangelog: changelogContent,
+    });
+  }
+}
+
+module.exports = {
+  ChangelogFormattingError,
+  InvalidChangelogError,
+  MissingCurrentVersionError,
+  UnreleasedChangesError,
+  validateChangelog,
+};
+
+
+/***/ }),
+
 /***/ 2746:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -2370,6 +3326,348 @@ function sync (path, options) {
 
 /***/ }),
 
+/***/ 7129:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+
+// A linked list to keep track of recently-used-ness
+const Yallist = __nccwpck_require__(665)
+
+const MAX = Symbol('max')
+const LENGTH = Symbol('length')
+const LENGTH_CALCULATOR = Symbol('lengthCalculator')
+const ALLOW_STALE = Symbol('allowStale')
+const MAX_AGE = Symbol('maxAge')
+const DISPOSE = Symbol('dispose')
+const NO_DISPOSE_ON_SET = Symbol('noDisposeOnSet')
+const LRU_LIST = Symbol('lruList')
+const CACHE = Symbol('cache')
+const UPDATE_AGE_ON_GET = Symbol('updateAgeOnGet')
+
+const naiveLength = () => 1
+
+// lruList is a yallist where the head is the youngest
+// item, and the tail is the oldest.  the list contains the Hit
+// objects as the entries.
+// Each Hit object has a reference to its Yallist.Node.  This
+// never changes.
+//
+// cache is a Map (or PseudoMap) that matches the keys to
+// the Yallist.Node object.
+class LRUCache {
+  constructor (options) {
+    if (typeof options === 'number')
+      options = { max: options }
+
+    if (!options)
+      options = {}
+
+    if (options.max && (typeof options.max !== 'number' || options.max < 0))
+      throw new TypeError('max must be a non-negative number')
+    // Kind of weird to have a default max of Infinity, but oh well.
+    const max = this[MAX] = options.max || Infinity
+
+    const lc = options.length || naiveLength
+    this[LENGTH_CALCULATOR] = (typeof lc !== 'function') ? naiveLength : lc
+    this[ALLOW_STALE] = options.stale || false
+    if (options.maxAge && typeof options.maxAge !== 'number')
+      throw new TypeError('maxAge must be a number')
+    this[MAX_AGE] = options.maxAge || 0
+    this[DISPOSE] = options.dispose
+    this[NO_DISPOSE_ON_SET] = options.noDisposeOnSet || false
+    this[UPDATE_AGE_ON_GET] = options.updateAgeOnGet || false
+    this.reset()
+  }
+
+  // resize the cache when the max changes.
+  set max (mL) {
+    if (typeof mL !== 'number' || mL < 0)
+      throw new TypeError('max must be a non-negative number')
+
+    this[MAX] = mL || Infinity
+    trim(this)
+  }
+  get max () {
+    return this[MAX]
+  }
+
+  set allowStale (allowStale) {
+    this[ALLOW_STALE] = !!allowStale
+  }
+  get allowStale () {
+    return this[ALLOW_STALE]
+  }
+
+  set maxAge (mA) {
+    if (typeof mA !== 'number')
+      throw new TypeError('maxAge must be a non-negative number')
+
+    this[MAX_AGE] = mA
+    trim(this)
+  }
+  get maxAge () {
+    return this[MAX_AGE]
+  }
+
+  // resize the cache when the lengthCalculator changes.
+  set lengthCalculator (lC) {
+    if (typeof lC !== 'function')
+      lC = naiveLength
+
+    if (lC !== this[LENGTH_CALCULATOR]) {
+      this[LENGTH_CALCULATOR] = lC
+      this[LENGTH] = 0
+      this[LRU_LIST].forEach(hit => {
+        hit.length = this[LENGTH_CALCULATOR](hit.value, hit.key)
+        this[LENGTH] += hit.length
+      })
+    }
+    trim(this)
+  }
+  get lengthCalculator () { return this[LENGTH_CALCULATOR] }
+
+  get length () { return this[LENGTH] }
+  get itemCount () { return this[LRU_LIST].length }
+
+  rforEach (fn, thisp) {
+    thisp = thisp || this
+    for (let walker = this[LRU_LIST].tail; walker !== null;) {
+      const prev = walker.prev
+      forEachStep(this, fn, walker, thisp)
+      walker = prev
+    }
+  }
+
+  forEach (fn, thisp) {
+    thisp = thisp || this
+    for (let walker = this[LRU_LIST].head; walker !== null;) {
+      const next = walker.next
+      forEachStep(this, fn, walker, thisp)
+      walker = next
+    }
+  }
+
+  keys () {
+    return this[LRU_LIST].toArray().map(k => k.key)
+  }
+
+  values () {
+    return this[LRU_LIST].toArray().map(k => k.value)
+  }
+
+  reset () {
+    if (this[DISPOSE] &&
+        this[LRU_LIST] &&
+        this[LRU_LIST].length) {
+      this[LRU_LIST].forEach(hit => this[DISPOSE](hit.key, hit.value))
+    }
+
+    this[CACHE] = new Map() // hash of items by key
+    this[LRU_LIST] = new Yallist() // list of items in order of use recency
+    this[LENGTH] = 0 // length of items in the list
+  }
+
+  dump () {
+    return this[LRU_LIST].map(hit =>
+      isStale(this, hit) ? false : {
+        k: hit.key,
+        v: hit.value,
+        e: hit.now + (hit.maxAge || 0)
+      }).toArray().filter(h => h)
+  }
+
+  dumpLru () {
+    return this[LRU_LIST]
+  }
+
+  set (key, value, maxAge) {
+    maxAge = maxAge || this[MAX_AGE]
+
+    if (maxAge && typeof maxAge !== 'number')
+      throw new TypeError('maxAge must be a number')
+
+    const now = maxAge ? Date.now() : 0
+    const len = this[LENGTH_CALCULATOR](value, key)
+
+    if (this[CACHE].has(key)) {
+      if (len > this[MAX]) {
+        del(this, this[CACHE].get(key))
+        return false
+      }
+
+      const node = this[CACHE].get(key)
+      const item = node.value
+
+      // dispose of the old one before overwriting
+      // split out into 2 ifs for better coverage tracking
+      if (this[DISPOSE]) {
+        if (!this[NO_DISPOSE_ON_SET])
+          this[DISPOSE](key, item.value)
+      }
+
+      item.now = now
+      item.maxAge = maxAge
+      item.value = value
+      this[LENGTH] += len - item.length
+      item.length = len
+      this.get(key)
+      trim(this)
+      return true
+    }
+
+    const hit = new Entry(key, value, len, now, maxAge)
+
+    // oversized objects fall out of cache automatically.
+    if (hit.length > this[MAX]) {
+      if (this[DISPOSE])
+        this[DISPOSE](key, value)
+
+      return false
+    }
+
+    this[LENGTH] += hit.length
+    this[LRU_LIST].unshift(hit)
+    this[CACHE].set(key, this[LRU_LIST].head)
+    trim(this)
+    return true
+  }
+
+  has (key) {
+    if (!this[CACHE].has(key)) return false
+    const hit = this[CACHE].get(key).value
+    return !isStale(this, hit)
+  }
+
+  get (key) {
+    return get(this, key, true)
+  }
+
+  peek (key) {
+    return get(this, key, false)
+  }
+
+  pop () {
+    const node = this[LRU_LIST].tail
+    if (!node)
+      return null
+
+    del(this, node)
+    return node.value
+  }
+
+  del (key) {
+    del(this, this[CACHE].get(key))
+  }
+
+  load (arr) {
+    // reset the cache
+    this.reset()
+
+    const now = Date.now()
+    // A previous serialized cache has the most recent items first
+    for (let l = arr.length - 1; l >= 0; l--) {
+      const hit = arr[l]
+      const expiresAt = hit.e || 0
+      if (expiresAt === 0)
+        // the item was created without expiration in a non aged cache
+        this.set(hit.k, hit.v)
+      else {
+        const maxAge = expiresAt - now
+        // dont add already expired items
+        if (maxAge > 0) {
+          this.set(hit.k, hit.v, maxAge)
+        }
+      }
+    }
+  }
+
+  prune () {
+    this[CACHE].forEach((value, key) => get(this, key, false))
+  }
+}
+
+const get = (self, key, doUse) => {
+  const node = self[CACHE].get(key)
+  if (node) {
+    const hit = node.value
+    if (isStale(self, hit)) {
+      del(self, node)
+      if (!self[ALLOW_STALE])
+        return undefined
+    } else {
+      if (doUse) {
+        if (self[UPDATE_AGE_ON_GET])
+          node.value.now = Date.now()
+        self[LRU_LIST].unshiftNode(node)
+      }
+    }
+    return hit.value
+  }
+}
+
+const isStale = (self, hit) => {
+  if (!hit || (!hit.maxAge && !self[MAX_AGE]))
+    return false
+
+  const diff = Date.now() - hit.now
+  return hit.maxAge ? diff > hit.maxAge
+    : self[MAX_AGE] && (diff > self[MAX_AGE])
+}
+
+const trim = self => {
+  if (self[LENGTH] > self[MAX]) {
+    for (let walker = self[LRU_LIST].tail;
+      self[LENGTH] > self[MAX] && walker !== null;) {
+      // We know that we're about to delete this one, and also
+      // what the next least recently used key will be, so just
+      // go ahead and set it now.
+      const prev = walker.prev
+      del(self, walker)
+      walker = prev
+    }
+  }
+}
+
+const del = (self, node) => {
+  if (node) {
+    const hit = node.value
+    if (self[DISPOSE])
+      self[DISPOSE](hit.key, hit.value)
+
+    self[LENGTH] -= hit.length
+    self[CACHE].delete(hit.key)
+    self[LRU_LIST].removeNode(node)
+  }
+}
+
+class Entry {
+  constructor (key, value, length, now, maxAge) {
+    this.key = key
+    this.value = value
+    this.length = length
+    this.now = now
+    this.maxAge = maxAge || 0
+  }
+}
+
+const forEachStep = (self, fn, node, thisp) => {
+  let hit = node.value
+  if (isStale(self, hit)) {
+    del(self, node)
+    if (!self[ALLOW_STALE])
+      hit = undefined
+  }
+  if (hit)
+    fn.call(thisp, hit.value, hit.key, self)
+}
+
+module.exports = LRUCache
+
+
+/***/ }),
+
 /***/ 2621:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -2709,6 +4007,665 @@ module.exports = pump
 
 /***/ }),
 
+/***/ 1532:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const ANY = Symbol('SemVer ANY')
+// hoisted class for cyclic dependency
+class Comparator {
+  static get ANY () {
+    return ANY
+  }
+  constructor (comp, options) {
+    options = parseOptions(options)
+
+    if (comp instanceof Comparator) {
+      if (comp.loose === !!options.loose) {
+        return comp
+      } else {
+        comp = comp.value
+      }
+    }
+
+    debug('comparator', comp, options)
+    this.options = options
+    this.loose = !!options.loose
+    this.parse(comp)
+
+    if (this.semver === ANY) {
+      this.value = ''
+    } else {
+      this.value = this.operator + this.semver.version
+    }
+
+    debug('comp', this)
+  }
+
+  parse (comp) {
+    const r = this.options.loose ? re[t.COMPARATORLOOSE] : re[t.COMPARATOR]
+    const m = comp.match(r)
+
+    if (!m) {
+      throw new TypeError(`Invalid comparator: ${comp}`)
+    }
+
+    this.operator = m[1] !== undefined ? m[1] : ''
+    if (this.operator === '=') {
+      this.operator = ''
+    }
+
+    // if it literally is just '>' or '' then allow anything.
+    if (!m[2]) {
+      this.semver = ANY
+    } else {
+      this.semver = new SemVer(m[2], this.options.loose)
+    }
+  }
+
+  toString () {
+    return this.value
+  }
+
+  test (version) {
+    debug('Comparator.test', version, this.options.loose)
+
+    if (this.semver === ANY || version === ANY) {
+      return true
+    }
+
+    if (typeof version === 'string') {
+      try {
+        version = new SemVer(version, this.options)
+      } catch (er) {
+        return false
+      }
+    }
+
+    return cmp(version, this.operator, this.semver, this.options)
+  }
+
+  intersects (comp, options) {
+    if (!(comp instanceof Comparator)) {
+      throw new TypeError('a Comparator is required')
+    }
+
+    if (!options || typeof options !== 'object') {
+      options = {
+        loose: !!options,
+        includePrerelease: false
+      }
+    }
+
+    if (this.operator === '') {
+      if (this.value === '') {
+        return true
+      }
+      return new Range(comp.value, options).test(this.value)
+    } else if (comp.operator === '') {
+      if (comp.value === '') {
+        return true
+      }
+      return new Range(this.value, options).test(comp.semver)
+    }
+
+    const sameDirectionIncreasing =
+      (this.operator === '>=' || this.operator === '>') &&
+      (comp.operator === '>=' || comp.operator === '>')
+    const sameDirectionDecreasing =
+      (this.operator === '<=' || this.operator === '<') &&
+      (comp.operator === '<=' || comp.operator === '<')
+    const sameSemVer = this.semver.version === comp.semver.version
+    const differentDirectionsInclusive =
+      (this.operator === '>=' || this.operator === '<=') &&
+      (comp.operator === '>=' || comp.operator === '<=')
+    const oppositeDirectionsLessThan =
+      cmp(this.semver, '<', comp.semver, options) &&
+      (this.operator === '>=' || this.operator === '>') &&
+        (comp.operator === '<=' || comp.operator === '<')
+    const oppositeDirectionsGreaterThan =
+      cmp(this.semver, '>', comp.semver, options) &&
+      (this.operator === '<=' || this.operator === '<') &&
+        (comp.operator === '>=' || comp.operator === '>')
+
+    return (
+      sameDirectionIncreasing ||
+      sameDirectionDecreasing ||
+      (sameSemVer && differentDirectionsInclusive) ||
+      oppositeDirectionsLessThan ||
+      oppositeDirectionsGreaterThan
+    )
+  }
+}
+
+module.exports = Comparator
+
+const parseOptions = __nccwpck_require__(785)
+const {re, t} = __nccwpck_require__(9523)
+const cmp = __nccwpck_require__(5098)
+const debug = __nccwpck_require__(427)
+const SemVer = __nccwpck_require__(8088)
+const Range = __nccwpck_require__(9828)
+
+
+/***/ }),
+
+/***/ 9828:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+// hoisted class for cyclic dependency
+class Range {
+  constructor (range, options) {
+    options = parseOptions(options)
+
+    if (range instanceof Range) {
+      if (
+        range.loose === !!options.loose &&
+        range.includePrerelease === !!options.includePrerelease
+      ) {
+        return range
+      } else {
+        return new Range(range.raw, options)
+      }
+    }
+
+    if (range instanceof Comparator) {
+      // just put it in the set and return
+      this.raw = range.value
+      this.set = [[range]]
+      this.format()
+      return this
+    }
+
+    this.options = options
+    this.loose = !!options.loose
+    this.includePrerelease = !!options.includePrerelease
+
+    // First, split based on boolean or ||
+    this.raw = range
+    this.set = range
+      .split(/\s*\|\|\s*/)
+      // map the range to a 2d array of comparators
+      .map(range => this.parseRange(range.trim()))
+      // throw out any comparator lists that are empty
+      // this generally means that it was not a valid range, which is allowed
+      // in loose mode, but will still throw if the WHOLE range is invalid.
+      .filter(c => c.length)
+
+    if (!this.set.length) {
+      throw new TypeError(`Invalid SemVer Range: ${range}`)
+    }
+
+    // if we have any that are not the null set, throw out null sets.
+    if (this.set.length > 1) {
+      // keep the first one, in case they're all null sets
+      const first = this.set[0]
+      this.set = this.set.filter(c => !isNullSet(c[0]))
+      if (this.set.length === 0)
+        this.set = [first]
+      else if (this.set.length > 1) {
+        // if we have any that are *, then the range is just *
+        for (const c of this.set) {
+          if (c.length === 1 && isAny(c[0])) {
+            this.set = [c]
+            break
+          }
+        }
+      }
+    }
+
+    this.format()
+  }
+
+  format () {
+    this.range = this.set
+      .map((comps) => {
+        return comps.join(' ').trim()
+      })
+      .join('||')
+      .trim()
+    return this.range
+  }
+
+  toString () {
+    return this.range
+  }
+
+  parseRange (range) {
+    range = range.trim()
+
+    // memoize range parsing for performance.
+    // this is a very hot path, and fully deterministic.
+    const memoOpts = Object.keys(this.options).join(',')
+    const memoKey = `parseRange:${memoOpts}:${range}`
+    const cached = cache.get(memoKey)
+    if (cached)
+      return cached
+
+    const loose = this.options.loose
+    // `1.2.3 - 1.2.4` => `>=1.2.3 <=1.2.4`
+    const hr = loose ? re[t.HYPHENRANGELOOSE] : re[t.HYPHENRANGE]
+    range = range.replace(hr, hyphenReplace(this.options.includePrerelease))
+    debug('hyphen replace', range)
+    // `> 1.2.3 < 1.2.5` => `>1.2.3 <1.2.5`
+    range = range.replace(re[t.COMPARATORTRIM], comparatorTrimReplace)
+    debug('comparator trim', range, re[t.COMPARATORTRIM])
+
+    // `~ 1.2.3` => `~1.2.3`
+    range = range.replace(re[t.TILDETRIM], tildeTrimReplace)
+
+    // `^ 1.2.3` => `^1.2.3`
+    range = range.replace(re[t.CARETTRIM], caretTrimReplace)
+
+    // normalize spaces
+    range = range.split(/\s+/).join(' ')
+
+    // At this point, the range is completely trimmed and
+    // ready to be split into comparators.
+
+    const compRe = loose ? re[t.COMPARATORLOOSE] : re[t.COMPARATOR]
+    const rangeList = range
+      .split(' ')
+      .map(comp => parseComparator(comp, this.options))
+      .join(' ')
+      .split(/\s+/)
+      // >=0.0.0 is equivalent to *
+      .map(comp => replaceGTE0(comp, this.options))
+      // in loose mode, throw out any that are not valid comparators
+      .filter(this.options.loose ? comp => !!comp.match(compRe) : () => true)
+      .map(comp => new Comparator(comp, this.options))
+
+    // if any comparators are the null set, then replace with JUST null set
+    // if more than one comparator, remove any * comparators
+    // also, don't include the same comparator more than once
+    const l = rangeList.length
+    const rangeMap = new Map()
+    for (const comp of rangeList) {
+      if (isNullSet(comp))
+        return [comp]
+      rangeMap.set(comp.value, comp)
+    }
+    if (rangeMap.size > 1 && rangeMap.has(''))
+      rangeMap.delete('')
+
+    const result = [...rangeMap.values()]
+    cache.set(memoKey, result)
+    return result
+  }
+
+  intersects (range, options) {
+    if (!(range instanceof Range)) {
+      throw new TypeError('a Range is required')
+    }
+
+    return this.set.some((thisComparators) => {
+      return (
+        isSatisfiable(thisComparators, options) &&
+        range.set.some((rangeComparators) => {
+          return (
+            isSatisfiable(rangeComparators, options) &&
+            thisComparators.every((thisComparator) => {
+              return rangeComparators.every((rangeComparator) => {
+                return thisComparator.intersects(rangeComparator, options)
+              })
+            })
+          )
+        })
+      )
+    })
+  }
+
+  // if ANY of the sets match ALL of its comparators, then pass
+  test (version) {
+    if (!version) {
+      return false
+    }
+
+    if (typeof version === 'string') {
+      try {
+        version = new SemVer(version, this.options)
+      } catch (er) {
+        return false
+      }
+    }
+
+    for (let i = 0; i < this.set.length; i++) {
+      if (testSet(this.set[i], version, this.options)) {
+        return true
+      }
+    }
+    return false
+  }
+}
+module.exports = Range
+
+const LRU = __nccwpck_require__(7129)
+const cache = new LRU({ max: 1000 })
+
+const parseOptions = __nccwpck_require__(785)
+const Comparator = __nccwpck_require__(1532)
+const debug = __nccwpck_require__(427)
+const SemVer = __nccwpck_require__(8088)
+const {
+  re,
+  t,
+  comparatorTrimReplace,
+  tildeTrimReplace,
+  caretTrimReplace
+} = __nccwpck_require__(9523)
+
+const isNullSet = c => c.value === '<0.0.0-0'
+const isAny = c => c.value === ''
+
+// take a set of comparators and determine whether there
+// exists a version which can satisfy it
+const isSatisfiable = (comparators, options) => {
+  let result = true
+  const remainingComparators = comparators.slice()
+  let testComparator = remainingComparators.pop()
+
+  while (result && remainingComparators.length) {
+    result = remainingComparators.every((otherComparator) => {
+      return testComparator.intersects(otherComparator, options)
+    })
+
+    testComparator = remainingComparators.pop()
+  }
+
+  return result
+}
+
+// comprised of xranges, tildes, stars, and gtlt's at this point.
+// already replaced the hyphen ranges
+// turn into a set of JUST comparators.
+const parseComparator = (comp, options) => {
+  debug('comp', comp, options)
+  comp = replaceCarets(comp, options)
+  debug('caret', comp)
+  comp = replaceTildes(comp, options)
+  debug('tildes', comp)
+  comp = replaceXRanges(comp, options)
+  debug('xrange', comp)
+  comp = replaceStars(comp, options)
+  debug('stars', comp)
+  return comp
+}
+
+const isX = id => !id || id.toLowerCase() === 'x' || id === '*'
+
+// ~, ~> --> * (any, kinda silly)
+// ~2, ~2.x, ~2.x.x, ~>2, ~>2.x ~>2.x.x --> >=2.0.0 <3.0.0-0
+// ~2.0, ~2.0.x, ~>2.0, ~>2.0.x --> >=2.0.0 <2.1.0-0
+// ~1.2, ~1.2.x, ~>1.2, ~>1.2.x --> >=1.2.0 <1.3.0-0
+// ~1.2.3, ~>1.2.3 --> >=1.2.3 <1.3.0-0
+// ~1.2.0, ~>1.2.0 --> >=1.2.0 <1.3.0-0
+const replaceTildes = (comp, options) =>
+  comp.trim().split(/\s+/).map((comp) => {
+    return replaceTilde(comp, options)
+  }).join(' ')
+
+const replaceTilde = (comp, options) => {
+  const r = options.loose ? re[t.TILDELOOSE] : re[t.TILDE]
+  return comp.replace(r, (_, M, m, p, pr) => {
+    debug('tilde', comp, _, M, m, p, pr)
+    let ret
+
+    if (isX(M)) {
+      ret = ''
+    } else if (isX(m)) {
+      ret = `>=${M}.0.0 <${+M + 1}.0.0-0`
+    } else if (isX(p)) {
+      // ~1.2 == >=1.2.0 <1.3.0-0
+      ret = `>=${M}.${m}.0 <${M}.${+m + 1}.0-0`
+    } else if (pr) {
+      debug('replaceTilde pr', pr)
+      ret = `>=${M}.${m}.${p}-${pr
+      } <${M}.${+m + 1}.0-0`
+    } else {
+      // ~1.2.3 == >=1.2.3 <1.3.0-0
+      ret = `>=${M}.${m}.${p
+      } <${M}.${+m + 1}.0-0`
+    }
+
+    debug('tilde return', ret)
+    return ret
+  })
+}
+
+// ^ --> * (any, kinda silly)
+// ^2, ^2.x, ^2.x.x --> >=2.0.0 <3.0.0-0
+// ^2.0, ^2.0.x --> >=2.0.0 <3.0.0-0
+// ^1.2, ^1.2.x --> >=1.2.0 <2.0.0-0
+// ^1.2.3 --> >=1.2.3 <2.0.0-0
+// ^1.2.0 --> >=1.2.0 <2.0.0-0
+const replaceCarets = (comp, options) =>
+  comp.trim().split(/\s+/).map((comp) => {
+    return replaceCaret(comp, options)
+  }).join(' ')
+
+const replaceCaret = (comp, options) => {
+  debug('caret', comp, options)
+  const r = options.loose ? re[t.CARETLOOSE] : re[t.CARET]
+  const z = options.includePrerelease ? '-0' : ''
+  return comp.replace(r, (_, M, m, p, pr) => {
+    debug('caret', comp, _, M, m, p, pr)
+    let ret
+
+    if (isX(M)) {
+      ret = ''
+    } else if (isX(m)) {
+      ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`
+    } else if (isX(p)) {
+      if (M === '0') {
+        ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`
+      } else {
+        ret = `>=${M}.${m}.0${z} <${+M + 1}.0.0-0`
+      }
+    } else if (pr) {
+      debug('replaceCaret pr', pr)
+      if (M === '0') {
+        if (m === '0') {
+          ret = `>=${M}.${m}.${p}-${pr
+          } <${M}.${m}.${+p + 1}-0`
+        } else {
+          ret = `>=${M}.${m}.${p}-${pr
+          } <${M}.${+m + 1}.0-0`
+        }
+      } else {
+        ret = `>=${M}.${m}.${p}-${pr
+        } <${+M + 1}.0.0-0`
+      }
+    } else {
+      debug('no pr')
+      if (M === '0') {
+        if (m === '0') {
+          ret = `>=${M}.${m}.${p
+          }${z} <${M}.${m}.${+p + 1}-0`
+        } else {
+          ret = `>=${M}.${m}.${p
+          }${z} <${M}.${+m + 1}.0-0`
+        }
+      } else {
+        ret = `>=${M}.${m}.${p
+        } <${+M + 1}.0.0-0`
+      }
+    }
+
+    debug('caret return', ret)
+    return ret
+  })
+}
+
+const replaceXRanges = (comp, options) => {
+  debug('replaceXRanges', comp, options)
+  return comp.split(/\s+/).map((comp) => {
+    return replaceXRange(comp, options)
+  }).join(' ')
+}
+
+const replaceXRange = (comp, options) => {
+  comp = comp.trim()
+  const r = options.loose ? re[t.XRANGELOOSE] : re[t.XRANGE]
+  return comp.replace(r, (ret, gtlt, M, m, p, pr) => {
+    debug('xRange', comp, ret, gtlt, M, m, p, pr)
+    const xM = isX(M)
+    const xm = xM || isX(m)
+    const xp = xm || isX(p)
+    const anyX = xp
+
+    if (gtlt === '=' && anyX) {
+      gtlt = ''
+    }
+
+    // if we're including prereleases in the match, then we need
+    // to fix this to -0, the lowest possible prerelease value
+    pr = options.includePrerelease ? '-0' : ''
+
+    if (xM) {
+      if (gtlt === '>' || gtlt === '<') {
+        // nothing is allowed
+        ret = '<0.0.0-0'
+      } else {
+        // nothing is forbidden
+        ret = '*'
+      }
+    } else if (gtlt && anyX) {
+      // we know patch is an x, because we have any x at all.
+      // replace X with 0
+      if (xm) {
+        m = 0
+      }
+      p = 0
+
+      if (gtlt === '>') {
+        // >1 => >=2.0.0
+        // >1.2 => >=1.3.0
+        gtlt = '>='
+        if (xm) {
+          M = +M + 1
+          m = 0
+          p = 0
+        } else {
+          m = +m + 1
+          p = 0
+        }
+      } else if (gtlt === '<=') {
+        // <=0.7.x is actually <0.8.0, since any 0.7.x should
+        // pass.  Similarly, <=7.x is actually <8.0.0, etc.
+        gtlt = '<'
+        if (xm) {
+          M = +M + 1
+        } else {
+          m = +m + 1
+        }
+      }
+
+      if (gtlt === '<')
+        pr = '-0'
+
+      ret = `${gtlt + M}.${m}.${p}${pr}`
+    } else if (xm) {
+      ret = `>=${M}.0.0${pr} <${+M + 1}.0.0-0`
+    } else if (xp) {
+      ret = `>=${M}.${m}.0${pr
+      } <${M}.${+m + 1}.0-0`
+    }
+
+    debug('xRange return', ret)
+
+    return ret
+  })
+}
+
+// Because * is AND-ed with everything else in the comparator,
+// and '' means "any version", just remove the *s entirely.
+const replaceStars = (comp, options) => {
+  debug('replaceStars', comp, options)
+  // Looseness is ignored here.  star is always as loose as it gets!
+  return comp.trim().replace(re[t.STAR], '')
+}
+
+const replaceGTE0 = (comp, options) => {
+  debug('replaceGTE0', comp, options)
+  return comp.trim()
+    .replace(re[options.includePrerelease ? t.GTE0PRE : t.GTE0], '')
+}
+
+// This function is passed to string.replace(re[t.HYPHENRANGE])
+// M, m, patch, prerelease, build
+// 1.2 - 3.4.5 => >=1.2.0 <=3.4.5
+// 1.2.3 - 3.4 => >=1.2.0 <3.5.0-0 Any 3.4.x will do
+// 1.2 - 3.4 => >=1.2.0 <3.5.0-0
+const hyphenReplace = incPr => ($0,
+  from, fM, fm, fp, fpr, fb,
+  to, tM, tm, tp, tpr, tb) => {
+  if (isX(fM)) {
+    from = ''
+  } else if (isX(fm)) {
+    from = `>=${fM}.0.0${incPr ? '-0' : ''}`
+  } else if (isX(fp)) {
+    from = `>=${fM}.${fm}.0${incPr ? '-0' : ''}`
+  } else if (fpr) {
+    from = `>=${from}`
+  } else {
+    from = `>=${from}${incPr ? '-0' : ''}`
+  }
+
+  if (isX(tM)) {
+    to = ''
+  } else if (isX(tm)) {
+    to = `<${+tM + 1}.0.0-0`
+  } else if (isX(tp)) {
+    to = `<${tM}.${+tm + 1}.0-0`
+  } else if (tpr) {
+    to = `<=${tM}.${tm}.${tp}-${tpr}`
+  } else if (incPr) {
+    to = `<${tM}.${tm}.${+tp + 1}-0`
+  } else {
+    to = `<=${to}`
+  }
+
+  return (`${from} ${to}`).trim()
+}
+
+const testSet = (set, version, options) => {
+  for (let i = 0; i < set.length; i++) {
+    if (!set[i].test(version)) {
+      return false
+    }
+  }
+
+  if (version.prerelease.length && !options.includePrerelease) {
+    // Find the set of versions that are allowed to have prereleases
+    // For example, ^1.2.3-pr.1 desugars to >=1.2.3-pr.1 <2.0.0
+    // That should allow `1.2.3-pr.2` to pass.
+    // However, `1.2.4-alpha.notready` should NOT be allowed,
+    // even though it's within the range set by the comparators.
+    for (let i = 0; i < set.length; i++) {
+      debug(set[i].semver)
+      if (set[i].semver === Comparator.ANY) {
+        continue
+      }
+
+      if (set[i].semver.prerelease.length > 0) {
+        const allowed = set[i].semver
+        if (allowed.major === version.major &&
+            allowed.minor === version.minor &&
+            allowed.patch === version.patch) {
+          return true
+        }
+      }
+    }
+
+    // Version has a -pre, but it's not one of the ones we like.
+    return false
+  }
+
+  return true
+}
+
+
+/***/ }),
+
 /***/ 8088:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -3016,6 +4973,143 @@ module.exports = clean
 
 /***/ }),
 
+/***/ 5098:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const eq = __nccwpck_require__(1898)
+const neq = __nccwpck_require__(6017)
+const gt = __nccwpck_require__(4123)
+const gte = __nccwpck_require__(5522)
+const lt = __nccwpck_require__(194)
+const lte = __nccwpck_require__(7520)
+
+const cmp = (a, op, b, loose) => {
+  switch (op) {
+    case '===':
+      if (typeof a === 'object')
+        a = a.version
+      if (typeof b === 'object')
+        b = b.version
+      return a === b
+
+    case '!==':
+      if (typeof a === 'object')
+        a = a.version
+      if (typeof b === 'object')
+        b = b.version
+      return a !== b
+
+    case '':
+    case '=':
+    case '==':
+      return eq(a, b, loose)
+
+    case '!=':
+      return neq(a, b, loose)
+
+    case '>':
+      return gt(a, b, loose)
+
+    case '>=':
+      return gte(a, b, loose)
+
+    case '<':
+      return lt(a, b, loose)
+
+    case '<=':
+      return lte(a, b, loose)
+
+    default:
+      throw new TypeError(`Invalid operator: ${op}`)
+  }
+}
+module.exports = cmp
+
+
+/***/ }),
+
+/***/ 3466:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const parse = __nccwpck_require__(5925)
+const {re, t} = __nccwpck_require__(9523)
+
+const coerce = (version, options) => {
+  if (version instanceof SemVer) {
+    return version
+  }
+
+  if (typeof version === 'number') {
+    version = String(version)
+  }
+
+  if (typeof version !== 'string') {
+    return null
+  }
+
+  options = options || {}
+
+  let match = null
+  if (!options.rtl) {
+    match = version.match(re[t.COERCE])
+  } else {
+    // Find the right-most coercible string that does not share
+    // a terminus with a more left-ward coercible string.
+    // Eg, '1.2.3.4' wants to coerce '2.3.4', not '3.4' or '4'
+    //
+    // Walk through the string checking with a /g regexp
+    // Manually set the index so as to pick up overlapping matches.
+    // Stop when we get a match that ends at the string end, since no
+    // coercible string can be more right-ward without the same terminus.
+    let next
+    while ((next = re[t.COERCERTL].exec(version)) &&
+        (!match || match.index + match[0].length !== version.length)
+    ) {
+      if (!match ||
+            next.index + next[0].length !== match.index + match[0].length) {
+        match = next
+      }
+      re[t.COERCERTL].lastIndex = next.index + next[1].length + next[2].length
+    }
+    // leave it in a clean state
+    re[t.COERCERTL].lastIndex = -1
+  }
+
+  if (match === null)
+    return null
+
+  return parse(`${match[2]}.${match[3] || '0'}.${match[4] || '0'}`, options)
+}
+module.exports = coerce
+
+
+/***/ }),
+
+/***/ 2156:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const compareBuild = (a, b, loose) => {
+  const versionA = new SemVer(a, loose)
+  const versionB = new SemVer(b, loose)
+  return versionA.compare(versionB) || versionA.compareBuild(versionB)
+}
+module.exports = compareBuild
+
+
+/***/ }),
+
+/***/ 2804:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const compareLoose = (a, b) => compare(a, b, true)
+module.exports = compareLoose
+
+
+/***/ }),
+
 /***/ 4309:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -3068,6 +5162,26 @@ module.exports = eq
 
 /***/ }),
 
+/***/ 4123:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const gt = (a, b, loose) => compare(a, b, loose) > 0
+module.exports = gt
+
+
+/***/ }),
+
+/***/ 5522:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const gte = (a, b, loose) => compare(a, b, loose) >= 0
+module.exports = gte
+
+
+/***/ }),
+
 /***/ 900:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -3086,6 +5200,56 @@ const inc = (version, release, options, identifier) => {
   }
 }
 module.exports = inc
+
+
+/***/ }),
+
+/***/ 194:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const lt = (a, b, loose) => compare(a, b, loose) < 0
+module.exports = lt
+
+
+/***/ }),
+
+/***/ 7520:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const lte = (a, b, loose) => compare(a, b, loose) <= 0
+module.exports = lte
+
+
+/***/ }),
+
+/***/ 6688:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const major = (a, loose) => new SemVer(a, loose).major
+module.exports = major
+
+
+/***/ }),
+
+/***/ 8447:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const minor = (a, loose) => new SemVer(a, loose).minor
+module.exports = minor
+
+
+/***/ }),
+
+/***/ 6017:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const neq = (a, b, loose) => compare(a, b, loose) !== 0
+module.exports = neq
 
 
 /***/ }),
@@ -3126,6 +5290,144 @@ const parse = (version, options) => {
 }
 
 module.exports = parse
+
+
+/***/ }),
+
+/***/ 2866:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const patch = (a, loose) => new SemVer(a, loose).patch
+module.exports = patch
+
+
+/***/ }),
+
+/***/ 4016:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const parse = __nccwpck_require__(5925)
+const prerelease = (version, options) => {
+  const parsed = parse(version, options)
+  return (parsed && parsed.prerelease.length) ? parsed.prerelease : null
+}
+module.exports = prerelease
+
+
+/***/ }),
+
+/***/ 6417:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compare = __nccwpck_require__(4309)
+const rcompare = (a, b, loose) => compare(b, a, loose)
+module.exports = rcompare
+
+
+/***/ }),
+
+/***/ 8701:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compareBuild = __nccwpck_require__(2156)
+const rsort = (list, loose) => list.sort((a, b) => compareBuild(b, a, loose))
+module.exports = rsort
+
+
+/***/ }),
+
+/***/ 6055:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const Range = __nccwpck_require__(9828)
+const satisfies = (version, range, options) => {
+  try {
+    range = new Range(range, options)
+  } catch (er) {
+    return false
+  }
+  return range.test(version)
+}
+module.exports = satisfies
+
+
+/***/ }),
+
+/***/ 1426:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const compareBuild = __nccwpck_require__(2156)
+const sort = (list, loose) => list.sort((a, b) => compareBuild(a, b, loose))
+module.exports = sort
+
+
+/***/ }),
+
+/***/ 9601:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const parse = __nccwpck_require__(5925)
+const valid = (version, options) => {
+  const v = parse(version, options)
+  return v ? v.version : null
+}
+module.exports = valid
+
+
+/***/ }),
+
+/***/ 1383:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+// just pre-load all the stuff that index.js lazily exports
+const internalRe = __nccwpck_require__(9523)
+module.exports = {
+  re: internalRe.re,
+  src: internalRe.src,
+  tokens: internalRe.t,
+  SEMVER_SPEC_VERSION: __nccwpck_require__(2293).SEMVER_SPEC_VERSION,
+  SemVer: __nccwpck_require__(8088),
+  compareIdentifiers: __nccwpck_require__(2463).compareIdentifiers,
+  rcompareIdentifiers: __nccwpck_require__(2463).rcompareIdentifiers,
+  parse: __nccwpck_require__(5925),
+  valid: __nccwpck_require__(9601),
+  clean: __nccwpck_require__(8848),
+  inc: __nccwpck_require__(900),
+  diff: __nccwpck_require__(4297),
+  major: __nccwpck_require__(6688),
+  minor: __nccwpck_require__(8447),
+  patch: __nccwpck_require__(2866),
+  prerelease: __nccwpck_require__(4016),
+  compare: __nccwpck_require__(4309),
+  rcompare: __nccwpck_require__(6417),
+  compareLoose: __nccwpck_require__(2804),
+  compareBuild: __nccwpck_require__(2156),
+  sort: __nccwpck_require__(1426),
+  rsort: __nccwpck_require__(8701),
+  gt: __nccwpck_require__(4123),
+  lt: __nccwpck_require__(194),
+  eq: __nccwpck_require__(1898),
+  neq: __nccwpck_require__(6017),
+  gte: __nccwpck_require__(5522),
+  lte: __nccwpck_require__(7520),
+  cmp: __nccwpck_require__(5098),
+  coerce: __nccwpck_require__(3466),
+  Comparator: __nccwpck_require__(1532),
+  Range: __nccwpck_require__(9828),
+  satisfies: __nccwpck_require__(6055),
+  toComparators: __nccwpck_require__(2706),
+  maxSatisfying: __nccwpck_require__(579),
+  minSatisfying: __nccwpck_require__(832),
+  minVersion: __nccwpck_require__(4179),
+  validRange: __nccwpck_require__(2098),
+  outside: __nccwpck_require__(420),
+  gtr: __nccwpck_require__(9380),
+  ltr: __nccwpck_require__(3323),
+  intersects: __nccwpck_require__(7008),
+  simplifyRange: __nccwpck_require__(5297),
+  subset: __nccwpck_require__(7863),
+}
 
 
 /***/ }),
@@ -3403,6 +5705,572 @@ createToken('STAR', '(<|>)?=?\\s*\\*')
 // >=0.0.0 is like a star
 createToken('GTE0', '^\\s*>=\\s*0\.0\.0\\s*$')
 createToken('GTE0PRE', '^\\s*>=\\s*0\.0\.0-0\\s*$')
+
+
+/***/ }),
+
+/***/ 9380:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+// Determine if version is greater than all the versions possible in the range.
+const outside = __nccwpck_require__(420)
+const gtr = (version, range, options) => outside(version, range, '>', options)
+module.exports = gtr
+
+
+/***/ }),
+
+/***/ 7008:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const Range = __nccwpck_require__(9828)
+const intersects = (r1, r2, options) => {
+  r1 = new Range(r1, options)
+  r2 = new Range(r2, options)
+  return r1.intersects(r2)
+}
+module.exports = intersects
+
+
+/***/ }),
+
+/***/ 3323:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const outside = __nccwpck_require__(420)
+// Determine if version is less than all the versions possible in the range
+const ltr = (version, range, options) => outside(version, range, '<', options)
+module.exports = ltr
+
+
+/***/ }),
+
+/***/ 579:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const Range = __nccwpck_require__(9828)
+
+const maxSatisfying = (versions, range, options) => {
+  let max = null
+  let maxSV = null
+  let rangeObj = null
+  try {
+    rangeObj = new Range(range, options)
+  } catch (er) {
+    return null
+  }
+  versions.forEach((v) => {
+    if (rangeObj.test(v)) {
+      // satisfies(v, range, options)
+      if (!max || maxSV.compare(v) === -1) {
+        // compare(max, v, true)
+        max = v
+        maxSV = new SemVer(max, options)
+      }
+    }
+  })
+  return max
+}
+module.exports = maxSatisfying
+
+
+/***/ }),
+
+/***/ 832:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const Range = __nccwpck_require__(9828)
+const minSatisfying = (versions, range, options) => {
+  let min = null
+  let minSV = null
+  let rangeObj = null
+  try {
+    rangeObj = new Range(range, options)
+  } catch (er) {
+    return null
+  }
+  versions.forEach((v) => {
+    if (rangeObj.test(v)) {
+      // satisfies(v, range, options)
+      if (!min || minSV.compare(v) === 1) {
+        // compare(min, v, true)
+        min = v
+        minSV = new SemVer(min, options)
+      }
+    }
+  })
+  return min
+}
+module.exports = minSatisfying
+
+
+/***/ }),
+
+/***/ 4179:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const Range = __nccwpck_require__(9828)
+const gt = __nccwpck_require__(4123)
+
+const minVersion = (range, loose) => {
+  range = new Range(range, loose)
+
+  let minver = new SemVer('0.0.0')
+  if (range.test(minver)) {
+    return minver
+  }
+
+  minver = new SemVer('0.0.0-0')
+  if (range.test(minver)) {
+    return minver
+  }
+
+  minver = null
+  for (let i = 0; i < range.set.length; ++i) {
+    const comparators = range.set[i]
+
+    let setMin = null
+    comparators.forEach((comparator) => {
+      // Clone to avoid manipulating the comparator's semver object.
+      const compver = new SemVer(comparator.semver.version)
+      switch (comparator.operator) {
+        case '>':
+          if (compver.prerelease.length === 0) {
+            compver.patch++
+          } else {
+            compver.prerelease.push(0)
+          }
+          compver.raw = compver.format()
+          /* fallthrough */
+        case '':
+        case '>=':
+          if (!setMin || gt(compver, setMin)) {
+            setMin = compver
+          }
+          break
+        case '<':
+        case '<=':
+          /* Ignore maximum versions */
+          break
+        /* istanbul ignore next */
+        default:
+          throw new Error(`Unexpected operation: ${comparator.operator}`)
+      }
+    })
+    if (setMin && (!minver || gt(minver, setMin)))
+      minver = setMin
+  }
+
+  if (minver && range.test(minver)) {
+    return minver
+  }
+
+  return null
+}
+module.exports = minVersion
+
+
+/***/ }),
+
+/***/ 420:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const SemVer = __nccwpck_require__(8088)
+const Comparator = __nccwpck_require__(1532)
+const {ANY} = Comparator
+const Range = __nccwpck_require__(9828)
+const satisfies = __nccwpck_require__(6055)
+const gt = __nccwpck_require__(4123)
+const lt = __nccwpck_require__(194)
+const lte = __nccwpck_require__(7520)
+const gte = __nccwpck_require__(5522)
+
+const outside = (version, range, hilo, options) => {
+  version = new SemVer(version, options)
+  range = new Range(range, options)
+
+  let gtfn, ltefn, ltfn, comp, ecomp
+  switch (hilo) {
+    case '>':
+      gtfn = gt
+      ltefn = lte
+      ltfn = lt
+      comp = '>'
+      ecomp = '>='
+      break
+    case '<':
+      gtfn = lt
+      ltefn = gte
+      ltfn = gt
+      comp = '<'
+      ecomp = '<='
+      break
+    default:
+      throw new TypeError('Must provide a hilo val of "<" or ">"')
+  }
+
+  // If it satisfies the range it is not outside
+  if (satisfies(version, range, options)) {
+    return false
+  }
+
+  // From now on, variable terms are as if we're in "gtr" mode.
+  // but note that everything is flipped for the "ltr" function.
+
+  for (let i = 0; i < range.set.length; ++i) {
+    const comparators = range.set[i]
+
+    let high = null
+    let low = null
+
+    comparators.forEach((comparator) => {
+      if (comparator.semver === ANY) {
+        comparator = new Comparator('>=0.0.0')
+      }
+      high = high || comparator
+      low = low || comparator
+      if (gtfn(comparator.semver, high.semver, options)) {
+        high = comparator
+      } else if (ltfn(comparator.semver, low.semver, options)) {
+        low = comparator
+      }
+    })
+
+    // If the edge version comparator has a operator then our version
+    // isn't outside it
+    if (high.operator === comp || high.operator === ecomp) {
+      return false
+    }
+
+    // If the lowest version comparator has an operator and our version
+    // is less than it then it isn't higher than the range
+    if ((!low.operator || low.operator === comp) &&
+        ltefn(version, low.semver)) {
+      return false
+    } else if (low.operator === ecomp && ltfn(version, low.semver)) {
+      return false
+    }
+  }
+  return true
+}
+
+module.exports = outside
+
+
+/***/ }),
+
+/***/ 5297:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+// given a set of versions and a range, create a "simplified" range
+// that includes the same versions that the original range does
+// If the original range is shorter than the simplified one, return that.
+const satisfies = __nccwpck_require__(6055)
+const compare = __nccwpck_require__(4309)
+module.exports = (versions, range, options) => {
+  const set = []
+  let min = null
+  let prev = null
+  const v = versions.sort((a, b) => compare(a, b, options))
+  for (const version of v) {
+    const included = satisfies(version, range, options)
+    if (included) {
+      prev = version
+      if (!min)
+        min = version
+    } else {
+      if (prev) {
+        set.push([min, prev])
+      }
+      prev = null
+      min = null
+    }
+  }
+  if (min)
+    set.push([min, null])
+
+  const ranges = []
+  for (const [min, max] of set) {
+    if (min === max)
+      ranges.push(min)
+    else if (!max && min === v[0])
+      ranges.push('*')
+    else if (!max)
+      ranges.push(`>=${min}`)
+    else if (min === v[0])
+      ranges.push(`<=${max}`)
+    else
+      ranges.push(`${min} - ${max}`)
+  }
+  const simplified = ranges.join(' || ')
+  const original = typeof range.raw === 'string' ? range.raw : String(range)
+  return simplified.length < original.length ? simplified : range
+}
+
+
+/***/ }),
+
+/***/ 7863:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const Range = __nccwpck_require__(9828)
+const Comparator = __nccwpck_require__(1532)
+const { ANY } = Comparator
+const satisfies = __nccwpck_require__(6055)
+const compare = __nccwpck_require__(4309)
+
+// Complex range `r1 || r2 || ...` is a subset of `R1 || R2 || ...` iff:
+// - Every simple range `r1, r2, ...` is a null set, OR
+// - Every simple range `r1, r2, ...` which is not a null set is a subset of
+//   some `R1, R2, ...`
+//
+// Simple range `c1 c2 ...` is a subset of simple range `C1 C2 ...` iff:
+// - If c is only the ANY comparator
+//   - If C is only the ANY comparator, return true
+//   - Else if in prerelease mode, return false
+//   - else replace c with `[>=0.0.0]`
+// - If C is only the ANY comparator
+//   - if in prerelease mode, return true
+//   - else replace C with `[>=0.0.0]`
+// - Let EQ be the set of = comparators in c
+// - If EQ is more than one, return true (null set)
+// - Let GT be the highest > or >= comparator in c
+// - Let LT be the lowest < or <= comparator in c
+// - If GT and LT, and GT.semver > LT.semver, return true (null set)
+// - If any C is a = range, and GT or LT are set, return false
+// - If EQ
+//   - If GT, and EQ does not satisfy GT, return true (null set)
+//   - If LT, and EQ does not satisfy LT, return true (null set)
+//   - If EQ satisfies every C, return true
+//   - Else return false
+// - If GT
+//   - If GT.semver is lower than any > or >= comp in C, return false
+//   - If GT is >=, and GT.semver does not satisfy every C, return false
+//   - If GT.semver has a prerelease, and not in prerelease mode
+//     - If no C has a prerelease and the GT.semver tuple, return false
+// - If LT
+//   - If LT.semver is greater than any < or <= comp in C, return false
+//   - If LT is <=, and LT.semver does not satisfy every C, return false
+//   - If GT.semver has a prerelease, and not in prerelease mode
+//     - If no C has a prerelease and the LT.semver tuple, return false
+// - Else return true
+
+const subset = (sub, dom, options = {}) => {
+  if (sub === dom)
+    return true
+
+  sub = new Range(sub, options)
+  dom = new Range(dom, options)
+  let sawNonNull = false
+
+  OUTER: for (const simpleSub of sub.set) {
+    for (const simpleDom of dom.set) {
+      const isSub = simpleSubset(simpleSub, simpleDom, options)
+      sawNonNull = sawNonNull || isSub !== null
+      if (isSub)
+        continue OUTER
+    }
+    // the null set is a subset of everything, but null simple ranges in
+    // a complex range should be ignored.  so if we saw a non-null range,
+    // then we know this isn't a subset, but if EVERY simple range was null,
+    // then it is a subset.
+    if (sawNonNull)
+      return false
+  }
+  return true
+}
+
+const simpleSubset = (sub, dom, options) => {
+  if (sub === dom)
+    return true
+
+  if (sub.length === 1 && sub[0].semver === ANY) {
+    if (dom.length === 1 && dom[0].semver === ANY)
+      return true
+    else if (options.includePrerelease)
+      sub = [ new Comparator('>=0.0.0-0') ]
+    else
+      sub = [ new Comparator('>=0.0.0') ]
+  }
+
+  if (dom.length === 1 && dom[0].semver === ANY) {
+    if (options.includePrerelease)
+      return true
+    else
+      dom = [ new Comparator('>=0.0.0') ]
+  }
+
+  const eqSet = new Set()
+  let gt, lt
+  for (const c of sub) {
+    if (c.operator === '>' || c.operator === '>=')
+      gt = higherGT(gt, c, options)
+    else if (c.operator === '<' || c.operator === '<=')
+      lt = lowerLT(lt, c, options)
+    else
+      eqSet.add(c.semver)
+  }
+
+  if (eqSet.size > 1)
+    return null
+
+  let gtltComp
+  if (gt && lt) {
+    gtltComp = compare(gt.semver, lt.semver, options)
+    if (gtltComp > 0)
+      return null
+    else if (gtltComp === 0 && (gt.operator !== '>=' || lt.operator !== '<='))
+      return null
+  }
+
+  // will iterate one or zero times
+  for (const eq of eqSet) {
+    if (gt && !satisfies(eq, String(gt), options))
+      return null
+
+    if (lt && !satisfies(eq, String(lt), options))
+      return null
+
+    for (const c of dom) {
+      if (!satisfies(eq, String(c), options))
+        return false
+    }
+
+    return true
+  }
+
+  let higher, lower
+  let hasDomLT, hasDomGT
+  // if the subset has a prerelease, we need a comparator in the superset
+  // with the same tuple and a prerelease, or it's not a subset
+  let needDomLTPre = lt &&
+    !options.includePrerelease &&
+    lt.semver.prerelease.length ? lt.semver : false
+  let needDomGTPre = gt &&
+    !options.includePrerelease &&
+    gt.semver.prerelease.length ? gt.semver : false
+  // exception: <1.2.3-0 is the same as <1.2.3
+  if (needDomLTPre && needDomLTPre.prerelease.length === 1 &&
+      lt.operator === '<' && needDomLTPre.prerelease[0] === 0) {
+    needDomLTPre = false
+  }
+
+  for (const c of dom) {
+    hasDomGT = hasDomGT || c.operator === '>' || c.operator === '>='
+    hasDomLT = hasDomLT || c.operator === '<' || c.operator === '<='
+    if (gt) {
+      if (needDomGTPre) {
+        if (c.semver.prerelease && c.semver.prerelease.length &&
+            c.semver.major === needDomGTPre.major &&
+            c.semver.minor === needDomGTPre.minor &&
+            c.semver.patch === needDomGTPre.patch) {
+          needDomGTPre = false
+        }
+      }
+      if (c.operator === '>' || c.operator === '>=') {
+        higher = higherGT(gt, c, options)
+        if (higher === c && higher !== gt)
+          return false
+      } else if (gt.operator === '>=' && !satisfies(gt.semver, String(c), options))
+        return false
+    }
+    if (lt) {
+      if (needDomLTPre) {
+        if (c.semver.prerelease && c.semver.prerelease.length &&
+            c.semver.major === needDomLTPre.major &&
+            c.semver.minor === needDomLTPre.minor &&
+            c.semver.patch === needDomLTPre.patch) {
+          needDomLTPre = false
+        }
+      }
+      if (c.operator === '<' || c.operator === '<=') {
+        lower = lowerLT(lt, c, options)
+        if (lower === c && lower !== lt)
+          return false
+      } else if (lt.operator === '<=' && !satisfies(lt.semver, String(c), options))
+        return false
+    }
+    if (!c.operator && (lt || gt) && gtltComp !== 0)
+      return false
+  }
+
+  // if there was a < or >, and nothing in the dom, then must be false
+  // UNLESS it was limited by another range in the other direction.
+  // Eg, >1.0.0 <1.0.1 is still a subset of <2.0.0
+  if (gt && hasDomLT && !lt && gtltComp !== 0)
+    return false
+
+  if (lt && hasDomGT && !gt && gtltComp !== 0)
+    return false
+
+  // we needed a prerelease range in a specific tuple, but didn't get one
+  // then this isn't a subset.  eg >=1.2.3-pre is not a subset of >=1.0.0,
+  // because it includes prereleases in the 1.2.3 tuple
+  if (needDomGTPre || needDomLTPre)
+    return false
+
+  return true
+}
+
+// >=1.2.3 is lower than >1.2.3
+const higherGT = (a, b, options) => {
+  if (!a)
+    return b
+  const comp = compare(a.semver, b.semver, options)
+  return comp > 0 ? a
+    : comp < 0 ? b
+    : b.operator === '>' && a.operator === '>=' ? b
+    : a
+}
+
+// <=1.2.3 is higher than <1.2.3
+const lowerLT = (a, b, options) => {
+  if (!a)
+    return b
+  const comp = compare(a.semver, b.semver, options)
+  return comp < 0 ? a
+    : comp > 0 ? b
+    : b.operator === '<' && a.operator === '<=' ? b
+    : a
+}
+
+module.exports = subset
+
+
+/***/ }),
+
+/***/ 2706:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const Range = __nccwpck_require__(9828)
+
+// Mostly just for testing and legacy API reasons
+const toComparators = (range, options) =>
+  new Range(range, options).set
+    .map(comp => comp.map(c => c.value).join(' ').trim().split(' '))
+
+module.exports = toComparators
+
+
+/***/ }),
+
+/***/ 2098:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+const Range = __nccwpck_require__(9828)
+const validRange = (range, options) => {
+  try {
+    // Return '*' instead of '' so that truthiness works.
+    // This will throw if it's invalid anyway
+    return new Range(range, options).range || '*'
+  } catch (er) {
+    return null
+  }
+}
+module.exports = validRange
 
 
 /***/ }),
@@ -3870,6 +6738,456 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
+/***/ 4091:
+/***/ ((module) => {
+
+"use strict";
+
+module.exports = function (Yallist) {
+  Yallist.prototype[Symbol.iterator] = function* () {
+    for (let walker = this.head; walker; walker = walker.next) {
+      yield walker.value
+    }
+  }
+}
+
+
+/***/ }),
+
+/***/ 665:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+module.exports = Yallist
+
+Yallist.Node = Node
+Yallist.create = Yallist
+
+function Yallist (list) {
+  var self = this
+  if (!(self instanceof Yallist)) {
+    self = new Yallist()
+  }
+
+  self.tail = null
+  self.head = null
+  self.length = 0
+
+  if (list && typeof list.forEach === 'function') {
+    list.forEach(function (item) {
+      self.push(item)
+    })
+  } else if (arguments.length > 0) {
+    for (var i = 0, l = arguments.length; i < l; i++) {
+      self.push(arguments[i])
+    }
+  }
+
+  return self
+}
+
+Yallist.prototype.removeNode = function (node) {
+  if (node.list !== this) {
+    throw new Error('removing node which does not belong to this list')
+  }
+
+  var next = node.next
+  var prev = node.prev
+
+  if (next) {
+    next.prev = prev
+  }
+
+  if (prev) {
+    prev.next = next
+  }
+
+  if (node === this.head) {
+    this.head = next
+  }
+  if (node === this.tail) {
+    this.tail = prev
+  }
+
+  node.list.length--
+  node.next = null
+  node.prev = null
+  node.list = null
+
+  return next
+}
+
+Yallist.prototype.unshiftNode = function (node) {
+  if (node === this.head) {
+    return
+  }
+
+  if (node.list) {
+    node.list.removeNode(node)
+  }
+
+  var head = this.head
+  node.list = this
+  node.next = head
+  if (head) {
+    head.prev = node
+  }
+
+  this.head = node
+  if (!this.tail) {
+    this.tail = node
+  }
+  this.length++
+}
+
+Yallist.prototype.pushNode = function (node) {
+  if (node === this.tail) {
+    return
+  }
+
+  if (node.list) {
+    node.list.removeNode(node)
+  }
+
+  var tail = this.tail
+  node.list = this
+  node.prev = tail
+  if (tail) {
+    tail.next = node
+  }
+
+  this.tail = node
+  if (!this.head) {
+    this.head = node
+  }
+  this.length++
+}
+
+Yallist.prototype.push = function () {
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    push(this, arguments[i])
+  }
+  return this.length
+}
+
+Yallist.prototype.unshift = function () {
+  for (var i = 0, l = arguments.length; i < l; i++) {
+    unshift(this, arguments[i])
+  }
+  return this.length
+}
+
+Yallist.prototype.pop = function () {
+  if (!this.tail) {
+    return undefined
+  }
+
+  var res = this.tail.value
+  this.tail = this.tail.prev
+  if (this.tail) {
+    this.tail.next = null
+  } else {
+    this.head = null
+  }
+  this.length--
+  return res
+}
+
+Yallist.prototype.shift = function () {
+  if (!this.head) {
+    return undefined
+  }
+
+  var res = this.head.value
+  this.head = this.head.next
+  if (this.head) {
+    this.head.prev = null
+  } else {
+    this.tail = null
+  }
+  this.length--
+  return res
+}
+
+Yallist.prototype.forEach = function (fn, thisp) {
+  thisp = thisp || this
+  for (var walker = this.head, i = 0; walker !== null; i++) {
+    fn.call(thisp, walker.value, i, this)
+    walker = walker.next
+  }
+}
+
+Yallist.prototype.forEachReverse = function (fn, thisp) {
+  thisp = thisp || this
+  for (var walker = this.tail, i = this.length - 1; walker !== null; i--) {
+    fn.call(thisp, walker.value, i, this)
+    walker = walker.prev
+  }
+}
+
+Yallist.prototype.get = function (n) {
+  for (var i = 0, walker = this.head; walker !== null && i < n; i++) {
+    // abort out of the list early if we hit a cycle
+    walker = walker.next
+  }
+  if (i === n && walker !== null) {
+    return walker.value
+  }
+}
+
+Yallist.prototype.getReverse = function (n) {
+  for (var i = 0, walker = this.tail; walker !== null && i < n; i++) {
+    // abort out of the list early if we hit a cycle
+    walker = walker.prev
+  }
+  if (i === n && walker !== null) {
+    return walker.value
+  }
+}
+
+Yallist.prototype.map = function (fn, thisp) {
+  thisp = thisp || this
+  var res = new Yallist()
+  for (var walker = this.head; walker !== null;) {
+    res.push(fn.call(thisp, walker.value, this))
+    walker = walker.next
+  }
+  return res
+}
+
+Yallist.prototype.mapReverse = function (fn, thisp) {
+  thisp = thisp || this
+  var res = new Yallist()
+  for (var walker = this.tail; walker !== null;) {
+    res.push(fn.call(thisp, walker.value, this))
+    walker = walker.prev
+  }
+  return res
+}
+
+Yallist.prototype.reduce = function (fn, initial) {
+  var acc
+  var walker = this.head
+  if (arguments.length > 1) {
+    acc = initial
+  } else if (this.head) {
+    walker = this.head.next
+    acc = this.head.value
+  } else {
+    throw new TypeError('Reduce of empty list with no initial value')
+  }
+
+  for (var i = 0; walker !== null; i++) {
+    acc = fn(acc, walker.value, i)
+    walker = walker.next
+  }
+
+  return acc
+}
+
+Yallist.prototype.reduceReverse = function (fn, initial) {
+  var acc
+  var walker = this.tail
+  if (arguments.length > 1) {
+    acc = initial
+  } else if (this.tail) {
+    walker = this.tail.prev
+    acc = this.tail.value
+  } else {
+    throw new TypeError('Reduce of empty list with no initial value')
+  }
+
+  for (var i = this.length - 1; walker !== null; i--) {
+    acc = fn(acc, walker.value, i)
+    walker = walker.prev
+  }
+
+  return acc
+}
+
+Yallist.prototype.toArray = function () {
+  var arr = new Array(this.length)
+  for (var i = 0, walker = this.head; walker !== null; i++) {
+    arr[i] = walker.value
+    walker = walker.next
+  }
+  return arr
+}
+
+Yallist.prototype.toArrayReverse = function () {
+  var arr = new Array(this.length)
+  for (var i = 0, walker = this.tail; walker !== null; i++) {
+    arr[i] = walker.value
+    walker = walker.prev
+  }
+  return arr
+}
+
+Yallist.prototype.slice = function (from, to) {
+  to = to || this.length
+  if (to < 0) {
+    to += this.length
+  }
+  from = from || 0
+  if (from < 0) {
+    from += this.length
+  }
+  var ret = new Yallist()
+  if (to < from || to < 0) {
+    return ret
+  }
+  if (from < 0) {
+    from = 0
+  }
+  if (to > this.length) {
+    to = this.length
+  }
+  for (var i = 0, walker = this.head; walker !== null && i < from; i++) {
+    walker = walker.next
+  }
+  for (; walker !== null && i < to; i++, walker = walker.next) {
+    ret.push(walker.value)
+  }
+  return ret
+}
+
+Yallist.prototype.sliceReverse = function (from, to) {
+  to = to || this.length
+  if (to < 0) {
+    to += this.length
+  }
+  from = from || 0
+  if (from < 0) {
+    from += this.length
+  }
+  var ret = new Yallist()
+  if (to < from || to < 0) {
+    return ret
+  }
+  if (from < 0) {
+    from = 0
+  }
+  if (to > this.length) {
+    to = this.length
+  }
+  for (var i = this.length, walker = this.tail; walker !== null && i > to; i--) {
+    walker = walker.prev
+  }
+  for (; walker !== null && i > from; i--, walker = walker.prev) {
+    ret.push(walker.value)
+  }
+  return ret
+}
+
+Yallist.prototype.splice = function (start, deleteCount, ...nodes) {
+  if (start > this.length) {
+    start = this.length - 1
+  }
+  if (start < 0) {
+    start = this.length + start;
+  }
+
+  for (var i = 0, walker = this.head; walker !== null && i < start; i++) {
+    walker = walker.next
+  }
+
+  var ret = []
+  for (var i = 0; walker && i < deleteCount; i++) {
+    ret.push(walker.value)
+    walker = this.removeNode(walker)
+  }
+  if (walker === null) {
+    walker = this.tail
+  }
+
+  if (walker !== this.head && walker !== this.tail) {
+    walker = walker.prev
+  }
+
+  for (var i = 0; i < nodes.length; i++) {
+    walker = insert(this, walker, nodes[i])
+  }
+  return ret;
+}
+
+Yallist.prototype.reverse = function () {
+  var head = this.head
+  var tail = this.tail
+  for (var walker = head; walker !== null; walker = walker.prev) {
+    var p = walker.prev
+    walker.prev = walker.next
+    walker.next = p
+  }
+  this.head = tail
+  this.tail = head
+  return this
+}
+
+function insert (self, node, value) {
+  var inserted = node === self.head ?
+    new Node(value, null, node, self) :
+    new Node(value, node, node.next, self)
+
+  if (inserted.next === null) {
+    self.tail = inserted
+  }
+  if (inserted.prev === null) {
+    self.head = inserted
+  }
+
+  self.length++
+
+  return inserted
+}
+
+function push (self, item) {
+  self.tail = new Node(item, self.tail, null, self)
+  if (!self.head) {
+    self.head = self.tail
+  }
+  self.length++
+}
+
+function unshift (self, item) {
+  self.head = new Node(item, null, self.head, self)
+  if (!self.tail) {
+    self.tail = self.head
+  }
+  self.length++
+}
+
+function Node (value, prev, next, list) {
+  if (!(this instanceof Node)) {
+    return new Node(value, prev, next, list)
+  }
+
+  this.list = list
+  this.value = value
+
+  if (prev) {
+    prev.next = this
+    this.prev = prev
+  } else {
+    this.prev = null
+  }
+
+  if (next) {
+    next.prev = this
+    this.next = next
+  } else {
+    this.next = null
+  }
+}
+
+try {
+  // add if support for Symbol.iterator is present
+  __nccwpck_require__(4091)(Yallist)
+} catch (er) {}
+
+
+/***/ }),
+
 /***/ 2357:
 /***/ ((module) => {
 
@@ -4202,6 +7520,38 @@ function tabs(numTabs, prefix) {
 const HEAD = 'HEAD';
 const DIFFS = new Map();
 /**
+ * Gets the HTTPS URL of the current GitHub remote repository. Assumes that
+ * the git config remote.origin.url string matches one of:
+ *
+ * - https://github.com/OrganizationName/RepositoryName
+ * - git@github.com:OrganizationName/RepositoryName.git
+ *
+ * If the URL of the "origin" remote matches neither pattern, an error is
+ * thrown.
+ *
+ * @returns The HTTPS URL of the repository, e.g.
+ * https://github.com/OrganizationName/RepositoryName
+ */
+async function getRepositoryHttpsUrl() {
+    const httpsPrefix = 'https://github.com';
+    const sshPrefixRegex = /^git@github\.com:/u;
+    const sshPostfixRegex = /\.git$/u;
+    const gitConfigUrl = await performGitOperation('config', '--get', 'remote.origin.url');
+    if (gitConfigUrl.startsWith(httpsPrefix)) {
+        return gitConfigUrl;
+    }
+    // Extracts "OrganizationName/RepositoryName" from
+    // "git@github.com:OrganizationName/RepositoryName.git" and returns the
+    // corresponding HTTPS URL.
+    if (gitConfigUrl.match(sshPrefixRegex) &&
+        gitConfigUrl.match(sshPostfixRegex)) {
+        return `${httpsPrefix}/${gitConfigUrl
+            .replace(sshPrefixRegex, '')
+            .replace(sshPostfixRegex, '')}`;
+    }
+    throw new Error(`Unrecognized URL for git remote "origin": ${gitConfigUrl}`);
+}
+/**
  * Utility function for executing "git tag" and parsing the result.
  * An error is thrown if no tags are found and the local git history is
  * incomplete.
@@ -4331,7 +7681,10 @@ function versionToTag(version) {
     return `v${version}`;
 }
 //# sourceMappingURL=git-operations.js.map
+// EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/src/index.js
+var src = __nccwpck_require__(3439);
 ;// CONCATENATED MODULE: ./lib/package-operations.js
+
 
 
 
@@ -4406,9 +7759,9 @@ async function getPackagesToUpdate(allPackages, synchronizeVersions, tags) {
     return shouldBeUpdated;
 }
 /**
- * Updates the manifests of all packages in the monorepo per the update
- * specification. Writes the new manifests to disk. The following changes are
- * made to the new manifests:
+ * Updates the manifests and changelogs of all packages in the monorepo per the
+ * update specification. Writes the new manifests to disk. The following changes
+ * are made to the new manifests:
  *
  * - The "version" field is replaced with the new version
  * - If package versions are being synchronized, updates their version ranges
@@ -4422,8 +7775,9 @@ async function updatePackages(allPackages, updateSpecification) {
     await Promise.all(Array.from(packagesToUpdate.keys()).map(async (packageName) => updatePackage(allPackages[packageName], updateSpecification)));
 }
 /**
- * Updates the given manifest per the update specification and writes it to
- * disk. The following changes are made to the new manifest:
+ * Updates the manifest and changelog of the given package per the update
+ * specification and writes the changes to disk. The following changes are made
+ * to the manifest:
  *
  * - The "version" field is replaced with the new version
  * - If package versions are being synchronized, updates their version ranges
@@ -4434,7 +7788,41 @@ async function updatePackages(allPackages, updateSpecification) {
  * the update is performed.
  */
 async function updatePackage(packageMetadata, updateSpecification) {
-    await writeJsonFile(external_path_default().join(packageMetadata.dirPath, PACKAGE_JSON), getUpdatedManifest(packageMetadata.manifest, updateSpecification));
+    await Promise.all([
+        writeJsonFile(external_path_default().join(packageMetadata.dirPath, PACKAGE_JSON), getUpdatedManifest(packageMetadata.manifest, updateSpecification)),
+        updateSpecification.shouldUpdateChangelog
+            ? updatePackageChangelog(packageMetadata, updateSpecification)
+            : Promise.resolve(),
+    ]);
+}
+/**
+ * Updates the changelog file of the given package, using
+ * @metamask/auto-changelog. Assumes that the changelog file is located at the
+ * package root directory and named "CHANGELOG.md".
+ *
+ * @param packageMetadata - The metadata of the package to update.
+ * @param updateSpecification - The update specification, which determines how
+ * the update is performed.
+ */
+async function updatePackageChangelog(packageMetadata, updateSpecification) {
+    const { dirPath: projectRootDirectory } = packageMetadata;
+    const { newVersion, repositoryUrl } = updateSpecification;
+    let changelogContent;
+    const changelogPath = external_path_default().join(projectRootDirectory, 'CHANGELOG.md');
+    try {
+        changelogContent = await external_fs_.promises.readFile(changelogPath, 'utf-8');
+    }
+    catch (error) {
+        console.error(`Failed to read changelog at "${getTruncatedPath(changelogPath)}".`);
+        throw error;
+    }
+    await (0,src.updateChangelog)({
+        changelogContent,
+        currentVersion: newVersion,
+        isReleaseCandidate: true,
+        projectRootDirectory,
+        repoUrl: repositoryUrl,
+    });
 }
 /**
  * Updates the given manifest per the update specification as follows:
@@ -4536,7 +7924,7 @@ function validatePackageManifest(manifest, manifestDirPath, fieldsToValidate = [
     }
     const _fieldsToValidate = new Set(fieldsToValidate);
     // Just for logging purposes
-    const legiblePath = manifestDirPath.split('/').splice(-2).join('/');
+    const legiblePath = getTruncatedPath(manifestDirPath);
     const getErrorMessagePrefix = (fieldName) => {
         return `${manifest[FieldNames.Name]
             ? `"${manifest[FieldNames.Name]}" manifest "${fieldName}"`
@@ -4575,6 +7963,20 @@ function isMonorepoUpdateSpecification(specification) {
     return ('packagesToUpdate' in specification &&
         'synchronizeVersions' in specification);
 }
+/**
+ * Given a path string, returns the last two segments of the path, without
+ * leading or trailing slashes.
+ *
+ * @param absolutePath - The absolute path to truncate.
+ * @returns The truncated path string.
+ */
+function getTruncatedPath(absolutePath) {
+    return absolutePath
+        .split((external_path_default()).sep)
+        .filter((segment) => Boolean(segment))
+        .splice(-2)
+        .join((external_path_default()).sep);
+}
 //# sourceMappingURL=package-operations.js.map
 ;// CONCATENATED MODULE: ./lib/update.js
 
@@ -4592,6 +7994,7 @@ function isMonorepoUpdateSpecification(specification) {
  * repository) workflow.
  */
 async function performUpdate(actionInputs) {
+    const repositoryUrl = await getRepositoryHttpsUrl();
     // Get all git tags. An error is thrown if "git tag" returns no tags and the
     // local git history is incomplete.
     const [tags] = await getTags();
@@ -4613,38 +8016,41 @@ async function performUpdate(actionInputs) {
         versionDiff = diff_default()(currentVersion, newVersion);
     }
     if (isMonorepo) {
-        await updateMonorepo(newVersion, versionDiff, rootManifest, tags);
+        await updateMonorepo(newVersion, versionDiff, rootManifest, repositoryUrl, tags);
     }
     else {
-        await updatePolyrepo(newVersion, rootManifest);
+        validatePackageManifest(rootManifest, WORKSPACE_ROOT, [FieldNames.Name]);
+        await updatePolyrepo(newVersion, rootManifest, repositoryUrl);
     }
     (0,core.setOutput)('NEW_VERSION', newVersion);
 }
 /**
- *
- * Given that the package is a polyrepo (i.e., a "normal", single-package repo),
- * updates the package.
+ * Given that checked out git repository is a polyrepo (i.e., a "normal",
+ * single-package repo), updates the repository's package and its changelog.
  *
  * @param newVersion - The package's new version.
  * @param manifest - The package's parsed package.json file.
+ * @param repositoryUrl - The HTTPS URL of the repository.
  */
-async function updatePolyrepo(newVersion, manifest) {
-    await updatePackage({ dirPath: WORKSPACE_ROOT, manifest }, { newVersion });
+async function updatePolyrepo(newVersion, manifest, repositoryUrl) {
+    await updatePackage({ dirPath: WORKSPACE_ROOT, manifest }, { newVersion, repositoryUrl, shouldUpdateChangelog: true });
 }
 /**
- * Given that the Action is run for a monorepo:
+ * Given that the checked out repository is a monorepo:
  *
  * If the semver diff is "major" or if it's the first release of the monorepo
  * (inferred from the complete absence of tags), updates all packages.
  * Otherwise, updates packages that changed since their previous release.
+ * The changelog of any updated package will also be updated.
  *
  * @param newVersion - The new version of the package(s) to update.
  * @param versionDiff - A SemVer version diff, e.g. "major" or "prerelease".
  * @param rootManifest - The parsed root package.json file of the monorepo.
+ * @param repositoryUrl - The HTTPS URL of the repository.
  * @param tags - All tags reachable from the current git HEAD, as from "git
  * tag --merged".
  */
-async function updateMonorepo(newVersion, versionDiff, rootManifest, tags) {
+async function updateMonorepo(newVersion, versionDiff, rootManifest, repositoryUrl, tags) {
     // If the version bump is major, we will synchronize the versions of all
     // monorepo packages, meaning the "version" field of their manifests and
     // their version range specified wherever they appear as a dependency.
@@ -4655,12 +8061,15 @@ async function updateMonorepo(newVersion, versionDiff, rootManifest, tags) {
     const updateSpecification = {
         newVersion,
         packagesToUpdate,
+        repositoryUrl,
         synchronizeVersions,
+        shouldUpdateChangelog: true,
     };
-    // Finally, bump the version of all packages and the root manifest, and add
-    // the new version as an output of this Action
+    // Finally, bump the version of all packages and the root manifest, update the
+    // changelogs of all updated packages, and add the new version as an output of
+    // this Action.
     await updatePackages(allPackages, updateSpecification);
-    await updatePackage({ dirPath: WORKSPACE_ROOT, manifest: rootManifest }, updateSpecification);
+    await updatePackage({ dirPath: WORKSPACE_ROOT, manifest: rootManifest }, { ...updateSpecification, shouldUpdateChangelog: false });
 }
 //# sourceMappingURL=update.js.map
 ;// CONCATENATED MODULE: ./lib/index.js

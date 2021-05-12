@@ -10,6 +10,47 @@ type DiffMap = Map<string, string[]>;
 const DIFFS: DiffMap = new Map();
 
 /**
+ * Gets the HTTPS URL of the current GitHub remote repository. Assumes that
+ * the git config remote.origin.url string matches one of:
+ *
+ * - https://github.com/OrganizationName/RepositoryName
+ * - git@github.com:OrganizationName/RepositoryName.git
+ *
+ * If the URL of the "origin" remote matches neither pattern, an error is
+ * thrown.
+ *
+ * @returns The HTTPS URL of the repository, e.g.
+ * https://github.com/OrganizationName/RepositoryName
+ */
+export async function getRepositoryHttpsUrl(): Promise<string> {
+  const httpsPrefix = 'https://github.com';
+  const sshPrefixRegex = /^git@github\.com:/u;
+  const sshPostfixRegex = /\.git$/u;
+  const gitConfigUrl = await performGitOperation(
+    'config',
+    '--get',
+    'remote.origin.url',
+  );
+
+  if (gitConfigUrl.startsWith(httpsPrefix)) {
+    return gitConfigUrl;
+  }
+
+  // Extracts "OrganizationName/RepositoryName" from
+  // "git@github.com:OrganizationName/RepositoryName.git" and returns the
+  // corresponding HTTPS URL.
+  if (
+    gitConfigUrl.match(sshPrefixRegex) &&
+    gitConfigUrl.match(sshPostfixRegex)
+  ) {
+    return `${httpsPrefix}/${gitConfigUrl
+      .replace(sshPrefixRegex, '')
+      .replace(sshPostfixRegex, '')}`;
+  }
+  throw new Error(`Unrecognized URL for git remote "origin": ${gitConfigUrl}`);
+}
+
+/**
  * Utility function for executing "git tag" and parsing the result.
  * An error is thrown if no tags are found and the local git history is
  * incomplete.

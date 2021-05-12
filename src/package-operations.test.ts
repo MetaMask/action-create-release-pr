@@ -1,5 +1,6 @@
 import fs from 'fs';
 import cloneDeep from 'lodash.clonedeep';
+import * as autoChangelog from '@metamask/auto-changelog';
 import * as gitOps from './git-operations';
 import * as utils from './utils';
 import {
@@ -14,11 +15,18 @@ import {
 
 jest.mock('fs', () => ({
   promises: {
-    readdir: jest.fn(),
-    writeFile: jest.fn(),
     lstat: jest.fn(),
+    readdir: jest.fn(),
+    readFile: jest.fn(),
+    writeFile: jest.fn(),
   },
 }));
+
+jest.mock('@metamask/auto-changelog', () => {
+  return {
+    updateChangelog: jest.fn(),
+  };
+});
 
 jest.mock('./git-operations', () => {
   const actualModule = jest.requireActual('./git-operations');
@@ -274,6 +282,9 @@ describe('package-operations', () => {
     const writeFileMock = jest
       .spyOn(fs.promises, 'writeFile')
       .mockImplementation(() => Promise.resolve());
+    const readFileMock = jest.spyOn(fs.promises, 'readFile');
+
+    const updateChangelogMock = jest.spyOn(autoChangelog, 'updateChangelog');
 
     const getMockPackageMetadata = (
       dirPath: string,
@@ -302,6 +313,8 @@ describe('package-operations', () => {
         const updateSpecification = {
           newVersion,
           packagesToUpdate: new Set(packageNames),
+          repositoryUrl: '',
+          shouldUpdateChangelog: false,
           synchronizeVersions: false,
         };
 
@@ -313,6 +326,80 @@ describe('package-operations', () => {
             ...cloneDeep(manifest),
             version: newVersion,
           }),
+        );
+        expect(updateChangelogMock).not.toHaveBeenCalled();
+      });
+
+      it('updates a package and its changelog', async () => {
+        const originalVersion = '1.0.0';
+        const newVersion = '1.0.1';
+        const dir = mockDirs[0];
+        const name = packageNames[0];
+        const manifest = getMockManifest(name, originalVersion);
+
+        const repoUrl = 'https://fake';
+        const changelogContent = 'I am a changelog.';
+        readFileMock.mockImplementationOnce(async () => changelogContent);
+
+        const packageMetadata = getMockPackageMetadata(dir, manifest);
+        const updateSpecification = {
+          newVersion,
+          packagesToUpdate: new Set(packageNames),
+          repositoryUrl: repoUrl,
+          shouldUpdateChangelog: true,
+          synchronizeVersions: false,
+        };
+
+        await updatePackage(packageMetadata, updateSpecification);
+        expect(writeFileMock).toHaveBeenCalledTimes(1);
+        expect(writeFileMock).toHaveBeenCalledWith(
+          getMockWritePath(dir),
+          jsonStringify({
+            ...cloneDeep(manifest),
+            version: newVersion,
+          }),
+        );
+        expect(updateChangelogMock).toHaveBeenCalledTimes(1);
+        expect(updateChangelogMock).toHaveBeenCalledWith({
+          changelogContent,
+          currentVersion: newVersion,
+          isReleaseCandidate: true,
+          projectRootDirectory: dir,
+          repoUrl,
+        });
+      });
+
+      it('re-throws changelog read error', async () => {
+        const originalVersion = '1.0.0';
+        const newVersion = '1.0.1';
+        const dir = mockDirs[0];
+        const name = packageNames[0];
+        const manifest = getMockManifest(name, originalVersion);
+
+        readFileMock.mockImplementationOnce(async () => {
+          throw new Error('readError');
+        });
+
+        const packageMetadata = getMockPackageMetadata(dir, manifest);
+        const updateSpecification = {
+          newVersion,
+          packagesToUpdate: new Set(packageNames),
+          repositoryUrl: 'https://fake',
+          shouldUpdateChangelog: true,
+          synchronizeVersions: false,
+        };
+
+        const consoleErrorSpy = jest
+          .spyOn(console, 'error')
+          .mockImplementationOnce(() => undefined);
+
+        await expect(
+          updatePackage(packageMetadata, updateSpecification),
+        ).rejects.toThrow(new Error('readError'));
+        expect(updateChangelogMock).not.toHaveBeenCalled();
+        expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          expect.stringMatching(/^Failed to read changelog/u),
         );
       });
 
@@ -330,6 +417,8 @@ describe('package-operations', () => {
           newVersion,
           packagesToUpdate: new Set(packageNames),
           synchronizeVersions: false,
+          repositoryUrl: '',
+          shouldUpdateChangelog: false,
         };
 
         await updatePackage(packageMetadata, updateSpecification);
@@ -341,6 +430,7 @@ describe('package-operations', () => {
             version: newVersion,
           }),
         );
+        expect(updateChangelogMock).not.toHaveBeenCalled();
       });
 
       it('updates a package and synchronizes dependency versions', async () => {
@@ -372,6 +462,8 @@ describe('package-operations', () => {
           newVersion,
           packagesToUpdate: new Set(packageNames),
           synchronizeVersions: true,
+          repositoryUrl: '',
+          shouldUpdateChangelog: false,
         };
 
         await updatePackage(packageMetadata, updateSpecification);
@@ -382,6 +474,7 @@ describe('package-operations', () => {
             getMockManifest(name, newVersion, expectedDependencies),
           ),
         );
+        expect(updateChangelogMock).not.toHaveBeenCalled();
       });
     });
 
@@ -408,6 +501,8 @@ describe('package-operations', () => {
           newVersion,
           packagesToUpdate: new Set([name1, name2]),
           synchronizeVersions: false,
+          repositoryUrl: '',
+          shouldUpdateChangelog: false,
         };
 
         await updatePackages(allPackages, updateSpecification);

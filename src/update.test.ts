@@ -12,6 +12,7 @@ jest.mock('@actions/core', () => {
 
 jest.mock('./git-operations', () => {
   return {
+    getRepositoryHttpsUrl: jest.fn(),
     getTags: jest.fn(),
   };
 });
@@ -38,12 +39,17 @@ jest.mock('./utils', () => {
 
 describe('performUpdate', () => {
   const WORKSPACE_ROOT = 'rootDir';
+  const mockRepoUrl = 'https://fake';
 
+  let getRepositoryHttpsUrlMock: jest.SpyInstance;
   let getTagsMock: jest.SpyInstance;
   let getPackageManifestMock: jest.SpyInstance;
   let setActionOutputMock: jest.SpyInstance;
 
   beforeEach(() => {
+    getRepositoryHttpsUrlMock = jest
+      .spyOn(gitOperations, 'getRepositoryHttpsUrl')
+      .mockImplementationOnce(async () => mockRepoUrl);
     getTagsMock = jest
       .spyOn(gitOperations, 'getTags')
       .mockImplementationOnce(async () => [
@@ -70,6 +76,7 @@ describe('performUpdate', () => {
     });
 
     await performUpdate({ ReleaseType: null, ReleaseVersion: newVersion });
+    expect(getRepositoryHttpsUrlMock).toHaveBeenCalledTimes(1);
     expect(getTagsMock).toHaveBeenCalledTimes(1);
     expect(packageOperations.updatePackage).toHaveBeenCalledTimes(1);
     expect(packageOperations.updatePackage).toHaveBeenCalledWith(
@@ -77,7 +84,7 @@ describe('performUpdate', () => {
         dirPath: WORKSPACE_ROOT,
         manifest: { name: packageName, version: oldVersion },
       },
-      { newVersion },
+      { newVersion, repositoryUrl: mockRepoUrl, shouldUpdateChangelog: true },
     );
     expect(setActionOutputMock).toHaveBeenCalledTimes(1);
     expect(setActionOutputMock).toHaveBeenCalledWith('NEW_VERSION', newVersion);
@@ -99,6 +106,7 @@ describe('performUpdate', () => {
       ReleaseType: utils.AcceptedSemverReleaseTypes.Major,
       ReleaseVersion: null,
     });
+    expect(getRepositoryHttpsUrlMock).toHaveBeenCalledTimes(1);
     expect(getTagsMock).toHaveBeenCalledTimes(1);
     expect(packageOperations.updatePackage).toHaveBeenCalledTimes(1);
     expect(packageOperations.updatePackage).toHaveBeenCalledWith(
@@ -106,7 +114,7 @@ describe('performUpdate', () => {
         dirPath: WORKSPACE_ROOT,
         manifest: { name: packageName, version: oldVersion },
       },
-      { newVersion },
+      { newVersion, repositoryUrl: mockRepoUrl, shouldUpdateChangelog: true },
     );
     expect(setActionOutputMock).toHaveBeenCalledTimes(1);
     expect(setActionOutputMock).toHaveBeenCalledWith('NEW_VERSION', newVersion);
@@ -139,6 +147,7 @@ describe('performUpdate', () => {
 
     await performUpdate({ ReleaseType: null, ReleaseVersion: newVersion });
 
+    expect(getRepositoryHttpsUrlMock).toHaveBeenCalledTimes(1);
     expect(getTagsMock).toHaveBeenCalledTimes(1);
     expect(getPackagesMetadataMock).toHaveBeenCalledTimes(1);
 
@@ -155,6 +164,8 @@ describe('performUpdate', () => {
       {
         newVersion,
         packagesToUpdate: new Set(workspaces),
+        repositoryUrl: mockRepoUrl,
+        shouldUpdateChangelog: true,
         synchronizeVersions: true,
       },
     );
@@ -173,6 +184,8 @@ describe('performUpdate', () => {
       {
         newVersion,
         packagesToUpdate: new Set(workspaces),
+        repositoryUrl: mockRepoUrl,
+        shouldUpdateChangelog: false,
         synchronizeVersions: true,
       },
     );

@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import pathUtils from 'path';
+import { updateChangelog } from '@metamask/auto-changelog';
 
 import { didPackageChange } from './git-operations';
 import {
@@ -44,6 +45,8 @@ export interface PackageMetadata {
 
 interface UpdateSpecification {
   readonly newVersion: string;
+  readonly repositoryUrl: string;
+  readonly shouldUpdateChangelog: boolean;
 }
 
 interface MonorepoUpdateSpecification extends UpdateSpecification {
@@ -120,9 +123,9 @@ export async function getPackagesToUpdate(
 }
 
 /**
- * Updates the manifests of all packages in the monorepo per the update
- * specification. Writes the new manifests to disk. The following changes are
- * made to the new manifests:
+ * Updates the manifests and changelogs of all packages in the monorepo per the
+ * update specification. Writes the new manifests to disk. The following changes
+ * are made to the new manifests:
  *
  * - The "version" field is replaced with the new version
  * - If package versions are being synchronized, updates their version ranges
@@ -144,8 +147,9 @@ export async function updatePackages(
 }
 
 /**
- * Updates the given manifest per the update specification and writes it to
- * disk. The following changes are made to the new manifest:
+ * Updates the manifest and changelog of the given package per the update
+ * specification and writes the changes to disk. The following changes are made
+ * to the manifest:
  *
  * - The "version" field is replaced with the new version
  * - If package versions are being synchronized, updates their version ranges
@@ -159,10 +163,51 @@ export async function updatePackage(
   packageMetadata: { dirPath: string; manifest: Partial<PackageManifest> },
   updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
 ): Promise<void> {
-  await writeJsonFile(
-    pathUtils.join(packageMetadata.dirPath, PACKAGE_JSON),
-    getUpdatedManifest(packageMetadata.manifest, updateSpecification),
-  );
+  await Promise.all([
+    writeJsonFile(
+      pathUtils.join(packageMetadata.dirPath, PACKAGE_JSON),
+      getUpdatedManifest(packageMetadata.manifest, updateSpecification),
+    ),
+    updateSpecification.shouldUpdateChangelog
+      ? updatePackageChangelog(packageMetadata, updateSpecification)
+      : Promise.resolve(),
+  ]);
+}
+
+/**
+ * Updates the changelog file of the given package, using
+ * @metamask/auto-changelog. Assumes that the changelog file is located at the
+ * package root directory and named "CHANGELOG.md".
+ *
+ * @param packageMetadata - The metadata of the package to update.
+ * @param updateSpecification - The update specification, which determines how
+ * the update is performed.
+ */
+async function updatePackageChangelog(
+  packageMetadata: { dirPath: string },
+  updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
+) {
+  const { dirPath: projectRootDirectory } = packageMetadata;
+  const { newVersion, repositoryUrl } = updateSpecification;
+
+  let changelogContent: string;
+  const changelogPath = pathUtils.join(projectRootDirectory, 'CHANGELOG.md');
+  try {
+    changelogContent = await fs.readFile(changelogPath, 'utf-8');
+  } catch (error) {
+    console.error(
+      `Failed to read changelog at "${getTruncatedPath(changelogPath)}".`,
+    );
+    throw error;
+  }
+
+  await updateChangelog({
+    changelogContent,
+    currentVersion: newVersion,
+    isReleaseCandidate: true,
+    projectRootDirectory,
+    repoUrl: repositoryUrl,
+  });
 }
 
 /**
@@ -291,7 +336,7 @@ export async function getPackageManifest<T extends keyof PackageManifest>(
  * package.json file.
  * @param fieldsToValidate - The manifest fields that will be validated.
  */
-function validatePackageManifest(
+export function validatePackageManifest(
   manifest: Partial<PackageManifest>,
   manifestDirPath: string,
   fieldsToValidate: (keyof PackageManifest)[] = [
@@ -305,7 +350,7 @@ function validatePackageManifest(
   const _fieldsToValidate = new Set(fieldsToValidate);
 
   // Just for logging purposes
-  const legiblePath = manifestDirPath.split('/').splice(-2).join('/');
+  const legiblePath = getTruncatedPath(manifestDirPath);
   const getErrorMessagePrefix = (fieldName: FieldNames) => {
     return `${
       manifest[FieldNames.Name]
@@ -380,4 +425,19 @@ function isMonorepoUpdateSpecification(
     'packagesToUpdate' in specification &&
     'synchronizeVersions' in specification
   );
+}
+
+/**
+ * Given a path string, returns the last two segments of the path, without
+ * leading or trailing slashes.
+ *
+ * @param absolutePath - The absolute path to truncate.
+ * @returns The truncated path string.
+ */
+function getTruncatedPath(absolutePath: string): string {
+  return absolutePath
+    .split(pathUtils.sep)
+    .filter((segment) => Boolean(segment))
+    .splice(-2)
+    .join(pathUtils.sep);
 }

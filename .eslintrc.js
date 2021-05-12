@@ -17,6 +17,12 @@ module.exports = {
       },
     },
     {
+      files: ['**/*.d.ts'],
+      rules: {
+        'import/unambiguous': 'off',
+      },
+    },
+    {
       files: ['**/*.test.js', '**/*.test.ts'],
       extends: ['@metamask/eslint-config-jest'],
     },
