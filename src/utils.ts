@@ -123,13 +123,14 @@ function validateActionInputs(inputs: ActionInputs): void {
  * Reads the assumed JSON file at the given path, attempts to parse it, and
  * returns the resulting object.
  *
- * Throws if failing to read or parse, or if the parsed JSON value is falsy.
+ * Throws if failing to read or parse, or if the parsed JSON value is not a
+ * plain object.
  *
  * @param paths - The path segments pointing to the JSON file. Will be passed
  * to path.join().
  * @returns The object corresponding to the parsed JSON file.
  */
-export async function readJsonFile(
+export async function readJsonObjectFile(
   path: string,
 ): Promise<Record<string, unknown>> {
   const obj = JSON.parse(await fs.readFile(path, 'utf8')) as Record<
@@ -137,9 +138,9 @@ export async function readJsonFile(
     unknown
   >;
 
-  if (!obj) {
+  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
     throw new Error(
-      `Assumed JSON file at path "${path}" parsed to a falsy value.`,
+      `Assumed JSON file at path "${path}" parsed to a non-object value.`,
     );
   }
   return obj;

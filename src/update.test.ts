@@ -43,6 +43,7 @@ describe('performUpdate', () => {
 
   let getRepositoryHttpsUrlMock: jest.SpyInstance;
   let getTagsMock: jest.SpyInstance;
+  let consoleLogMock: jest.SpyInstance;
   let getPackageManifestMock: jest.SpyInstance;
   let setActionOutputMock: jest.SpyInstance;
 
@@ -56,6 +57,9 @@ describe('performUpdate', () => {
         new Set(['1.0.0', '1.1.0']),
         '1.1.0',
       ]);
+    consoleLogMock = jest
+      .spyOn(console, 'log')
+      .mockImplementation(() => undefined);
     getPackageManifestMock = jest.spyOn(
       packageOperations,
       'getPackageManifest',
@@ -78,6 +82,10 @@ describe('performUpdate', () => {
     await performUpdate({ ReleaseType: null, ReleaseVersion: newVersion });
     expect(getRepositoryHttpsUrlMock).toHaveBeenCalledTimes(1);
     expect(getTagsMock).toHaveBeenCalledTimes(1);
+    expect(consoleLogMock).toHaveBeenCalledTimes(1);
+    expect(consoleLogMock).toHaveBeenCalledWith(
+      expect.stringMatching(/Applying polyrepo workflow/u),
+    );
     expect(packageOperations.updatePackage).toHaveBeenCalledTimes(1);
     expect(packageOperations.updatePackage).toHaveBeenCalledWith(
       {
@@ -108,6 +116,10 @@ describe('performUpdate', () => {
     });
     expect(getRepositoryHttpsUrlMock).toHaveBeenCalledTimes(1);
     expect(getTagsMock).toHaveBeenCalledTimes(1);
+    expect(consoleLogMock).toHaveBeenCalledTimes(1);
+    expect(consoleLogMock).toHaveBeenCalledWith(
+      expect.stringMatching(/Applying polyrepo workflow/u),
+    );
     expect(packageOperations.updatePackage).toHaveBeenCalledTimes(1);
     expect(packageOperations.updatePackage).toHaveBeenCalledWith(
       {
@@ -149,6 +161,10 @@ describe('performUpdate', () => {
 
     expect(getRepositoryHttpsUrlMock).toHaveBeenCalledTimes(1);
     expect(getTagsMock).toHaveBeenCalledTimes(1);
+    expect(consoleLogMock).toHaveBeenCalledTimes(1);
+    expect(consoleLogMock).toHaveBeenCalledWith(
+      expect.stringMatching(/Applying monorepo workflow/u),
+    );
     expect(getPackagesMetadataMock).toHaveBeenCalledTimes(1);
 
     expect(getPackagesToUpdateMock).toHaveBeenCalledTimes(1);

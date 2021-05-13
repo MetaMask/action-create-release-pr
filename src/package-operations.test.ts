@@ -11,6 +11,9 @@ import {
   PackageDependencyFields,
   updatePackage,
   updatePackages,
+  validateMonorepoPackageManifest,
+  validatePackageManifestName,
+  validatePackageManifestVersion,
 } from './package-operations';
 
 jest.mock('fs', () => ({
@@ -40,7 +43,7 @@ jest.mock('./utils', () => {
   const actualModule = jest.requireActual('./utils');
   return {
     ...actualModule,
-    readJsonFile: jest.fn(),
+    readJsonObjectFile: jest.fn(),
     WORKSPACE_ROOT: 'root',
   };
 });
@@ -68,115 +71,127 @@ describe('package-operations', () => {
     let readJsonFileMock: jest.SpyInstance;
 
     beforeEach(() => {
-      readJsonFileMock = jest.spyOn(utils, 'readJsonFile');
+      readJsonFileMock = jest.spyOn(utils, 'readJsonObjectFile');
     });
 
-    it('gets and returns a valid manifest', async () => {
-      const validManifest = { name: 'fooName', version: '1.0.0' };
-
-      readJsonFileMock.mockImplementationOnce(async () => {
-        return { ...validManifest };
-      });
-
-      expect(await getPackageManifest('fooPath')).toStrictEqual(validManifest);
-    });
-
-    it('gets and returns a valid manifest, with different fields specified', async () => {
-      const validManifest: Readonly<Record<string, unknown>> = {
-        name: 'fooName',
-        private: false,
-        version: '1.0.0',
-        workspaces: ['bar'],
+    it('gets and returns a manifest file', async () => {
+      const manifest = {
+        [FieldNames.Name]: 'fooName',
+        [FieldNames.Version]: '1.0.0',
       };
 
-      readJsonFileMock.mockImplementation(async () => {
-        return { ...validManifest };
+      readJsonFileMock.mockImplementationOnce(async () => {
+        return { ...manifest };
       });
 
-      expect(
-        await getPackageManifest('fooPath', [FieldNames.Name]),
-      ).toStrictEqual(validManifest);
-      expect(
-        await getPackageManifest('fooPath', [FieldNames.Version]),
-      ).toStrictEqual(validManifest);
-      expect(
-        await getPackageManifest('fooPath', [FieldNames.Private]),
-      ).toStrictEqual(validManifest);
-      expect(
-        await getPackageManifest('fooPath', [FieldNames.Workspaces]),
-      ).toStrictEqual(validManifest);
-      expect(
-        await getPackageManifest('fooPath', [
-          FieldNames.Name,
-          FieldNames.Private,
-          FieldNames.Version,
-          FieldNames.Workspaces,
-        ]),
-      ).toStrictEqual(validManifest);
-      expect(await getPackageManifest('fooPath', [])).toStrictEqual(
-        validManifest,
+      expect(await getPackageManifest('fooPath')).toStrictEqual(manifest);
+    });
+  });
+
+  describe('validatePackageManifestVersion', () => {
+    it('passes through a manifest with a valid "version"', async () => {
+      const path = 'fooPath';
+      const manifest = { [FieldNames.Version]: '1.0.0' };
+
+      expect(validatePackageManifestVersion(manifest, path)).toStrictEqual(
+        manifest,
       );
     });
 
-    it('throws an error if the manifest is missing required fields', async () => {
-      readJsonFileMock
-        .mockImplementationOnce(async () => {
-          return { foo: 'bar' };
-        })
-        .mockImplementationOnce(async () => {
-          return { version: '1.0.0' };
-        })
-        .mockImplementationOnce(async () => {
-          return { version: '1.0.0' };
-        });
+    it('throws if manifest has an invalid "version"', async () => {
+      const path = 'fooPath';
+      const badVersions: any[] = ['foo', 'v1.0.0', null, true];
 
-      await expect(getPackageManifest('fooPath')).rejects.toThrow(/"name"/u);
-      await expect(getPackageManifest('fooPath')).rejects.toThrow(/"name"/u);
-      await expect(
-        getPackageManifest('fooPath', [FieldNames.Name]),
-      ).rejects.toThrow(/"name"/u);
+      for (const badValue of badVersions) {
+        expect(() =>
+          validatePackageManifestVersion(
+            { [FieldNames.Version]: badValue },
+            path,
+          ),
+        ).toThrow(/"version"/u);
+      }
 
-      readJsonFileMock
-        .mockImplementationOnce(async () => {
-          return { name: 'fooName' };
-        })
-        .mockImplementationOnce(async () => {
-          return { name: 'fooName' };
-        })
-        .mockImplementationOnce(async () => {
-          return { version: 'badVersion' };
-        });
+      // For coverage purposes
+      expect(() =>
+        validatePackageManifestVersion({ name: 'foo-name' }, path),
+      ).toThrow(/"version"/u);
+    });
+  });
 
-      await expect(getPackageManifest('fooPath')).rejects.toThrow(/"version"/u);
-      await expect(
-        getPackageManifest('fooPath', [FieldNames.Version]),
-      ).rejects.toThrow(/"version"/u);
-      await expect(
-        getPackageManifest('fooPath', [FieldNames.Version]),
-      ).rejects.toThrow(/"version"/u);
+  describe('validatePackageManifestName', () => {
+    it('passes through a manifest with a valid "name"', async () => {
+      const path = 'fooPath';
+      const manifest = { [FieldNames.Name]: 'foo-name' };
 
-      readJsonFileMock.mockImplementationOnce(async () => {
-        return { private: 'notABoolean' };
-      });
+      expect(validatePackageManifestName(manifest, path)).toStrictEqual(
+        manifest,
+      );
+    });
 
-      await expect(
-        getPackageManifest('fooPath', [FieldNames.Private]),
-      ).rejects.toThrow(/"private"/u);
+    it('throws if manifest has an invalid "name"', async () => {
+      const path = 'fooPath';
+      const badNames: any[] = [1, '', null, true];
 
-      readJsonFileMock
-        .mockImplementationOnce(async () => {
-          return { workspaces: 'notAnArray' };
-        })
-        .mockImplementationOnce(async () => {
-          return { workspaces: [] };
-        });
+      for (const badValue of badNames) {
+        expect(() =>
+          validatePackageManifestName({ [FieldNames.Name]: badValue }, path),
+        ).toThrow(/"name"/u);
+      }
+    });
+  });
 
-      await expect(
-        getPackageManifest('fooPath', [FieldNames.Workspaces]),
-      ).rejects.toThrow(/"workspaces"/u);
-      await expect(
-        getPackageManifest('fooPath', [FieldNames.Workspaces]),
-      ).rejects.toThrow(/"workspaces"/u);
+  describe('validateMonorepoPackageManifest', () => {
+    it('passes through a manifest with valid fields', async () => {
+      const path = 'fooPath';
+      const manifest = {
+        [FieldNames.Private]: true,
+        [FieldNames.Version]: '1.0.0',
+        [FieldNames.Workspaces]: ['a', 'b'],
+      };
+
+      expect(validateMonorepoPackageManifest(manifest, path)).toStrictEqual(
+        manifest,
+      );
+    });
+
+    it('throws if manifest has invalid fields', async () => {
+      const path = 'fooPath';
+
+      let badManifest: any = {
+        [FieldNames.Private]: true,
+        [FieldNames.Version]: '1.0.0',
+        [FieldNames.Workspaces]: [],
+      };
+      expect(() => validateMonorepoPackageManifest(badManifest, path)).toThrow(
+        /"workspaces" .* non-empty array/u,
+      );
+
+      badManifest = {
+        [FieldNames.Private]: true,
+        [FieldNames.Version]: '1.0.0',
+        [FieldNames.Workspaces]: 'foo',
+      };
+      expect(() => validateMonorepoPackageManifest(badManifest, path)).toThrow(
+        /"workspaces" .*non-empty array/u,
+      );
+
+      badManifest = {
+        [FieldNames.Private]: false,
+        [FieldNames.Version]: '1.0.0',
+        [FieldNames.Workspaces]: ['a', 'b'],
+      };
+      expect(() => validateMonorepoPackageManifest(badManifest, path)).toThrow(
+        /"private" .*"true"/u,
+      );
+
+      badManifest = {
+        [FieldNames.Private]: {},
+        [FieldNames.Version]: '1.0.0',
+        [FieldNames.Workspaces]: ['a', 'b'],
+      };
+      expect(() => validateMonorepoPackageManifest(badManifest, path)).toThrow(
+        /"private" .*"true"/u,
+      );
     });
   });
 
@@ -192,7 +207,7 @@ describe('package-operations', () => {
       return {
         dirName: dirs[index],
         manifest: getMockManifest(names[index], version),
-        name: names[index],
+        [FieldNames.Name]: names[index],
         dirPath: `${MOCK_ROOT_DIR}/${MOCK_PACKAGES_DIR}/${dirs[index]}`,
       };
     };
@@ -217,7 +232,7 @@ describe('package-operations', () => {
       }) as any);
 
       jest
-        .spyOn(utils, 'readJsonFile')
+        .spyOn(utils, 'readJsonObjectFile')
         .mockImplementation(getMockReadJsonFile());
     });
 
@@ -324,7 +339,7 @@ describe('package-operations', () => {
           getMockWritePath(dir),
           jsonStringify({
             ...cloneDeep(manifest),
-            version: newVersion,
+            [FieldNames.Version]: newVersion,
           }),
         );
         expect(updateChangelogMock).not.toHaveBeenCalled();
@@ -356,7 +371,7 @@ describe('package-operations', () => {
           getMockWritePath(dir),
           jsonStringify({
             ...cloneDeep(manifest),
-            version: newVersion,
+            [FieldNames.Version]: newVersion,
           }),
         );
         expect(updateChangelogMock).toHaveBeenCalledTimes(1);
@@ -427,7 +442,7 @@ describe('package-operations', () => {
           getMockWritePath(dir),
           jsonStringify({
             ...cloneDeep(manifest),
-            version: newVersion,
+            [FieldNames.Version]: newVersion,
           }),
         );
         expect(updateChangelogMock).not.toHaveBeenCalled();
@@ -512,7 +527,7 @@ describe('package-operations', () => {
           getMockWritePath(dir1),
           jsonStringify({
             ...cloneDeep(manifest1),
-            version: newVersion,
+            [FieldNames.Version]: newVersion,
           }),
         );
         expect(writeFileMock).toHaveBeenNthCalledWith(
@@ -520,7 +535,7 @@ describe('package-operations', () => {
           getMockWritePath(dir2),
           jsonStringify({
             ...cloneDeep(manifest2),
-            version: newVersion,
+            [FieldNames.Version]: newVersion,
           }),
         );
       });
