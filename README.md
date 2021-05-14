@@ -1,9 +1,11 @@
-# MetaMask/action-monorepo-release-pr
+# MetaMask/action-create-release-pr
 
-Add the following Workflow File to your repository in the path `.github/workflows/create-release-pr.yml`
+This Action can be used on its own, but we recommend using it with [MetaMask/action-publish-release](https://github.com/MetaMask/action-publish-release).
+
+Add the following Workflow File to your repository in the path `.github/workflows/create-release-pr.yml`:
 
 ```yaml
-name: Create Monorepo Release Pull Request
+name: Create Release Pull Request
 
 on:
     workflow_dispatch:
@@ -20,8 +22,11 @@ on:
                 required: false
 
 jobs:
-    monorepo-release-pr:
+    create-release-pr:
         runs-on: ubuntu-latest
+        permissions:
+            contents: read
+            pull-requests: write
         steps:
             - uses: actions/checkout@v2
               with:
@@ -37,7 +42,7 @@ jobs:
             - uses: actions/setup-node@v2
               with:
                   node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-            - uses: MetaMask/action-monorepo-release-pr@0.0.1
+            - uses: MetaMask/action-create-release-pr@0.0.16
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
               with:
