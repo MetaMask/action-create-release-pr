@@ -1,6 +1,7 @@
 import { setOutput as setActionOutput } from '@actions/core';
 import semverIncrement from 'semver/functions/inc';
 import semverDiff from 'semver/functions/diff';
+import semverGt from 'semver/functions/gt';
 import type { ReleaseType as SemverReleaseType } from 'semver';
 
 import { getRepositoryHttpsUrl, getTags } from './git-operations';
@@ -54,6 +55,10 @@ export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
     newVersion = actionInputs.ReleaseVersion as string;
     versionDiff = semverDiff(currentVersion, newVersion) as SemverReleaseType;
   }
+
+  // Ensure that the new version is greater than the current version, and that
+  // there's no existing tag for it.
+  validateVersion(currentVersion, newVersion, tags);
 
   if (FieldNames.Workspaces in rootManifest) {
     console.log(
@@ -150,4 +155,31 @@ async function updateMonorepo(
     { dirPath: WORKSPACE_ROOT, manifest: rootManifest },
     { ...updateSpecification, shouldUpdateChangelog: false },
   );
+}
+
+/**
+ * Throws an error if the current version is equal to the new version, if a
+ * tag for the new version already exists, or if the new version is less than
+ * the current version.
+ *
+ * @param currentVersion - The most recently released version.
+ * @param newVersion - The new version to be released.
+ * @param tags - All tags reachable from the current git HEAD, as from "git
+ * tag --merged".
+ */
+function validateVersion(
+  currentVersion: string,
+  newVersion: string,
+  tags: ReadonlySet<string>,
+) {
+  if (!semverGt(newVersion, currentVersion)) {
+    throw new Error(
+      `The new version "${newVersion}" is not greater than the current version "${currentVersion}".`,
+    );
+  }
+  if (tags.has(`v${newVersion}`)) {
+    throw new Error(
+      `Tag "v${newVersion}" for new version "${newVersion}" already exists.`,
+    );
+  }
 }

@@ -51,12 +51,7 @@ describe('performUpdate', () => {
     getRepositoryHttpsUrlMock = jest
       .spyOn(gitOperations, 'getRepositoryHttpsUrl')
       .mockImplementationOnce(async () => mockRepoUrl);
-    getTagsMock = jest
-      .spyOn(gitOperations, 'getTags')
-      .mockImplementationOnce(async () => [
-        new Set(['1.0.0', '1.1.0']),
-        '1.1.0',
-      ]);
+    getTagsMock = jest.spyOn(gitOperations, 'getTags');
     consoleLogMock = jest
       .spyOn(console, 'log')
       .mockImplementation(() => undefined);
@@ -71,6 +66,11 @@ describe('performUpdate', () => {
     const packageName = 'A';
     const oldVersion = '1.1.0';
     const newVersion = '2.0.0';
+
+    getTagsMock.mockImplementationOnce(async () => [
+      new Set(['v1.0.0', 'v1.1.0']),
+      'v1.1.0',
+    ]);
 
     getPackageManifestMock.mockImplementationOnce(async () => {
       return {
@@ -102,6 +102,11 @@ describe('performUpdate', () => {
     const packageName = 'A';
     const oldVersion = '1.1.0';
     const newVersion = '2.0.0';
+
+    getTagsMock.mockImplementationOnce(async () => [
+      new Set(['v1.0.0', 'v1.1.0']),
+      'v1.1.0',
+    ]);
 
     getPackageManifestMock.mockImplementationOnce(async () => {
       return {
@@ -138,6 +143,11 @@ describe('performUpdate', () => {
     const newVersion = '2.0.0';
     const workspaces: readonly string[] = ['a', 'b', 'c'];
 
+    getTagsMock.mockImplementationOnce(async () => [
+      new Set(['v1.0.0', 'v1.1.0']),
+      'v1.1.0',
+    ]);
+
     getPackageManifestMock.mockImplementationOnce(async () => {
       return {
         name: rootManifestName,
@@ -171,7 +181,7 @@ describe('performUpdate', () => {
     expect(getPackagesToUpdateMock).toHaveBeenCalledWith(
       { a: {}, b: {}, c: {} },
       true,
-      new Set(['1.0.0', '1.1.0']),
+      new Set(['v1.0.0', 'v1.1.0']),
     );
 
     expect(packageOperations.updatePackages).toHaveBeenCalledTimes(1);
@@ -208,5 +218,73 @@ describe('performUpdate', () => {
 
     expect(setActionOutputMock).toHaveBeenCalledTimes(1);
     expect(setActionOutputMock).toHaveBeenCalledWith('NEW_VERSION', newVersion);
+  });
+
+  it('throws if the new version is less than the current version', async () => {
+    const packageName = 'A';
+    const oldVersion = '1.1.0';
+    const newVersion = '1.0.0';
+
+    getTagsMock.mockImplementationOnce(async () => [
+      new Set(['v1.1.0']),
+      'v1.1.0',
+    ]);
+
+    getPackageManifestMock.mockImplementationOnce(async () => {
+      return {
+        name: packageName,
+        version: oldVersion,
+      };
+    });
+
+    await expect(
+      performUpdate({ ReleaseType: null, ReleaseVersion: newVersion }),
+    ).rejects.toThrow(/^The new version "1\.0\.0" is not greater than/u);
+  });
+
+  it('throws if the new version is equal to the current version', async () => {
+    const packageName = 'A';
+    const oldVersion = '1.1.0';
+    const newVersion = '1.1.0';
+
+    getTagsMock.mockImplementationOnce(async () => [
+      new Set(['v1.1.0']),
+      'v1.1.0',
+    ]);
+
+    getPackageManifestMock.mockImplementationOnce(async () => {
+      return {
+        name: packageName,
+        version: oldVersion,
+      };
+    });
+
+    await expect(
+      performUpdate({ ReleaseType: null, ReleaseVersion: newVersion }),
+    ).rejects.toThrow(/^The new version "1\.1\.0" is not greater than/u);
+  });
+
+  it('throws if there is already a tag for the new version', async () => {
+    const packageName = 'A';
+    const oldVersion = '1.1.0';
+    const newVersion = '2.0.0';
+
+    getTagsMock.mockImplementationOnce(async () => [
+      new Set(['v1.0.0', 'v1.1.0', 'v2.0.0']),
+      'v2.0.0',
+    ]);
+
+    getPackageManifestMock.mockImplementationOnce(async () => {
+      return {
+        name: packageName,
+        version: oldVersion,
+      };
+    });
+
+    await expect(
+      performUpdate({ ReleaseType: null, ReleaseVersion: newVersion }),
+    ).rejects.toThrow(
+      /^Tag "v2\.0\.0" for new version "2\.0\.0" already exists\.$/u,
+    );
   });
 });

@@ -7343,6 +7343,9 @@ var inc_default = /*#__PURE__*/__nccwpck_require__.n(inc);
 // EXTERNAL MODULE: ./node_modules/semver/functions/diff.js
 var diff = __nccwpck_require__(4297);
 var diff_default = /*#__PURE__*/__nccwpck_require__.n(diff);
+// EXTERNAL MODULE: ./node_modules/semver/functions/gt.js
+var gt = __nccwpck_require__(4123);
+var gt_default = /*#__PURE__*/__nccwpck_require__.n(gt);
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(5622);
 var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
@@ -8053,6 +8056,7 @@ function getManifestErrorMessagePrefix(invalidField, manifest, manifestDirPath) 
 
 
 
+
 /**
  * Action entry function. Gets git tags, reads the work space root package.json,
  * and updates the package(s) of the repository per the Action inputs.
@@ -8079,6 +8083,9 @@ async function performUpdate(actionInputs) {
         newVersion = actionInputs.ReleaseVersion;
         versionDiff = diff_default()(currentVersion, newVersion);
     }
+    // Ensure that the new version is greater than the current version, and that
+    // there's no existing tag for it.
+    validateVersion(currentVersion, newVersion, tags);
     if (FieldNames.Workspaces in rootManifest) {
         console.log('Project appears to have workspaces. Applying monorepo workflow.');
         await updateMonorepo(newVersion, versionDiff, validateMonorepoPackageManifest(rootManifest, WORKSPACE_ROOT), repositoryUrl, tags);
@@ -8135,6 +8142,24 @@ async function updateMonorepo(newVersion, versionDiff, rootManifest, repositoryU
     // this Action.
     await updatePackages(allPackages, updateSpecification);
     await updatePackage({ dirPath: WORKSPACE_ROOT, manifest: rootManifest }, { ...updateSpecification, shouldUpdateChangelog: false });
+}
+/**
+ * Throws an error if the current version is equal to the new version, if a
+ * tag for the new version already exists, or if the new version is less than
+ * the current version.
+ *
+ * @param currentVersion - The most recently released version.
+ * @param newVersion - The new version to be released.
+ * @param tags - All tags reachable from the current git HEAD, as from "git
+ * tag --merged".
+ */
+function validateVersion(currentVersion, newVersion, tags) {
+    if (!gt_default()(newVersion, currentVersion)) {
+        throw new Error(`The new version "${newVersion}" is not greater than the current version "${currentVersion}".`);
+    }
+    if (tags.has(`v${newVersion}`)) {
+        throw new Error(`Tag "v${newVersion}" for new version "${newVersion}" already exists.`);
+    }
 }
 //# sourceMappingURL=update.js.map
 ;// CONCATENATED MODULE: ./lib/index.js
