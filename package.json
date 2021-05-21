@@ -12,15 +12,16 @@
   },
   "scripts": {
     "lint:eslint": "yarn eslint . --cache --ext js,ts",
-    "lint:misc": "prettier '**/*.json' '**/*.md' '**/*.yml' --single-quote --ignore-path .gitignore",
+    "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' --ignore-path .gitignore",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
-    "build:clean": "mkdir -p lib && rm -rf lib/* && mkdir -p dist && rm -rf dist/*",
+    "build:clean": "yarn rimraf 'lib/*' 'dist/*'",
     "build:tsc": "tsc --project .",
     "build:ncc": "ncc build lib/index.js --out dist",
     "build": "yarn build:clean && yarn build:tsc && yarn build:ncc",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "prepublishOnly": "yarn build && yarn lint && yarn test"
   },
   "repository": {
     "type": "git",
@@ -66,6 +67,7 @@
     "jest": "^26.6.3",
     "lodash.clonedeep": "^4.5.0",
     "prettier": "^2.2.1",
+    "rimraf": "^3.0.2",
     "ts-jest": "^26.5.5",
     "typescript": "^4.2.4"
   }

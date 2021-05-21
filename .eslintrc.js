@@ -28,5 +28,5 @@ module.exports = {
     },
   ],
 
-  ignorePatterns: ['!.eslintrc.js', 'lib', 'dist'],
+  ignorePatterns: ['!.eslintrc.js', 'lib/', 'dist/'],
 };
