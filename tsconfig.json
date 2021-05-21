@@ -11,7 +11,7 @@
     "sourceMap": true,
     "strict": true,
     "target": "ES2019",
-    "typeRoots": ["node_modules/@types", "src/types"]
+    "typeRoots": ["node_modules/@types"]
   },
   "exclude": ["src/**/*.test.ts"],
   "include": ["src/**/*.ts"]
