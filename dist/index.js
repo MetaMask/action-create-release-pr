@@ -516,7 +516,7 @@ class Changelog {
         this._repoUrl = repoUrl;
     }
     /**
-     * Add a release to the changelog
+     * Add a release to the changelog.
      *
      * @param options
      * @param options.addToStart - Determines whether the change is added to the
@@ -550,7 +550,7 @@ class Changelog {
         }
     }
     /**
-     * Add a change to the changelog
+     * Add a change to the changelog.
      *
      * @param options
      * @param options.addToStart - Determines whether the change is added to the
@@ -596,8 +596,7 @@ class Changelog {
      * Changes are migrated in their existing categories, and placed above any
      * pre-existing changes in that category.
      *
-     * @param version - The release version to migrate unreleased
-     * changes to.
+     * @param version - The release version to migrate unreleased changes to.
      */
     migrateUnreleasedChangesToRelease(version) {
         const releaseChanges = this._changes[version];
@@ -620,13 +619,39 @@ class Changelog {
     }
     /**
      * Gets the metadata for all releases.
+     *
      * @returns The metadata for each release.
      */
     getReleases() {
         return this._releases;
     }
     /**
+     * Gets the release of the given version.
+     *
+     * @param version - The version of the release to retrieve.
+     * @returns The specified release, or undefined if no such release exists.
+     */
+    getRelease(version) {
+        return this.getReleases().find(({ version: _version }) => _version === version);
+    }
+    /**
+     * Gets the stringified release of the given version.
+     * Throws an error if no such release exists.
+     *
+     * @param version - The version of the release to stringify.
+     * @returns The stringified release, as it appears in the changelog.
+     */
+    getStringifiedRelease(version) {
+        const release = this.getRelease(version);
+        if (!release) {
+            throw new Error(`Specified release version does not exist: '${version}'`);
+        }
+        const releaseChanges = this.getReleaseChanges(version);
+        return stringifyRelease(version, releaseChanges, release);
+    }
+    /**
      * Gets the changes in the given release, organized by category.
+     *
      * @param version - The version of the release being retrieved.
      * @returns The changes included in the given released.
      */
@@ -635,6 +660,7 @@ class Changelog {
     }
     /**
      * Gets all changes that have not yet been released
+     *
      * @returns The changes that have not yet been released.
      */
     getUnreleasedChanges() {
@@ -642,6 +668,7 @@ class Changelog {
     }
     /**
      * The stringified changelog, formatted according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+     *
      * @returns The stringified changelog.
      */
     toString() {
