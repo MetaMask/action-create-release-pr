@@ -395,159 +395,108 @@ exports.toCommandValue = toCommandValue;
 
 /***/ }),
 
-/***/ 4341:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ 1610:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-const semver = __nccwpck_require__(1383);
+"use strict";
 
-const { orderedChangeCategories, unreleased } = __nccwpck_require__(6379);
-
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const semver_1 = __importDefault(__nccwpck_require__(1383));
+const constants_1 = __nccwpck_require__(1373);
 const changelogTitle = '# Changelog';
 const changelogDescription = `All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).`;
-
 // Stringification helpers
-
 function stringifyCategory(category, changes) {
-  const categoryHeader = `### ${category}`;
-  if (changes.length === 0) {
-    return categoryHeader;
-  }
-  const changeDescriptions = changes
-    .map((description) => `- ${description}`)
-    .join('\n');
-  return `${categoryHeader}\n${changeDescriptions}`;
+    const categoryHeader = `### ${category}`;
+    if (changes.length === 0) {
+        return categoryHeader;
+    }
+    const changeDescriptions = changes
+        .map((description) => `- ${description}`)
+        .join('\n');
+    return `${categoryHeader}\n${changeDescriptions}`;
 }
-
 function stringifyRelease(version, categories, { date, status } = {}) {
-  const releaseHeader = `## [${version}]${date ? ` - ${date}` : ''}${
-    status ? ` [${status}]` : ''
-  }`;
-  const categorizedChanges = orderedChangeCategories
-    .filter((category) => categories[category])
-    .map((category) => {
-      const changes = categories[category];
-      return stringifyCategory(category, changes);
+    const releaseHeader = `## [${version}]${date ? ` - ${date}` : ''}${status ? ` [${status}]` : ''}`;
+    const categorizedChanges = constants_1.orderedChangeCategories
+        .filter((category) => categories[category])
+        .map((category) => {
+        const changes = categories[category];
+        return stringifyCategory(category, changes);
     })
-    .join('\n\n');
-  if (categorizedChanges === '') {
-    return releaseHeader;
-  }
-  return `${releaseHeader}\n${categorizedChanges}`;
+        .join('\n\n');
+    if (categorizedChanges === '') {
+        return releaseHeader;
+    }
+    return `${releaseHeader}\n${categorizedChanges}`;
 }
-
 function stringifyReleases(releases, changes) {
-  const stringifiedUnreleased = stringifyRelease(
-    unreleased,
-    changes[unreleased],
-  );
-  const stringifiedReleases = releases.map(({ version, date, status }) => {
-    const categories = changes[version];
-    return stringifyRelease(version, categories, { date, status });
-  });
-
-  return [stringifiedUnreleased, ...stringifiedReleases].join('\n\n');
-}
-
-function withTrailingSlash(url) {
-  return url.endsWith('/') ? url : `${url}/`;
-}
-
-function getCompareUrl(repoUrl, firstRef, secondRef) {
-  return `${withTrailingSlash(repoUrl)}compare/${firstRef}...${secondRef}`;
-}
-
-function getTagUrl(repoUrl, tag) {
-  return `${withTrailingSlash(repoUrl)}releases/tag/${tag}`;
-}
-
-function stringifyLinkReferenceDefinitions(repoUrl, releases) {
-  const releasesOrderedByVersion = releases
-    .map(({ version }) => version)
-    .sort((a, b) => {
-      return semver.gt(a, b) ? -1 : 1;
+    const stringifiedUnreleased = stringifyRelease(constants_1.unreleased, changes[constants_1.unreleased]);
+    const stringifiedReleases = releases.map(({ version, date, status }) => {
+        const categories = changes[version];
+        return stringifyRelease(version, categories, { date, status });
     });
-  const orderedReleases = releases.map(({ version }) => version);
-  const hasReleases = orderedReleases.length > 0;
-
-  // The "Unreleased" section represents all changes made since the *highest*
-  // release, not the most recent release. This is to accomodate patch releases
-  // of older versions that don't represent the latest set of changes.
-  //
-  // For example, if a library has a v2.0.0 but the v1.0.0 release needed a
-  // security update, the v1.0.1 release would then be the most recent, but the
-  // range of unreleased changes would remain `v2.0.0...HEAD`.
-  //
-  // If there have not been any releases yet, the repo URL is used directly as
-  // the link definition.
-  const unreleasedLinkReferenceDefinition = `[${unreleased}]: ${
-    hasReleases
-      ? getCompareUrl(repoUrl, `v${releasesOrderedByVersion[0]}`, 'HEAD')
-      : withTrailingSlash(repoUrl)
-  }`;
-
-  // The "previous" release that should be used for comparison is not always
-  // the most recent release chronologically. The _highest_ version that is
-  // lower than the current release is used as the previous release, so that
-  // patch releases on older releases can be accomodated.
-  const releaseLinkReferenceDefinitions = releases
-    .map(({ version }) => {
-      if (version === orderedReleases[orderedReleases.length - 1]) {
-        return `[${version}]: ${getTagUrl(repoUrl, `v${version}`)}`;
-      }
-      const versionIndex = orderedReleases.indexOf(version);
-      const previousVersion = orderedReleases
-        .slice(versionIndex)
-        .find((releaseVersion) => {
-          return semver.gt(version, releaseVersion);
-        });
-      return `[${version}]: ${getCompareUrl(
-        repoUrl,
-        `v${previousVersion}`,
-        `v${version}`,
-      )}`;
-    })
-    .join('\n');
-  return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${
-    releases.length > 0 ? '\n' : ''
-  }`;
+    return [stringifiedUnreleased, ...stringifiedReleases].join('\n\n');
 }
-
+function withTrailingSlash(url) {
+    return url.endsWith('/') ? url : `${url}/`;
+}
+function getCompareUrl(repoUrl, firstRef, secondRef) {
+    return `${withTrailingSlash(repoUrl)}compare/${firstRef}...${secondRef}`;
+}
+function getTagUrl(repoUrl, tag) {
+    return `${withTrailingSlash(repoUrl)}releases/tag/${tag}`;
+}
+function stringifyLinkReferenceDefinitions(repoUrl, releases) {
+    const releasesOrderedByVersion = releases
+        .map(({ version }) => version)
+        .sort((a, b) => {
+        return semver_1.default.gt(a, b) ? -1 : 1;
+    });
+    const orderedReleases = releases.map(({ version }) => version);
+    const hasReleases = orderedReleases.length > 0;
+    // The "Unreleased" section represents all changes made since the *highest*
+    // release, not the most recent release. This is to accomodate patch releases
+    // of older versions that don't represent the latest set of changes.
+    //
+    // For example, if a library has a v2.0.0 but the v1.0.0 release needed a
+    // security update, the v1.0.1 release would then be the most recent, but the
+    // range of unreleased changes would remain `v2.0.0...HEAD`.
+    //
+    // If there have not been any releases yet, the repo URL is used directly as
+    // the link definition.
+    const unreleasedLinkReferenceDefinition = `[${constants_1.unreleased}]: ${hasReleases
+        ? getCompareUrl(repoUrl, `v${releasesOrderedByVersion[0]}`, 'HEAD')
+        : withTrailingSlash(repoUrl)}`;
+    // The "previous" release that should be used for comparison is not always
+    // the most recent release chronologically. The _highest_ version that is
+    // lower than the current release is used as the previous release, so that
+    // patch releases on older releases can be accomodated.
+    const releaseLinkReferenceDefinitions = releases
+        .map(({ version }) => {
+        if (version === orderedReleases[orderedReleases.length - 1]) {
+            return `[${version}]: ${getTagUrl(repoUrl, `v${version}`)}`;
+        }
+        const versionIndex = orderedReleases.indexOf(version);
+        const previousVersion = orderedReleases
+            .slice(versionIndex)
+            .find((releaseVersion) => {
+            return semver_1.default.gt(version, releaseVersion);
+        });
+        return `[${version}]: ${getCompareUrl(repoUrl, `v${previousVersion}`, `v${version}`)}`;
+    })
+        .join('\n');
+    return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${releases.length > 0 ? '\n' : ''}`;
+}
 /**
- * @typedef {import('./constants.js').Unreleased} Unreleased
- * @typedef {import('./constants.js').ChangeCategories ChangeCategories}
- */
-/**
- * @typedef {import('./constants.js').Version} Version
- */
-/**
- * Release metadata.
- * @typedef {Object} ReleaseMetadata
- * @property {string} date - An ISO-8601 formatted date, representing the
- *   release date.
- * @property {string} status -The status of the release (e.g. 'WITHDRAWN', 'DEPRECATED')
- * @property {Version} version - The version of the current release.
- */
-
-/**
- * Category changes. A list of changes in a single category.
- * @typedef {Array<string>} CategoryChanges
- */
-
-/**
- * Release changes, organized by category
- * @typedef {Record<keyof ChangeCategories, CategoryChanges>} ReleaseChanges
- */
-
-/**
- * Changelog changes, organized by release and by category.
- * @typedef {Record<Version|Unreleased, ReleaseChanges>} ChangelogChanges
- */
-
-/**
- * A changelog that complies with the ["keep a changelog" v1.1.0 guidelines]{@link https://keepachangelog.com/en/1.0.0/}.
+ * A changelog that complies with the
+ * ["Keep a Changelog" v1.1.0 guidelines](https://keepachangelog.com/en/1.0.0/).
  *
  * This changelog starts out completely empty, and allows new releases and
  * changes to be added such that the changelog remains compliant at all times.
@@ -555,392 +504,417 @@ function stringifyLinkReferenceDefinitions(repoUrl, releases) {
  * formatting, update a changelog, or build one from scratch.
  */
 class Changelog {
-  /**
-   * Construct an empty changelog
-   *
-   * @param {Object} options
-   * @param {string} options.repoUrl - The GitHub repository URL for the current project
-   */
-  constructor({ repoUrl }) {
-    this._releases = [];
-    this._changes = { [unreleased]: {} };
-    this._repoUrl = repoUrl;
-  }
-
-  /**
-   * Add a release to the changelog
-   *
-   * @param {Object} options
-   * @param {boolean} [options.addToStart] - Determines whether the release is
-   *   added to the top or bottom of the changelog. This defaults to 'true'
-   *   because new releases should be added to the top of the changelog. This
-   *   should be set to 'false' when parsing a changelog top-to-bottom.
-   * @param {string} [options.date] - An ISO-8601 formatted date, representing the
-   *   release date.
-   * @param {string} [options.status] - The status of the release (e.g.
-   *   'WITHDRAWN', 'DEPRECATED')
-   * @param {Version} options.version - The version of the current release,
-   *   which should be a [semver]{@link https://semver.org/spec/v2.0.0.html}-
-   *   compatible version.
-   */
-  addRelease({ addToStart = true, date, status, version }) {
-    if (!version) {
-      throw new Error('Version required');
-    } else if (semver.valid(version) === null) {
-      throw new Error(`Not a valid semver version: '${version}'`);
-    } else if (this._changes[version]) {
-      throw new Error(`Release already exists: '${version}'`);
+    /**
+     * Construct an empty changelog
+     *
+     * @param options
+     * @param options.repoUrl - The GitHub repository URL for the current project
+     */
+    constructor({ repoUrl }) {
+        this._releases = [];
+        this._changes = { [constants_1.unreleased]: {} };
+        this._repoUrl = repoUrl;
     }
-
-    this._changes[version] = {};
-    const newRelease = { version, date, status };
-    if (addToStart) {
-      this._releases.unshift(newRelease);
-    } else {
-      this._releases.push(newRelease);
+    /**
+     * Add a release to the changelog.
+     *
+     * @param options
+     * @param options.addToStart - Determines whether the change is added to the
+     * top or bottom of the list of changes in this category. This defaults to
+     * `true` because changes should be in reverse-chronological order. This
+     * should be set to `false` when parsing a changelog top-to-bottom.
+     * @param options.date - An ISO-8601 formatted date, representing the release
+     * date.
+     * @param options.status - The status of the release (e.g. 'WITHDRAWN',
+     * 'DEPRECATED')
+     * @param options.version - The version of the current release, which should
+     * be a [SemVer](https://semver.org/spec/v2.0.0.html)-compatible version.
+     */
+    addRelease({ addToStart = true, date, status, version }) {
+        if (!version) {
+            throw new Error('Version required');
+        }
+        else if (semver_1.default.valid(version) === null) {
+            throw new Error(`Not a valid semver version: '${version}'`);
+        }
+        else if (this._changes[version]) {
+            throw new Error(`Release already exists: '${version}'`);
+        }
+        this._changes[version] = {};
+        const newRelease = { version, date, status };
+        if (addToStart) {
+            this._releases.unshift(newRelease);
+        }
+        else {
+            this._releases.push(newRelease);
+        }
     }
-  }
-
-  /**
-   * Add a change to the changelog
-   *
-   * @param {Object} options
-   * @param {boolean} [options.addToStart] - Determines whether the change is
-   *   added to the top or bottom of the list of changes in this category. This
-   *   defaults to 'true' because changes should be in reverse-chronological
-   *   order. This should be set to 'false' when parsing a changelog top-to-
-   *   bottom.
-   * @param {string} options.category - The category of the change.
-   * @param {string} options.description - The description of the change.
-   * @param {Version} [options.version] - The version this change was released
-   *  in. If this is not given, the change is assumed to be unreleased.
-   */
-  addChange({ addToStart = true, category, description, version }) {
-    if (!category) {
-      throw new Error('Category required');
-    } else if (!orderedChangeCategories.includes(category)) {
-      throw new Error(`Unrecognized category: '${category}'`);
-    } else if (!description) {
-      throw new Error('Description required');
-    } else if (version !== undefined && !this._changes[version]) {
-      throw new Error(`Specified release version does not exist: '${version}'`);
+    /**
+     * Add a change to the changelog.
+     *
+     * @param options
+     * @param options.addToStart - Determines whether the change is added to the
+     * top or bottom of the list of changes in this category. This defaults to
+     * `true` because changes should be in reverse-chronological order. This
+     * should be set to `false` when parsing a changelog top-to-bottom.
+     * @param options.category - The category of the change.
+     * @param options.description - The description of the change.
+     * @param options.version - The version this change was released in. If this
+     * is not given, the change is assumed to be unreleased.
+     */
+    addChange({ addToStart = true, category, description, version, }) {
+        if (!category) {
+            throw new Error('Category required');
+        }
+        else if (!constants_1.orderedChangeCategories.includes(category)) {
+            throw new Error(`Unrecognized category: '${category}'`);
+        }
+        else if (!description) {
+            throw new Error('Description required');
+        }
+        else if (version !== undefined && !this._changes[version]) {
+            throw new Error(`Specified release version does not exist: '${version}'`);
+        }
+        const release = version
+            ? this._changes[version]
+            : this._changes[constants_1.unreleased];
+        if (!release[category]) {
+            release[category] = [];
+        }
+        if (addToStart) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            release[category].unshift(description);
+        }
+        else {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            release[category].push(description);
+        }
     }
-
-    const release = version
-      ? this._changes[version]
-      : this._changes[unreleased];
-
-    if (!release[category]) {
-      release[category] = [];
+    /**
+     * Migrate all unreleased changes to a release section.
+     *
+     * Changes are migrated in their existing categories, and placed above any
+     * pre-existing changes in that category.
+     *
+     * @param version - The release version to migrate unreleased changes to.
+     */
+    migrateUnreleasedChangesToRelease(version) {
+        const releaseChanges = this._changes[version];
+        if (!releaseChanges) {
+            throw new Error(`Specified release version does not exist: '${version}'`);
+        }
+        const unreleasedChanges = this._changes[constants_1.unreleased];
+        for (const category of Object.keys(unreleasedChanges)) {
+            if (releaseChanges[category]) {
+                releaseChanges[category] = [
+                    ...unreleasedChanges[category],
+                    ...releaseChanges[category],
+                ];
+            }
+            else {
+                releaseChanges[category] = unreleasedChanges[category];
+            }
+        }
+        this._changes[constants_1.unreleased] = {};
     }
-    if (addToStart) {
-      release[category].unshift(description);
-    } else {
-      release[category].push(description);
+    /**
+     * Gets the metadata for all releases.
+     *
+     * @returns The metadata for each release.
+     */
+    getReleases() {
+        return this._releases;
     }
-  }
-
-  /**
-   * Migrate all unreleased changes to a release section.
-   *
-   * Changes are migrated in their existing categories, and placed above any
-   * pre-existing changes in that category.
-   *
-   * @param {Version} version - The release version to migrate unreleased
-   *   changes to.
-   */
-  migrateUnreleasedChangesToRelease(version) {
-    const releaseChanges = this._changes[version];
-    if (!releaseChanges) {
-      throw new Error(`Specified release version does not exist: '${version}'`);
+    /**
+     * Gets the release of the given version.
+     *
+     * @param version - The version of the release to retrieve.
+     * @returns The specified release, or undefined if no such release exists.
+     */
+    getRelease(version) {
+        return this.getReleases().find(({ version: _version }) => _version === version);
     }
-
-    const unreleasedChanges = this._changes[unreleased];
-
-    for (const category of Object.keys(unreleasedChanges)) {
-      if (releaseChanges[category]) {
-        releaseChanges[category] = [
-          ...unreleasedChanges[category],
-          ...releaseChanges[category],
-        ];
-      } else {
-        releaseChanges[category] = unreleasedChanges[category];
-      }
+    /**
+     * Gets the stringified release of the given version.
+     * Throws an error if no such release exists.
+     *
+     * @param version - The version of the release to stringify.
+     * @returns The stringified release, as it appears in the changelog.
+     */
+    getStringifiedRelease(version) {
+        const release = this.getRelease(version);
+        if (!release) {
+            throw new Error(`Specified release version does not exist: '${version}'`);
+        }
+        const releaseChanges = this.getReleaseChanges(version);
+        return stringifyRelease(version, releaseChanges, release);
     }
-    this._changes[unreleased] = {};
-  }
-
-  /**
-   * Gets the metadata for all releases.
-   * @returns {Array<ReleaseMetadata>} The metadata for each release.
-   */
-  getReleases() {
-    return this._releases;
-  }
-
-  /**
-   * Gets the changes in the given release, organized by category.
-   * @param {Version} version - The version of the release being retrieved.
-   * @returns {ReleaseChanges} The changes included in the given released.
-   */
-  getReleaseChanges(version) {
-    return this._changes[version];
-  }
-
-  /**
-   * Gets all changes that have not yet been released
-   * @returns {ReleaseChanges} The changes that have not yet been released.
-   */
-  getUnreleasedChanges() {
-    return this._changes[unreleased];
-  }
-
-  /**
-   * The stringified changelog, formatted according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-   * @returns {string} The stringified changelog.
-   */
-  toString() {
-    return `${changelogTitle}
+    /**
+     * Gets the changes in the given release, organized by category.
+     *
+     * @param version - The version of the release being retrieved.
+     * @returns The changes included in the given released.
+     */
+    getReleaseChanges(version) {
+        return this._changes[version];
+    }
+    /**
+     * Gets all changes that have not yet been released
+     *
+     * @returns The changes that have not yet been released.
+     */
+    getUnreleasedChanges() {
+        return this._changes[constants_1.unreleased];
+    }
+    /**
+     * The stringified changelog, formatted according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+     *
+     * @returns The stringified changelog.
+     */
+    toString() {
+        return `${changelogTitle}
 ${changelogDescription}
 
 ${stringifyReleases(this._releases, this._changes)}
 
 ${stringifyLinkReferenceDefinitions(this._repoUrl, this._releases)}`;
-  }
+    }
 }
-
-module.exports = Changelog;
-
+exports.default = Changelog;
+//# sourceMappingURL=changelog.js.map
 
 /***/ }),
 
-/***/ 6379:
-/***/ ((module) => {
+/***/ 1373:
+/***/ ((__unused_webpack_module, exports) => {
 
-/**
- * Version string
- * @typedef {string} Version - A [SemVer]{@link https://semver.org/spec/v2.0.0.html}-
- *   compatible version string.
- */
+"use strict";
 
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.unreleased = exports.orderedChangeCategories = exports.ChangeCategory = void 0;
 /**
  * Change categories.
  *
- * Most of these categories are from [Keep a Changelog]{@link https://keepachangelog.com/en/1.0.0/}.
+ * Most of these categories are from [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
  * The "Uncategorized" category was added because we have many changes from
  * older releases that would be difficult to categorize.
- *
- * @typedef {Record<string, string>} ChangeCategories
- * @property {'Added'} Added - for new features.
- * @property {'Changed'} Changed - for changes in existing functionality.
- * @property {'Deprecated'} Deprecated - for soon-to-be removed features.
- * @property {'Fixed'} Fixed - for any bug fixes.
- * @property {'Removed'} Removed - for now removed features.
- * @property {'Security'} Security - in case of vulnerabilities.
- * @property {'Uncategorized'} Uncategorized - for any changes that have not
- *   yet been categorized.
  */
-
-/**
- * @type {ChangeCategories}
- */
-const changeCategories = {
-  Added: 'Added',
-  Changed: 'Changed',
-  Deprecated: 'Deprecated',
-  Fixed: 'Fixed',
-  Removed: 'Removed',
-  Security: 'Security',
-  Uncategorized: 'Uncategorized',
-};
-
+var ChangeCategory;
+(function (ChangeCategory) {
+    /**
+     * For new features.
+     */
+    ChangeCategory["Added"] = "Added";
+    /**
+     * For changes in existing functionality.
+     */
+    ChangeCategory["Changed"] = "Changed";
+    /**
+     * For soon-to-be-removed features.
+     */
+    ChangeCategory["Deprecated"] = "Deprecated";
+    /**
+     * For bug fixes.
+     */
+    ChangeCategory["Fixed"] = "Fixed";
+    /**
+     * For now removed features.
+     */
+    ChangeCategory["Removed"] = "Removed";
+    /**
+     * In case of vulnerabilities.
+     */
+    ChangeCategory["Security"] = "Security";
+    /**
+     * For any changes that have yet to be categorized.
+     */
+    ChangeCategory["Uncategorized"] = "Uncategorized";
+})(ChangeCategory = exports.ChangeCategory || (exports.ChangeCategory = {}));
 /**
  * Change categories in the order in which they should be listed in the
  * changelog.
- *
- * @type {Array<keyof ChangeCategories>}
  */
-const orderedChangeCategories = [
-  'Uncategorized',
-  'Added',
-  'Changed',
-  'Deprecated',
-  'Removed',
-  'Fixed',
-  'Security',
+exports.orderedChangeCategories = [
+    ChangeCategory.Uncategorized,
+    ChangeCategory.Added,
+    ChangeCategory.Changed,
+    ChangeCategory.Deprecated,
+    ChangeCategory.Removed,
+    ChangeCategory.Fixed,
+    ChangeCategory.Security,
 ];
-
 /**
  * The header for the section of the changelog listing unreleased changes.
- * @typedef {'Unreleased'} Unreleased
  */
-
-/**
- * @type {Unreleased}
- */
-const unreleased = 'Unreleased';
-
-module.exports = {
-  changeCategories,
-  orderedChangeCategories,
-  unreleased,
-};
-
+exports.unreleased = 'Unreleased';
+//# sourceMappingURL=constants.js.map
 
 /***/ }),
 
-/***/ 3439:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ 9272:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-const { updateChangelog } = __nccwpck_require__(6816);
-const {
-  ChangelogFormattingError,
-  validateChangelog,
-} = __nccwpck_require__(6311);
+"use strict";
+var __webpack_unused_export__;
 
-module.exports = {
-  ChangelogFormattingError,
-  updateChangelog,
-  validateChangelog,
-};
-
+__webpack_unused_export__ = ({ value: true });
+__webpack_unused_export__ = __webpack_unused_export__ = exports.cV = void 0;
+var update_changelog_1 = __nccwpck_require__(9437);
+Object.defineProperty(exports, "cV", ({ enumerable: true, get: function () { return update_changelog_1.updateChangelog; } }));
+var validate_changelog_1 = __nccwpck_require__(4933);
+__webpack_unused_export__ = ({ enumerable: true, get: function () { return validate_changelog_1.ChangelogFormattingError; } });
+__webpack_unused_export__ = ({ enumerable: true, get: function () { return validate_changelog_1.validateChangelog; } });
+//# sourceMappingURL=index.js.map
 
 /***/ }),
 
-/***/ 6026:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ 7607:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-const Changelog = __nccwpck_require__(4341);
-const { unreleased } = __nccwpck_require__(6379);
+"use strict";
 
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.parseChangelog = void 0;
+const changelog_1 = __importDefault(__nccwpck_require__(1610));
+const constants_1 = __nccwpck_require__(1373);
 function truncated(line) {
-  return line.length > 80 ? `${line.slice(0, 80)}...` : line;
+    return line.length > 80 ? `${line.slice(0, 80)}...` : line;
 }
-
+function isValidChangeCategory(category) {
+    return constants_1.ChangeCategory[category] !== undefined;
+}
 /**
  * Constructs a Changelog instance that represents the given changelog, which
  * is parsed for release and change information.
- * @param {Object} options
- * @param {string} options.changelogContent - The changelog to parse
- * @param {string} options.repoUrl - The GitHub repository URL for the current
- *   project.
- * @returns {Changelog} A changelog instance that reflects the changelog text
- *   provided.
+ * @param options
+ * @param options.changelogContent - The changelog to parse
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @returns A changelog instance that reflects the changelog text provided.
  */
-function parseChangelog({ changelogContent, repoUrl }) {
-  const changelogLines = changelogContent.split('\n');
-  const changelog = new Changelog({ repoUrl });
-
-  const unreleasedHeaderIndex = changelogLines.indexOf(`## [${unreleased}]`);
-  if (unreleasedHeaderIndex === -1) {
-    throw new Error(`Failed to find ${unreleased} header`);
-  }
-  const unreleasedLinkReferenceDefinition = changelogLines.findIndex((line) => {
-    return line.startsWith(`[${unreleased}]: `);
-  });
-  if (unreleasedLinkReferenceDefinition === -1) {
-    throw new Error(`Failed to find ${unreleased} link reference definition`);
-  }
-
-  const contentfulChangelogLines = changelogLines.slice(
-    unreleasedHeaderIndex + 1,
-    unreleasedLinkReferenceDefinition,
-  );
-
-  let mostRecentRelease;
-  let mostRecentCategory;
-  let currentChangeEntry;
-
-  /**
-   * Finalize a change entry, adding it to the changelog.
-   *
-   * This is required because change entries can span multiple lines.
-   *
-   * @param {Object} [options]
-   * @param {boolean} [options.removeTrailingNewline] - Indicates that the
-   *   trailing newline is not a part of the change description, so should be
-   *   removed.
-   */
-  function finalizePreviousChange({ removeTrailingNewline = false } = {}) {
-    if (!currentChangeEntry) {
-      return;
+function parseChangelog({ changelogContent, repoUrl, }) {
+    const changelogLines = changelogContent.split('\n');
+    const changelog = new changelog_1.default({ repoUrl });
+    const unreleasedHeaderIndex = changelogLines.indexOf(`## [${constants_1.unreleased}]`);
+    if (unreleasedHeaderIndex === -1) {
+        throw new Error(`Failed to find ${constants_1.unreleased} header`);
     }
-    if (removeTrailingNewline && currentChangeEntry.endsWith('\n')) {
-      currentChangeEntry = currentChangeEntry.slice(
-        0,
-        currentChangeEntry.length - 1,
-      );
-    }
-    changelog.addChange({
-      addToStart: false,
-      category: mostRecentCategory,
-      description: currentChangeEntry,
-      version: mostRecentRelease,
+    const unreleasedLinkReferenceDefinition = changelogLines.findIndex((line) => {
+        return line.startsWith(`[${constants_1.unreleased}]: `);
     });
-    currentChangeEntry = undefined;
-  }
-
-  for (const line of contentfulChangelogLines) {
-    if (line.startsWith('## [')) {
-      const results = line.match(
-        /^## \[(\d+\.\d+\.\d+)\](?: - (\d\d\d\d-\d\d-\d\d))?(?: \[(\w+)\])?/u,
-      );
-      if (results === null) {
-        throw new Error(`Malformed release header: '${truncated(line)}'`);
-      }
-      // Trailing newline removed because the release section is expected to
-      // be prefixed by a newline.
-      finalizePreviousChange({ removeTrailingNewline: true });
-      mostRecentRelease = results[1];
-      mostRecentCategory = undefined;
-      const date = results[2];
-      const status = results[3];
-      changelog.addRelease({
-        addToStart: false,
-        date,
-        status,
-        version: mostRecentRelease,
-      });
-    } else if (line.startsWith('### ')) {
-      const results = line.match(/^### (\w+)$\b/u);
-      if (results === null) {
-        throw new Error(`Malformed category header: '${truncated(line)}'`);
-      }
-      const isFirstCategory = mostRecentCategory === null;
-      finalizePreviousChange({ removeTrailingNewline: !isFirstCategory });
-      mostRecentCategory = results[1];
-    } else if (line.startsWith('- ')) {
-      if (mostRecentCategory === undefined) {
-        throw new Error(`Category missing for change: '${truncated(line)}'`);
-      }
-      const description = line.slice(2);
-      finalizePreviousChange();
-      currentChangeEntry = description;
-    } else if (currentChangeEntry) {
-      currentChangeEntry += `\n${line}`;
-    } else if (line === '') {
-      continue;
-    } else {
-      throw new Error(`Unrecognized line: '${truncated(line)}'`);
+    if (unreleasedLinkReferenceDefinition === -1) {
+        throw new Error(`Failed to find ${constants_1.unreleased} link reference definition`);
     }
-  }
-  // Trailing newline removed because the reference link definition section is
-  // expected to be separated by a newline.
-  finalizePreviousChange({ removeTrailingNewline: true });
-
-  return changelog;
+    const contentfulChangelogLines = changelogLines.slice(unreleasedHeaderIndex + 1, unreleasedLinkReferenceDefinition);
+    let mostRecentRelease;
+    let mostRecentCategory;
+    let currentChangeEntry;
+    /**
+     * Finalize a change entry, adding it to the changelog.
+     *
+     * This is required because change entries can span multiple lines.
+     *
+     * @param options
+     * @param options.removeTrailingNewline - Indicates that the trailing newline
+     * is not a part of the change description, and should therefore be removed.
+     */
+    function finalizePreviousChange({ removeTrailingNewline = false, } = {}) {
+        if (!currentChangeEntry) {
+            return;
+        }
+        // This should never happen in practice, because `mostRecentCategory` is
+        // guaranteed to be set if `currentChangeEntry` is set.
+        /* istanbul ignore next */
+        if (!mostRecentCategory) {
+            throw new Error('Cannot finalize change without most recent category.');
+        }
+        if (removeTrailingNewline && currentChangeEntry.endsWith('\n')) {
+            currentChangeEntry = currentChangeEntry.slice(0, currentChangeEntry.length - 1);
+        }
+        changelog.addChange({
+            addToStart: false,
+            category: mostRecentCategory,
+            description: currentChangeEntry,
+            version: mostRecentRelease,
+        });
+        currentChangeEntry = undefined;
+    }
+    for (const line of contentfulChangelogLines) {
+        if (line.startsWith('## [')) {
+            const results = line.match(/^## \[(\d+\.\d+\.\d+)\](?: - (\d\d\d\d-\d\d-\d\d))?(?: \[(\w+)\])?/u);
+            if (results === null) {
+                throw new Error(`Malformed release header: '${truncated(line)}'`);
+            }
+            // Trailing newline removed because the release section is expected to
+            // be prefixed by a newline.
+            finalizePreviousChange({
+                removeTrailingNewline: true,
+            });
+            mostRecentRelease = results[1];
+            mostRecentCategory = undefined;
+            const date = results[2];
+            const status = results[3];
+            changelog.addRelease({
+                addToStart: false,
+                date,
+                status,
+                version: mostRecentRelease,
+            });
+        }
+        else if (line.startsWith('### ')) {
+            const results = line.match(/^### (\w+)$\b/u);
+            if (results === null) {
+                throw new Error(`Malformed category header: '${truncated(line)}'`);
+            }
+            const isFirstCategory = mostRecentCategory === null;
+            finalizePreviousChange({
+                removeTrailingNewline: !isFirstCategory,
+            });
+            if (!isValidChangeCategory(results[1])) {
+                throw new Error(`Invalid change category: '${results[1]}'`);
+            }
+            mostRecentCategory = results[1];
+        }
+        else if (line.startsWith('- ')) {
+            if (!mostRecentCategory) {
+                throw new Error(`Category missing for change: '${truncated(line)}'`);
+            }
+            const description = line.slice(2);
+            finalizePreviousChange();
+            currentChangeEntry = description;
+        }
+        else if (currentChangeEntry) {
+            currentChangeEntry += `\n${line}`;
+        }
+        else if (line === '') {
+            continue;
+        }
+        else {
+            throw new Error(`Unrecognized line: '${truncated(line)}'`);
+        }
+    }
+    // Trailing newline removed because the reference link definition section is
+    // expected to be separated by a newline.
+    finalizePreviousChange({ removeTrailingNewline: true });
+    return changelog;
 }
-
-module.exports = { parseChangelog };
-
+exports.parseChangelog = parseChangelog;
+//# sourceMappingURL=parse-changelog.js.map
 
 /***/ }),
 
-/***/ 606:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ 5126:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-const spawn = __nccwpck_require__(2746);
+"use strict";
 
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const cross_spawn_1 = __importDefault(__nccwpck_require__(2746));
 /**
  * Run a command to completion using the system shell.
  *
@@ -952,402 +926,358 @@ const spawn = __nccwpck_require__(2746);
  * Anything received on STDERR is assumed to indicate a problem, and is tracked
  * as an error.
  *
- * @param {string} command - The command to run
- * @param {Array<string>} [args] - The arguments to pass to the command
- * @returns {Array<string>} Lines of output received via STDOUT
+ * @param command - The command to run
+ * @param args - The arguments to pass to the command
+ * @returns Lines of output received via STDOUT
  */
 async function runCommand(command, args) {
-  const output = [];
-  let mostRecentError;
-  let errorSignal;
-  let errorCode;
-  const internalError = new Error('Internal');
-  try {
-    await new Promise((resolve, reject) => {
-      const childProcess = spawn(command, args, { encoding: 'utf8' });
-      childProcess.stdout.setEncoding('utf8');
-      childProcess.stderr.setEncoding('utf8');
-
-      childProcess.on('error', (error) => {
-        mostRecentError = error;
-      });
-
-      childProcess.stdout.on('data', (message) => {
-        const nonEmptyLines = message.split('\n').filter((line) => line !== '');
-        output.push(...nonEmptyLines);
-      });
-
-      childProcess.stderr.on('data', (message) => {
-        mostRecentError = new Error(message.trim());
-      });
-
-      childProcess.once('exit', (code, signal) => {
-        if (code === 0) {
-          return resolve();
-        }
-        errorCode = code;
-        errorSignal = signal;
-        return reject(internalError);
-      });
-    });
-  } catch (error) {
-    /**
-     * The error is re-thrown here in an `async` context to preserve the stack trace. If this was
-     * was thrown inside the Promise constructor, the stack trace would show a few frames of
-     * Node.js internals then end, without indicating where `runCommand` was called.
-     */
-    if (error === internalError) {
-      let errorMessage;
-      if (errorCode !== null && errorSignal !== null) {
-        errorMessage = `Terminated by signal '${errorSignal}'; exited with code '${errorCode}'`;
-      } else if (errorSignal !== null) {
-        errorMessage = `Terminaled by signal '${errorSignal}'`;
-      } else if (errorCode === null) {
-        errorMessage = 'Exited with no code or signal';
-      } else {
-        errorMessage = `Exited with code '${errorCode}'`;
-      }
-      const improvedError = new Error(errorMessage);
-      if (mostRecentError) {
-        improvedError.cause = mostRecentError;
-      }
-      throw improvedError;
+    const output = [];
+    let mostRecentError;
+    let errorSignal;
+    let errorCode;
+    const internalError = new Error('Internal');
+    try {
+        await new Promise((resolve, reject) => {
+            const childProcess = cross_spawn_1.default(command, args);
+            if (!childProcess.stdout || !childProcess.stderr) {
+                throw new Error('Child process is missing stdout and stderr.');
+            }
+            childProcess.stdout.setEncoding('utf8');
+            childProcess.stderr.setEncoding('utf8');
+            childProcess.on('error', (error) => {
+                mostRecentError = error;
+            });
+            childProcess.stdout.on('data', (message) => {
+                const nonEmptyLines = message
+                    .split('\n')
+                    .filter((line) => line !== '');
+                output.push(...nonEmptyLines);
+            });
+            childProcess.stderr.on('data', (message) => {
+                mostRecentError = new Error(message.trim());
+            });
+            childProcess.once('exit', (code, signal) => {
+                if (code === 0) {
+                    return resolve();
+                }
+                errorCode = code;
+                errorSignal = signal;
+                return reject(internalError);
+            });
+        });
     }
-  }
-  return output;
+    catch (error) {
+        /**
+         * The error is re-thrown here in an `async` context to preserve the stack trace. If this was
+         * was thrown inside the Promise constructor, the stack trace would show a few frames of
+         * Node.js internals then end, without indicating where `runCommand` was called.
+         */
+        if (error === internalError) {
+            let errorMessage;
+            if (errorCode !== null && errorSignal !== null) {
+                errorMessage = `Terminated by signal '${errorSignal}'; exited with code '${errorCode}'`;
+            }
+            else if (errorSignal !== null) {
+                errorMessage = `Terminated by signal '${errorSignal}'`;
+            }
+            else if (errorCode === null) {
+                errorMessage = 'Exited with no code or signal';
+            }
+            else {
+                errorMessage = `Exited with code '${errorCode}'`;
+            }
+            const improvedError = new Error(errorMessage);
+            if (mostRecentError) {
+                improvedError.cause = mostRecentError;
+            }
+            throw improvedError;
+        }
+    }
+    return output;
 }
-
-module.exports = runCommand;
-
+exports.default = runCommand;
+//# sourceMappingURL=run-command.js.map
 
 /***/ }),
 
-/***/ 6816:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ 9437:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
-const assert = __nccwpck_require__(2357).strict;
-const runCommand = __nccwpck_require__(606);
-const { parseChangelog } = __nccwpck_require__(6026);
-const { changeCategories } = __nccwpck_require__(6379);
+"use strict";
 
-async function getMostRecentTag({ projectRootDirectory }) {
-  const revListArgs = ['rev-list', '--tags', '--max-count=1'];
-  if (projectRootDirectory) {
-    revListArgs.push(projectRootDirectory);
-  }
-  const results = await runCommand('git', revListArgs);
-  if (results.length === 0) {
-    return null;
-  }
-  const [mostRecentTagCommitHash] = results;
-  const [mostRecentTag] = await runCommand('git', [
-    'describe',
-    '--tags',
-    mostRecentTagCommitHash,
-  ]);
-  assert.equal(mostRecentTag[0], 'v', 'Most recent tag should start with v');
-  return mostRecentTag;
-}
-
-async function getCommits(commitHashes) {
-  const commits = [];
-  for (const commitHash of commitHashes) {
-    const [subject] = await runCommand('git', [
-      'show',
-      '-s',
-      '--format=%s',
-      commitHash,
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.updateChangelog = void 0;
+const assert_1 = __nccwpck_require__(2357);
+const run_command_1 = __importDefault(__nccwpck_require__(5126));
+const parse_changelog_1 = __nccwpck_require__(7607);
+const constants_1 = __nccwpck_require__(1373);
+async function getMostRecentTag({ projectRootDirectory, }) {
+    const revListArgs = ['rev-list', '--tags', '--max-count=1'];
+    if (projectRootDirectory) {
+        revListArgs.push(projectRootDirectory);
+    }
+    const results = await run_command_1.default('git', revListArgs);
+    if (results.length === 0) {
+        return null;
+    }
+    const [mostRecentTagCommitHash] = results;
+    const [mostRecentTag] = await run_command_1.default('git', [
+        'describe',
+        '--tags',
+        mostRecentTagCommitHash,
     ]);
-
-    let prNumber;
-    let description = subject;
-
-    // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
-    if (subject.match(/\(#\d+\)/u)) {
-      const matchResults = subject.match(/\(#(\d+)\)/u);
-      prNumber = matchResults[1];
-      description = subject.match(/^(.+)\s\(#\d+\)/u)[1];
-      // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
-      // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
-      // If no body is found, the description is set to the commit subject
-    } else if (subject.match(/#\d+\sfrom/u)) {
-      const matchResults = subject.match(/#(\d+)\sfrom/u);
-      prNumber = matchResults[1];
-      const [firstLineOfBody] = await runCommand('git', [
-        'show',
-        '-s',
-        '--format=%b',
-        commitHash,
-      ]);
-      description = firstLineOfBody || subject;
-    }
-    // Otherwise:
-    // Normal commits: The commit subject is the description, and the PR ID is omitted.
-
-    commits.push({ prNumber, description });
-  }
-  return commits;
+    assert_1.strict.equal(mostRecentTag[0], 'v', 'Most recent tag should start with v');
+    return mostRecentTag;
 }
-
+async function getCommits(commitHashes) {
+    var _a;
+    const commits = [];
+    for (const commitHash of commitHashes) {
+        const [subject] = await run_command_1.default('git', [
+            'show',
+            '-s',
+            '--format=%s',
+            commitHash,
+        ]);
+        let matchResults = subject.match(/\(#(\d+)\)/u);
+        let prNumber;
+        let description = subject;
+        if (matchResults) {
+            // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
+            prNumber = matchResults[1];
+            description = ((_a = subject.match(/^(.+)\s\(#\d+\)/u)) === null || _a === void 0 ? void 0 : _a[1]) || '';
+        }
+        else {
+            // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
+            // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
+            // If no body is found, the description is set to the commit subject
+            matchResults = subject.match(/#(\d+)\sfrom/u);
+            if (matchResults) {
+                prNumber = matchResults[1];
+                const [firstLineOfBody] = await run_command_1.default('git', [
+                    'show',
+                    '-s',
+                    '--format=%b',
+                    commitHash,
+                ]);
+                description = firstLineOfBody || subject;
+            }
+        }
+        // Otherwise:
+        // Normal commits: The commit subject is the description, and the PR ID is omitted.
+        commits.push({ prNumber, description });
+    }
+    return commits;
+}
 function getAllChangeDescriptions(changelog) {
-  const releases = changelog.getReleases();
-  const changeDescriptions = Object.values(
-    changelog.getUnreleasedChanges(),
-  ).flat();
-  for (const release of releases) {
-    changeDescriptions.push(
-      ...Object.values(changelog.getReleaseChanges(release.version)).flat(),
-    );
-  }
-  return changeDescriptions;
-}
-
-function getAllLoggedPrNumbers(changelog) {
-  const changeDescriptions = getAllChangeDescriptions(changelog);
-
-  const prNumbersWithChangelogEntries = [];
-  for (const description of changeDescriptions) {
-    const matchResults = description.match(/^\[#(\d+)\]/u);
-    if (matchResults === null) {
-      continue;
+    const releases = changelog.getReleases();
+    const changeDescriptions = Object.values(changelog.getUnreleasedChanges()).flat();
+    for (const release of releases) {
+        changeDescriptions.push(...Object.values(changelog.getReleaseChanges(release.version)).flat());
     }
-    const prNumber = matchResults[1];
-    prNumbersWithChangelogEntries.push(prNumber);
-  }
-
-  return prNumbersWithChangelogEntries;
+    return changeDescriptions;
 }
-
+function getAllLoggedPrNumbers(changelog) {
+    const changeDescriptions = getAllChangeDescriptions(changelog);
+    const prNumbersWithChangelogEntries = [];
+    for (const description of changeDescriptions) {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        const matchResults = description.match(/^\[#(\d+)\]/u);
+        if (matchResults === null) {
+            continue;
+        }
+        const prNumber = matchResults[1];
+        prNumbersWithChangelogEntries.push(prNumber);
+    }
+    return prNumbersWithChangelogEntries;
+}
 async function getCommitHashesInRange(commitRange, rootDirectory) {
-  const revListArgs = ['rev-list', commitRange];
-  if (rootDirectory) {
-    revListArgs.push(rootDirectory);
-  }
-  return await runCommand('git', revListArgs);
+    const revListArgs = ['rev-list', commitRange];
+    if (rootDirectory) {
+        revListArgs.push(rootDirectory);
+    }
+    return await run_command_1.default('git', revListArgs);
 }
-
-/**
- * @typedef {import('./constants.js').Version} Version
- */
-
 /**
  * Update a changelog with any commits made since the last release. Commits for
  * PRs that are already included in the changelog are omitted.
- * @param {Object} options
- * @param {string} options.changelogContent - The current changelog
- * @param {Version} [options.currentVersion] - The current version. Required if
- *   `isReleaseCandidate` is set, but optional otherwise.
- * @param {string} options.repoUrl - The GitHub repository URL for the current
- *   project.
- * @param {boolean} options.isReleaseCandidate - Denotes whether the current
- *   project is in the midst of release preparation or not. If this is set, any
- *   new changes are listed under the current release header. Otherwise, they
- *   are listed under the 'Unreleased' section.
- * @param {string} [options.projectRootDirectory] - The root project directory,
- *   used to filter results from various git commands. This path is assumed to
- *   be either absolute, or relative to the current directory. Defaults to the
- *   root of the current git repository.
- * @returns {string} The updated changelog text
+ * @param options
+ * @param options.changelogContent - The current changelog
+ * @param options.currentVersion - The current version. Required if
+ * `isReleaseCandidate` is set, but optional otherwise.
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @param options.isReleaseCandidate - Denotes whether the current project.
+ * is in the midst of release preparation or not. If this is set, any new
+ * changes are listed under the current release header. Otherwise, they are
+ * listed under the 'Unreleased' section.
+ * @param options.projectRootDirectory - The root project directory, used to
+ * filter results from various git commands. This path is assumed to be either
+ * absolute, or relative to the current directory. Defaults to the root of the
+ * current git repository.
+ * @returns The updated changelog text
  */
-async function updateChangelog({
-  changelogContent,
-  currentVersion,
-  repoUrl,
-  isReleaseCandidate,
-  projectRootDirectory,
-}) {
-  if (isReleaseCandidate && !currentVersion) {
-    throw new Error(
-      `A version must be specified if 'isReleaseCandidate' is set.`,
-    );
-  }
-  const changelog = parseChangelog({ changelogContent, repoUrl });
-
-  // Ensure we have all tags on remote
-  await runCommand('git', ['fetch', '--tags']);
-  const mostRecentTag = await getMostRecentTag({ projectRootDirectory });
-
-  if (isReleaseCandidate && mostRecentTag === currentVersion) {
-    throw new Error(
-      `Current version already has tag, which is unexpected for a release candidate.`,
-    );
-  }
-
-  const commitRange =
-    mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
-  const commitsHashesSinceLastRelease = await getCommitHashesInRange(
-    commitRange,
-    projectRootDirectory,
-  );
-  const commits = await getCommits(commitsHashesSinceLastRelease);
-
-  const loggedPrNumbers = getAllLoggedPrNumbers(changelog);
-  const newCommits = commits.filter(
-    ({ prNumber }) => !loggedPrNumbers.includes(prNumber),
-  );
-
-  const hasUnreleasedChanges = changelog.getUnreleasedChanges().length !== 0;
-  if (
-    newCommits.length === 0 &&
-    (!isReleaseCandidate || hasUnreleasedChanges)
-  ) {
-    return undefined;
-  }
-
-  // Ensure release header exists, if necessary
-  if (
-    isReleaseCandidate &&
-    !changelog
-      .getReleases()
-      .find((release) => release.version === currentVersion)
-  ) {
-    changelog.addRelease({ version: currentVersion });
-  }
-
-  if (isReleaseCandidate && hasUnreleasedChanges) {
-    changelog.migrateUnreleasedChangesToRelease(currentVersion);
-  }
-
-  const newChangeEntries = newCommits.map(({ prNumber, description }) => {
-    if (prNumber) {
-      const prefix = `[#${prNumber}](${repoUrl}/pull/${prNumber})`;
-      return `${prefix}: ${description}`;
+async function updateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, projectRootDirectory, }) {
+    if (isReleaseCandidate && !currentVersion) {
+        throw new Error(`A version must be specified if 'isReleaseCandidate' is set.`);
     }
-    return description;
-  });
-
-  for (const description of newChangeEntries.reverse()) {
-    changelog.addChange({
-      version: isReleaseCandidate ? currentVersion : undefined,
-      category: changeCategories.Uncategorized,
-      description,
+    const changelog = parse_changelog_1.parseChangelog({ changelogContent, repoUrl });
+    // Ensure we have all tags on remote
+    await run_command_1.default('git', ['fetch', '--tags']);
+    const mostRecentTag = await getMostRecentTag({ projectRootDirectory });
+    if (isReleaseCandidate && mostRecentTag === `v${currentVersion}`) {
+        throw new Error(`Current version already has tag, which is unexpected for a release candidate.`);
+    }
+    const commitRange = mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
+    const commitsHashesSinceLastRelease = await getCommitHashesInRange(commitRange, projectRootDirectory);
+    const commits = await getCommits(commitsHashesSinceLastRelease);
+    const loggedPrNumbers = getAllLoggedPrNumbers(changelog);
+    const newCommits = commits.filter(({ prNumber }) => prNumber === undefined || !loggedPrNumbers.includes(prNumber));
+    const hasUnreleasedChanges = Object.keys(changelog.getUnreleasedChanges()).length !== 0;
+    if (newCommits.length === 0 &&
+        (!isReleaseCandidate || hasUnreleasedChanges)) {
+        return undefined;
+    }
+    // Ensure release header exists, if necessary
+    if (isReleaseCandidate &&
+        !changelog
+            .getReleases()
+            .find((release) => release.version === currentVersion)) {
+        // Typecast: currentVersion will be defined here due to type guard at the
+        // top of this function.
+        changelog.addRelease({ version: currentVersion });
+    }
+    if (isReleaseCandidate && hasUnreleasedChanges) {
+        // Typecast: currentVersion will be defined here due to type guard at the
+        // top of this function.
+        changelog.migrateUnreleasedChangesToRelease(currentVersion);
+    }
+    const newChangeEntries = newCommits.map(({ prNumber, description }) => {
+        if (prNumber) {
+            const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
+            return `${description} ${suffix}`;
+        }
+        return description;
     });
-  }
-
-  return changelog.toString();
+    for (const description of newChangeEntries.reverse()) {
+        changelog.addChange({
+            version: isReleaseCandidate ? currentVersion : undefined,
+            category: constants_1.ChangeCategory.Uncategorized,
+            description,
+        });
+    }
+    return changelog.toString();
 }
-
-module.exports = { updateChangelog };
-
+exports.updateChangelog = updateChangelog;
+//# sourceMappingURL=update-changelog.js.map
 
 /***/ }),
 
-/***/ 6311:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ 4933:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
-const { parseChangelog } = __nccwpck_require__(6026);
+"use strict";
 
-/**
- * @typedef {import('./constants.js').Version} Version
- */
-
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.validateChangelog = exports.ChangelogFormattingError = exports.MissingCurrentVersionError = exports.UnreleasedChangesError = exports.InvalidChangelogError = void 0;
+const parse_changelog_1 = __nccwpck_require__(7607);
 /**
  * Indicates that the changelog is invalid.
  */
-class InvalidChangelogError extends Error {}
-
+class InvalidChangelogError extends Error {
+}
+exports.InvalidChangelogError = InvalidChangelogError;
 /**
  * Indicates that unreleased changes are still present in the changelog.
  */
 class UnreleasedChangesError extends InvalidChangelogError {
-  constructor() {
-    super('Unreleased changes present in the changelog');
-  }
+    constructor() {
+        super('Unreleased changes present in the changelog');
+    }
 }
-
+exports.UnreleasedChangesError = UnreleasedChangesError;
 /**
  * Indicates that the release header for the current version is missing.
  */
 class MissingCurrentVersionError extends InvalidChangelogError {
-  /**
-   * @param {Version} currentVersion - The current version
-   */
-  constructor(currentVersion) {
-    super(`Current version missing from changelog: '${currentVersion}'`);
-  }
+    /**
+     * @param currentVersion - The current version
+     */
+    constructor(currentVersion) {
+        super(`Current version missing from changelog: '${currentVersion}'`);
+    }
 }
-
+exports.MissingCurrentVersionError = MissingCurrentVersionError;
 /**
  * Represents a formatting error in a changelog.
  */
 class ChangelogFormattingError extends InvalidChangelogError {
-  /**
-   * @param {Object} options
-   * @param {string} options.validChangelog - The string contents of the well-
-   *   formatted changelog.
-   * @param {string} options.invalidChangelog - The string contents of the
-   *   malformed changelog.
-   */
-  constructor({ validChangelog, invalidChangelog }) {
-    super('Changelog is not well-formatted');
-    this.data = {
-      validChangelog,
-      invalidChangelog,
-    };
-  }
+    /**
+     * @param options
+     * @param options.validChangelog - The string contents of the well-formatted
+     * changelog.
+     * @param options.invalidChangelog - The string contents of the malformed
+     * changelog.
+     */
+    constructor({ validChangelog, invalidChangelog, }) {
+        super('Changelog is not well-formatted');
+        this.data = {
+            validChangelog,
+            invalidChangelog,
+        };
+    }
 }
-
+exports.ChangelogFormattingError = ChangelogFormattingError;
 /**
  * Validates that a changelog is well-formatted.
- * @param {Object} options
- * @param {string} options.changelogContent - The current changelog
- * @param {Version} options.currentVersion - The current version
- * @param {string} options.repoUrl - The GitHub repository URL for the current
- *   project.
- * @param {boolean} options.isReleaseCandidate - Denotes whether the current
- *   project is in the midst of release preparation or not. If this is set, this
- *   command will also ensure the current version is represented in the
- *   changelog with a release header, and that there are no unreleased changes
- *   present.
- * @throws {InvalidChangelogError} Will throw if the changelog is invalid
- * @throws {MissingCurrentVersionError} Will throw if `isReleaseCandidate` is
- *   `true` and the changelog is missing the release header for the current
- *   version.
- * @throws {UnreleasedChangesError} Will throw if `isReleaseCandidate` is
- *   `true` and the changelog contains unreleased changes.
- * @throws {ChangelogFormattingError} Will throw if there is a formatting error.
+ *
+ * @param options
+ * @param options.changelogContent - The current changelog
+ * @param options.currentVersion - The current version. Required if
+ * `isReleaseCandidate` is set, but optional otherwise.
+ * @param options.repoUrl - The GitHub repository URL for the current
+ * project.
+ * @param options.isReleaseCandidate - Denotes whether the current project is in
+ * the midst of release preparation or not. If this is set, this command will
+ * also ensure the current version is represented in the changelog with a
+ * header, and that there are no unreleased changes present.
+ * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
+ * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
+ * `true` and the changelog is missing the release header for the current
+ * version.
+ * @throws `UnreleasedChangesError` - Will throw if `isReleaseCandidate` is
+ * `true` and the changelog contains unreleased changes.
+ * @throws `ChangelogFormattingError` - Will throw if there is a formatting error.
  */
-function validateChangelog({
-  changelogContent,
-  currentVersion,
-  repoUrl,
-  isReleaseCandidate,
-}) {
-  const changelog = parseChangelog({ changelogContent, repoUrl });
-
-  // Ensure release header exists, if necessary
-  if (
-    isReleaseCandidate &&
-    !changelog
-      .getReleases()
-      .find((release) => release.version === currentVersion)
-  ) {
-    throw new MissingCurrentVersionError(currentVersion);
-  }
-
-  const hasUnreleasedChanges =
-    Object.keys(changelog.getUnreleasedChanges()).length !== 0;
-  if (isReleaseCandidate && hasUnreleasedChanges) {
-    throw new UnreleasedChangesError();
-  }
-
-  const validChangelog = changelog.toString();
-  if (validChangelog !== changelogContent) {
-    throw new ChangelogFormattingError({
-      validChangelog,
-      invalidChangelog: changelogContent,
-    });
-  }
+function validateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, }) {
+    const changelog = parse_changelog_1.parseChangelog({ changelogContent, repoUrl });
+    if (isReleaseCandidate) {
+        if (!currentVersion) {
+            throw new Error(`A version must be specified if 'isReleaseCandidate' is set.`);
+        }
+        // Ensure release header exists, if necessary
+        if (!changelog
+            .getReleases()
+            .find((release) => release.version === currentVersion)) {
+            throw new MissingCurrentVersionError(currentVersion);
+        }
+    }
+    const hasUnreleasedChanges = Object.keys(changelog.getUnreleasedChanges()).length !== 0;
+    if (isReleaseCandidate && hasUnreleasedChanges) {
+        throw new UnreleasedChangesError();
+    }
+    const validChangelog = changelog.toString();
+    if (validChangelog !== changelogContent) {
+        throw new ChangelogFormattingError({
+            validChangelog,
+            invalidChangelog: changelogContent,
+        });
+    }
 }
-
-module.exports = {
-  ChangelogFormattingError,
-  InvalidChangelogError,
-  MissingCurrentVersionError,
-  UnreleasedChangesError,
-  validateChangelog,
-};
-
+exports.validateChangelog = validateChangelog;
+//# sourceMappingURL=validate-changelog.js.map
 
 /***/ }),
 
@@ -7685,8 +7615,8 @@ function versionToTag(version) {
     return `v${version}`;
 }
 //# sourceMappingURL=git-operations.js.map
-// EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/src/index.js
-var src = __nccwpck_require__(3439);
+// EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/dist/index.js
+var dist = __nccwpck_require__(9272);
 ;// CONCATENATED MODULE: ./lib/package-operations.js
 
 
@@ -7821,7 +7751,7 @@ async function updatePackageChangelog(packageMetadata, updateSpecification) {
         console.error(`Failed to read changelog at "${getTruncatedPath(changelogPath)}".`);
         throw error;
     }
-    await (0,src.updateChangelog)({
+    await (0,dist/* updateChangelog */.cV)({
         changelogContent,
         currentVersion: newVersion,
         isReleaseCandidate: true,

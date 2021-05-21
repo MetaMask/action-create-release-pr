@@ -510,10 +510,10 @@
     "@types/yargs" "^15.0.0"
     chalk "^4.0.0"
 
-"@metamask/auto-changelog@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@metamask/auto-changelog/-/auto-changelog-1.0.0.tgz#ca6a71d1b983cf08b715bdcd8e240d746974d0c7"
-  integrity sha512-3Bcm+JsEmNllPi7kRtzS6EAjYTzz+Isa4QFq2DQ4DFwIsv2HUxdR+KNU2GJ1BdX4lbPcQTrpTdaPgBZ9G4NhLA==
+"@metamask/auto-changelog@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@metamask/auto-changelog/-/auto-changelog-2.1.0.tgz#5cb546f05b07695476d9489540b8d2744d350eda"
+  integrity sha512-FO1NsgcrHQY6CWlD9wFEWgmxWgam1GqtfFGiRH7lp4aYSGn/43ktBMkZ/rF0//7XvUDXn27nC2CClRUBCrg8Jg==
   dependencies:
     cross-spawn "^7.0.3"
     diff "^5.0.0"
