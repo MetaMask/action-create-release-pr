@@ -123,14 +123,14 @@ async function hasCompleteGitHistory(): Promise<boolean> {
  *
  * @param tags - All tags for the release's base git branch.
  * @param packageData - The metadata of the package to diff.
- * @param packagesDir - The directory containing the monorepo's packages.
+ * @param rootDir - The monorepo root directory.
  * @returns Whether the package changed since its last release. `true` is
  * returned if there are no releases in the repository's history.
  */
 export async function didPackageChange(
   tags: ReadonlySet<string>,
   packageData: PackageMetadata,
-  packagesDir = 'packages',
+  rootDir = WORKSPACE_ROOT,
 ): Promise<boolean> {
   // In this case, we assume that it's the first release, and every package
   // is implicitly considered to have "changed".
@@ -148,7 +148,7 @@ export async function didPackageChange(
       `Package "${packageName}" has version "${currentVersion}" in its manifest, but no corresponding tag "${tagOfCurrentVersion}" exists.`,
     );
   }
-  return hasDiff(packageData, tagOfCurrentVersion, packagesDir);
+  return hasDiff(packageData, tagOfCurrentVersion, rootDir);
 }
 
 /**
@@ -157,26 +157,25 @@ export async function didPackageChange(
  *
  * @param packageData - The metadata of the package to diff.
  * @param tag - The tag corresponding to the package's latest release.
- * @param packagesDir - The monorepo's packages directory.
+ * @param rootDir - The monorepo root directory.
  * @returns Whether the package changed since its last release.
  */
 async function hasDiff(
   packageData: PackageMetadata,
   tag: string,
-  packagesDir: string,
+  rootDir: string,
 ): Promise<boolean> {
-  const { dirName: packageDirName } = packageData;
+  const { dirPath } = packageData;
 
   let diff: string[];
   if (DIFFS.has(tag)) {
     diff = DIFFS.get(tag) as string[];
   } else {
-    diff = await getDiff(tag, packagesDir);
+    diff = await getDiff(tag, pathUtils.join(rootDir, dirPath));
     DIFFS.set(tag, diff);
   }
 
-  const packagePathPrefix = pathUtils.join(packagesDir, packageDirName);
-  return diff.some((diffPath) => diffPath.startsWith(packagePathPrefix));
+  return diff.length > 0;
 }
 
 /**
@@ -184,12 +183,12 @@ async function hasDiff(
  * current HEAD.
  *
  * @param tag - The tag to compare against HEAD.
- * @param packagesDir - The monorepo's packages directory. Used for narrowing
- * git diff results.
- * @returns An array of paths to files in the packages directory that were
+ * @param workspaceDir - The workspace's directory. Used for narrowing git
+ * diff results.
+ * @returns An array of paths to files in the workspace directory that were
  * changed between the tag and the current HEAD.
  */
-async function getDiff(tag: string, packagesDir: string): Promise<string[]> {
+async function getDiff(tag: string, workspaceDir: string): Promise<string[]> {
   return (
     await performGitOperation(
       'diff',
@@ -197,7 +196,7 @@ async function getDiff(tag: string, packagesDir: string): Promise<string[]> {
       HEAD,
       '--name-only',
       '--',
-      packagesDir,
+      workspaceDir,
     )
   ).split('\n');
 }

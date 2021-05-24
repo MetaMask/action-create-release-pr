@@ -25,6 +25,21 @@ jest.mock('fs', () => ({
   },
 }));
 
+jest.mock('glob', () => {
+  return (
+    _pattern: string,
+    _options: Record<string, unknown>,
+    callback: (error: Error | null, results: string[]) => unknown,
+  ) => {
+    callback(null, [
+      'packages/dir1',
+      'packages/dir2',
+      'packages/dir3',
+      'packages/someFile',
+    ]);
+  };
+});
+
 jest.mock('@metamask/auto-changelog', () => {
   return {
     updateChangelog: jest.fn(),
@@ -48,7 +63,6 @@ jest.mock('./utils', () => {
   };
 });
 
-const MOCK_ROOT_DIR = 'root';
 const MOCK_PACKAGES_DIR = 'packages';
 
 type DependencyFieldsDict = Partial<
@@ -196,8 +210,6 @@ describe('package-operations', () => {
   });
 
   describe('getMetadataForAllPackages', () => {
-    let readdirMock: jest.SpyInstance;
-
     const names = ['name1', 'name2', 'name3'];
     const dirs = ['dir1', 'dir2', 'dir3'];
     const version = '1.0.0';
@@ -208,7 +220,7 @@ describe('package-operations', () => {
         dirName: dirs[index],
         manifest: getMockManifest(names[index], version),
         [FieldNames.Name]: names[index],
-        dirPath: `${MOCK_ROOT_DIR}/${MOCK_PACKAGES_DIR}/${dirs[index]}`,
+        dirPath: `${MOCK_PACKAGES_DIR}/${dirs[index]}`,
       };
     };
 
@@ -221,8 +233,6 @@ describe('package-operations', () => {
     }
 
     beforeEach(() => {
-      readdirMock = jest.spyOn(fs.promises, 'readdir');
-
       jest.spyOn(fs.promises, 'lstat').mockImplementation((async (
         path: string,
       ) => {
@@ -237,11 +247,7 @@ describe('package-operations', () => {
     });
 
     it('does not throw', async () => {
-      readdirMock.mockImplementationOnce((async () => {
-        return [...dirs, SOME_FILE];
-      }) as any);
-
-      expect(await getMetadataForAllPackages()).toStrictEqual({
+      expect(await getMetadataForAllPackages(['packages/*'])).toStrictEqual({
         [names[0]]: getMockPackageMetadata(0),
         [names[1]]: getMockPackageMetadata(1),
         [names[2]]: getMockPackageMetadata(2),
@@ -311,7 +317,8 @@ describe('package-operations', () => {
       };
     };
 
-    const getMockWritePath = (dirPath: string) => `${dirPath}/package.json`;
+    const getMockWritePath = (dirPath: string) =>
+      `root/${dirPath}/package.json`;
 
     const mockDirs = ['dir1', 'dir2', 'dir3'];
     const packageNames = ['name1', 'name2', 'name3'];

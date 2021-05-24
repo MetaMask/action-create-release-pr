@@ -38,7 +38,6 @@ jest.mock('./utils', () => {
 });
 
 describe('performUpdate', () => {
-  const WORKSPACE_ROOT = 'rootDir';
   const mockRepoUrl = 'https://fake';
 
   let getRepositoryHttpsUrlMock: jest.SpyInstance;
@@ -89,7 +88,7 @@ describe('performUpdate', () => {
     expect(packageOperations.updatePackage).toHaveBeenCalledTimes(1);
     expect(packageOperations.updatePackage).toHaveBeenCalledWith(
       {
-        dirPath: WORKSPACE_ROOT,
+        dirPath: './',
         manifest: { name: packageName, version: oldVersion },
       },
       { newVersion, repositoryUrl: mockRepoUrl, shouldUpdateChangelog: true },
@@ -128,7 +127,7 @@ describe('performUpdate', () => {
     expect(packageOperations.updatePackage).toHaveBeenCalledTimes(1);
     expect(packageOperations.updatePackage).toHaveBeenCalledWith(
       {
-        dirPath: WORKSPACE_ROOT,
+        dirPath: './',
         manifest: { name: packageName, version: oldVersion },
       },
       { newVersion, repositoryUrl: mockRepoUrl, shouldUpdateChangelog: true },
@@ -199,7 +198,7 @@ describe('performUpdate', () => {
     expect(packageOperations.updatePackage).toHaveBeenCalledTimes(1);
     expect(packageOperations.updatePackage).toHaveBeenCalledWith(
       {
-        dirPath: WORKSPACE_ROOT,
+        dirPath: './',
         manifest: {
           name: rootManifestName,
           private: true,

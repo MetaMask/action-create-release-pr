@@ -100,7 +100,7 @@ async function updatePolyrepo(
   repositoryUrl: string,
 ): Promise<void> {
   await updatePackage(
-    { dirPath: WORKSPACE_ROOT, manifest },
+    { dirPath: './', manifest },
     { newVersion, repositoryUrl, shouldUpdateChangelog: true },
   );
 }
@@ -133,7 +133,7 @@ async function updateMonorepo(
   const synchronizeVersions = isMajorSemverDiff(versionDiff);
 
   // Collect required information to perform updates
-  const allPackages = await getMetadataForAllPackages();
+  const allPackages = await getMetadataForAllPackages(rootManifest.workspaces);
   const packagesToUpdate = await getPackagesToUpdate(
     allPackages,
     synchronizeVersions,
@@ -152,7 +152,7 @@ async function updateMonorepo(
   // this Action.
   await updatePackages(allPackages, updateSpecification);
   await updatePackage(
-    { dirPath: WORKSPACE_ROOT, manifest: rootManifest },
+    { dirPath: './', manifest: rootManifest },
     { ...updateSpecification, shouldUpdateChangelog: false },
   );
 }
