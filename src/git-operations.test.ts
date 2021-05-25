@@ -1,12 +1,13 @@
+/* eslint-disable import/first */
+// This must be set before the import, so that the default root workspace is set
+process.env.GITHUB_WORKSPACE = 'root';
+
 import execa from 'execa';
 import {
   didPackageChange,
   getRepositoryHttpsUrl,
   getTags,
 } from './git-operations';
-
-// We don't actually use it, so it doesn't matter what it is.
-process.env.GITHUB_WORKSPACE = 'root';
 
 jest.mock('execa');
 const execaMock: jest.Mock<any, any> = execa as any;
@@ -178,7 +179,7 @@ describe('didPackageChange', () => {
         name: PACKAGES.A.name,
         manifest: { name: PACKAGES.A.name, version: VERSIONS.A },
         dirName: PACKAGES.A.dir,
-        dirPath: '', // just for interface compliance, not relevant
+        dirPath: `packages/${PACKAGES.A.dir}`,
       }),
     ).toStrictEqual(true);
     expect(execaMock).toHaveBeenCalledTimes(1);
@@ -190,19 +191,7 @@ describe('didPackageChange', () => {
         name: PACKAGES.A.name,
         manifest: { name: PACKAGES.A.name, version: VERSIONS.A },
         dirName: PACKAGES.A.dir,
-        dirPath: '', // just for interface compliance, not relevant
-      }),
-    ).toStrictEqual(true);
-    expect(execaMock).not.toHaveBeenCalled();
-  });
-
-  it('retrieves cached diff on repeat call for tag', async () => {
-    expect(
-      await didPackageChange(PARSED_MOCK_TAGS, {
-        name: PACKAGES.A.name,
-        manifest: { name: PACKAGES.A.name, version: VERSIONS.A },
-        dirName: PACKAGES.A.dir,
-        dirPath: '', // just for interface compliance, not relevant
+        dirPath: `packages/${PACKAGES.A.dir}`,
       }),
     ).toStrictEqual(true);
     expect(execaMock).not.toHaveBeenCalled();
@@ -214,7 +203,7 @@ describe('didPackageChange', () => {
         name: PACKAGES.A.name,
         manifest: { name: PACKAGES.A.name, version: '2.0.0' },
         dirName: PACKAGES.A.dir,
-        dirPath: '', // just for interface compliance, not relevant
+        dirPath: `packages/${PACKAGES.A.dir}`,
       }),
     ).rejects.toThrow(/no corresponding tag/u);
     expect(execaMock).not.toHaveBeenCalled();

@@ -1,5 +1,7 @@
 import { promises as fs } from 'fs';
 import pathUtils from 'path';
+import { promisify } from 'util';
+import _glob from 'glob';
 import { updateChangelog } from '@metamask/auto-changelog';
 
 import { didPackageChange } from './git-operations';
@@ -10,6 +12,8 @@ import {
   WORKSPACE_ROOT,
   writeJsonFile,
 } from './utils';
+
+const glob = promisify(_glob);
 
 const PACKAGE_JSON = 'package.json';
 
@@ -67,37 +71,52 @@ interface MonorepoUpdateSpecification extends UpdateSpecification {
 }
 
 /**
- * Reads the contents of the monorepo's packages directory, and collects
- * metadata for each package therein. Assumes that all folders in the packages
- * directory are the root folders of distinct npm packages.
+ * Get workspace directory locations, given the set of workspace patterns
+ * specified in the `workspaces` field of the root `package.json` file.
  *
+ * @param workspaces - The list of workspace patterns given in the root manifest.
  * @param rootDir - The monorepo root directory.
- * @param packagesDir - The packages directory of the monorepo.
+ * @returns The location of each workspace directory relative to the root directory
+ */
+async function getWorkspaceLocations(
+  workspaces: string[],
+  rootDir: string,
+): Promise<string[]> {
+  const resolvedWorkspaces = await Promise.all(
+    workspaces.map((pattern) => glob(pattern, { cwd: rootDir })),
+  );
+  return resolvedWorkspaces.flat();
+}
+
+/**
+ * Finds the package manifest for each workspace, and collects
+ * metadata for each package.
+ *
+ * @param workspaces - The list of workspace patterns given in the root manifest.
+ * @param rootDir - The monorepo root directory.
  * @returns The metadata for all packages in the monorepo.
  */
 export async function getMetadataForAllPackages(
+  workspaces: string[],
   rootDir: string = WORKSPACE_ROOT,
-  packagesDir = 'packages',
 ): Promise<Record<string, PackageMetadata>> {
-  const packagesPath = pathUtils.join(rootDir, packagesDir);
-  const packagesDirContents = await fs.readdir(packagesPath);
+  const workspaceLocations = await getWorkspaceLocations(workspaces, rootDir);
 
   const result: Record<string, PackageMetadata> = {};
   await Promise.all(
-    packagesDirContents.map(async (packageDir) => {
-      const packagePath = pathUtils.join(packagesPath, packageDir);
-
-      if ((await fs.lstat(packagePath)).isDirectory()) {
-        const rawManifest = await getPackageManifest(packagePath);
+    workspaceLocations.map(async (workspaceDirectory) => {
+      const fullWorkspacePath = pathUtils.join(rootDir, workspaceDirectory);
+      if ((await fs.lstat(fullWorkspacePath)).isDirectory()) {
+        const rawManifest = await getPackageManifest(fullWorkspacePath);
         const manifest = validatePolyrepoPackageManifest(
           rawManifest,
-          packagePath,
+          workspaceDirectory,
         );
         result[manifest.name] = {
-          dirName: packageDir,
+          dirName: pathUtils.basename(workspaceDirectory),
           manifest,
           name: manifest.name,
-          dirPath: packagePath,
+          dirPath: workspaceDirectory,
         };
       }
     }),
@@ -178,10 +197,11 @@ export async function updatePackages(
 export async function updatePackage(
   packageMetadata: { dirPath: string; manifest: Partial<PackageManifest> },
   updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
+  rootDir: string = WORKSPACE_ROOT,
 ): Promise<void> {
   await Promise.all([
     writeJsonFile(
-      pathUtils.join(packageMetadata.dirPath, PACKAGE_JSON),
+      pathUtils.join(rootDir, packageMetadata.dirPath, PACKAGE_JSON),
       getUpdatedManifest(packageMetadata.manifest, updateSpecification),
     ),
     updateSpecification.shouldUpdateChangelog
@@ -202,18 +222,21 @@ export async function updatePackage(
 async function updatePackageChangelog(
   packageMetadata: { dirPath: string },
   updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
+  rootDir: string = WORKSPACE_ROOT,
 ) {
   const { dirPath: projectRootDirectory } = packageMetadata;
   const { newVersion, repositoryUrl } = updateSpecification;
 
   let changelogContent: string;
-  const changelogPath = pathUtils.join(projectRootDirectory, 'CHANGELOG.md');
+  const changelogPath = pathUtils.join(
+    rootDir,
+    projectRootDirectory,
+    'CHANGELOG.md',
+  );
   try {
     changelogContent = await fs.readFile(changelogPath, 'utf-8');
   } catch (error) {
-    console.error(
-      `Failed to read changelog at "${getTruncatedPath(changelogPath)}".`,
-    );
+    console.error(`Failed to read changelog in "${projectRootDirectory}".`);
     throw error;
   }
 
@@ -324,8 +347,8 @@ function getUpdatedDependencyField(
  *
  * An error is thrown if validation fails.
  *
- * @param containingDirPath - The path to the directory containing the
- * package.json file.
+ * @param containingDirPath - The complete path to the directory containing
+ * the package.json file.
  * @returns The object corresponding to the parsed package.json file.
  */
 export async function getPackageManifest(
@@ -396,7 +419,7 @@ function hasValidWorkspacesField(
  *
  * @param manifest - The manifest to validate.
  * @param manifestDirPath - The path to the directory containing the
- * manifest file.
+ * manifest file relative to the root directory.
  * @returns The unmodified manifest, with the "version" field typed correctly.
  */
 export function validatePackageManifestVersion<
@@ -423,7 +446,7 @@ export function validatePackageManifestVersion<
  *
  * @param manifest - The manifest to validate.
  * @param manifestDirPath - The path to the directory containing the
- * manifest file.
+ * manifest file relative to the root directory.
  * @returns The unmodified manifest, with the "name" field typed correctly.
  */
 export function validatePackageManifestName<
@@ -434,9 +457,7 @@ export function validatePackageManifestName<
 ): ManifestType & Pick<PackageManifest, FieldNames.Name> {
   if (!hasValidNameField(manifest)) {
     throw new Error(
-      `Manifest in "${getTruncatedPath(
-        manifestDirPath,
-      )}" does not have a valid "${FieldNames.Name}" field.`,
+      `Manifest in "${manifestDirPath}" does not have a valid "${FieldNames.Name}" field.`,
     );
   }
   return manifest;
@@ -448,7 +469,7 @@ export function validatePackageManifestName<
  *
  * @param manifest - The manifest to validate.
  * @param manifestDirPath - The path to the directory containing the
- * manifest file.
+ * manifest file relative to the root directory.
  * @returns The unmodified manifest, with the "version" and "name" fields typed
  * correctly.
  */
@@ -470,7 +491,7 @@ export function validatePolyrepoPackageManifest(
  *
  * @param manifest - The manifest to validate.
  * @param manifestDirPath - The path to the directory containing the
- * manifest file.
+ * manifest file relative to the root directory.
  * @returns The unmodified manifest, with the "workspaces" and "private" fields
  * typed correctly.
  */
@@ -522,26 +543,12 @@ function isMonorepoUpdateSpecification(
 }
 
 /**
- * Given a path string, returns the last two segments of the path, without
- * leading or trailing slashes.
- *
- * @param absolutePath - The absolute path to truncate.
- * @returns The truncated path string.
- */
-function getTruncatedPath(absolutePath: string): string {
-  return absolutePath
-    .split(pathUtils.sep)
-    .filter((segment) => Boolean(segment))
-    .splice(-2)
-    .join(pathUtils.sep);
-}
-
-/**
  * Gets the prefix of an error message for a manifest file validation error.
  *
  * @param invalidField - The name of the invalid field.
  * @param manifest - The manifest object that's invalid.
- * @param manifestDirPath - The path to the directory of the manifest file.
+ * @param manifestDirPath - The path to the directory of the manifest file
+ * relative to the root directory.
  * @returns The prefix of a manifest validation error message.
  */
 function getManifestErrorMessagePrefix(
@@ -549,10 +556,9 @@ function getManifestErrorMessagePrefix(
   manifest: Partial<MonorepoPackageManifest>,
   manifestDirPath: string,
 ) {
-  const legiblePath = getTruncatedPath(manifestDirPath);
   return `${
     manifest[FieldNames.Name]
       ? `"${manifest[FieldNames.Name]}" manifest "${invalidField}"`
-      : `"${invalidField}" of manifest in "${legiblePath}"`
+      : `"${invalidField}" of manifest in "${manifestDirPath}"`
   }`;
 }
