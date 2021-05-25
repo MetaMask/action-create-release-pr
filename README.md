@@ -1,5 +1,17 @@
 # MetaMask/action-create-release-pr
 
+## Description
+
+This action creates a new release branch and PR. It also makes a commit that includes any release preparation that can be easily automated, which includes version bumps and a partial changelog updates (using `@metamask/auto-changelog`).
+
+### Monorepos
+
+This action is compatible with monorepos, but only if they use workspaces. It uses the `workspaces` property of `package.json` to determine if the repo is a monorepo, and to find each workspace.
+
+The release type and git history determine which packages are bumped. For major releases, all packages are bumped. But for minor and patch releases, the git history will be scanned to determine whether each package has changed since the previous version. Only packages with changes since the previous version will be bumped.
+
+This action uses a synchronized versioning strategy, meaning that the version of the root `package.json` file will be set on any updated packages. Packages in the monorepo may fall behind in version if they don't have any changes, but they'll jump directly to the current version of the entire monorepo if they change at all. As a result, the version change for individual packages might be beyond what SemVer would recommend. For example, packages might get major version bumps despite having no breaking changes. This is unfortunate, but for us the benefits of this simplified versioning scheme outweigh the harms.
+
 ## Usage
 
 This Action can be used on its own, but we recommend using it with [MetaMask/action-publish-release](https://github.com/MetaMask/action-publish-release).
