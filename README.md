@@ -4,6 +4,8 @@
 
 This action creates a new release branch and PR. It also makes a commit that includes any release preparation that can be easily automated, which includes version bumps and a partial changelog updates (using `@metamask/auto-changelog`).
 
+This action is only tested with Yarn v1.
+
 ### Monorepos
 
 This action is compatible with monorepos, but only if they use workspaces. It uses the `workspaces` property of `package.json` to determine if the repo is a monorepo, and to find each workspace.
