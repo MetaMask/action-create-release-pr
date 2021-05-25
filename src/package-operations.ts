@@ -556,10 +556,9 @@ function getManifestErrorMessagePrefix(
   manifest: Partial<MonorepoPackageManifest>,
   manifestDirPath: string,
 ) {
-  const legiblePath = manifestDirPath;
   return `${
     manifest[FieldNames.Name]
       ? `"${manifest[FieldNames.Name]}" manifest "${invalidField}"`
-      : `"${invalidField}" of manifest in "${legiblePath}"`
+      : `"${invalidField}" of manifest in "${manifestDirPath}"`
   }`;
 }

@@ -11262,10 +11262,9 @@ function isMonorepoUpdateSpecification(specification) {
  * @returns The prefix of a manifest validation error message.
  */
 function getManifestErrorMessagePrefix(invalidField, manifest, manifestDirPath) {
-    const legiblePath = manifestDirPath;
     return `${manifest[FieldNames.Name]
         ? `"${manifest[FieldNames.Name]}" manifest "${invalidField}"`
-        : `"${invalidField}" of manifest in "${legiblePath}"`}`;
+        : `"${invalidField}" of manifest in "${manifestDirPath}"`}`;
 }
 //# sourceMappingURL=package-operations.js.map
 ;// CONCATENATED MODULE: ./lib/update.js
