@@ -196,8 +196,8 @@ describe('package-operations', () => {
       };
     };
 
-    const getMockWritePath = (dirPath: string) =>
-      `root/${dirPath}/package.json`;
+    const getMockWritePath = (dirPath: string, fileName: string) =>
+      `root/${dirPath}/${fileName}`;
 
     const mockDirs = ['dir1', 'dir2', 'dir3'];
     const packageNames = ['name1', 'name2', 'name3'];
@@ -222,7 +222,7 @@ describe('package-operations', () => {
         await updatePackage(packageMetadata, updateSpecification);
         expect(writeFileMock).toHaveBeenCalledTimes(1);
         expect(writeFileMock).toHaveBeenCalledWith(
-          getMockWritePath(dir),
+          getMockWritePath(dir, 'package.json'),
           jsonStringify({
             ...cloneDeep(manifest),
             [ManifestFieldNames.Version]: newVersion,
@@ -242,6 +242,9 @@ describe('package-operations', () => {
         const changelogContent = 'I am a changelog.';
         readFileMock.mockImplementationOnce(async () => changelogContent);
 
+        const mockNewChangelog = 'I am a new changelog.';
+        updateChangelogMock.mockImplementation(async () => mockNewChangelog);
+
         const packageMetadata = getMockPackageMetadata(dir, manifest);
         const updateSpecification = {
           newVersion,
@@ -252,9 +255,10 @@ describe('package-operations', () => {
         };
 
         await updatePackage(packageMetadata, updateSpecification);
-        expect(writeFileMock).toHaveBeenCalledTimes(1);
-        expect(writeFileMock).toHaveBeenCalledWith(
-          getMockWritePath(dir),
+        expect(writeFileMock).toHaveBeenCalledTimes(2);
+        expect(writeFileMock).toHaveBeenNthCalledWith(
+          1,
+          getMockWritePath(dir, 'package.json'),
           jsonStringify({
             ...cloneDeep(manifest),
             [ManifestFieldNames.Version]: newVersion,
@@ -268,6 +272,11 @@ describe('package-operations', () => {
           projectRootDirectory: dir,
           repoUrl,
         });
+        expect(writeFileMock).toHaveBeenNthCalledWith(
+          2,
+          getMockWritePath(dir, 'CHANGELOG.md'),
+          mockNewChangelog,
+        );
       });
 
       it('re-throws changelog read error', async () => {
@@ -304,6 +313,101 @@ describe('package-operations', () => {
         );
       });
 
+      it('throws if updated changelog is empty', async () => {
+        const originalVersion = '1.0.0';
+        const newVersion = '1.0.1';
+        const dir = mockDirs[0];
+        const name = packageNames[0];
+        const manifest = getMockManifest(name, originalVersion);
+
+        const repoUrl = 'https://fake';
+        const changelogContent = 'I am a changelog.';
+        readFileMock.mockImplementationOnce(async () => changelogContent);
+
+        // This will cause an error
+        updateChangelogMock.mockImplementation(async () => '');
+
+        const packageMetadata = getMockPackageMetadata(dir, manifest);
+        const updateSpecification = {
+          newVersion,
+          packagesToUpdate: new Set(packageNames),
+          repositoryUrl: repoUrl,
+          shouldUpdateChangelog: true,
+          synchronizeVersions: false,
+        };
+
+        await expect(
+          updatePackage(packageMetadata, updateSpecification),
+        ).rejects.toThrow(
+          '"updateChangelog" returned an empty value for package "name1".',
+        );
+        expect(writeFileMock).toHaveBeenCalledTimes(1);
+        expect(writeFileMock).toHaveBeenNthCalledWith(
+          1,
+          getMockWritePath(dir, 'package.json'),
+          jsonStringify({
+            ...cloneDeep(manifest),
+            [ManifestFieldNames.Version]: newVersion,
+          }),
+        );
+        expect(updateChangelogMock).toHaveBeenCalledTimes(1);
+        expect(updateChangelogMock).toHaveBeenCalledWith({
+          changelogContent,
+          currentVersion: newVersion,
+          isReleaseCandidate: true,
+          projectRootDirectory: dir,
+          repoUrl,
+        });
+      });
+
+      it('throws if updated changelog is empty, and handles missing package name', async () => {
+        const originalVersion = '1.0.0';
+        const newVersion = '1.0.1';
+        const dir = mockDirs[0];
+        const name = packageNames[0];
+        const manifest = getMockManifest(name, originalVersion);
+        delete (manifest as any).name;
+
+        const repoUrl = 'https://fake';
+        const changelogContent = 'I am a changelog.';
+        readFileMock.mockImplementationOnce(async () => changelogContent);
+
+        // This will cause an error
+        updateChangelogMock.mockImplementation(async () => '');
+
+        const packageMetadata = getMockPackageMetadata(dir, manifest);
+        const updateSpecification = {
+          newVersion,
+          packagesToUpdate: new Set(packageNames),
+          repositoryUrl: repoUrl,
+          shouldUpdateChangelog: true,
+          synchronizeVersions: false,
+        };
+
+        await expect(
+          updatePackage(packageMetadata, updateSpecification),
+        ).rejects.toThrow(
+          '"updateChangelog" returned an empty value for package at "root/dir1".',
+        );
+        expect(writeFileMock).toHaveBeenCalledTimes(1);
+        expect(writeFileMock).toHaveBeenNthCalledWith(
+          1,
+          getMockWritePath(dir, 'package.json'),
+          jsonStringify({
+            ...cloneDeep(manifest),
+            [ManifestFieldNames.Version]: newVersion,
+          }),
+        );
+        expect(updateChangelogMock).toHaveBeenCalledTimes(1);
+        expect(updateChangelogMock).toHaveBeenCalledWith({
+          changelogContent,
+          currentVersion: newVersion,
+          isReleaseCandidate: true,
+          projectRootDirectory: dir,
+          repoUrl,
+        });
+      });
+
       it('updates a package without synchronizing dependency versions', async () => {
         const originalVersion = '1.0.0';
         const newVersion = '1.0.1';
@@ -325,7 +429,7 @@ describe('package-operations', () => {
         await updatePackage(packageMetadata, updateSpecification);
         expect(writeFileMock).toHaveBeenCalledTimes(1);
         expect(writeFileMock).toHaveBeenCalledWith(
-          getMockWritePath(dir),
+          getMockWritePath(dir, 'package.json'),
           jsonStringify({
             ...cloneDeep(manifest),
             [ManifestFieldNames.Version]: newVersion,
@@ -370,7 +474,7 @@ describe('package-operations', () => {
         await updatePackage(packageMetadata, updateSpecification);
         expect(writeFileMock).toHaveBeenCalledTimes(1);
         expect(writeFileMock).toHaveBeenCalledWith(
-          getMockWritePath(dir),
+          getMockWritePath(dir, 'package.json'),
           jsonStringify(
             getMockManifest(name, newVersion, expectedDependencies),
           ),
@@ -410,7 +514,7 @@ describe('package-operations', () => {
         expect(writeFileMock).toHaveBeenCalledTimes(2);
         expect(writeFileMock).toHaveBeenNthCalledWith(
           1,
-          getMockWritePath(dir1),
+          getMockWritePath(dir1, 'package.json'),
           jsonStringify({
             ...cloneDeep(manifest1),
             [ManifestFieldNames.Version]: newVersion,
@@ -418,7 +522,7 @@ describe('package-operations', () => {
         );
         expect(writeFileMock).toHaveBeenNthCalledWith(
           2,
-          getMockWritePath(dir2),
+          getMockWritePath(dir2, 'package.json'),
           jsonStringify({
             ...cloneDeep(manifest2),
             [ManifestFieldNames.Version]: newVersion,
