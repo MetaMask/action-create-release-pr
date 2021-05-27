@@ -1,8 +1,9 @@
 import pathUtils from 'path';
 import semverClean from 'semver/functions/clean';
 import execa from 'execa';
+import { isValidSemver } from '@metamask/action-utils';
 import type { PackageMetadata } from './package-operations';
-import { isValidSemver, WORKSPACE_ROOT } from './utils';
+import { WORKSPACE_ROOT } from './utils';
 
 const HEAD = 'HEAD';
 
