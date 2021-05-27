@@ -1,4 +1,3 @@
-import pathUtils from 'path';
 import semverClean from 'semver/functions/clean';
 import execa from 'execa';
 import { isValidSemver } from '@metamask/action-utils';
@@ -124,14 +123,12 @@ async function hasCompleteGitHistory(): Promise<boolean> {
  *
  * @param tags - All tags for the release's base git branch.
  * @param packageData - The metadata of the package to diff.
- * @param rootDir - The monorepo root directory.
  * @returns Whether the package changed since its last release. `true` is
  * returned if there are no releases in the repository's history.
  */
 export async function didPackageChange(
   tags: ReadonlySet<string>,
   packageData: PackageMetadata,
-  rootDir = WORKSPACE_ROOT,
 ): Promise<boolean> {
   // In this case, we assume that it's the first release, and every package
   // is implicitly considered to have "changed".
@@ -149,7 +146,7 @@ export async function didPackageChange(
       `Package "${packageName}" has version "${currentVersion}" in its manifest, but no corresponding tag "${tagOfCurrentVersion}" exists.`,
     );
   }
-  return hasDiff(packageData, tagOfCurrentVersion, rootDir);
+  return hasDiff(packageData, tagOfCurrentVersion);
 }
 
 /**
@@ -158,48 +155,37 @@ export async function didPackageChange(
  *
  * @param packageData - The metadata of the package to diff.
  * @param tag - The tag corresponding to the package's latest release.
- * @param rootDir - The monorepo root directory.
  * @returns Whether the package changed since its last release.
  */
 async function hasDiff(
   packageData: PackageMetadata,
   tag: string,
-  rootDir: string,
 ): Promise<boolean> {
-  const { dirPath } = packageData;
+  const { dirPath: packagePath } = packageData;
 
   let diff: string[];
   if (DIFFS.has(tag)) {
     diff = DIFFS.get(tag) as string[];
   } else {
-    diff = await getDiff(tag, pathUtils.join(rootDir, dirPath));
+    diff = await getDiff(tag);
     DIFFS.set(tag, diff);
   }
 
-  return diff.length > 0;
+  return diff.some((diffPath) => diffPath.startsWith(packagePath));
 }
 
 /**
- * Wrapper function for diffing packages between a particular tag and the
+ * Wrapper function for diffing the repository between a particular tag and the
  * current HEAD.
  *
  * @param tag - The tag to compare against HEAD.
- * @param workspaceDir - The workspace's directory. Used for narrowing git
- * diff results.
  * @returns An array of paths to files in the workspace directory that were
  * changed between the tag and the current HEAD.
  */
-async function getDiff(tag: string, workspaceDir: string): Promise<string[]> {
-  return (
-    await performGitOperation(
-      'diff',
-      tag,
-      HEAD,
-      '--name-only',
-      '--',
-      workspaceDir,
-    )
-  ).split('\n');
+async function getDiff(tag: string): Promise<string[]> {
+  return (await performGitOperation('diff', tag, HEAD, '--name-only')).split(
+    '\n',
+  );
 }
 
 /**

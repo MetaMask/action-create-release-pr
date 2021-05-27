@@ -13,15 +13,15 @@ jest.mock('execa');
 const execaMock: jest.Mock<any, any> = execa as any;
 
 enum VERSIONS {
-  A = '1.0.0',
-  B = '1.0.1',
-  C = '1.1.0',
+  First = '1.0.0',
+  Second = '1.0.1',
+  Third = '1.1.0',
 }
 
 enum TAGS {
-  A = 'v1.0.0',
-  B = 'v1.0.1',
-  C = 'v1.1.0',
+  First = 'v1.0.0',
+  Second = 'v1.0.1',
+  Third = 'v1.1.0',
 }
 
 type MockPackage = Readonly<{ name: string; dir: string }>;
@@ -36,9 +36,9 @@ const RAW_MOCK_TAGS = `${Object.values(TAGS).join('\n')}\n`;
 const PARSED_MOCK_TAGS: ReadonlySet<string> = new Set(Object.values(TAGS));
 
 const RAW_DIFFS: Readonly<Record<TAGS, string>> = {
-  [TAGS.A]: `packages/${PACKAGES.A.dir}/file.txt\npackages/${PACKAGES.B.dir}/file.txt\n`,
-  [TAGS.B]: `packages/${PACKAGES.A.dir}/file.txt\n`,
-  [TAGS.C]: `packages/${PACKAGES.B.dir}/file.txt\n`,
+  [TAGS.First]: `packages/${PACKAGES.A.dir}/file.txt\npackages/${PACKAGES.B.dir}/file.txt\n`,
+  [TAGS.Second]: `packages/${PACKAGES.A.dir}/file.txt\n`,
+  [TAGS.Third]: `packages/${PACKAGES.B.dir}/file.txt\n`,
 };
 
 describe('getRepositoryHttpsUrl', () => {
@@ -99,7 +99,7 @@ describe('getTags', () => {
       return { stdout: RAW_MOCK_TAGS };
     });
 
-    expect(await getTags()).toStrictEqual([PARSED_MOCK_TAGS, TAGS.C]);
+    expect(await getTags()).toStrictEqual([PARSED_MOCK_TAGS, TAGS.Third]);
     expect(execaMock).toHaveBeenCalledTimes(1);
   });
 
@@ -163,23 +163,29 @@ describe('getTags', () => {
 
 describe('didPackageChange', () => {
   it('returns true if there are no tags', async () => {
-    expect(await didPackageChange(new Set(), {} as any, 'foo')).toStrictEqual(
-      true,
-    );
+    expect(await didPackageChange(new Set(), {} as any)).toStrictEqual(true);
     expect(execaMock).not.toHaveBeenCalled();
   });
 
   it('calls "git diff" with expected tag', async () => {
     execaMock.mockImplementationOnce(async () => {
-      return { stdout: RAW_DIFFS[TAGS.A] };
+      return { stdout: RAW_DIFFS[TAGS.First] };
     });
 
     expect(
       await didPackageChange(PARSED_MOCK_TAGS, {
         name: PACKAGES.A.name,
-        manifest: { name: PACKAGES.A.name, version: VERSIONS.A },
+        manifest: { name: PACKAGES.A.name, version: VERSIONS.First },
         dirName: PACKAGES.A.dir,
         dirPath: `packages/${PACKAGES.A.dir}`,
+      }),
+    ).toStrictEqual(true);
+    expect(
+      await didPackageChange(PARSED_MOCK_TAGS, {
+        name: PACKAGES.B.name,
+        manifest: { name: PACKAGES.B.name, version: VERSIONS.First },
+        dirName: PACKAGES.B.dir,
+        dirPath: `packages/${PACKAGES.B.dir}`,
       }),
     ).toStrictEqual(true);
     expect(execaMock).toHaveBeenCalledTimes(1);
@@ -189,12 +195,36 @@ describe('didPackageChange', () => {
     expect(
       await didPackageChange(PARSED_MOCK_TAGS, {
         name: PACKAGES.A.name,
-        manifest: { name: PACKAGES.A.name, version: VERSIONS.A },
+        manifest: { name: PACKAGES.A.name, version: VERSIONS.First },
         dirName: PACKAGES.A.dir,
         dirPath: `packages/${PACKAGES.A.dir}`,
       }),
     ).toStrictEqual(true);
     expect(execaMock).not.toHaveBeenCalled();
+  });
+
+  it('only returns true for packages that actually changed', async () => {
+    execaMock.mockImplementationOnce(async () => {
+      return { stdout: RAW_DIFFS[TAGS.Second] };
+    });
+
+    expect(
+      await didPackageChange(PARSED_MOCK_TAGS, {
+        name: PACKAGES.A.name,
+        manifest: { name: PACKAGES.A.name, version: VERSIONS.Second },
+        dirName: PACKAGES.A.dir,
+        dirPath: `packages/${PACKAGES.A.dir}`,
+      }),
+    ).toStrictEqual(true);
+    expect(
+      await didPackageChange(PARSED_MOCK_TAGS, {
+        name: PACKAGES.B.name,
+        manifest: { name: PACKAGES.B.name, version: VERSIONS.Second },
+        dirName: PACKAGES.B.dir,
+        dirPath: `packages/${PACKAGES.B.dir}`,
+      }),
+    ).toStrictEqual(false);
+    expect(execaMock).toHaveBeenCalledTimes(1);
   });
 
   it('throws if package manifest specifies version without tag', async () => {

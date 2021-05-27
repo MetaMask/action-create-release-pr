@@ -10927,9 +10927,6 @@ var gt = __nccwpck_require__(4123);
 var gt_default = /*#__PURE__*/__nccwpck_require__.n(gt);
 // EXTERNAL MODULE: ./node_modules/@metamask/action-utils/dist/index.js
 var dist = __nccwpck_require__(1281);
-// EXTERNAL MODULE: external "path"
-var external_path_ = __nccwpck_require__(5622);
-var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
 // EXTERNAL MODULE: ./node_modules/semver/functions/clean.js
 var clean = __nccwpck_require__(8848);
 var clean_default = /*#__PURE__*/__nccwpck_require__.n(clean);
@@ -11012,7 +11009,6 @@ function validateActionInputs(inputs) {
 }
 //# sourceMappingURL=utils.js.map
 ;// CONCATENATED MODULE: ./lib/git-operations.js
-
 
 
 
@@ -11109,11 +11105,10 @@ async function hasCompleteGitHistory() {
  *
  * @param tags - All tags for the release's base git branch.
  * @param packageData - The metadata of the package to diff.
- * @param rootDir - The monorepo root directory.
  * @returns Whether the package changed since its last release. `true` is
  * returned if there are no releases in the repository's history.
  */
-async function didPackageChange(tags, packageData, rootDir = WORKSPACE_ROOT) {
+async function didPackageChange(tags, packageData) {
     // In this case, we assume that it's the first release, and every package
     // is implicitly considered to have "changed".
     if (tags.size === 0) {
@@ -11124,7 +11119,7 @@ async function didPackageChange(tags, packageData, rootDir = WORKSPACE_ROOT) {
     if (!tags.has(tagOfCurrentVersion)) {
         throw new Error(`Package "${packageName}" has version "${currentVersion}" in its manifest, but no corresponding tag "${tagOfCurrentVersion}" exists.`);
     }
-    return hasDiff(packageData, tagOfCurrentVersion, rootDir);
+    return hasDiff(packageData, tagOfCurrentVersion);
 }
 /**
  * Retrieves the diff for the given tag from the cache or performs the git diff
@@ -11132,33 +11127,30 @@ async function didPackageChange(tags, packageData, rootDir = WORKSPACE_ROOT) {
  *
  * @param packageData - The metadata of the package to diff.
  * @param tag - The tag corresponding to the package's latest release.
- * @param rootDir - The monorepo root directory.
  * @returns Whether the package changed since its last release.
  */
-async function hasDiff(packageData, tag, rootDir) {
-    const { dirPath } = packageData;
+async function hasDiff(packageData, tag) {
+    const { dirPath: packagePath } = packageData;
     let diff;
     if (DIFFS.has(tag)) {
         diff = DIFFS.get(tag);
     }
     else {
-        diff = await getDiff(tag, external_path_default().join(rootDir, dirPath));
+        diff = await getDiff(tag);
         DIFFS.set(tag, diff);
     }
-    return diff.length > 0;
+    return diff.some((diffPath) => diffPath.startsWith(packagePath));
 }
 /**
- * Wrapper function for diffing packages between a particular tag and the
+ * Wrapper function for diffing the repository between a particular tag and the
  * current HEAD.
  *
  * @param tag - The tag to compare against HEAD.
- * @param workspaceDir - The workspace's directory. Used for narrowing git
- * diff results.
  * @returns An array of paths to files in the workspace directory that were
  * changed between the tag and the current HEAD.
  */
-async function getDiff(tag, workspaceDir) {
-    return (await performGitOperation('diff', tag, HEAD, '--name-only', '--', workspaceDir)).split('\n');
+async function getDiff(tag) {
+    return (await performGitOperation('diff', tag, HEAD, '--name-only')).split('\n');
 }
 /**
  * Utility function for performing git operations via execa.
@@ -11182,6 +11174,9 @@ function versionToTag(version) {
 //# sourceMappingURL=git-operations.js.map
 // EXTERNAL MODULE: external "fs"
 var external_fs_ = __nccwpck_require__(5747);
+// EXTERNAL MODULE: external "path"
+var external_path_ = __nccwpck_require__(5622);
+var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
 // EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/dist/index.js
 var auto_changelog_dist = __nccwpck_require__(9272);
 ;// CONCATENATED MODULE: ./lib/package-operations.js
