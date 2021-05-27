@@ -39,7 +39,9 @@ jest.mock('glob', () => {
 });
 
 jest.mock('@metamask/action-utils/dist/file-utils', () => {
-  const actualModule = jest.requireActual('@metamask/action-utils/dist/file-utils');
+  const actualModule = jest.requireActual(
+    '@metamask/action-utils/dist/file-utils',
+  );
   return {
     ...actualModule,
     readJsonObjectFile: jest.fn(),
