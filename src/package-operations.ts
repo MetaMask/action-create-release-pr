@@ -30,7 +30,8 @@ interface MonorepoUpdateSpecification extends UpdateSpecification {
   readonly synchronizeVersions: boolean;
 }
 
-const PACKAGE_JSON = 'package.json';
+const MANIFEST_FILE_NAME = 'package.json';
+const CHANGELOG_FILE_NAME = 'CHANGELOG.md';
 
 /**
  * Finds the package manifest for each workspace, and collects
@@ -145,7 +146,7 @@ export async function updatePackage(
 ): Promise<void> {
   await Promise.all([
     writeJsonFile(
-      pathUtils.join(rootDir, packageMetadata.dirPath, PACKAGE_JSON),
+      pathUtils.join(rootDir, packageMetadata.dirPath, MANIFEST_FILE_NAME),
       getUpdatedManifest(packageMetadata.manifest, updateSpecification),
     ),
     updateSpecification.shouldUpdateChangelog
@@ -164,7 +165,7 @@ export async function updatePackage(
  * the update is performed.
  */
 async function updatePackageChangelog(
-  packageMetadata: { dirPath: string },
+  packageMetadata: { dirPath: string; manifest: Partial<PackageManifest> },
   updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
   rootDir: string = WORKSPACE_ROOT,
 ) {
@@ -172,11 +173,9 @@ async function updatePackageChangelog(
   const { newVersion, repositoryUrl } = updateSpecification;
 
   let changelogContent: string;
-  const changelogPath = pathUtils.join(
-    rootDir,
-    projectRootDirectory,
-    'CHANGELOG.md',
-  );
+  const packagePath = pathUtils.join(rootDir, projectRootDirectory);
+  const changelogPath = pathUtils.join(packagePath, CHANGELOG_FILE_NAME);
+
   try {
     changelogContent = await fs.readFile(changelogPath, 'utf-8');
   } catch (error) {
@@ -184,13 +183,23 @@ async function updatePackageChangelog(
     throw error;
   }
 
-  await updateChangelog({
+  const newChangelogContent = await updateChangelog({
     changelogContent,
     currentVersion: newVersion,
     isReleaseCandidate: true,
     projectRootDirectory,
     repoUrl: repositoryUrl,
   });
+  if (!newChangelogContent) {
+    const packageName = packageMetadata.manifest.name;
+    throw new Error(
+      `"updateChangelog" returned an empty value for package ${
+        packageName ? `"${packageName}"` : `at "${packagePath}"`
+      }.`,
+    );
+  }
+
+  await fs.writeFile(changelogPath, newChangelogContent);
 }
 
 /**

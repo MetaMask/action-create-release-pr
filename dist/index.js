@@ -11191,7 +11191,8 @@ var auto_changelog_dist = __nccwpck_require__(9272);
 
 
 
-const PACKAGE_JSON = 'package.json';
+const MANIFEST_FILE_NAME = 'package.json';
+const CHANGELOG_FILE_NAME = 'CHANGELOG.md';
 /**
  * Finds the package manifest for each workspace, and collects
  * metadata for each package.
@@ -11275,7 +11276,7 @@ async function updatePackages(allPackages, updateSpecification) {
  */
 async function updatePackage(packageMetadata, updateSpecification, rootDir = WORKSPACE_ROOT) {
     await Promise.all([
-        (0,dist.writeJsonFile)(external_path_default().join(rootDir, packageMetadata.dirPath, PACKAGE_JSON), getUpdatedManifest(packageMetadata.manifest, updateSpecification)),
+        (0,dist.writeJsonFile)(external_path_default().join(rootDir, packageMetadata.dirPath, MANIFEST_FILE_NAME), getUpdatedManifest(packageMetadata.manifest, updateSpecification)),
         updateSpecification.shouldUpdateChangelog
             ? updatePackageChangelog(packageMetadata, updateSpecification)
             : Promise.resolve(),
@@ -11294,7 +11295,8 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
     const { dirPath: projectRootDirectory } = packageMetadata;
     const { newVersion, repositoryUrl } = updateSpecification;
     let changelogContent;
-    const changelogPath = external_path_default().join(rootDir, projectRootDirectory, 'CHANGELOG.md');
+    const packagePath = external_path_default().join(rootDir, projectRootDirectory);
+    const changelogPath = external_path_default().join(packagePath, CHANGELOG_FILE_NAME);
     try {
         changelogContent = await external_fs_.promises.readFile(changelogPath, 'utf-8');
     }
@@ -11302,13 +11304,18 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
         console.error(`Failed to read changelog in "${projectRootDirectory}".`);
         throw error;
     }
-    await (0,auto_changelog_dist/* updateChangelog */.cV)({
+    const newChangelogContent = await (0,auto_changelog_dist/* updateChangelog */.cV)({
         changelogContent,
         currentVersion: newVersion,
         isReleaseCandidate: true,
         projectRootDirectory,
         repoUrl: repositoryUrl,
     });
+    if (!newChangelogContent) {
+        const packageName = packageMetadata.manifest.name;
+        throw new Error(`"updateChangelog" returned an empty value for package ${packageName ? `"${packageName}"` : `at "${packagePath}"`}.`);
+    }
+    await external_fs_.promises.writeFile(changelogPath, newChangelogContent);
 }
 /**
  * Updates the given manifest per the update specification as follows:
