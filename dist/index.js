@@ -11146,8 +11146,8 @@ async function hasDiff(packageData, tag) {
  * current HEAD.
  *
  * @param tag - The tag to compare against HEAD.
- * @returns An array of paths to files in the workspace directory that were
- * changed between the tag and the current HEAD.
+ * @returns An array of paths to files that were between the given tag and the
+ * current HEAD.
  */
 async function getDiff(tag) {
     return (await performGitOperation('diff', tag, HEAD, '--name-only')).split('\n');
