@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.19]
+### Fixed
+- Monorepo package diffing ([#31](https://github.com/MetaMask/action-create-release-pr/pull/31))
+  - In ([#20](https://github.com/MetaMask/action-create-release-pr/pull/20)), we started returning the cached result for the first diffed package for every diffed package.
+
 ## [0.0.18]
 ### Fixed
 - Changelog updating ([#28](https://github.com/MetaMask/action-create-release-pr/pull/28))
@@ -25,7 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.18...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.19...HEAD
+[0.0.19]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.18...v0.0.19
 [0.0.18]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.17...v0.0.18
 [0.0.17]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.16...v0.0.17
 [0.0.16]: https://github.com/MetaMask/action-create-release-pr/releases/tag/v0.0.16
