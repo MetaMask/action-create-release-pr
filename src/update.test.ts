@@ -1,4 +1,5 @@
 import * as actionsCore from '@actions/core';
+import * as actionUtils from '@metamask/action-utils';
 import * as gitOperations from './git-operations';
 import * as packageOperations from './package-operations';
 import * as utils from './utils';
@@ -7,6 +8,14 @@ import { performUpdate } from './update';
 jest.mock('@actions/core', () => {
   return {
     setOutput: jest.fn(),
+  };
+});
+
+jest.mock('@metamask/action-utils', () => {
+  const actualModule = jest.requireActual('@metamask/action-utils');
+  return {
+    ...actualModule,
+    getPackageManifest: jest.fn(),
   };
 });
 
@@ -23,7 +32,6 @@ jest.mock('./package-operations', () => {
     ...actualModule,
     getMetadataForAllPackages: jest.fn(),
     getPackagesToUpdate: jest.fn(),
-    getPackageManifest: jest.fn(),
     updatePackage: jest.fn(),
     updatePackages: jest.fn(),
   };
@@ -54,10 +62,7 @@ describe('performUpdate', () => {
     consoleLogMock = jest
       .spyOn(console, 'log')
       .mockImplementation(() => undefined);
-    getPackageManifestMock = jest.spyOn(
-      packageOperations,
-      'getPackageManifest',
-    );
+    getPackageManifestMock = jest.spyOn(actionUtils, 'getPackageManifest');
     setActionOutputMock = jest.spyOn(actionsCore, 'setOutput');
   });
 

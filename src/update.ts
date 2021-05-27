@@ -3,22 +3,24 @@ import semverIncrement from 'semver/functions/inc';
 import semverDiff from 'semver/functions/diff';
 import semverGt from 'semver/functions/gt';
 import type { ReleaseType as SemverReleaseType } from 'semver';
-
-import { getRepositoryHttpsUrl, getTags } from './git-operations';
 import {
-  FieldNames,
-  getMetadataForAllPackages,
-  getPackagesToUpdate,
   getPackageManifest,
-  updatePackage,
-  updatePackages,
-  validateMonorepoPackageManifest,
-  validatePackageManifestVersion,
-  validatePackageManifestName,
+  isMajorSemverDiff,
+  ManifestFieldNames,
   MonorepoPackageManifest,
   PolyrepoPackageManifest,
+  validateMonorepoPackageManifest,
+  validatePackageManifestName,
+  validatePackageManifestVersion,
+} from '@metamask/action-utils';
+import { getRepositoryHttpsUrl, getTags } from './git-operations';
+import {
+  getMetadataForAllPackages,
+  getPackagesToUpdate,
+  updatePackage,
+  updatePackages,
 } from './package-operations';
-import { ActionInputs, isMajorSemverDiff, WORKSPACE_ROOT } from './utils';
+import { ActionInputs, WORKSPACE_ROOT } from './utils';
 
 /**
  * Action entry function. Gets git tags, reads the work space root package.json,
@@ -60,7 +62,7 @@ export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
   // there's no existing tag for it.
   validateVersion(currentVersion, newVersion, tags);
 
-  if (FieldNames.Workspaces in rootManifest) {
+  if (ManifestFieldNames.Workspaces in rootManifest) {
     console.log(
       'Project appears to have workspaces. Applying monorepo workflow.',
     );

@@ -395,6 +395,364 @@ exports.toCommandValue = toCommandValue;
 
 /***/ }),
 
+/***/ 4208:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.writeJsonFile = exports.readJsonObjectFile = void 0;
+const fs_1 = __nccwpck_require__(5747);
+/**
+ * Reads the assumed JSON file at the given path, attempts to parse it, and
+ * returns the resulting object.
+ *
+ * Throws if failing to read or parse, or if the parsed JSON value is not a
+ * plain object.
+ *
+ * @param paths - The path segments pointing to the JSON file. Will be passed
+ * to path.join().
+ * @returns The object corresponding to the parsed JSON file.
+ */
+async function readJsonObjectFile(path) {
+    const obj = JSON.parse(await fs_1.promises.readFile(path, 'utf8'));
+    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
+        throw new Error(`Assumed JSON file at path "${path}" parsed to a non-object value.`);
+    }
+    return obj;
+}
+exports.readJsonObjectFile = readJsonObjectFile;
+/**
+ * Attempts to write the given JSON-like value to the file at the given path.
+ * Adds a newline to the end of the file.
+ *
+ * @param path - The path to write the JSON file to, including the file itself.
+ * @param jsonValue - The JSON-like value to write to the file. Make sure that
+ * JSON.stringify can handle it.
+ */
+async function writeJsonFile(path, jsonValue) {
+    await fs_1.promises.writeFile(path, `${JSON.stringify(jsonValue, null, 2)}\n`);
+}
+exports.writeJsonFile = writeJsonFile;
+//# sourceMappingURL=file-utils.js.map
+
+/***/ }),
+
+/***/ 1281:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    Object.defineProperty(o, k2, { enumerable: true, get: function() { return m[k]; } });
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __exportStar = (this && this.__exportStar) || function(m, exports) {
+    for (var p in m) if (p !== "default" && !Object.prototype.hasOwnProperty.call(exports, p)) __createBinding(exports, m, p);
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+__exportStar(__nccwpck_require__(4208), exports);
+__exportStar(__nccwpck_require__(279), exports);
+__exportStar(__nccwpck_require__(8609), exports);
+__exportStar(__nccwpck_require__(2064), exports);
+//# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 279:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.tabs = exports.isTruthyString = exports.getStringRecordValue = void 0;
+const TWO_SPACES = '  ';
+/**
+ * Utility function to get the value of a key from an object known to only
+ * contain string values, such as process.env.
+ *
+ * Trims the value before returning it, and returns the empty string for any
+ * undefined values.
+ *
+ * @param key - The key of process.env to access.
+ * @returns The trimmed string value of the process.env key. Returns an empty
+ * string if the key is not set.
+ */
+function getStringRecordValue(key, object) {
+    var _a;
+    return ((_a = object[key]) === null || _a === void 0 ? void 0 : _a.trim()) || '';
+}
+exports.getStringRecordValue = getStringRecordValue;
+/**
+ * @param value - The value to test.
+ * @returns Whether the value is a non-empty string.
+ */
+function isTruthyString(value) {
+    return Boolean(value) && typeof value === 'string';
+}
+exports.isTruthyString = isTruthyString;
+/**
+ * @param numTabs - The number of tabs to return. A tab consists of two spaces.
+ * @param prefix - The prefix to prepend to the returned string, if any.
+ * @returns A string consisting of the prefix, if any, and the requested number
+ * of tabs.
+ */
+function tabs(numTabs, prefix) {
+    if (!Number.isInteger(numTabs) || numTabs < 1) {
+        throw new Error('Expected positive integer.');
+    }
+    const firstTab = prefix ? `${prefix}${TWO_SPACES}` : TWO_SPACES;
+    if (numTabs === 1) {
+        return firstTab;
+    }
+    return firstTab + new Array(numTabs).join(TWO_SPACES);
+}
+exports.tabs = tabs;
+//# sourceMappingURL=misc-utils.js.map
+
+/***/ }),
+
+/***/ 8609:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getWorkspaceLocations = exports.validateMonorepoPackageManifest = exports.validatePolyrepoPackageManifest = exports.validatePackageManifestName = exports.validatePackageManifestVersion = exports.getPackageManifest = exports.ManifestFieldNames = exports.ManifestDependencyFieldNames = void 0;
+const path_1 = __importDefault(__nccwpck_require__(5622));
+const util_1 = __nccwpck_require__(1669);
+const glob_1 = __importDefault(__nccwpck_require__(1957));
+const misc_utils_1 = __nccwpck_require__(279);
+const file_utils_1 = __nccwpck_require__(4208);
+const semver_utils_1 = __nccwpck_require__(2064);
+const glob = util_1.promisify(glob_1.default);
+const PACKAGE_JSON = 'package.json';
+var ManifestDependencyFieldNames;
+(function (ManifestDependencyFieldNames) {
+    ManifestDependencyFieldNames["Production"] = "dependencies";
+    ManifestDependencyFieldNames["Development"] = "devDependencies";
+    ManifestDependencyFieldNames["Peer"] = "peerDependencies";
+    ManifestDependencyFieldNames["Bundled"] = "bundledDependencies";
+    ManifestDependencyFieldNames["Optional"] = "optionalDependencies";
+})(ManifestDependencyFieldNames = exports.ManifestDependencyFieldNames || (exports.ManifestDependencyFieldNames = {}));
+var ManifestFieldNames;
+(function (ManifestFieldNames) {
+    ManifestFieldNames["Name"] = "name";
+    ManifestFieldNames["Private"] = "private";
+    ManifestFieldNames["Version"] = "version";
+    ManifestFieldNames["Workspaces"] = "workspaces";
+})(ManifestFieldNames = exports.ManifestFieldNames || (exports.ManifestFieldNames = {}));
+/**
+ * Read, parse, validate, and return the object corresponding to the
+ * package.json file in the given directory.
+ *
+ * An error is thrown if validation fails.
+ *
+ * @param containingDirPath - The complete path to the directory containing
+ * the package.json file.
+ * @returns The object corresponding to the parsed package.json file.
+ */
+async function getPackageManifest(containingDirPath) {
+    return await file_utils_1.readJsonObjectFile(path_1.default.join(containingDirPath, PACKAGE_JSON));
+}
+exports.getPackageManifest = getPackageManifest;
+/**
+ * Type guard to ensure that the given manifest has a valid "name" field.
+ *
+ * @param manifest - The manifest object to validate.
+ * @returns Whether the manifest has a valid "name" field.
+ */
+function hasValidNameField(manifest) {
+    return misc_utils_1.isTruthyString(manifest[ManifestFieldNames.Name]);
+}
+/**
+ * Type guard to ensure that the given manifest has a valid "private" field.
+ *
+ * @param manifest - The manifest object to validate.
+ * @returns Whether the manifest has a valid "private" field.
+ */
+function hasValidPrivateField(manifest) {
+    return manifest[ManifestFieldNames.Private] === true;
+}
+/**
+ * Type guard to ensure that the given manifest has a valid "version" field.
+ *
+ * @param manifest - The manifest object to validate.
+ * @returns Whether the manifest has a valid "version" field.
+ */
+function hasValidVersionField(manifest) {
+    return semver_utils_1.isValidSemver(manifest[ManifestFieldNames.Version]);
+}
+/**
+ * Type guard to ensure that the given manifest has a valid "worksapces" field.
+ *
+ * @param manifest - The manifest object to validate.
+ * @returns Whether the manifest has a valid "worksapces" field.
+ */
+function hasValidWorkspacesField(manifest) {
+    return (Array.isArray(manifest[ManifestFieldNames.Workspaces]) &&
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        manifest[ManifestFieldNames.Workspaces].length > 0);
+}
+/**
+ * Validates the "version" field of a package manifest object, i.e. a parsed
+ * "package.json" file.
+ *
+ * @param manifest - The manifest to validate.
+ * @param manifestDirPath - The path to the directory containing the
+ * manifest file relative to the root directory.
+ * @returns The unmodified manifest, with the "version" field typed correctly.
+ */
+function validatePackageManifestVersion(manifest, manifestDirPath) {
+    if (!hasValidVersionField(manifest)) {
+        throw new Error(`${getManifestErrorMessagePrefix(ManifestFieldNames.Version, manifest, manifestDirPath)} is not a valid SemVer version: ${manifest[ManifestFieldNames.Version]}`);
+    }
+    return manifest;
+}
+exports.validatePackageManifestVersion = validatePackageManifestVersion;
+/**
+ * Validates the "name" field of a package manifest object, i.e. a parsed
+ * "package.json" file.
+ *
+ * @param manifest - The manifest to validate.
+ * @param manifestDirPath - The path to the directory containing the
+ * manifest file relative to the root directory.
+ * @returns The unmodified manifest, with the "name" field typed correctly.
+ */
+function validatePackageManifestName(manifest, manifestDirPath) {
+    if (!hasValidNameField(manifest)) {
+        throw new Error(`Manifest in "${manifestDirPath}" does not have a valid "${ManifestFieldNames.Name}" field.`);
+    }
+    return manifest;
+}
+exports.validatePackageManifestName = validatePackageManifestName;
+/**
+ * Validates the "version" and "name" fields of a package manifest object,
+ * i.e. a parsed "package.json" file.
+ *
+ * @param manifest - The manifest to validate.
+ * @param manifestDirPath - The path to the directory containing the
+ * manifest file relative to the root directory.
+ * @returns The unmodified manifest, with the "version" and "name" fields typed
+ * correctly.
+ */
+function validatePolyrepoPackageManifest(manifest, manifestDirPath) {
+    return validatePackageManifestName(validatePackageManifestVersion(manifest, manifestDirPath), manifestDirPath);
+}
+exports.validatePolyrepoPackageManifest = validatePolyrepoPackageManifest;
+/**
+ * Validates the "workspaces" and "private" fields of a package manifest object,
+ * i.e. a parsed "package.json" file.
+ *
+ * Assumes that the manifest's "version" field is already validated.
+ *
+ * @param manifest - The manifest to validate.
+ * @param manifestDirPath - The path to the directory containing the
+ * manifest file relative to the root directory.
+ * @returns The unmodified manifest, with the "workspaces" and "private" fields
+ * typed correctly.
+ */
+function validateMonorepoPackageManifest(manifest, manifestDirPath) {
+    if (!hasValidWorkspacesField(manifest)) {
+        throw new Error(`${getManifestErrorMessagePrefix(ManifestFieldNames.Workspaces, manifest, manifestDirPath)} must be a non-empty array if present. Received: ${manifest[ManifestFieldNames.Workspaces]}`);
+    }
+    if (!hasValidPrivateField(manifest)) {
+        throw new Error(`${getManifestErrorMessagePrefix(ManifestFieldNames.Private, manifest, manifestDirPath)} must be "true" if "${ManifestFieldNames.Workspaces}" is present. Received: ${manifest[ManifestFieldNames.Private]}`);
+    }
+    return manifest;
+}
+exports.validateMonorepoPackageManifest = validateMonorepoPackageManifest;
+/**
+ * Gets the prefix of an error message for a manifest file validation error.
+ *
+ * @param invalidField - The name of the invalid field.
+ * @param manifest - The manifest object that's invalid.
+ * @param manifestDirPath - The path to the directory of the manifest file
+ * relative to the root directory.
+ * @returns The prefix of a manifest validation error message.
+ */
+function getManifestErrorMessagePrefix(invalidField, manifest, manifestDirPath) {
+    return `${manifest[ManifestFieldNames.Name]
+        ? `"${manifest[ManifestFieldNames.Name]}" manifest "${invalidField}"`
+        : `"${invalidField}" of manifest in "${manifestDirPath}"`}`;
+}
+/**
+ * Get workspace directory locations, given the set of workspace patterns
+ * specified in the `workspaces` field of the root `package.json` file.
+ *
+ * @param workspaces - The list of workspace patterns given in the root manifest.
+ * @param rootDir - The monorepo root directory.
+ * @returns The location of each workspace directory relative to the root directory
+ */
+async function getWorkspaceLocations(workspaces, rootDir) {
+    const resolvedWorkspaces = await Promise.all(workspaces.map((pattern) => glob(pattern, { cwd: rootDir })));
+    return resolvedWorkspaces.flat();
+}
+exports.getWorkspaceLocations = getWorkspaceLocations;
+//# sourceMappingURL=package-utils.js.map
+
+/***/ }),
+
+/***/ 2064:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.isMajorSemverDiff = exports.isValidSemver = exports.SemverReleaseTypes = void 0;
+const parse_1 = __importDefault(__nccwpck_require__(5925));
+var SemverReleaseTypes;
+(function (SemverReleaseTypes) {
+    SemverReleaseTypes["Major"] = "major";
+    SemverReleaseTypes["Premajor"] = "premajor";
+    SemverReleaseTypes["Minor"] = "minor";
+    SemverReleaseTypes["Preminor"] = "preminor";
+    SemverReleaseTypes["Patch"] = "patch";
+    SemverReleaseTypes["Prepatch"] = "prepatch";
+    SemverReleaseTypes["Prerelease"] = "prerelease";
+})(SemverReleaseTypes = exports.SemverReleaseTypes || (exports.SemverReleaseTypes = {}));
+/**
+ * Checks whether the given value is a valid, unprefixed SemVer version string.
+ * The string must begin with the numerical major version.
+ *
+ * (The semver package has a similar function, but it permits v-prefixes.)
+ *
+ * @param value - The value to check.
+ * @returns Whether the given value is a valid, unprefixed SemVer version
+ * string.
+ */
+function isValidSemver(value) {
+    var _a;
+    if (typeof value !== 'string') {
+        return false;
+    }
+    return ((_a = parse_1.default(value, { loose: false })) === null || _a === void 0 ? void 0 : _a.version) === value;
+}
+exports.isValidSemver = isValidSemver;
+/**
+ * Checks whether the given SemVer diff is a major diff, i.e. "major" or
+ * "premajor".
+ *
+ * @param diff - The SemVer diff to check.
+ * @returns Whether the given SemVer diff is a major diff.
+ */
+function isMajorSemverDiff(diff) {
+    return diff.includes(SemverReleaseTypes.Major);
+}
+exports.isMajorSemverDiff = isMajorSemverDiff;
+//# sourceMappingURL=semver-utils.js.map
+
+/***/ }),
+
 /***/ 1610:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -10561,6 +10919,8 @@ var diff_default = /*#__PURE__*/__nccwpck_require__.n(diff);
 // EXTERNAL MODULE: ./node_modules/semver/functions/gt.js
 var gt = __nccwpck_require__(4123);
 var gt_default = /*#__PURE__*/__nccwpck_require__.n(gt);
+// EXTERNAL MODULE: ./node_modules/@metamask/action-utils/dist/index.js
+var dist = __nccwpck_require__(1281);
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(5622);
 var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
@@ -10570,13 +10930,7 @@ var clean_default = /*#__PURE__*/__nccwpck_require__.n(clean);
 // EXTERNAL MODULE: ./node_modules/execa/index.js
 var execa = __nccwpck_require__(5447);
 var execa_default = /*#__PURE__*/__nccwpck_require__.n(execa);
-// EXTERNAL MODULE: external "fs"
-var external_fs_ = __nccwpck_require__(5747);
-// EXTERNAL MODULE: ./node_modules/semver/functions/parse.js
-var parse = __nccwpck_require__(5925);
-var parse_default = /*#__PURE__*/__nccwpck_require__.n(parse);
 ;// CONCATENATED MODULE: ./lib/utils.js
-
 
 // Our custom input env keys
 var InputKeys;
@@ -10602,7 +10956,6 @@ var InputNames;
     InputNames["ReleaseVersion"] = "release-version";
 })(InputNames || (InputNames = {}));
 const WORKSPACE_ROOT = process.env.GITHUB_WORKSPACE;
-const TWO_SPACES = '  ';
 /**
  * Validates and returns the inputs to the Action.
  * We perform additional validation because the GitHub Actions configuration
@@ -10642,96 +10995,18 @@ function validateActionInputs(inputs) {
     }
     if (inputs.ReleaseType &&
         !Object.values(AcceptedSemverReleaseTypes).includes(inputs.ReleaseType)) {
-        const tab = tabs(1, '\n');
+        const tab = (0,dist.tabs)(1, '\n');
         throw new Error(`Unrecognized "${InputNames.ReleaseType}". Must be one of:${tab}${Object.keys(AcceptedSemverReleaseTypes).join(tab)}`);
     }
     if (inputs.ReleaseVersion) {
-        if (!isValidSemver(inputs.ReleaseVersion)) {
+        if (!(0,dist.isValidSemver)(inputs.ReleaseVersion)) {
             throw new Error(`"${InputNames.ReleaseVersion}" must be a plain SemVer version string. Received: ${inputs.ReleaseVersion}`);
         }
     }
 }
-/**
- * Reads the assumed JSON file at the given path, attempts to parse it, and
- * returns the resulting object.
- *
- * Throws if failing to read or parse, or if the parsed JSON value is not a
- * plain object.
- *
- * @param paths - The path segments pointing to the JSON file. Will be passed
- * to path.join().
- * @returns The object corresponding to the parsed JSON file.
- */
-async function readJsonObjectFile(path) {
-    const obj = JSON.parse(await external_fs_.promises.readFile(path, 'utf8'));
-    if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
-        throw new Error(`Assumed JSON file at path "${path}" parsed to a non-object value.`);
-    }
-    return obj;
-}
-/**
- * Attempts to write the given JSON-like value to the file at the given path.
- * Adds a newline to the end of the file.
- *
- * @param path - The path to write the JSON file to, including the file itself.
- * @param jsonValue - The JSON-like value to write to the file. Make sure that
- * JSON.stringify can handle it.
- */
-async function writeJsonFile(path, jsonValue) {
-    await external_fs_.promises.writeFile(path, `${JSON.stringify(jsonValue, null, 2)}\n`);
-}
-/**
- * Checks whether the given value is a valid, unprefixed SemVer version string.
- * The string must begin with the numerical major version.
- *
- * (The semver package has a similar function, but it permits v-prefixes.)
- *
- * @param value - The value to check.
- * @returns Whether the given value is a valid, unprefixed SemVer version
- * string.
- */
-function isValidSemver(value) {
-    var _a;
-    if (typeof value !== 'string') {
-        return false;
-    }
-    return ((_a = parse_default()(value, { loose: false })) === null || _a === void 0 ? void 0 : _a.version) === value;
-}
-/**
- * Checks whether the given SemVer diff is a major diff, i.e. "major" or
- * "premajor".
- *
- * @param diff - The SemVer diff to check.
- * @returns Whether the given SemVer diff is a major diff.
- */
-function isMajorSemverDiff(diff) {
-    return diff.includes(AcceptedSemverReleaseTypes.Major);
-}
-/**
- * @param value - The value to test.
- * @returns Whether the value is a non-empty string.
- */
-function isTruthyString(value) {
-    return Boolean(value) && typeof value === 'string';
-}
-/**
- * @param numTabs - The number of tabs to return. A tab consists of two spaces.
- * @param prefix - The prefix to prepend to the returned string, if any.
- * @returns A string consisting of the prefix, if any, and the requested number
- * of tabs.
- */
-function tabs(numTabs, prefix) {
-    if (!Number.isInteger(numTabs) || numTabs < 1) {
-        throw new Error('Expected positive integer.');
-    }
-    const firstTab = prefix ? `${prefix}${TWO_SPACES}` : TWO_SPACES;
-    if (numTabs === 1) {
-        return firstTab;
-    }
-    return firstTab + new Array(numTabs).join(TWO_SPACES);
-}
 //# sourceMappingURL=utils.js.map
 ;// CONCATENATED MODULE: ./lib/git-operations.js
+
 
 
 
@@ -10790,7 +11065,7 @@ async function getTags() {
         throw new Error(`"git tag" returned no tags. Increase your git fetch depth.`);
     }
     const latestTag = allTags[allTags.length - 1];
-    if (!latestTag || !isValidSemver(clean_default()(latestTag))) {
+    if (!latestTag || !(0,dist.isValidSemver)(clean_default()(latestTag))) {
         throw new Error(`Invalid latest tag. Expected a valid SemVer version. Received: ${latestTag}`);
     }
     return [new Set(allTags), latestTag];
@@ -10899,13 +11174,10 @@ function versionToTag(version) {
     return `v${version}`;
 }
 //# sourceMappingURL=git-operations.js.map
-// EXTERNAL MODULE: external "util"
-var external_util_ = __nccwpck_require__(1669);
-// EXTERNAL MODULE: ./node_modules/glob/glob.js
-var glob = __nccwpck_require__(1957);
-var glob_default = /*#__PURE__*/__nccwpck_require__.n(glob);
+// EXTERNAL MODULE: external "fs"
+var external_fs_ = __nccwpck_require__(5747);
 // EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/dist/index.js
-var dist = __nccwpck_require__(9272);
+var auto_changelog_dist = __nccwpck_require__(9272);
 ;// CONCATENATED MODULE: ./lib/package-operations.js
 
 
@@ -10913,36 +11185,7 @@ var dist = __nccwpck_require__(9272);
 
 
 
-
-const package_operations_glob = (0,external_util_.promisify)((glob_default()));
 const PACKAGE_JSON = 'package.json';
-var PackageDependencyFields;
-(function (PackageDependencyFields) {
-    PackageDependencyFields["Production"] = "dependencies";
-    PackageDependencyFields["Development"] = "devDependencies";
-    PackageDependencyFields["Peer"] = "peerDependencies";
-    PackageDependencyFields["Bundled"] = "bundledDependencies";
-    PackageDependencyFields["Optional"] = "optionalDependencies";
-})(PackageDependencyFields || (PackageDependencyFields = {}));
-var FieldNames;
-(function (FieldNames) {
-    FieldNames["Name"] = "name";
-    FieldNames["Private"] = "private";
-    FieldNames["Version"] = "version";
-    FieldNames["Workspaces"] = "workspaces";
-})(FieldNames || (FieldNames = {}));
-/**
- * Get workspace directory locations, given the set of workspace patterns
- * specified in the `workspaces` field of the root `package.json` file.
- *
- * @param workspaces - The list of workspace patterns given in the root manifest.
- * @param rootDir - The monorepo root directory.
- * @returns The location of each workspace directory relative to the root directory
- */
-async function getWorkspaceLocations(workspaces, rootDir) {
-    const resolvedWorkspaces = await Promise.all(workspaces.map((pattern) => package_operations_glob(pattern, { cwd: rootDir })));
-    return resolvedWorkspaces.flat();
-}
 /**
  * Finds the package manifest for each workspace, and collects
  * metadata for each package.
@@ -10952,13 +11195,13 @@ async function getWorkspaceLocations(workspaces, rootDir) {
  * @returns The metadata for all packages in the monorepo.
  */
 async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT) {
-    const workspaceLocations = await getWorkspaceLocations(workspaces, rootDir);
+    const workspaceLocations = await (0,dist.getWorkspaceLocations)(workspaces, rootDir);
     const result = {};
     await Promise.all(workspaceLocations.map(async (workspaceDirectory) => {
         const fullWorkspacePath = external_path_default().join(rootDir, workspaceDirectory);
         if ((await external_fs_.promises.lstat(fullWorkspacePath)).isDirectory()) {
-            const rawManifest = await getPackageManifest(fullWorkspacePath);
-            const manifest = validatePolyrepoPackageManifest(rawManifest, workspaceDirectory);
+            const rawManifest = await (0,dist.getPackageManifest)(fullWorkspacePath);
+            const manifest = (0,dist.validatePolyrepoPackageManifest)(rawManifest, workspaceDirectory);
             result[manifest.name] = {
                 dirName: external_path_default().basename(workspaceDirectory),
                 manifest,
@@ -11026,7 +11269,7 @@ async function updatePackages(allPackages, updateSpecification) {
  */
 async function updatePackage(packageMetadata, updateSpecification, rootDir = WORKSPACE_ROOT) {
     await Promise.all([
-        writeJsonFile(external_path_default().join(rootDir, packageMetadata.dirPath, PACKAGE_JSON), getUpdatedManifest(packageMetadata.manifest, updateSpecification)),
+        (0,dist.writeJsonFile)(external_path_default().join(rootDir, packageMetadata.dirPath, PACKAGE_JSON), getUpdatedManifest(packageMetadata.manifest, updateSpecification)),
         updateSpecification.shouldUpdateChangelog
             ? updatePackageChangelog(packageMetadata, updateSpecification)
             : Promise.resolve(),
@@ -11053,7 +11296,7 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
         console.error(`Failed to read changelog in "${projectRootDirectory}".`);
         throw error;
     }
-    await (0,dist/* updateChangelog */.cV)({
+    await (0,auto_changelog_dist/* updateChangelog */.cV)({
         changelogContent,
         currentVersion: newVersion,
         isReleaseCandidate: true,
@@ -11099,7 +11342,7 @@ function getUpdatedManifest(currentManifest, updateSpecification) {
  */
 function getUpdatedDependencyFields(manifest, updateSpecification) {
     const { newVersion, packagesToUpdate } = updateSpecification;
-    return Object.values(PackageDependencyFields).reduce((newDepsFields, fieldName) => {
+    return Object.values(dist.ManifestDependencyFieldNames).reduce((newDepsFields, fieldName) => {
         if (fieldName in manifest) {
             newDepsFields[fieldName] = getUpdatedDependencyField(manifest[fieldName], packagesToUpdate, newVersion);
         }
@@ -11126,121 +11369,6 @@ function getUpdatedDependencyField(dependencyObject, packagesToUpdate, newVersio
     }, {});
 }
 /**
- * Read, parse, validate, and return the object corresponding to the
- * package.json file in the given directory.
- *
- * An error is thrown if validation fails.
- *
- * @param containingDirPath - The complete path to the directory containing
- * the package.json file.
- * @returns The object corresponding to the parsed package.json file.
- */
-async function getPackageManifest(containingDirPath) {
-    return await readJsonObjectFile(external_path_default().join(containingDirPath, PACKAGE_JSON));
-}
-/**
- * Type guard to ensure that the given manifest has a valid "name" field.
- *
- * @param manifest - The manifest object to validate.
- * @returns Whether the manifest has a valid "name" field.
- */
-function hasValidNameField(manifest) {
-    return isTruthyString(manifest[FieldNames.Name]);
-}
-/**
- * Type guard to ensure that the given manifest has a valid "private" field.
- *
- * @param manifest - The manifest object to validate.
- * @returns Whether the manifest has a valid "private" field.
- */
-function hasValidPrivateField(manifest) {
-    return manifest[FieldNames.Private] === true;
-}
-/**
- * Type guard to ensure that the given manifest has a valid "version" field.
- *
- * @param manifest - The manifest object to validate.
- * @returns Whether the manifest has a valid "version" field.
- */
-function hasValidVersionField(manifest) {
-    return isValidSemver(manifest[FieldNames.Version]);
-}
-/**
- * Type guard to ensure that the given manifest has a valid "worksapces" field.
- *
- * @param manifest - The manifest object to validate.
- * @returns Whether the manifest has a valid "worksapces" field.
- */
-function hasValidWorkspacesField(manifest) {
-    return (Array.isArray(manifest[FieldNames.Workspaces]) &&
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        manifest[FieldNames.Workspaces].length > 0);
-}
-/**
- * Validates the "version" field of a package manifest object, i.e. a parsed
- * "package.json" file.
- *
- * @param manifest - The manifest to validate.
- * @param manifestDirPath - The path to the directory containing the
- * manifest file relative to the root directory.
- * @returns The unmodified manifest, with the "version" field typed correctly.
- */
-function validatePackageManifestVersion(manifest, manifestDirPath) {
-    if (!hasValidVersionField(manifest)) {
-        throw new Error(`${getManifestErrorMessagePrefix(FieldNames.Version, manifest, manifestDirPath)} is not a valid SemVer version: ${manifest[FieldNames.Version]}`);
-    }
-    return manifest;
-}
-/**
- * Validates the "name" field of a package manifest object, i.e. a parsed
- * "package.json" file.
- *
- * @param manifest - The manifest to validate.
- * @param manifestDirPath - The path to the directory containing the
- * manifest file relative to the root directory.
- * @returns The unmodified manifest, with the "name" field typed correctly.
- */
-function validatePackageManifestName(manifest, manifestDirPath) {
-    if (!hasValidNameField(manifest)) {
-        throw new Error(`Manifest in "${manifestDirPath}" does not have a valid "${FieldNames.Name}" field.`);
-    }
-    return manifest;
-}
-/**
- * Validates the "version" and "name" fields of a package manifest object,
- * i.e. a parsed "package.json" file.
- *
- * @param manifest - The manifest to validate.
- * @param manifestDirPath - The path to the directory containing the
- * manifest file relative to the root directory.
- * @returns The unmodified manifest, with the "version" and "name" fields typed
- * correctly.
- */
-function validatePolyrepoPackageManifest(manifest, manifestDirPath) {
-    return validatePackageManifestName(validatePackageManifestVersion(manifest, manifestDirPath), manifestDirPath);
-}
-/**
- * Validates the "workspaces" and "private" fields of a package manifest object,
- * i.e. a parsed "package.json" file.
- *
- * Assumes that the manifest's "version" field is already validated.
- *
- * @param manifest - The manifest to validate.
- * @param manifestDirPath - The path to the directory containing the
- * manifest file relative to the root directory.
- * @returns The unmodified manifest, with the "workspaces" and "private" fields
- * typed correctly.
- */
-function validateMonorepoPackageManifest(manifest, manifestDirPath) {
-    if (!hasValidWorkspacesField(manifest)) {
-        throw new Error(`${getManifestErrorMessagePrefix(FieldNames.Workspaces, manifest, manifestDirPath)} must be a non-empty array if present. Received: ${manifest[FieldNames.Workspaces]}`);
-    }
-    if (!hasValidPrivateField(manifest)) {
-        throw new Error(`${getManifestErrorMessagePrefix(FieldNames.Private, manifest, manifestDirPath)} must be "true" if "${FieldNames.Workspaces}" is present. Received: ${manifest[FieldNames.Private]}`);
-    }
-    return manifest;
-}
-/**
  * Type guard for checking if an update specification is a monorepo update
  * specification.
  *
@@ -11252,22 +11380,9 @@ function isMonorepoUpdateSpecification(specification) {
     return ('packagesToUpdate' in specification &&
         'synchronizeVersions' in specification);
 }
-/**
- * Gets the prefix of an error message for a manifest file validation error.
- *
- * @param invalidField - The name of the invalid field.
- * @param manifest - The manifest object that's invalid.
- * @param manifestDirPath - The path to the directory of the manifest file
- * relative to the root directory.
- * @returns The prefix of a manifest validation error message.
- */
-function getManifestErrorMessagePrefix(invalidField, manifest, manifestDirPath) {
-    return `${manifest[FieldNames.Name]
-        ? `"${manifest[FieldNames.Name]}" manifest "${invalidField}"`
-        : `"${invalidField}" of manifest in "${manifestDirPath}"`}`;
-}
 //# sourceMappingURL=package-operations.js.map
 ;// CONCATENATED MODULE: ./lib/update.js
+
 
 
 
@@ -11288,8 +11403,8 @@ async function performUpdate(actionInputs) {
     // Get all git tags. An error is thrown if "git tag" returns no tags and the
     // local git history is incomplete.
     const [tags] = await getTags();
-    const rawRootManifest = await getPackageManifest(WORKSPACE_ROOT);
-    const rootManifest = validatePackageManifestVersion(rawRootManifest, WORKSPACE_ROOT);
+    const rawRootManifest = await (0,dist.getPackageManifest)(WORKSPACE_ROOT);
+    const rootManifest = (0,dist.validatePackageManifestVersion)(rawRootManifest, WORKSPACE_ROOT);
     const { version: currentVersion } = rootManifest;
     // Compute the new version and version diff from the inputs and root manifest
     let newVersion, versionDiff;
@@ -11304,13 +11419,13 @@ async function performUpdate(actionInputs) {
     // Ensure that the new version is greater than the current version, and that
     // there's no existing tag for it.
     validateVersion(currentVersion, newVersion, tags);
-    if (FieldNames.Workspaces in rootManifest) {
+    if (dist.ManifestFieldNames.Workspaces in rootManifest) {
         console.log('Project appears to have workspaces. Applying monorepo workflow.');
-        await updateMonorepo(newVersion, versionDiff, validateMonorepoPackageManifest(rootManifest, WORKSPACE_ROOT), repositoryUrl, tags);
+        await updateMonorepo(newVersion, versionDiff, (0,dist.validateMonorepoPackageManifest)(rootManifest, WORKSPACE_ROOT), repositoryUrl, tags);
     }
     else {
         console.log('Project does not appear to have any workspaces. Applying polyrepo workflow.');
-        await updatePolyrepo(newVersion, validatePackageManifestName(rootManifest, WORKSPACE_ROOT), repositoryUrl);
+        await updatePolyrepo(newVersion, (0,dist.validatePackageManifestName)(rootManifest, WORKSPACE_ROOT), repositoryUrl);
     }
     (0,core.setOutput)('NEW_VERSION', newVersion);
 }
@@ -11344,7 +11459,7 @@ async function updateMonorepo(newVersion, versionDiff, rootManifest, repositoryU
     // If the version bump is major, we will synchronize the versions of all
     // monorepo packages, meaning the "version" field of their manifests and
     // their version range specified wherever they appear as a dependency.
-    const synchronizeVersions = isMajorSemverDiff(versionDiff);
+    const synchronizeVersions = (0,dist.isMajorSemverDiff)(versionDiff);
     // Collect required information to perform updates
     const allPackages = await getMetadataForAllPackages(rootManifest.workspaces);
     const packagesToUpdate = await getPackagesToUpdate(allPackages, synchronizeVersions, tags);

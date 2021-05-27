@@ -1,56 +1,16 @@
 import { promises as fs } from 'fs';
 import pathUtils from 'path';
-import { promisify } from 'util';
-import _glob from 'glob';
 import { updateChangelog } from '@metamask/auto-changelog';
-
-import { didPackageChange } from './git-operations';
 import {
-  isTruthyString,
-  isValidSemver,
-  readJsonObjectFile,
-  WORKSPACE_ROOT,
+  getPackageManifest,
+  getWorkspaceLocations,
+  ManifestDependencyFieldNames,
+  PackageManifest,
+  validatePolyrepoPackageManifest,
   writeJsonFile,
-} from './utils';
-
-const glob = promisify(_glob);
-
-const PACKAGE_JSON = 'package.json';
-
-export enum PackageDependencyFields {
-  Production = 'dependencies',
-  Development = 'devDependencies',
-  Peer = 'peerDependencies',
-  Bundled = 'bundledDependencies',
-  Optional = 'optionalDependencies',
-}
-
-export enum FieldNames {
-  Name = 'name',
-  Private = 'private',
-  Version = 'version',
-  Workspaces = 'workspaces',
-}
-
-export interface PackageManifest
-  extends Partial<Record<PackageDependencyFields, Record<string, string>>> {
-  readonly [FieldNames.Name]: string;
-  readonly [FieldNames.Private]?: boolean;
-  readonly [FieldNames.Version]: string;
-  readonly [FieldNames.Workspaces]?: string[];
-}
-
-export interface PolyrepoPackageManifest
-  extends Partial<Record<PackageDependencyFields, Record<string, string>>> {
-  readonly [FieldNames.Name]: string;
-  readonly [FieldNames.Version]: string;
-}
-
-export interface MonorepoPackageManifest extends Partial<PackageManifest> {
-  readonly [FieldNames.Version]: string;
-  readonly [FieldNames.Private]: boolean;
-  readonly [FieldNames.Workspaces]: string[];
-}
+} from '@metamask/action-utils';
+import { didPackageChange } from './git-operations';
+import { WORKSPACE_ROOT } from './utils';
 
 export interface PackageMetadata {
   readonly dirName: string;
@@ -70,23 +30,7 @@ interface MonorepoUpdateSpecification extends UpdateSpecification {
   readonly synchronizeVersions: boolean;
 }
 
-/**
- * Get workspace directory locations, given the set of workspace patterns
- * specified in the `workspaces` field of the root `package.json` file.
- *
- * @param workspaces - The list of workspace patterns given in the root manifest.
- * @param rootDir - The monorepo root directory.
- * @returns The location of each workspace directory relative to the root directory
- */
-async function getWorkspaceLocations(
-  workspaces: string[],
-  rootDir: string,
-): Promise<string[]> {
-  const resolvedWorkspaces = await Promise.all(
-    workspaces.map((pattern) => glob(pattern, { cwd: rootDir })),
-  );
-  return resolvedWorkspaces.flat();
-}
+const PACKAGE_JSON = 'package.json';
 
 /**
  * Finds the package manifest for each workspace, and collects
@@ -295,9 +239,9 @@ function getUpdatedManifest(
 function getUpdatedDependencyFields(
   manifest: Partial<PackageManifest>,
   updateSpecification: MonorepoUpdateSpecification,
-): Partial<Pick<PackageManifest, PackageDependencyFields>> {
+): Partial<Pick<PackageManifest, ManifestDependencyFieldNames>> {
   const { newVersion, packagesToUpdate } = updateSpecification;
-  return Object.values(PackageDependencyFields).reduce(
+  return Object.values(ManifestDependencyFieldNames).reduce(
     (newDepsFields: Record<string, unknown>, fieldName) => {
       if (fieldName in manifest) {
         newDepsFields[fieldName] = getUpdatedDependencyField(
@@ -342,190 +286,6 @@ function getUpdatedDependencyField(
 }
 
 /**
- * Read, parse, validate, and return the object corresponding to the
- * package.json file in the given directory.
- *
- * An error is thrown if validation fails.
- *
- * @param containingDirPath - The complete path to the directory containing
- * the package.json file.
- * @returns The object corresponding to the parsed package.json file.
- */
-export async function getPackageManifest(
-  containingDirPath: string,
-): Promise<Record<string, unknown>> {
-  return await readJsonObjectFile(
-    pathUtils.join(containingDirPath, PACKAGE_JSON),
-  );
-}
-
-/**
- * Type guard to ensure that the given manifest has a valid "name" field.
- *
- * @param manifest - The manifest object to validate.
- * @returns Whether the manifest has a valid "name" field.
- */
-function hasValidNameField(
-  manifest: Partial<PackageManifest>,
-): manifest is typeof manifest & Pick<PackageManifest, FieldNames.Name> {
-  return isTruthyString(manifest[FieldNames.Name]);
-}
-
-/**
- * Type guard to ensure that the given manifest has a valid "private" field.
- *
- * @param manifest - The manifest object to validate.
- * @returns Whether the manifest has a valid "private" field.
- */
-function hasValidPrivateField(
-  manifest: Partial<PackageManifest>,
-): manifest is typeof manifest &
-  Pick<MonorepoPackageManifest, FieldNames.Private> {
-  return manifest[FieldNames.Private] === true;
-}
-
-/**
- * Type guard to ensure that the given manifest has a valid "version" field.
- *
- * @param manifest - The manifest object to validate.
- * @returns Whether the manifest has a valid "version" field.
- */
-function hasValidVersionField(
-  manifest: Partial<PackageManifest>,
-): manifest is typeof manifest & Pick<PackageManifest, FieldNames.Version> {
-  return isValidSemver(manifest[FieldNames.Version]);
-}
-
-/**
- * Type guard to ensure that the given manifest has a valid "worksapces" field.
- *
- * @param manifest - The manifest object to validate.
- * @returns Whether the manifest has a valid "worksapces" field.
- */
-function hasValidWorkspacesField(
-  manifest: Partial<PackageManifest>,
-): manifest is typeof manifest &
-  Pick<MonorepoPackageManifest, FieldNames.Workspaces> {
-  return (
-    Array.isArray(manifest[FieldNames.Workspaces]) &&
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    manifest[FieldNames.Workspaces]!.length > 0
-  );
-}
-
-/**
- * Validates the "version" field of a package manifest object, i.e. a parsed
- * "package.json" file.
- *
- * @param manifest - The manifest to validate.
- * @param manifestDirPath - The path to the directory containing the
- * manifest file relative to the root directory.
- * @returns The unmodified manifest, with the "version" field typed correctly.
- */
-export function validatePackageManifestVersion<
-  ManifestType extends Partial<PackageManifest>
->(
-  manifest: ManifestType,
-  manifestDirPath: string,
-): ManifestType & Pick<PackageManifest, FieldNames.Version> {
-  if (!hasValidVersionField(manifest)) {
-    throw new Error(
-      `${getManifestErrorMessagePrefix(
-        FieldNames.Version,
-        manifest,
-        manifestDirPath,
-      )} is not a valid SemVer version: ${manifest[FieldNames.Version]}`,
-    );
-  }
-  return manifest;
-}
-
-/**
- * Validates the "name" field of a package manifest object, i.e. a parsed
- * "package.json" file.
- *
- * @param manifest - The manifest to validate.
- * @param manifestDirPath - The path to the directory containing the
- * manifest file relative to the root directory.
- * @returns The unmodified manifest, with the "name" field typed correctly.
- */
-export function validatePackageManifestName<
-  ManifestType extends Partial<PackageManifest>
->(
-  manifest: ManifestType,
-  manifestDirPath: string,
-): ManifestType & Pick<PackageManifest, FieldNames.Name> {
-  if (!hasValidNameField(manifest)) {
-    throw new Error(
-      `Manifest in "${manifestDirPath}" does not have a valid "${FieldNames.Name}" field.`,
-    );
-  }
-  return manifest;
-}
-
-/**
- * Validates the "version" and "name" fields of a package manifest object,
- * i.e. a parsed "package.json" file.
- *
- * @param manifest - The manifest to validate.
- * @param manifestDirPath - The path to the directory containing the
- * manifest file relative to the root directory.
- * @returns The unmodified manifest, with the "version" and "name" fields typed
- * correctly.
- */
-export function validatePolyrepoPackageManifest(
-  manifest: Partial<PackageManifest>,
-  manifestDirPath: string,
-): PolyrepoPackageManifest {
-  return validatePackageManifestName(
-    validatePackageManifestVersion(manifest, manifestDirPath),
-    manifestDirPath,
-  );
-}
-
-/**
- * Validates the "workspaces" and "private" fields of a package manifest object,
- * i.e. a parsed "package.json" file.
- *
- * Assumes that the manifest's "version" field is already validated.
- *
- * @param manifest - The manifest to validate.
- * @param manifestDirPath - The path to the directory containing the
- * manifest file relative to the root directory.
- * @returns The unmodified manifest, with the "workspaces" and "private" fields
- * typed correctly.
- */
-export function validateMonorepoPackageManifest<
-  ManifestType extends Pick<PackageManifest, FieldNames.Version> &
-    Partial<PackageManifest>
->(manifest: ManifestType, manifestDirPath: string): MonorepoPackageManifest {
-  if (!hasValidWorkspacesField(manifest)) {
-    throw new Error(
-      `${getManifestErrorMessagePrefix(
-        FieldNames.Workspaces,
-        manifest,
-        manifestDirPath,
-      )} must be a non-empty array if present. Received: ${
-        manifest[FieldNames.Workspaces]
-      }`,
-    );
-  }
-
-  if (!hasValidPrivateField(manifest)) {
-    throw new Error(
-      `${getManifestErrorMessagePrefix(
-        FieldNames.Private,
-        manifest,
-        manifestDirPath,
-      )} must be "true" if "${FieldNames.Workspaces}" is present. Received: ${
-        manifest[FieldNames.Private]
-      }`,
-    );
-  }
-  return manifest;
-}
-
-/**
  * Type guard for checking if an update specification is a monorepo update
  * specification.
  *
@@ -540,25 +300,4 @@ function isMonorepoUpdateSpecification(
     'packagesToUpdate' in specification &&
     'synchronizeVersions' in specification
   );
-}
-
-/**
- * Gets the prefix of an error message for a manifest file validation error.
- *
- * @param invalidField - The name of the invalid field.
- * @param manifest - The manifest object that's invalid.
- * @param manifestDirPath - The path to the directory of the manifest file
- * relative to the root directory.
- * @returns The prefix of a manifest validation error message.
- */
-function getManifestErrorMessagePrefix(
-  invalidField: FieldNames,
-  manifest: Partial<MonorepoPackageManifest>,
-  manifestDirPath: string,
-) {
-  return `${
-    manifest[FieldNames.Name]
-      ? `"${manifest[FieldNames.Name]}" manifest "${invalidField}"`
-      : `"${invalidField}" of manifest in "${manifestDirPath}"`
-  }`;
 }

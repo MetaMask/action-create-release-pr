@@ -1,19 +1,17 @@
 import fs from 'fs';
 import cloneDeep from 'lodash.clonedeep';
+import * as actionUtils from '@metamask/action-utils/dist/file-utils';
+import {
+  ManifestDependencyFieldNames,
+  ManifestFieldNames,
+} from '@metamask/action-utils';
 import * as autoChangelog from '@metamask/auto-changelog';
 import * as gitOps from './git-operations';
-import * as utils from './utils';
 import {
-  FieldNames,
   getMetadataForAllPackages,
-  getPackageManifest,
   getPackagesToUpdate,
-  PackageDependencyFields,
   updatePackage,
   updatePackages,
-  validateMonorepoPackageManifest,
-  validatePackageManifestName,
-  validatePackageManifestVersion,
 } from './package-operations';
 
 jest.mock('fs', () => ({
@@ -40,6 +38,16 @@ jest.mock('glob', () => {
   };
 });
 
+jest.mock('@metamask/action-utils/dist/file-utils', () => {
+  const actualModule = jest.requireActual(
+    '@metamask/action-utils/dist/file-utils',
+  );
+  return {
+    ...actualModule,
+    readJsonObjectFile: jest.fn(),
+  };
+});
+
 jest.mock('@metamask/auto-changelog', () => {
   return {
     updateChangelog: jest.fn(),
@@ -58,7 +66,6 @@ jest.mock('./utils', () => {
   const actualModule = jest.requireActual('./utils');
   return {
     ...actualModule,
-    readJsonObjectFile: jest.fn(),
     WORKSPACE_ROOT: 'root',
   };
 });
@@ -66,7 +73,7 @@ jest.mock('./utils', () => {
 const MOCK_PACKAGES_DIR = 'packages';
 
 type DependencyFieldsDict = Partial<
-  Record<PackageDependencyFields, Record<string, string>>
+  Record<ManifestDependencyFieldNames, Record<string, string>>
 >;
 
 // Convenience method to match behavior of utils.writeJsonFile
@@ -81,134 +88,6 @@ const getMockManifest = (
 };
 
 describe('package-operations', () => {
-  describe('getPackageManifest', () => {
-    let readJsonFileMock: jest.SpyInstance;
-
-    beforeEach(() => {
-      readJsonFileMock = jest.spyOn(utils, 'readJsonObjectFile');
-    });
-
-    it('gets and returns a manifest file', async () => {
-      const manifest = {
-        [FieldNames.Name]: 'fooName',
-        [FieldNames.Version]: '1.0.0',
-      };
-
-      readJsonFileMock.mockImplementationOnce(async () => {
-        return { ...manifest };
-      });
-
-      expect(await getPackageManifest('fooPath')).toStrictEqual(manifest);
-    });
-  });
-
-  describe('validatePackageManifestVersion', () => {
-    it('passes through a manifest with a valid "version"', async () => {
-      const path = 'fooPath';
-      const manifest = { [FieldNames.Version]: '1.0.0' };
-
-      expect(validatePackageManifestVersion(manifest, path)).toStrictEqual(
-        manifest,
-      );
-    });
-
-    it('throws if manifest has an invalid "version"', async () => {
-      const path = 'fooPath';
-      const badVersions: any[] = ['foo', 'v1.0.0', null, true];
-
-      for (const badValue of badVersions) {
-        expect(() =>
-          validatePackageManifestVersion(
-            { [FieldNames.Version]: badValue },
-            path,
-          ),
-        ).toThrow(/"version"/u);
-      }
-
-      // For coverage purposes
-      expect(() =>
-        validatePackageManifestVersion({ name: 'foo-name' }, path),
-      ).toThrow(/"version"/u);
-    });
-  });
-
-  describe('validatePackageManifestName', () => {
-    it('passes through a manifest with a valid "name"', async () => {
-      const path = 'fooPath';
-      const manifest = { [FieldNames.Name]: 'foo-name' };
-
-      expect(validatePackageManifestName(manifest, path)).toStrictEqual(
-        manifest,
-      );
-    });
-
-    it('throws if manifest has an invalid "name"', async () => {
-      const path = 'fooPath';
-      const badNames: any[] = [1, '', null, true];
-
-      for (const badValue of badNames) {
-        expect(() =>
-          validatePackageManifestName({ [FieldNames.Name]: badValue }, path),
-        ).toThrow(/"name"/u);
-      }
-    });
-  });
-
-  describe('validateMonorepoPackageManifest', () => {
-    it('passes through a manifest with valid fields', async () => {
-      const path = 'fooPath';
-      const manifest = {
-        [FieldNames.Private]: true,
-        [FieldNames.Version]: '1.0.0',
-        [FieldNames.Workspaces]: ['a', 'b'],
-      };
-
-      expect(validateMonorepoPackageManifest(manifest, path)).toStrictEqual(
-        manifest,
-      );
-    });
-
-    it('throws if manifest has invalid fields', async () => {
-      const path = 'fooPath';
-
-      let badManifest: any = {
-        [FieldNames.Private]: true,
-        [FieldNames.Version]: '1.0.0',
-        [FieldNames.Workspaces]: [],
-      };
-      expect(() => validateMonorepoPackageManifest(badManifest, path)).toThrow(
-        /"workspaces" .* non-empty array/u,
-      );
-
-      badManifest = {
-        [FieldNames.Private]: true,
-        [FieldNames.Version]: '1.0.0',
-        [FieldNames.Workspaces]: 'foo',
-      };
-      expect(() => validateMonorepoPackageManifest(badManifest, path)).toThrow(
-        /"workspaces" .*non-empty array/u,
-      );
-
-      badManifest = {
-        [FieldNames.Private]: false,
-        [FieldNames.Version]: '1.0.0',
-        [FieldNames.Workspaces]: ['a', 'b'],
-      };
-      expect(() => validateMonorepoPackageManifest(badManifest, path)).toThrow(
-        /"private" .*"true"/u,
-      );
-
-      badManifest = {
-        [FieldNames.Private]: {},
-        [FieldNames.Version]: '1.0.0',
-        [FieldNames.Workspaces]: ['a', 'b'],
-      };
-      expect(() => validateMonorepoPackageManifest(badManifest, path)).toThrow(
-        /"private" .*"true"/u,
-      );
-    });
-  });
-
   describe('getMetadataForAllPackages', () => {
     const names = ['name1', 'name2', 'name3'];
     const dirs = ['dir1', 'dir2', 'dir3'];
@@ -219,7 +98,7 @@ describe('package-operations', () => {
       return {
         dirName: dirs[index],
         manifest: getMockManifest(names[index], version),
-        [FieldNames.Name]: names[index],
+        [ManifestFieldNames.Name]: names[index],
         dirPath: `${MOCK_PACKAGES_DIR}/${dirs[index]}`,
       };
     };
@@ -242,7 +121,7 @@ describe('package-operations', () => {
       }) as any);
 
       jest
-        .spyOn(utils, 'readJsonObjectFile')
+        .spyOn(actionUtils, 'readJsonObjectFile')
         .mockImplementation(getMockReadJsonFile());
     });
 
@@ -346,7 +225,7 @@ describe('package-operations', () => {
           getMockWritePath(dir),
           jsonStringify({
             ...cloneDeep(manifest),
-            [FieldNames.Version]: newVersion,
+            [ManifestFieldNames.Version]: newVersion,
           }),
         );
         expect(updateChangelogMock).not.toHaveBeenCalled();
@@ -378,7 +257,7 @@ describe('package-operations', () => {
           getMockWritePath(dir),
           jsonStringify({
             ...cloneDeep(manifest),
-            [FieldNames.Version]: newVersion,
+            [ManifestFieldNames.Version]: newVersion,
           }),
         );
         expect(updateChangelogMock).toHaveBeenCalledTimes(1);
@@ -449,7 +328,7 @@ describe('package-operations', () => {
           getMockWritePath(dir),
           jsonStringify({
             ...cloneDeep(manifest),
-            [FieldNames.Version]: newVersion,
+            [ManifestFieldNames.Version]: newVersion,
           }),
         );
         expect(updateChangelogMock).not.toHaveBeenCalled();
@@ -534,7 +413,7 @@ describe('package-operations', () => {
           getMockWritePath(dir1),
           jsonStringify({
             ...cloneDeep(manifest1),
-            [FieldNames.Version]: newVersion,
+            [ManifestFieldNames.Version]: newVersion,
           }),
         );
         expect(writeFileMock).toHaveBeenNthCalledWith(
@@ -542,7 +421,7 @@ describe('package-operations', () => {
           getMockWritePath(dir2),
           jsonStringify({
             ...cloneDeep(manifest2),
-            [FieldNames.Version]: newVersion,
+            [ManifestFieldNames.Version]: newVersion,
           }),
         );
       });
