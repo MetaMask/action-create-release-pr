@@ -1119,19 +1119,54 @@ exports.unreleased = 'Unreleased';
 /***/ }),
 
 /***/ 9272:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
-var __webpack_unused_export__;
 
-__webpack_unused_export__ = ({ value: true });
-__webpack_unused_export__ = __webpack_unused_export__ = exports.cV = void 0;
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.validateChangelog = exports.ChangelogFormattingError = exports.updateChangelog = exports.parseChangelog = exports.createEmptyChangelog = exports.Changelog = void 0;
+var changelog_1 = __nccwpck_require__(1610);
+Object.defineProperty(exports, "Changelog", ({ enumerable: true, get: function () { return __importDefault(changelog_1).default; } }));
+var init_1 = __nccwpck_require__(3725);
+Object.defineProperty(exports, "createEmptyChangelog", ({ enumerable: true, get: function () { return init_1.createEmptyChangelog; } }));
+var parse_changelog_1 = __nccwpck_require__(7607);
+Object.defineProperty(exports, "parseChangelog", ({ enumerable: true, get: function () { return parse_changelog_1.parseChangelog; } }));
 var update_changelog_1 = __nccwpck_require__(9437);
-Object.defineProperty(exports, "cV", ({ enumerable: true, get: function () { return update_changelog_1.updateChangelog; } }));
+Object.defineProperty(exports, "updateChangelog", ({ enumerable: true, get: function () { return update_changelog_1.updateChangelog; } }));
 var validate_changelog_1 = __nccwpck_require__(4933);
-__webpack_unused_export__ = ({ enumerable: true, get: function () { return validate_changelog_1.ChangelogFormattingError; } });
-__webpack_unused_export__ = ({ enumerable: true, get: function () { return validate_changelog_1.validateChangelog; } });
+Object.defineProperty(exports, "ChangelogFormattingError", ({ enumerable: true, get: function () { return validate_changelog_1.ChangelogFormattingError; } }));
+Object.defineProperty(exports, "validateChangelog", ({ enumerable: true, get: function () { return validate_changelog_1.validateChangelog; } }));
 //# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 3725:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.createEmptyChangelog = void 0;
+const changelog_1 = __importDefault(__nccwpck_require__(1610));
+/**
+ * Creates a new empty changelog.
+ *
+ * @param options
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @returns The initial changelog text.
+ */
+function createEmptyChangelog({ repoUrl }) {
+    const changelog = new changelog_1.default({ repoUrl });
+    return changelog.toString();
+}
+exports.createEmptyChangelog = createEmptyChangelog;
+//# sourceMappingURL=init.js.map
 
 /***/ }),
 
@@ -1381,11 +1416,8 @@ const assert_1 = __nccwpck_require__(2357);
 const run_command_1 = __importDefault(__nccwpck_require__(5126));
 const parse_changelog_1 = __nccwpck_require__(7607);
 const constants_1 = __nccwpck_require__(1373);
-async function getMostRecentTag({ projectRootDirectory, }) {
+async function getMostRecentTag() {
     const revListArgs = ['rev-list', '--tags', '--max-count=1'];
-    if (projectRootDirectory) {
-        revListArgs.push(projectRootDirectory);
-    }
     const results = await run_command_1.default('git', revListArgs);
     if (results.length === 0) {
         return null;
@@ -1490,7 +1522,7 @@ async function updateChangelog({ changelogContent, currentVersion, repoUrl, isRe
     const changelog = parse_changelog_1.parseChangelog({ changelogContent, repoUrl });
     // Ensure we have all tags on remote
     await run_command_1.default('git', ['fetch', '--tags']);
-    const mostRecentTag = await getMostRecentTag({ projectRootDirectory });
+    const mostRecentTag = await getMostRecentTag();
     if (isReleaseCandidate && mostRecentTag === `v${currentVersion}`) {
         throw new Error(`Current version already has tag, which is unexpected for a release candidate.`);
     }
@@ -11299,7 +11331,7 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
         console.error(`Failed to read changelog in "${projectRootDirectory}".`);
         throw error;
     }
-    const newChangelogContent = await (0,auto_changelog_dist/* updateChangelog */.cV)({
+    const newChangelogContent = await (0,auto_changelog_dist.updateChangelog)({
         changelogContent,
         currentVersion: newVersion,
         isReleaseCandidate: true,
