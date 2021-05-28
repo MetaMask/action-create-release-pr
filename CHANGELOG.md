@@ -6,6 +6,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.20]
+### Uncategorized
+- Add release automation ([#36](https://github.com/MetaMask/action-create-release-pr/pull/36))
+- Change release branch prefix from 'release-v' to 'automation_release-' ([#35](https://github.com/MetaMask/action-create-release-pr/pull/35))
+- @metamask/auto-changelog@2.3.0 ([#33](https://github.com/MetaMask/action-create-release-pr/pull/33))
+
 ## [0.0.19]
 ### Fixed
 - Monorepo package diffing ([#31](https://github.com/MetaMask/action-create-release-pr/pull/31))
@@ -30,7 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.19...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.20...HEAD
+[0.0.20]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.19...v0.0.20
 [0.0.19]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.18...v0.0.19
 [0.0.18]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.17...v0.0.18
 [0.0.17]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.16...v0.0.17
