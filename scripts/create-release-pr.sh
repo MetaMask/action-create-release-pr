@@ -12,7 +12,7 @@ if [[ -z $NEW_VERSION ]]; then
   exit 1
 fi
 
-RELEASE_BRANCH_NAME="release/${NEW_VERSION}"
+RELEASE_BRANCH_NAME="automation_release-${NEW_VERSION}"
 RELEASE_BODY="This is the release candidate for version ${NEW_VERSION}."
 
 git config user.name github-actions
