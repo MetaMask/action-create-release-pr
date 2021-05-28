@@ -2,6 +2,10 @@ name: 'Create Release PR'
 description: "Update a repository's npm package(s). Monorepo-compatible."
 
 inputs:
+  release-branch-prefix:
+    description: "The prefix of the release PR branch name, to which the release's SemVer version will be appended."
+    default: 'automation_release-'
+    required: true
   release-type:
     description: 'A SemVer version diff, e.g. "major", "minor", or "patch". Mutually exclusive with "release-version".'
     required: false
@@ -20,4 +24,6 @@ runs:
         RELEASE_VERSION: ${{ inputs.release-version }}
     - id: create-release-pr
       shell: bash
-      run: ${{ github.action_path }}/scripts/create-release-pr.sh ${{ steps.update-packages.outputs.NEW_VERSION }}
+      run: ${{ github.action_path }}/scripts/create-release-pr.sh \
+        ${{ steps.update-packages.outputs.NEW_VERSION }} \
+        ${{ inputs.release-branch-prefix }}
