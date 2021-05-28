@@ -18,7 +18,7 @@ This action uses a synchronized versioning strategy, meaning that the version of
 
 This Action can be used on its own, but we recommend using it with [MetaMask/action-publish-release](https://github.com/MetaMask/action-publish-release).
 
-Add the following Workflow File to your repository in the path `.github/workflows/create-release-pr.yml`:
+Add the following workflow file to your repository in the path `.github/workflows/create-release-pr.yml`:
 
 ```yaml
 name: Create Release Pull Request
