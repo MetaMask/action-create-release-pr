@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [0.0.20]
-### Uncategorized
-- Add release automation ([#36](https://github.com/MetaMask/action-create-release-pr/pull/36))
-- Change release branch prefix from 'release-v' to 'automation_release-' ([#35](https://github.com/MetaMask/action-create-release-pr/pull/35))
-- @metamask/auto-changelog@2.3.0 ([#33](https://github.com/MetaMask/action-create-release-pr/pull/33))
+### Changed
+- **(BREAKING)** Change release branch prefix from 'release-v' to 'automation_release-' ([#35](https://github.com/MetaMask/action-create-release-pr/pull/35))
+
+### Fixed
+- Changelog updating in monorepos and repositories with merge commits ([#33](https://github.com/MetaMask/action-create-release-pr/pull/33))
+  - Done by updating `@metamask/auto-changelog` to `2.3.0`. See [MetaMask/auto-changelog#87](https://github.com/MetaMask/auto-changelog/pull/87) for details.
 
 ## [0.0.19]
 ### Fixed
