@@ -10,8 +10,7 @@
     "node": ">=12.10.0"
   },
   "scripts": {
-    "setup": "yarn install && yarn setup:postinstall",
-    "setup:postinstall": "yarn allow-scripts",
+    "setup": "yarn install && yarn allow-scripts",
     "lint:eslint": "yarn eslint . --cache --ext js,ts",
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' --ignore-path .gitignore",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
@@ -51,6 +50,7 @@
   },
   "devDependencies": {
     "@lavamoat/allow-scripts": "^1.0.6",
+    "@lavamoat/preinstall-always-fail": "^1.0.0",
     "@metamask/eslint-config": "^6.0.0",
     "@metamask/eslint-config-jest": "^6.0.0",
     "@metamask/eslint-config-nodejs": "^6.0.0",
