@@ -68,7 +68,7 @@ jobs:
 
 ### Release Branch Names
 
-Optionally, a `release-branch-prefix` input can be specified to the Action, which will be used as the prefix for the names of release PR branches.
+A `release-branch-prefix` input must be specified to the Action, which will be used as the prefix for the names of release PR branches.
 The SemVer version being released is appended to the prefix.
 The default prefix is `automation_release-`, which creates branches named e.g. `automation_release-1.0.0`.
 
