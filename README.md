@@ -18,6 +18,8 @@ This action uses a synchronized versioning strategy, meaning that the version of
 
 This Action can be used on its own, but we recommend using it with [MetaMask/action-publish-release](https://github.com/MetaMask/action-publish-release).
 
+In order for this action to run, the project must have a [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)-compatible changelog, even if it's empty.
+
 Add the following workflow file to your repository in the path `.github/workflows/create-release-pr.yml`:
 
 ```yaml
