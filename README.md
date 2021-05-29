@@ -18,7 +18,9 @@ This action uses a synchronized versioning strategy, meaning that the version of
 
 This Action can be used on its own, but we recommend using it with [MetaMask/action-publish-release](https://github.com/MetaMask/action-publish-release).
 
-Add the following Workflow File to your repository in the path `.github/workflows/create-release-pr.yml`:
+In order for this action to run, the project must have a [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)-compatible changelog, even if it's empty.
+
+Add the following workflow file to your repository in the path `.github/workflows/create-release-pr.yml`:
 
 ```yaml
 name: Create Release Pull Request
@@ -65,6 +67,15 @@ jobs:
           release-type: ${{ github.event.inputs.release-type }}
           release-version: ${{ github.event.inputs.release-version }}
 ```
+
+### Release Branch Names
+
+A `release-branch-prefix` input must be specified to the Action, which will be used as the prefix for the names of release PR branches.
+The SemVer version being released is appended to the prefix.
+The default prefix is `automation_release-`, which creates branches named e.g. `automation_release-1.0.0`.
+
+If this Action is used with [MetaMask/action-publish-release](https://github.com/MetaMask/action-publish-release), both Actions must be configured to use the same branch prefix.
+Their branch prefix defaults are the same within major versions.
 
 ## Contributing
 
