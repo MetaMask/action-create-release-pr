@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.1]
 ### Fixed
 - This action ([#42](https://github.com/MetaMask/action-create-release-pr/pull/42))
-  - Due to a poorly formatted Bash invocation in `action.yml`, the Action was completely broken.
+  - Due to a poorly formatted Bash invocation in `action.yml`, this Action was completely broken.
 
 ## [0.1.0]
 ### Added
