@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.0]
 ### Uncategorized
-- Fix publish-release workflow ([#45](https://github.com/MetaMask/action-create-release-pr/pull/45))
+- First stable release
 
 ## [0.1.1]
 ### Fixed
