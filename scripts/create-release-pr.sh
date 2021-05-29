@@ -36,6 +36,6 @@ git push --set-upstream origin "${RELEASE_BRANCH_NAME}"
 
 gh pr create \
   --draft \
-  --title "${NEW_VERSION} RC" \
+  --title "${NEW_VERSION}" \
   --body "${RELEASE_BODY}" \
   --head "${RELEASE_BRANCH_NAME}";
