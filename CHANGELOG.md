@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0]
+### Uncategorized
+- Remove ' RC' suffix from PR title ([#39](https://github.com/MetaMask/action-create-release-pr/pull/39))
+- Add release-branch-prefix input ([#38](https://github.com/MetaMask/action-create-release-pr/pull/38))
+
 ## [0.0.20]
 ### Changed
 - **(BREAKING)** Change release branch prefix from 'release-v' to 'automation_release-' ([#35](https://github.com/MetaMask/action-create-release-pr/pull/35))
@@ -38,7 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.20...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.20...v0.1.0
 [0.0.20]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.19...v0.0.20
 [0.0.19]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.18...v0.0.19
 [0.0.18]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.17...v0.0.18
