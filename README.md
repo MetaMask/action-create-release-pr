@@ -60,7 +60,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - uses: MetaMask/action-create-release-pr@0.0.16
+      - uses: MetaMask/action-create-release-pr@v0.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
