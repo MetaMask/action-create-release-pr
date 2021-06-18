@@ -43,7 +43,7 @@ jobs:
   create-release-pr:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
     steps:
       - uses: actions/checkout@v2
@@ -53,14 +53,14 @@ jobs:
           fetch-depth: 0
           # We check out the specified branch, which will be used as the base
           # branch for all git operations and the release PR.
-          ref: ${{ inputs.base-branch }}
+          ref: ${{ github.event.inputs.base-branch }}
       - name: Get Node.js version
         id: nvm
         run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - uses: MetaMask/action-create-release-pr@v0.1.0
+      - uses: MetaMask/action-create-release-pr@v0.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
