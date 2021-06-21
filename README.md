@@ -43,7 +43,7 @@ jobs:
   create-release-pr:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
     steps:
       - uses: actions/checkout@v2
@@ -53,14 +53,14 @@ jobs:
           fetch-depth: 0
           # We check out the specified branch, which will be used as the base
           # branch for all git operations and the release PR.
-          ref: ${{ inputs.base-branch }}
+          ref: ${{ github.event.inputs.base-branch }}
       - name: Get Node.js version
         id: nvm
         run: echo ::set-output name=NODE_VERSION::$(cat .nvmrc)
       - uses: actions/setup-node@v2
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - uses: MetaMask/action-create-release-pr@v0.1.0
+      - uses: MetaMask/action-create-release-pr@v0.1.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -72,7 +72,7 @@ jobs:
 
 A `release-branch-prefix` input must be specified to the Action, which will be used as the prefix for the names of release PR branches.
 The SemVer version being released is appended to the prefix.
-The default prefix is `automation_release-`, which creates branches named e.g. `automation_release-1.0.0`.
+The default prefix is `release/`, which creates branches named e.g. `release/1.0.0`.
 
 If this Action is used with [MetaMask/action-publish-release](https://github.com/MetaMask/action-publish-release), both Actions must be configured to use the same branch prefix.
 Their branch prefix defaults are the same within major versions.

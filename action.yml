@@ -4,7 +4,7 @@ description: "Update a repository's npm package(s). Monorepo-compatible."
 inputs:
   release-branch-prefix:
     description: "The prefix of the release PR branch name, to which the release's SemVer version will be appended."
-    default: 'automation_release-'
+    default: 'release/'
     required: true
   release-type:
     description: 'A SemVer version diff, e.g. "major", "minor", or "patch". Mutually exclusive with "release-version".'
