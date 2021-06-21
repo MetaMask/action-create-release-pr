@@ -72,7 +72,7 @@ jobs:
 
 A `release-branch-prefix` input must be specified to the Action, which will be used as the prefix for the names of release PR branches.
 The SemVer version being released is appended to the prefix.
-The default prefix is `automation_release-`, which creates branches named e.g. `automation_release-1.0.0`.
+The default prefix is `release/`, which creates branches named e.g. `release/1.0.0`.
 
 If this Action is used with [MetaMask/action-publish-release](https://github.com/MetaMask/action-publish-release), both Actions must be configured to use the same branch prefix.
 Their branch prefix defaults are the same within major versions.
