@@ -19,8 +19,11 @@ This action uses a synchronized versioning strategy, meaning that the version of
 This Action can be used on its own, but we recommend using it with [MetaMask/action-publish-release](https://github.com/MetaMask/action-publish-release).
 
 In order for this action to run, the project must have a [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)-compatible changelog, even if it's empty.
+You should use [`@metamask/auto-changelog`](https://github.com/MetaMask/auto-changelog) to do this.
 
-Add the following workflow file to your repository in the path `.github/workflows/create-release-pr.yml`:
+Add the below workflow file to your repository in the path `.github/workflows/create-release-pr.yml`.
+You'll notice that the workflow is manually triggered using the `workflow_dispatch` event.
+Once you've added the workflow file, you trigger the workflow via the Actions tab of the [GitHub Web UI](https://github.blog/changelog/2020-07-06-github-actions-manual-triggers-with-workflow_dispatch/) or the [`gh` CLI](https://cli.github.com/manual/gh_workflow_run).
 
 ```yaml
 name: Create Release Pull Request
