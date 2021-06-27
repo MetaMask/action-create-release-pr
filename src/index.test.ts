@@ -4,6 +4,7 @@ import * as utils from './utils';
 
 jest.mock('@actions/core', () => {
   return {
+    error: jest.fn(),
     setFailed: jest.fn(),
   };
 });
@@ -32,6 +33,7 @@ describe('main entry file', () => {
       .mockImplementationOnce(async () => {
         throw new Error('error');
       });
+    const logErrorMock = jest.spyOn(actionsCore, 'error');
     const setFailedMock = jest.spyOn(actionsCore, 'setFailed');
 
     import('.');
@@ -39,6 +41,7 @@ describe('main entry file', () => {
       setImmediate(() => {
         expect(getActionInputsMock).toHaveBeenCalledTimes(1);
         expect(performUpdateMock).toHaveBeenCalledTimes(1);
+        expect(logErrorMock).toHaveBeenCalledTimes(1);
         expect(setFailedMock).toHaveBeenCalledTimes(1);
         expect(setFailedMock).toHaveBeenCalledWith(new Error('error'));
         resolve();

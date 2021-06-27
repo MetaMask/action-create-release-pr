@@ -6,6 +6,6 @@ import { performUpdate } from './update';
 import { getActionInputs } from './utils';
 
 performUpdate(getActionInputs()).catch((error) => {
-  logError(error?.stack || 'The error has no stack.');
+  logError(error.stack);
   setActionToFailed(error);
 });
