@@ -11540,6 +11540,7 @@ function validateVersion(currentVersion, newVersion, tags) {
 
 
 performUpdate(getActionInputs()).catch((error) => {
+    (0,core.error)((error === null || error === void 0 ? void 0 : error.stack) || 'The error has no stack.');
     (0,core.setFailed)(error);
 });
 //# sourceMappingURL=index.js.map
