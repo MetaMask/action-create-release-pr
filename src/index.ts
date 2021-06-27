@@ -6,6 +6,9 @@ import { performUpdate } from './update';
 import { getActionInputs } from './utils';
 
 performUpdate(getActionInputs()).catch((error) => {
-  logError(error.stack);
+  // istanbul ignore else
+  if (error.stack) {
+    logError(error.stack);
+  }
   setActionToFailed(error);
 });
