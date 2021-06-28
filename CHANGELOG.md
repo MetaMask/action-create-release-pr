@@ -6,12 +6,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.1]
-### Fixed
-- Error logging on Action failure ([#56](https://github.com/MetaMask/action-create-release-pr/pull/56))
+## [1.0.2]
+### Changed
+- Bump `@metamask/auto-changelog` from `2.3.0` to `2.4.0` ([#59](https://github.com/MetaMask/action-create-release-pr/pull/59))
 
+## [1.0.1]
 ### Changed
 - Improve usage instructions ([#53](https://github.com/MetaMask/action-create-release-pr/pull/53))
+
+### Fixed
+- Error logging on Action failure ([#56](https://github.com/MetaMask/action-create-release-pr/pull/56))
 
 ## [1.0.0]
 ### Uncategorized
@@ -70,7 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v0.1.1...v1.0.0
 [0.1.1]: https://github.com/MetaMask/action-create-release-pr/compare/v0.1.0...v0.1.1
