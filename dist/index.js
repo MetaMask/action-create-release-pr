@@ -11540,6 +11540,10 @@ function validateVersion(currentVersion, newVersion, tags) {
 
 
 performUpdate(getActionInputs()).catch((error) => {
+    // istanbul ignore else
+    if (error.stack) {
+        (0,core.error)(error.stack);
+    }
     (0,core.setFailed)(error);
 });
 //# sourceMappingURL=index.js.map
