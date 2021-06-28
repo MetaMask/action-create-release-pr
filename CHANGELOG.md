@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1]
+### Uncategorized
+- Add debug logging ([#56](https://github.com/MetaMask/action-create-release-pr/pull/56))
+- Improve local workflow documentation ([#55](https://github.com/MetaMask/action-create-release-pr/pull/55))
+- Automate shorthand major version tag updating ([#54](https://github.com/MetaMask/action-create-release-pr/pull/54))
+- Improve usage instructions ([#53](https://github.com/MetaMask/action-create-release-pr/pull/53))
+
 ## [1.0.0]
 ### Uncategorized
 - First stable release
@@ -63,7 +70,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v0.1.1...v1.0.0
 [0.1.1]: https://github.com/MetaMask/action-create-release-pr/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/MetaMask/action-create-release-pr/compare/v0.0.20...v0.1.0
