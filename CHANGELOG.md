@@ -7,10 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.0.1]
-### Uncategorized
-- Add debug logging ([#56](https://github.com/MetaMask/action-create-release-pr/pull/56))
-- Improve local workflow documentation ([#55](https://github.com/MetaMask/action-create-release-pr/pull/55))
-- Automate shorthand major version tag updating ([#54](https://github.com/MetaMask/action-create-release-pr/pull/54))
+### Fixed
+- Debug logging ([#56](https://github.com/MetaMask/action-create-release-pr/pull/56))
+
+### Changed
 - Improve usage instructions ([#53](https://github.com/MetaMask/action-create-release-pr/pull/53))
 
 ## [1.0.0]
