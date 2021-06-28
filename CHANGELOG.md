@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.0.2]
-### Uncategorized
-- @metamask/auto-changelog@2.4.0 ([#59](https://github.com/MetaMask/action-create-release-pr/pull/59))
+### Changed
+- Bump `@metamask/auto-changelog` from `2.3.0` to `2.4.0` ([#59](https://github.com/MetaMask/action-create-release-pr/pull/59))
 
 ## [1.0.1]
 ### Changed
