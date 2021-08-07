@@ -7,7 +7,6 @@ on:
 
 jobs:
   require-additional-reviewer:
-    name: Require Additional Reviewer for Releases
     permissions:
       contents: read
       pull-requests: read
