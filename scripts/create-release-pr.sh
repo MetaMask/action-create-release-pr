@@ -18,6 +18,13 @@ if [[ -z $RELEASE_BRANCH_PREFIX ]]; then
   exit 1
 fi
 
+ACTION_INITIATOR="${3}"
+
+if [[ -z $ACTION_INITIATOR ]]; then
+  echo "Error: No action initiator specified."
+  exit 1
+fi
+
 RELEASE_BRANCH_NAME="${RELEASE_BRANCH_PREFIX}${NEW_VERSION}"
 RELEASE_BODY="This is the release candidate for version ${NEW_VERSION}."
 
@@ -39,3 +46,17 @@ gh pr create \
   --title "${NEW_VERSION}" \
   --body "${RELEASE_BODY}" \
   --head "${RELEASE_BRANCH_NAME}";
+
+# Write PR number to file so that it can be uploaded as an artifact
+PR_NUMBER=$(gh pr view --json number | jq '.number')
+
+if [[ -z $PR_NUMBER ]]; then
+  echo 'Error: "gh pr view" did not return a PR number.'
+  exit 1
+fi
+
+ARTIFACTS_DIR="gh-action__release-authors"
+
+mkdir -p $ARTIFACTS_DIR
+echo "${ACTION_INITIATOR}" > "${ARTIFACTS_DIR}/${PR_NUMBER}.txt"
+echo "::set-output name=release-author-artifact-dir::${ARTIFACTS_DIR}"

@@ -36,8 +36,15 @@ jobs:
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - uses: ./
+        id: create-release-pr-action
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           release-type: ${{ github.event.inputs.release-type }}
           release-version: ${{ github.event.inputs.release-version }}
+      # Upload the release author artifact for use in subsequent workflows
+      - uses: actions/upload-artifact@v2
+        with:
+          name: release-authors
+          path: ${{ steps.create-release-pr-action.outputs.release-author-artifact-dir }}
+          if-no-files-found: error
