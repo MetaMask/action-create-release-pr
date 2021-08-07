@@ -60,7 +60,7 @@ fi
 
 echo \
   "Identified author of release PR #${PR_NUMBER} as \"${ACTION_INITIATOR}\"." \
-  "Looking for approving reviews from other users..."
+  "Looking for approving reviews from other organization members..."
 
 NUM_OTHER_APPROVING_REVIEWERS=$( 
   echo "${PR_INFO}" |
@@ -76,11 +76,11 @@ NUM_OTHER_APPROVING_REVIEWERS=$(
 )
 
 if (( NUM_OTHER_APPROVING_REVIEWERS > 0 )); then
-  echo "Success! Found approving reviews from other users."
+  echo "Success! Found approving reviews from organization members."
   exit 0
 fi
 
-echo "Failure: No approving reviews from other users found."
+echo "Failure: No approving reviews from other organization members found."
 exit 1
 
 # Relevant GitHub documentation:
