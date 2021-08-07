@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+set -x
+set -e
+set -o pipefail
+
 # This script checks whether an organization member or owner other than the
 # specified action initiator (i.e., GitHub username) has approved the pull
 # request associated with the current git branch. It uses the the GitHub CLI,
