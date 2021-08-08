@@ -18,7 +18,6 @@ jobs:
         with:
           name: release-authors
           path: gh-action__release-authors
-      - name: Check for Additional Reviewers
-        run: |
-          ./.github/workflows/scripts/require-additional-reviewer.sh \
-            gh-action__release-authors
+      - uses: MetaMask/action-require-additional-reviewer@v1
+        with:
+          artifacts-path: gh-action__release-authors
