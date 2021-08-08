@@ -18,7 +18,14 @@ if [[ -z $RELEASE_BRANCH_PREFIX ]]; then
   exit 1
 fi
 
-ACTION_INITIATOR="${3}"
+ARTIFACTS_DIR_PATH="${3}"
+
+if [[ -z $ARTIFACTS_DIR_PATH ]]; then
+  echo "Error: No artifacts directory specified."
+  exit 1
+fi
+
+ACTION_INITIATOR="${4}"
 
 if [[ -z $ACTION_INITIATOR ]]; then
   echo "Error: No action initiator specified."
@@ -55,8 +62,6 @@ if [[ -z $PR_NUMBER ]]; then
   exit 1
 fi
 
-ARTIFACTS_DIR="gh-action__release-authors"
-
-mkdir -p $ARTIFACTS_DIR
-echo "${ACTION_INITIATOR}" > "${ARTIFACTS_DIR}/${PR_NUMBER}.txt"
-echo "::set-output name=release-author-artifact-dir::${ARTIFACTS_DIR}"
+# Write release author artifact to artifacts directory.
+mkdir -p "$ARTIFACTS_DIR_PATH"
+echo "${ACTION_INITIATOR}" > "${ARTIFACTS_DIR_PATH}/${PR_NUMBER}.txt"
