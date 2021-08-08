@@ -18,24 +18,12 @@ if [[ -z $RELEASE_BRANCH_PREFIX ]]; then
   exit 1
 fi
 
-ARTIFACTS_DIR_PATH="${3}"
+ACTION_INITIATOR="${3}"
 
-if [[ -z $ARTIFACTS_DIR_PATH ]]; then
-  echo "Error: No artifacts directory specified."
-  exit 1
-fi
+ARTIFACTS_DIR_PATH="${4}"
 
-ACTION_INITIATOR="${4}"
-
-if [[ -z $ACTION_INITIATOR ]]; then
-  echo "Error: No action initiator specified."
-  exit 1
-fi
-
-ARTIFACTS_DIR="${4}"
-
-if [[ -z $ARTIFACTS_DIR ]]; then
-  echo "Error: No artifacts directory specified."
+if [[ -n $ARTIFACTS_DIR_PATH && -z $ACTION_INITIATOR ]]; then
+  echo "Error: Must specify action initiator if artifacts directory is specified."
   exit 1
 fi
 
@@ -61,14 +49,16 @@ gh pr create \
   --body "${RELEASE_BODY}" \
   --head "${RELEASE_BRANCH_NAME}";
 
-# Write PR number to file so that it can be uploaded as an artifact
-PR_NUMBER=$(gh pr view --json number | jq '.number')
+if [[ -n $ARTIFACTS_DIR_PATH ]]; then
+  # Write PR number to file so that it can be uploaded as an artifact
+  PR_NUMBER=$(gh pr view --json number | jq '.number')
 
-if [[ -z $PR_NUMBER ]]; then
-  echo 'Error: "gh pr view" did not return a PR number.'
-  exit 1
+  if [[ -z $PR_NUMBER ]]; then
+    echo 'Error: "gh pr view" did not return a PR number.'
+    exit 1
+  fi
+
+  # Write release author artifact to artifacts directory.
+  mkdir -p "$ARTIFACTS_DIR_PATH"
+  echo "${ACTION_INITIATOR}" > "${ARTIFACTS_DIR_PATH}/${PR_NUMBER}.txt"
 fi
-
-# Write release author artifact to artifacts directory.
-mkdir -p "$ARTIFACTS_DIR_PATH"
-echo "${ACTION_INITIATOR}" > "${ARTIFACTS_DIR_PATH}/${PR_NUMBER}.txt"
