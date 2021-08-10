@@ -6,6 +6,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0]
+### Added
+- Write file identifying the initiator of the workflow using this action ([#72](https://github.com/MetaMask/action-create-release-pr/pull/72))
+  - This is can be used to upload the artifact required by [MetaMask/action-require-additional-reviewer](https://github.com/MetaMask/action-require-additional-reviewer) in subsequent workflows.
+
+### Changed
+- Prevent `Uncategorized` change category from appearing in new releases ([#69](https://github.com/MetaMask/action-create-release-pr/pull/69))
+
 ## [1.0.2]
 ### Changed
 - Bump `@metamask/auto-changelog` from `2.3.0` to `2.4.0` ([#59](https://github.com/MetaMask/action-create-release-pr/pull/59))
@@ -74,7 +82,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v0.1.1...v1.0.0
