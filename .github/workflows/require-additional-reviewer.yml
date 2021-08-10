@@ -1,0 +1,23 @@
+name: Require Additional Reviewer for Releases
+
+on:
+  pull_request:
+
+jobs:
+  require-additional-reviewer:
+    permissions:
+      contents: read
+      pull-requests: read
+    # The string argument must match the release branch PR name prefix of
+    # MetaMask/action-create-release-pr.
+    if: startsWith(github.event.pull_request.head.ref, 'release/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@v2
+        with:
+          name: release-authors
+          path: gh-action__release-authors
+      - uses: MetaMask/action-require-additional-reviewer@v1
+        with:
+          artifacts-path: gh-action__release-authors
