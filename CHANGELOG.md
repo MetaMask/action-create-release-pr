@@ -7,14 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.1.0]
-### Uncategorized
-- Add require-additional-reviewer workflow ([#72](https://github.com/MetaMask/action-create-release-pr/pull/72))
-- build(deps): bump @metamask/auto-changelog from 2.4.0 to 2.5.0 ([#69](https://github.com/MetaMask/action-create-release-pr/pull/69))
-- Update all ESLint config packages to v7.0.1 ([#66](https://github.com/MetaMask/action-create-release-pr/pull/66))
-- build(deps-dev): bump @metamask/eslint-config-nodejs from 6.0.0 to 7.0.1 ([#64](https://github.com/MetaMask/action-create-release-pr/pull/64))
-- build(deps-dev): bump @metamask/eslint-config-typescript ([#63](https://github.com/MetaMask/action-create-release-pr/pull/63))
-- build(deps-dev): bump @metamask/eslint-config from 7.0.0 to 7.0.1 ([#62](https://github.com/MetaMask/action-create-release-pr/pull/62))
-- build(deps-dev): bump @metamask/eslint-config from 6.0.0 to 7.0.0 ([#61](https://github.com/MetaMask/action-create-release-pr/pull/61))
+### Added
+- Write file identifying the initiator of the workflow using this action ([#72](https://github.com/MetaMask/action-create-release-pr/pull/72))
+  - This is can be used to upload the artifact required by [MetaMask/action-require-additional-reviewer](https://github.com/MetaMask/action-require-additional-reviewer) in subsequent workflows.
+
+### Changed
+- Prevent `Uncategorized` change category from appearing in new releases ([#69](https://github.com/MetaMask/action-create-release-pr/pull/69))
 
 ## [1.0.2]
 ### Changed
