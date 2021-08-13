@@ -14,6 +14,13 @@ The release type and git history determine which packages are bumped. For major 
 
 This action uses a synchronized versioning strategy, meaning that the version of the root `package.json` file will be set on any updated packages. Packages in the monorepo may fall behind in version if they don't have any changes, but they'll jump directly to the current version of the entire monorepo if they change at all. As a result, the version change for individual packages might be beyond what SemVer would recommend. For example, packages might get major version bumps despite having no breaking changes. This is unfortunate, but for us the benefits of this simplified versioning scheme outweigh the harms.
 
+#### Adding New Packages
+
+In order for this action to continue working after new packages have been added to a monorepo with previously released packages, simply make the following changes to the new package:
+
+1. Set the `version` field in its `package.json` to the version of the most recently released package in the monorepo.
+2. Run `yarn auto-changelog init` in the root directory of the new package.
+
 ## Usage
 
 This Action can be used on its own, but we recommend using it with [MetaMask/action-publish-release](https://github.com/MetaMask/action-publish-release).
