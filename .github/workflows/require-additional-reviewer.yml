@@ -26,4 +26,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          read-org-token: ${{ secrets.READ_ORG_TOKEN }}
+          read-org-token: ${{ secrets.ORG_READER }}
