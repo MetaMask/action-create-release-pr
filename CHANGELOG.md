@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.0]
 ### Added
-- instructions for adding new packages to monorepos ([#74](https://github.com/MetaMask/action-create-release-pr/pull/74))
+- Instructions for adding new packages to monorepos ([#74](https://github.com/MetaMask/action-create-release-pr/pull/74))
 - Draft PR status option ([#76](https://github.com/MetaMask/action-create-release-pr/pull/76))
 
 ### Changed
