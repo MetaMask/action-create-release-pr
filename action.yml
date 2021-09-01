@@ -16,8 +16,8 @@ inputs:
     description: 'The path to the directory where this action will create its artifact files.'
     required: false
   create-draft-pr:
-    default: 'true'
-    description: 'The status of the pull request when created. Allowed options are "true" and "false"'
+    default: 'draft'
+    description: 'The status of the pull request when created. Allowed options are "draft" and "open"'
     required: true
 
 runs:
