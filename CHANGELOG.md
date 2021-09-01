@@ -11,10 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Instructions for adding new packages to monorepos ([#74](https://github.com/MetaMask/action-create-release-pr/pull/74))
 - Draft PR status option ([#76](https://github.com/MetaMask/action-create-release-pr/pull/76))
 
-### Changed
-- Fix MetaMask/action-require-additional-reviewer@v1 workflow ([#75](https://github.com/MetaMask/action-create-release-pr/pull/75))
-
-
 ## [1.1.0]
 ### Added
 - Write file identifying the initiator of the workflow using this action ([#72](https://github.com/MetaMask/action-create-release-pr/pull/72))
