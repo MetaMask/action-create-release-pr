@@ -15,6 +15,10 @@ inputs:
   artifacts-path:
     description: 'The path to the directory where this action will create its artifact files.'
     required: false
+  create-draft-pr:
+    default: 'true'
+    description: 'The status of the pull request when created. Allowed options are "true" and "false"'
+    required: true
 
 runs:
   using: 'composite'
@@ -32,4 +36,5 @@ runs:
           ${{ steps.update-packages.outputs.NEW_VERSION }} \
           ${{ inputs.release-branch-prefix }} \
           ${{ github.actor }} \
+          ${{ inputs.create-draft-pr }} \
           ${{ inputs.artifacts-path }}

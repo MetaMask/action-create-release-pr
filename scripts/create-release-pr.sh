@@ -20,7 +20,8 @@ fi
 
 ACTION_INITIATOR="${3}"
 
-ARTIFACTS_DIR_PATH="${4}"
+CREATE_DRAFT_PR="${4}"
+ARTIFACTS_DIR_PATH="${5}"
 
 if [[ -n $ARTIFACTS_DIR_PATH && -z $ACTION_INITIATOR ]]; then
   echo "Error: Must specify action initiator if artifacts directory is specified."
@@ -43,10 +44,20 @@ fi
 
 git push --set-upstream origin "${RELEASE_BRANCH_NAME}"
 
-gh pr create \
-  --title "${NEW_VERSION}" \
-  --body "${RELEASE_BODY}" \
-  --head "${RELEASE_BRANCH_NAME}";
+if [[CREATE_DRAFT_PR = "true"]]; then
+  gh pr create \
+    --draft
+    --title "${NEW_VERSION}" \
+    --body "${RELEASE_BODY}" \
+    --head "${RELEASE_BRANCH_NAME}";
+fi
+
+if [[CREATE_DRAFT_PR = "false"]]; then
+  gh pr create \
+    --title "${NEW_VERSION}" \
+    --body "${RELEASE_BODY}" \
+    --head "${RELEASE_BRANCH_NAME}";
+fi
 
 if [[ -n $ARTIFACTS_DIR_PATH ]]; then
   # Write PR number to file so that it can be uploaded as an artifact
