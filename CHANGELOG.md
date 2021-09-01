@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0]
+### Added
+- Instructions for adding new packages to monorepos ([#74](https://github.com/MetaMask/action-create-release-pr/pull/74))
+- Draft PR status option ([#76](https://github.com/MetaMask/action-create-release-pr/pull/76))
+
 ## [1.1.0]
 ### Added
 - Write file identifying the initiator of the workflow using this action ([#72](https://github.com/MetaMask/action-create-release-pr/pull/72))
@@ -82,7 +87,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.0...v1.0.1
