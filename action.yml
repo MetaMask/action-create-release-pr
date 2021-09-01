@@ -36,5 +36,5 @@ runs:
           ${{ steps.update-packages.outputs.NEW_VERSION }} \
           ${{ inputs.release-branch-prefix }} \
           ${{ github.actor }} \
-          ${{ inputs.create-draft-pr }} \
+          ${{ inputs.created-pr-status }} \
           ${{ inputs.artifacts-path }}
