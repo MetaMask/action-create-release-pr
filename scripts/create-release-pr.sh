@@ -18,9 +18,19 @@ if [[ -z $RELEASE_BRANCH_PREFIX ]]; then
   exit 1
 fi
 
-ACTION_INITIATOR="${3}"
+CREATED_PR_STATUS="${3}"
 
-CREATE_DRAFT_PR="${4}"
+if [[ -z $CREATED_PR_STATUS ]]; then
+  echo "Error: No PR status specified."
+  exit 1
+fi
+
+if [[ $CREATED_PR_STATUS != "draft" && $CREATED_PR_STATUS != "open" ]]; then
+  echo "Error: Invalid PR status input. Must be one of 'draft' or 'open'. Received: ${CREATED_PR_STATUS}"
+  exit 1
+fi
+
+ACTION_INITIATOR="${4}"
 ARTIFACTS_DIR_PATH="${5}"
 
 if [[ -n $ARTIFACTS_DIR_PATH && -z $ACTION_INITIATOR ]]; then
@@ -44,15 +54,13 @@ fi
 
 git push --set-upstream origin "${RELEASE_BRANCH_NAME}"
 
-if [ "$CREATE_DRAFT_PR" = "draft" ]; then
+if [[ "$CREATED_PR_STATUS" = "draft" ]]; then
   gh pr create \
     --draft \
     --title "${NEW_VERSION}" \
     --body "${RELEASE_BODY}" \
     --head "${RELEASE_BRANCH_NAME}";
-fi
-
-if [ "$CREATE_DRAFT_PR" = "open" ]; then
+elif [[ "$CREATED_PR_STATUS" = "open" ]]; then
   gh pr create \
     --title "${NEW_VERSION}" \
     --body "${RELEASE_BODY}" \
