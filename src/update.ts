@@ -2,6 +2,7 @@ import { setOutput as setActionOutput } from '@actions/core';
 import semverIncrement from 'semver/functions/inc';
 import semverDiff from 'semver/functions/diff';
 import semverGt from 'semver/functions/gt';
+import semverMajor from 'semver/functions/major';
 import type { ReleaseType as SemverReleaseType } from 'semver';
 import {
   getPackageManifest,
@@ -129,10 +130,11 @@ async function updateMonorepo(
   repositoryUrl: string,
   tags: ReadonlySet<string>,
 ): Promise<void> {
-  // If the version bump is major, we will synchronize the versions of all
-  // monorepo packages, meaning the "version" field of their manifests and
-  // their version range specified wherever they appear as a dependency.
-  const synchronizeVersions = isMajorSemverDiff(versionDiff);
+  // If the version bump is major or the new major version is still "0", we
+  // synchronize the versions of all monorepo packages, meaning the "version"
+  // field of their manifests and their version range specified wherever they
+  // appear as a dependency.
+  const synchronizeVersions = isMajorSemverDiff(versionDiff) || semverMajor(newVersion) === 0;
 
   // Collect required information to perform updates
   const allPackages = await getMetadataForAllPackages(rootManifest.workspaces);
