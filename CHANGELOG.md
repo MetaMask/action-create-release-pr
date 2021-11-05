@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0]
+### Fixed
+- Synchronize monorepo packages for versions in range 0.x.x ([#80](https://github.com/MetaMask/action-create-release-pr/pull/80))
+  - Before this change, monorepo packages on major version `0` would break if any sibling packages contained breaking changes, which is permitted by SemVer.
+
 ## [1.2.0]
 ### Added
 - Instructions for adding new packages to monorepos ([#74](https://github.com/MetaMask/action-create-release-pr/pull/74))
@@ -87,7 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.1...v1.0.2
