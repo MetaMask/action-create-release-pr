@@ -134,7 +134,8 @@ async function updateMonorepo(
   // synchronize the versions of all monorepo packages, meaning the "version"
   // field of their manifests and their version range specified wherever they
   // appear as a dependency.
-  const synchronizeVersions = isMajorSemverDiff(versionDiff) || semverMajor(newVersion) === 0;
+  const synchronizeVersions =
+    isMajorSemverDiff(versionDiff) || semverMajor(newVersion) === 0;
 
   // Collect required information to perform updates
   const allPackages = await getMetadataForAllPackages(rootManifest.workspaces);
