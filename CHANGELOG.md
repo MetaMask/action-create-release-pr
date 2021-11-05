@@ -7,8 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.3.0]
-### Uncategorized
+### Fixed
 - Synchronize monorepo packages for versions in range 0.x.x ([#80](https://github.com/MetaMask/action-create-release-pr/pull/80))
+  - Before this change, monorepo packages on major version `0` would break if any sibling packages contained breaking changes, which is permitted by SemVer.
 
 ## [1.2.0]
 ### Added
