@@ -141,7 +141,7 @@ describe('performUpdate', () => {
     expect(setActionOutputMock).toHaveBeenCalledWith('NEW_VERSION', newVersion);
   });
 
-  it('updates a monorepo', async () => {
+  it('updates a monorepo (major version bump)', async () => {
     const rootManifestName = 'root';
     const oldVersion = '1.1.0';
     const newVersion = '2.0.0';
@@ -186,6 +186,172 @@ describe('performUpdate', () => {
       { a: {}, b: {}, c: {} },
       true,
       new Set(['v1.0.0', 'v1.1.0']),
+    );
+
+    expect(packageOperations.updatePackages).toHaveBeenCalledTimes(1);
+    expect(packageOperations.updatePackages).toHaveBeenCalledWith(
+      { a: {}, b: {}, c: {} },
+      {
+        newVersion,
+        packagesToUpdate: new Set(workspaces),
+        repositoryUrl: mockRepoUrl,
+        shouldUpdateChangelog: true,
+        synchronizeVersions: true,
+      },
+    );
+
+    expect(packageOperations.updatePackage).toHaveBeenCalledTimes(1);
+    expect(packageOperations.updatePackage).toHaveBeenCalledWith(
+      {
+        dirPath: './',
+        manifest: {
+          name: rootManifestName,
+          private: true,
+          version: oldVersion,
+          workspaces: [...workspaces],
+        },
+      },
+      {
+        newVersion,
+        packagesToUpdate: new Set(workspaces),
+        repositoryUrl: mockRepoUrl,
+        shouldUpdateChangelog: false,
+        synchronizeVersions: true,
+      },
+    );
+
+    expect(setActionOutputMock).toHaveBeenCalledTimes(1);
+    expect(setActionOutputMock).toHaveBeenCalledWith('NEW_VERSION', newVersion);
+  });
+
+  it('updates a monorepo (non-major version bump)', async () => {
+    const rootManifestName = 'root';
+    const oldVersion = '1.1.0';
+    const newVersion = '1.2.0';
+    const workspaces: readonly string[] = ['a', 'b', 'c'];
+
+    getTagsMock.mockImplementationOnce(async () => [
+      new Set(['v1.0.0', 'v1.1.0']),
+      'v1.1.0',
+    ]);
+
+    getPackageManifestMock.mockImplementationOnce(async () => {
+      return {
+        name: rootManifestName,
+        version: oldVersion,
+        private: true,
+        workspaces: [...workspaces],
+      };
+    });
+
+    const getPackagesMetadataMock = jest
+      .spyOn(packageOperations, 'getMetadataForAllPackages')
+      .mockImplementationOnce(async () => {
+        return { a: {}, b: {}, c: {} } as any;
+      });
+
+    const getPackagesToUpdateMock = jest
+      .spyOn(packageOperations, 'getPackagesToUpdate')
+      .mockImplementationOnce(async () => new Set(workspaces));
+
+    await performUpdate({ ReleaseType: null, ReleaseVersion: newVersion });
+
+    expect(getRepositoryHttpsUrlMock).toHaveBeenCalledTimes(1);
+    expect(getTagsMock).toHaveBeenCalledTimes(1);
+    expect(consoleLogMock).toHaveBeenCalledTimes(1);
+    expect(consoleLogMock).toHaveBeenCalledWith(
+      expect.stringMatching(/Applying monorepo workflow/u),
+    );
+    expect(getPackagesMetadataMock).toHaveBeenCalledTimes(1);
+
+    expect(getPackagesToUpdateMock).toHaveBeenCalledTimes(1);
+    expect(getPackagesToUpdateMock).toHaveBeenCalledWith(
+      { a: {}, b: {}, c: {} },
+      false,
+      new Set(['v1.0.0', 'v1.1.0']),
+    );
+
+    expect(packageOperations.updatePackages).toHaveBeenCalledTimes(1);
+    expect(packageOperations.updatePackages).toHaveBeenCalledWith(
+      { a: {}, b: {}, c: {} },
+      {
+        newVersion,
+        packagesToUpdate: new Set(workspaces),
+        repositoryUrl: mockRepoUrl,
+        shouldUpdateChangelog: true,
+        synchronizeVersions: false,
+      },
+    );
+
+    expect(packageOperations.updatePackage).toHaveBeenCalledTimes(1);
+    expect(packageOperations.updatePackage).toHaveBeenCalledWith(
+      {
+        dirPath: './',
+        manifest: {
+          name: rootManifestName,
+          private: true,
+          version: oldVersion,
+          workspaces: [...workspaces],
+        },
+      },
+      {
+        newVersion,
+        packagesToUpdate: new Set(workspaces),
+        repositoryUrl: mockRepoUrl,
+        shouldUpdateChangelog: false,
+        synchronizeVersions: false,
+      },
+    );
+
+    expect(setActionOutputMock).toHaveBeenCalledTimes(1);
+    expect(setActionOutputMock).toHaveBeenCalledWith('NEW_VERSION', newVersion);
+  });
+
+  it('updates a monorepo (within major version 0)', async () => {
+    const rootManifestName = 'root';
+    const oldVersion = '0.1.0';
+    const newVersion = '0.2.0';
+    const workspaces: readonly string[] = ['a', 'b', 'c'];
+
+    getTagsMock.mockImplementationOnce(async () => [
+      new Set(['v0.0.0', 'v0.1.0']),
+      'v0.1.0',
+    ]);
+
+    getPackageManifestMock.mockImplementationOnce(async () => {
+      return {
+        name: rootManifestName,
+        version: oldVersion,
+        private: true,
+        workspaces: [...workspaces],
+      };
+    });
+
+    const getPackagesMetadataMock = jest
+      .spyOn(packageOperations, 'getMetadataForAllPackages')
+      .mockImplementationOnce(async () => {
+        return { a: {}, b: {}, c: {} } as any;
+      });
+
+    const getPackagesToUpdateMock = jest
+      .spyOn(packageOperations, 'getPackagesToUpdate')
+      .mockImplementationOnce(async () => new Set(workspaces));
+
+    await performUpdate({ ReleaseType: null, ReleaseVersion: newVersion });
+
+    expect(getRepositoryHttpsUrlMock).toHaveBeenCalledTimes(1);
+    expect(getTagsMock).toHaveBeenCalledTimes(1);
+    expect(consoleLogMock).toHaveBeenCalledTimes(1);
+    expect(consoleLogMock).toHaveBeenCalledWith(
+      expect.stringMatching(/Applying monorepo workflow/u),
+    );
+    expect(getPackagesMetadataMock).toHaveBeenCalledTimes(1);
+
+    expect(getPackagesToUpdateMock).toHaveBeenCalledTimes(1);
+    expect(getPackagesToUpdateMock).toHaveBeenCalledWith(
+      { a: {}, b: {}, c: {} },
+      true,
+      new Set(['v0.0.0', 'v0.1.0']),
     );
 
     expect(packageOperations.updatePackages).toHaveBeenCalledTimes(1);

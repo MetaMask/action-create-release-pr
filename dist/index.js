@@ -12222,6 +12222,9 @@ var diff_default = /*#__PURE__*/__nccwpck_require__.n(diff);
 // EXTERNAL MODULE: ./node_modules/semver/functions/gt.js
 var gt = __nccwpck_require__(4123);
 var gt_default = /*#__PURE__*/__nccwpck_require__.n(gt);
+// EXTERNAL MODULE: ./node_modules/semver/functions/major.js
+var major = __nccwpck_require__(6688);
+var major_default = /*#__PURE__*/__nccwpck_require__.n(major);
 // EXTERNAL MODULE: ./node_modules/@metamask/action-utils/dist/index.js
 var dist = __nccwpck_require__(1281);
 // EXTERNAL MODULE: ./node_modules/semver/functions/clean.js
@@ -12695,6 +12698,7 @@ function isMonorepoUpdateSpecification(specification) {
 
 
 
+
 /**
  * Action entry function. Gets git tags, reads the work space root package.json,
  * and updates the package(s) of the repository per the Action inputs.
@@ -12761,10 +12765,11 @@ async function updatePolyrepo(newVersion, manifest, repositoryUrl) {
  * tag --merged".
  */
 async function updateMonorepo(newVersion, versionDiff, rootManifest, repositoryUrl, tags) {
-    // If the version bump is major, we will synchronize the versions of all
-    // monorepo packages, meaning the "version" field of their manifests and
-    // their version range specified wherever they appear as a dependency.
-    const synchronizeVersions = (0,dist.isMajorSemverDiff)(versionDiff);
+    // If the version bump is major or the new major version is still "0", we
+    // synchronize the versions of all monorepo packages, meaning the "version"
+    // field of their manifests and their version range specified wherever they
+    // appear as a dependency.
+    const synchronizeVersions = (0,dist.isMajorSemverDiff)(versionDiff) || major_default()(newVersion) === 0;
     // Collect required information to perform updates
     const allPackages = await getMetadataForAllPackages(rootManifest.workspaces);
     const packagesToUpdate = await getPackagesToUpdate(allPackages, synchronizeVersions, tags);
