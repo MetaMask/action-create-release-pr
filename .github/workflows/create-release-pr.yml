@@ -13,6 +13,9 @@ on:
       release-version:
         description: 'A specific version to bump to. Mutually exclusive with "release-type".'
         required: false
+      version-synchronization-strategy:
+        description: 'Monorepos only. Whether and how to synchronize monorepo package versions. See Action readme for details.'
+        required: false
 
 jobs:
   create-release-pr:
@@ -39,9 +42,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          artifacts-path: gh-action__release-authors
           release-type: ${{ github.event.inputs.release-type }}
           release-version: ${{ github.event.inputs.release-version }}
-          artifacts-path: gh-action__release-authors
+          version-synchronization-strategy: ${{ github.event.inputs.version-synchronization-strategy }}
       # Upload the release author artifact for use in subsequent workflows
       - uses: actions/upload-artifact@v2
         with:

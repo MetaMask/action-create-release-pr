@@ -2,6 +2,8 @@ import {
   AcceptedSemverReleaseTypes,
   getActionInputs,
   InputKeys,
+  InputNames,
+  VersionSynchronizationStrategies,
 } from './utils';
 
 jest.mock('fs', () => ({
@@ -14,15 +16,20 @@ jest.mock('fs', () => ({
 const mockProcessEnv = ({
   releaseType,
   releaseVersion,
+  versionSyncStrategy,
 }: {
   releaseType?: string;
   releaseVersion?: string;
+  versionSyncStrategy?: VersionSynchronizationStrategies;
 }) => {
   if (releaseType !== undefined) {
     process.env[InputKeys.ReleaseType] = releaseType;
   }
   if (releaseVersion !== undefined) {
     process.env[InputKeys.ReleaseVersion] = releaseVersion;
+  }
+  if (versionSyncStrategy !== undefined) {
+    process.env[InputKeys.VersionSynchronizationStrategy] = versionSyncStrategy;
   }
 };
 
@@ -35,25 +42,44 @@ describe('getActionInputs', () => {
     unmockProcessEnv();
   });
 
-  it('correctly parses valid input: release-type', () => {
-    for (const releaseType of Object.values(AcceptedSemverReleaseTypes)) {
+  it(`correctly parses valid input: ${InputNames.ReleaseType}`, () => {
+    Object.values(AcceptedSemverReleaseTypes).forEach((releaseType) => {
       mockProcessEnv({ releaseType });
+
       expect(getActionInputs()).toStrictEqual({
         ReleaseType: releaseType,
         ReleaseVersion: null,
+        VersionSynchronizationStrategy: null,
       });
-    }
+    });
   });
 
-  it('correctly parses valid input: release-version', () => {
-    const versions = ['1.0.0', '2.0.0', '1.0.1', '0.1.0'];
-    for (const releaseVersion of versions) {
+  it(`correctly parses valid input: ${InputNames.ReleaseVersion}`, () => {
+    ['1.0.0', '2.0.0', '1.0.1', '0.1.0'].forEach((releaseVersion) => {
       mockProcessEnv({ releaseVersion });
+
       expect(getActionInputs()).toStrictEqual({
         ReleaseType: null,
         ReleaseVersion: releaseVersion,
+        VersionSynchronizationStrategy: null,
       });
-    }
+    });
+  });
+
+  it(`correctly parses valid input: ${InputNames.VersionSynchronizationStrategy}`, () => {
+    const releaseVersion = '1.0.0';
+
+    Object.values(VersionSynchronizationStrategies).forEach(
+      (versionSyncStrategy) => {
+        mockProcessEnv({ versionSyncStrategy, releaseVersion });
+
+        expect(getActionInputs()).toStrictEqual({
+          ReleaseType: null,
+          ReleaseVersion: releaseVersion,
+          VersionSynchronizationStrategy: versionSyncStrategy,
+        });
+      },
+    );
   });
 
   it('throws if neither "release-type" nor "release-version" are specified', () => {

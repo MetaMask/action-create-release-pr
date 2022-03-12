@@ -163,7 +163,9 @@ describe('getTags', () => {
 
 describe('didPackageChange', () => {
   it('returns true if there are no tags', async () => {
-    expect(await didPackageChange(new Set(), {} as any)).toStrictEqual(true);
+    expect(await didPackageChange(new Set(), {} as any, '/foo')).toStrictEqual(
+      true,
+    );
     expect(execaMock).not.toHaveBeenCalled();
   });
 
@@ -173,32 +175,29 @@ describe('didPackageChange', () => {
     });
 
     expect(
-      await didPackageChange(PARSED_MOCK_TAGS, {
-        name: PACKAGES.A.name,
-        manifest: { name: PACKAGES.A.name, version: VERSIONS.First },
-        dirName: PACKAGES.A.dir,
-        dirPath: `packages/${PACKAGES.A.dir}`,
-      }),
+      await didPackageChange(
+        PARSED_MOCK_TAGS,
+        { name: PACKAGES.A.name, version: VERSIONS.First },
+        `packages/${PACKAGES.A.dir}`,
+      ),
     ).toStrictEqual(true);
     expect(
-      await didPackageChange(PARSED_MOCK_TAGS, {
-        name: PACKAGES.B.name,
-        manifest: { name: PACKAGES.B.name, version: VERSIONS.First },
-        dirName: PACKAGES.B.dir,
-        dirPath: `packages/${PACKAGES.B.dir}`,
-      }),
+      await didPackageChange(
+        PARSED_MOCK_TAGS,
+        { name: PACKAGES.B.name, version: VERSIONS.First },
+        `packages/${PACKAGES.B.dir}`,
+      ),
     ).toStrictEqual(true);
     expect(execaMock).toHaveBeenCalledTimes(1);
   });
 
   it('repeat call for tag retrieves result from cache', async () => {
     expect(
-      await didPackageChange(PARSED_MOCK_TAGS, {
-        name: PACKAGES.A.name,
-        manifest: { name: PACKAGES.A.name, version: VERSIONS.First },
-        dirName: PACKAGES.A.dir,
-        dirPath: `packages/${PACKAGES.A.dir}`,
-      }),
+      await didPackageChange(
+        PARSED_MOCK_TAGS,
+        { name: PACKAGES.A.name, version: VERSIONS.First },
+        `packages/${PACKAGES.A.dir}`,
+      ),
     ).toStrictEqual(true);
     expect(execaMock).not.toHaveBeenCalled();
   });
@@ -209,32 +208,29 @@ describe('didPackageChange', () => {
     });
 
     expect(
-      await didPackageChange(PARSED_MOCK_TAGS, {
-        name: PACKAGES.A.name,
-        manifest: { name: PACKAGES.A.name, version: VERSIONS.Second },
-        dirName: PACKAGES.A.dir,
-        dirPath: `packages/${PACKAGES.A.dir}`,
-      }),
+      await didPackageChange(
+        PARSED_MOCK_TAGS,
+        { name: PACKAGES.A.name, version: VERSIONS.Second },
+        `packages/${PACKAGES.A.dir}`,
+      ),
     ).toStrictEqual(true);
     expect(
-      await didPackageChange(PARSED_MOCK_TAGS, {
-        name: PACKAGES.B.name,
-        manifest: { name: PACKAGES.B.name, version: VERSIONS.Second },
-        dirName: PACKAGES.B.dir,
-        dirPath: `packages/${PACKAGES.B.dir}`,
-      }),
+      await didPackageChange(
+        PARSED_MOCK_TAGS,
+        { name: PACKAGES.B.name, version: VERSIONS.Second },
+        `packages/${PACKAGES.B.dir}`,
+      ),
     ).toStrictEqual(false);
     expect(execaMock).toHaveBeenCalledTimes(1);
   });
 
   it('throws if package manifest specifies version without tag', async () => {
     await expect(
-      didPackageChange(PARSED_MOCK_TAGS, {
-        name: PACKAGES.A.name,
-        manifest: { name: PACKAGES.A.name, version: '2.0.0' },
-        dirName: PACKAGES.A.dir,
-        dirPath: `packages/${PACKAGES.A.dir}`,
-      }),
+      didPackageChange(
+        PARSED_MOCK_TAGS,
+        { name: PACKAGES.A.name, version: '2.0.0' },
+        `packages/${PACKAGES.A.dir}`,
+      ),
     ).rejects.toThrow(/no corresponding tag/u);
     expect(execaMock).not.toHaveBeenCalled();
   });

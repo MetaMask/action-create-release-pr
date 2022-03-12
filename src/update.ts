@@ -2,7 +2,6 @@ import { setOutput as setActionOutput } from '@actions/core';
 import semverIncrement from 'semver/functions/inc';
 import semverDiff from 'semver/functions/diff';
 import semverGt from 'semver/functions/gt';
-import semverMajor from 'semver/functions/major';
 import type { ReleaseType as SemverReleaseType } from 'semver';
 import {
   getPackageManifest,
@@ -17,11 +16,15 @@ import {
 import { getRepositoryHttpsUrl, getTags } from './git-operations';
 import {
   getMetadataForAllPackages,
-  getPackagesToUpdate,
-  updatePackage,
+  updateRepoRootManifest,
   updatePackages,
+  updatePackageChangelog,
 } from './package-operations';
-import { ActionInputs, WORKSPACE_ROOT } from './utils';
+import {
+  ActionInputs,
+  VersionSynchronizationStrategies,
+  WORKSPACE_ROOT,
+} from './utils';
 
 /**
  * Action entry function. Gets git tags, reads the work space root package.json,
@@ -30,6 +33,7 @@ import { ActionInputs, WORKSPACE_ROOT } from './utils';
  * @see updateMonorepo - For details on monorepo workflow.
  * @see updatePolyrepo - For details on polyrepo (i.e. single-package
  * repository) workflow.
+ * @param actionInputs - The parsed inputs to the Action.
  */
 export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
   const repositoryUrl = await getRepositoryHttpsUrl();
@@ -59,6 +63,15 @@ export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
     versionDiff = semverDiff(currentVersion, newVersion) as SemverReleaseType;
   }
 
+  let versionSyncStrategy: VersionSynchronizationStrategies;
+  if (actionInputs.VersionSynchronizationStrategy) {
+    versionSyncStrategy = actionInputs.VersionSynchronizationStrategy;
+  } else if (isMajorSemverDiff(versionDiff)) {
+    versionSyncStrategy = VersionSynchronizationStrategies.all;
+  } else {
+    versionSyncStrategy = VersionSynchronizationStrategies.dependenciesOnly;
+  }
+
   // Ensure that the new version is greater than the current version, and that
   // there's no existing tag for it.
   validateVersion(currentVersion, newVersion, tags);
@@ -70,7 +83,7 @@ export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
 
     await updateMonorepo(
       newVersion,
-      versionDiff,
+      versionSyncStrategy,
       validateMonorepoPackageManifest(rootManifest, WORKSPACE_ROOT),
       repositoryUrl,
       tags,
@@ -102,9 +115,14 @@ async function updatePolyrepo(
   manifest: PolyrepoPackageManifest,
   repositoryUrl: string,
 ): Promise<void> {
-  await updatePackage(
+  const updateSpecification = {
+    newVersion,
+    repositoryUrl,
+  };
+  await updateRepoRootManifest(manifest, updateSpecification);
+  await updatePackageChangelog(
     { dirPath: './', manifest },
-    { newVersion, repositoryUrl, shouldUpdateChangelog: true },
+    updateSpecification,
   );
 }
 
@@ -117,49 +135,43 @@ async function updatePolyrepo(
  * The changelog of any updated package will also be updated.
  *
  * @param newVersion - The new version of the package(s) to update.
- * @param versionDiff - A SemVer version diff, e.g. "major" or "prerelease".
+ * @param versionSyncStrategy - The monorepo package version synchronization
+ * strategy.
  * @param rootManifest - The parsed root package.json file of the monorepo.
  * @param repositoryUrl - The HTTPS URL of the repository.
- * @param tags - All tags reachable from the current git HEAD, as from "git
- * tag --merged".
+ * @param tags - All tags reachable from the current git HEAD, as from `git
+ * tag --merged`.
  */
 async function updateMonorepo(
   newVersion: string,
-  versionDiff: SemverReleaseType,
+  versionSyncStrategy: VersionSynchronizationStrategies,
   rootManifest: MonorepoPackageManifest,
   repositoryUrl: string,
   tags: ReadonlySet<string>,
 ): Promise<void> {
-  // If the version bump is major or the new major version is still "0", we
-  // synchronize the versions of all monorepo packages, meaning the "version"
-  // field of their manifests and their version range specified wherever they
-  // appear as a dependency.
-  const synchronizeVersions =
-    isMajorSemverDiff(versionDiff) || semverMajor(newVersion) === 0;
-
   // Collect required information to perform updates
-  const allPackages = await getMetadataForAllPackages(rootManifest.workspaces);
-  const packagesToUpdate = await getPackagesToUpdate(
-    allPackages,
-    synchronizeVersions,
+  const [allPackageMetadata, changedPackages] = await getMetadataForAllPackages(
+    rootManifest.workspaces,
     tags,
+    versionSyncStrategy,
   );
+
   const updateSpecification = {
+    allPackageMetadata,
+    changedPackages,
     newVersion,
-    packagesToUpdate,
     repositoryUrl,
-    synchronizeVersions,
+    versionSyncStrategy,
     shouldUpdateChangelog: true,
   };
 
   // Finally, bump the version of all packages and the root manifest, update the
   // changelogs of all updated packages, and add the new version as an output of
   // this Action.
-  await updatePackages(allPackages, updateSpecification);
-  await updatePackage(
-    { dirPath: './', manifest: rootManifest },
-    { ...updateSpecification, shouldUpdateChangelog: false },
-  );
+  await Promise.all([
+    updateRepoRootManifest(rootManifest, updateSpecification),
+    updatePackages(updateSpecification),
+  ]);
 }
 
 /**

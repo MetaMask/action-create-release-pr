@@ -12222,9 +12222,6 @@ var diff_default = /*#__PURE__*/__nccwpck_require__.n(diff);
 // EXTERNAL MODULE: ./node_modules/semver/functions/gt.js
 var gt = __nccwpck_require__(4123);
 var gt_default = /*#__PURE__*/__nccwpck_require__.n(gt);
-// EXTERNAL MODULE: ./node_modules/semver/functions/major.js
-var major = __nccwpck_require__(6688);
-var major_default = /*#__PURE__*/__nccwpck_require__.n(major);
 // EXTERNAL MODULE: ./node_modules/@metamask/action-utils/dist/index.js
 var dist = __nccwpck_require__(1281);
 // EXTERNAL MODULE: ./node_modules/semver/functions/clean.js
@@ -12240,6 +12237,7 @@ var InputKeys;
 (function (InputKeys) {
     InputKeys["ReleaseType"] = "RELEASE_TYPE";
     InputKeys["ReleaseVersion"] = "RELEASE_VERSION";
+    InputKeys["VersionSynchronizationStrategy"] = "VERSION_SYNCHRONIZATION_STRATEGY";
 })(InputKeys || (InputKeys = {}));
 /**
  * SemVer release types that are accepted by this Action.
@@ -12251,12 +12249,44 @@ var AcceptedSemverReleaseTypes;
     AcceptedSemverReleaseTypes["Patch"] = "patch";
 })(AcceptedSemverReleaseTypes || (AcceptedSemverReleaseTypes = {}));
 /**
+ * The different monorepo package version synchronization strategies employed
+ * by this Action.
+ */
+var VersionSynchronizationStrategies;
+(function (VersionSynchronizationStrategies) {
+    /**
+     * All packages will be updated to the new version, and the version of every
+     * monorepo package will be updated to the new version wherever it appears as
+     * a dependency.
+     *
+     * This is the default if the release is a new major version.
+     */
+    VersionSynchronizationStrategies["all"] = "all";
+    /**
+     * Only changed packages will be updated to the new version, but the version
+     * of every monorepo package will be updated to the new version wherever it
+     * appears as a dependency.
+     *
+     * This is the default _unless_ the release is a new major version.
+     */
+    VersionSynchronizationStrategies["dependenciesOnly"] = "dependenciesOnly";
+    /**
+     * Only changed packages will be updated to the new version, and no version of
+     * any monorepo package will be updated to a new version where it appears as a
+     * dependency.
+     *
+     * This is never the default.
+     */
+    VersionSynchronizationStrategies["none"] = "none";
+})(VersionSynchronizationStrategies || (VersionSynchronizationStrategies = {}));
+/**
  * The names of the inputs to the Action, per action.yml.
  */
 var InputNames;
 (function (InputNames) {
     InputNames["ReleaseType"] = "release-type";
     InputNames["ReleaseVersion"] = "release-version";
+    InputNames["VersionSynchronizationStrategy"] = "version-synchronization-strategy";
 })(InputNames || (InputNames = {}));
 const WORKSPACE_ROOT = process.env.GITHUB_WORKSPACE;
 /**
@@ -12270,20 +12300,34 @@ function getActionInputs() {
     const inputs = {
         ReleaseType: getProcessEnvValue(InputKeys.ReleaseType) || null,
         ReleaseVersion: getProcessEnvValue(InputKeys.ReleaseVersion) || null,
+        VersionSynchronizationStrategy: getVersionSynchronizationStrategyInput(),
     };
     validateActionInputs(inputs);
     return inputs;
 }
 /**
- * Utility function to get the trimmed value of a particular key of process.env.
+ * Gets the trimmed value of a particular key of process.env.
  *
- * @param key - The key of process.env to access.
- * @returns The trimmed string value of the process.env key. Returns an empty
+ * @param key - The key of `process.env` to access.
+ * @returns The trimmed string value of the `process.env` key. Returns an empty
  * string if the key is not set.
  */
 function getProcessEnvValue(key) {
     var _a;
     return ((_a = process.env[key]) === null || _a === void 0 ? void 0 : _a.trim()) || '';
+}
+/**
+ * @returns The version synchronization strategy input of the Action, or the
+ * default value if no input was specified.
+ */
+function getVersionSynchronizationStrategyInput() {
+    const rawInput = getProcessEnvValue(InputKeys.VersionSynchronizationStrategy) || null;
+    if (rawInput !== null &&
+        !Object.hasOwnProperty.call(VersionSynchronizationStrategies, rawInput)) {
+        const tab = (0,dist.tabs)(1, '\n');
+        throw new Error(`Invalid "${InputNames.VersionSynchronizationStrategy}". Received "${rawInput}". Must be one of:${tab}${Object.values(VersionSynchronizationStrategies).join(tab)}`);
+    }
+    return rawInput;
 }
 /**
  * Validates the inputs to the Action, defined earlier in this file.
@@ -12299,7 +12343,7 @@ function validateActionInputs(inputs) {
     if (inputs.ReleaseType &&
         !Object.values(AcceptedSemverReleaseTypes).includes(inputs.ReleaseType)) {
         const tab = (0,dist.tabs)(1, '\n');
-        throw new Error(`Unrecognized "${InputNames.ReleaseType}". Must be one of:${tab}${Object.keys(AcceptedSemverReleaseTypes).join(tab)}`);
+        throw new Error(`Unrecognized "${InputNames.ReleaseType}". Must be one of:${tab}${Object.values(AcceptedSemverReleaseTypes).join(tab)}`);
     }
     if (inputs.ReleaseVersion) {
         if (!(0,dist.isValidSemver)(inputs.ReleaseVersion)) {
@@ -12404,33 +12448,33 @@ async function hasCompleteGitHistory() {
  * "v<VERSION>", where <VERSION> is equal to the manifest's "version" field.
  *
  * @param tags - All tags for the release's base git branch.
+ * @param manifest - The contents of the package's `package.json` file.
  * @param packageData - The metadata of the package to diff.
  * @returns Whether the package changed since its last release. `true` is
  * returned if there are no releases in the repository's history.
  */
-async function didPackageChange(tags, packageData) {
+async function didPackageChange(tags, manifest, packagePath) {
     // In this case, we assume that it's the first release, and every package
     // is implicitly considered to have "changed".
     if (tags.size === 0) {
         return true;
     }
-    const { manifest: { name: packageName, version: currentVersion }, } = packageData;
+    const { name: packageName, version: currentVersion } = manifest;
     const tagOfCurrentVersion = versionToTag(currentVersion);
     if (!tags.has(tagOfCurrentVersion)) {
         throw new Error(`Package "${packageName}" has version "${currentVersion}" in its manifest, but no corresponding tag "${tagOfCurrentVersion}" exists.`);
     }
-    return hasDiff(packageData, tagOfCurrentVersion);
+    return hasDiff(packagePath, tagOfCurrentVersion);
 }
 /**
  * Retrieves the diff for the given tag from the cache or performs the git diff
  * operation, caching the result and returning it.
  *
- * @param packageData - The metadata of the package to diff.
+ * @param packagePath - The path to the package.
  * @param tag - The tag corresponding to the package's latest release.
  * @returns Whether the package changed since its last release.
  */
-async function hasDiff(packageData, tag) {
-    const { dirPath: packagePath } = packageData;
+async function hasDiff(packagePath, tag) {
     let diff;
     if (DIFFS.has(tag)) {
         diff = DIFFS.get(tag);
@@ -12493,52 +12537,46 @@ const CHANGELOG_FILE_NAME = 'CHANGELOG.md';
  * metadata for each package.
  *
  * @param workspaces - The list of workspace patterns given in the root manifest.
+ * @param tags - All tags for the release's base git branch.
+ * @param versionSyncStrategy - The monorepo package version synchronization
+ * strategy.
  * @param rootDir - The monorepo root directory.
- * @returns The metadata for all packages in the monorepo.
+ * @returns The metadata for all packages in the monorepo, and the set of
+ * changed packages.
  */
-async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT) {
+async function getMetadataForAllPackages(workspaces, tags, versionSyncStrategy, rootDir = WORKSPACE_ROOT) {
     const workspaceLocations = await (0,dist.getWorkspaceLocations)(workspaces, rootDir);
-    const result = {};
-    await Promise.all(workspaceLocations.map(async (workspaceDirectory) => {
-        const fullWorkspacePath = external_path_default().join(rootDir, workspaceDirectory);
+    let hasChangedPackages = false;
+    const allPackageMetadata = {};
+    const changedPackages = new Set();
+    await Promise.all(workspaceLocations.map(async (packagePath) => {
+        const fullWorkspacePath = external_path_default().join(rootDir, packagePath);
         if ((await external_fs_.promises.lstat(fullWorkspacePath)).isDirectory()) {
             const rawManifest = await (0,dist.getPackageManifest)(fullWorkspacePath);
-            const manifest = (0,dist.validatePolyrepoPackageManifest)(rawManifest, workspaceDirectory);
-            result[manifest.name] = {
-                dirName: external_path_default().basename(workspaceDirectory),
+            const manifest = (0,dist.validatePolyrepoPackageManifest)(rawManifest, packagePath);
+            const { name: packageName } = manifest;
+            // Record package metadata
+            allPackageMetadata[packageName] = {
+                dirName: external_path_default().basename(packagePath),
                 manifest,
-                name: manifest.name,
-                dirPath: workspaceDirectory,
+                name: packageName,
+                dirPath: packagePath,
             };
+            // Record whether package changed
+            const didChange = await didPackageChange(tags, manifest, packagePath);
+            if (didChange) {
+                changedPackages.add(packageName);
+            }
+            hasChangedPackages = hasChangedPackages || didChange;
         }
     }));
-    return result;
-}
-/**
- * @param allPackages - The metadata of all packages in the monorepo.
- * @param synchronizeVersions - Whether to synchronize the versions of all
- * packages.
- * @param tags - All tags for the release's base git branch.
- * @returns The names of the packages to update.
- */
-async function getPackagesToUpdate(allPackages, synchronizeVersions, tags) {
-    // In order to synchronize versions, we must update every package.
-    if (synchronizeVersions) {
-        return new Set(Object.keys(allPackages));
-    }
-    // If we're not synchronizing versions, we only update changed packages.
-    const shouldBeUpdated = new Set();
-    // We use a for-loop here instead of Promise.all because didPackageChange
-    // must be called serially.
-    for (const packageName of Object.keys(allPackages)) {
-        if (await didPackageChange(tags, allPackages[packageName])) {
-            shouldBeUpdated.add(packageName);
-        }
-    }
-    if (shouldBeUpdated.size === 0) {
+    // If no packages were changed, and our strategy is not to bump the versions
+    // of all packages, there's nothing to do, and we exit with an error.
+    if (!hasChangedPackages &&
+        versionSyncStrategy !== VersionSynchronizationStrategies.all) {
         throw new Error(`There are no packages to update.`);
     }
-    return shouldBeUpdated;
+    return [allPackageMetadata, changedPackages];
 }
 /**
  * Updates the manifests and changelogs of all packages in the monorepo per the
@@ -12549,12 +12587,11 @@ async function getPackagesToUpdate(allPackages, synchronizeVersions, tags) {
  * - If package versions are being synchronized, updates their version ranges
  * wherever they appear as dependencies
  *
- * @param allPackages - The metadata of all monorepo packages
  * @param updateSpecification - The update specification.
  */
-async function updatePackages(allPackages, updateSpecification) {
-    const { packagesToUpdate } = updateSpecification;
-    await Promise.all(Array.from(packagesToUpdate.keys()).map(async (packageName) => updatePackage(allPackages[packageName], updateSpecification)));
+async function updatePackages(updateSpecification) {
+    const { allPackageMetadata } = updateSpecification;
+    await Promise.all(Object.keys(allPackageMetadata).map(async (packageName) => updatePackage(allPackageMetadata[packageName], updateSpecification)));
 }
 /**
  * Updates the manifest and changelog of the given package per the update
@@ -12568,23 +12605,40 @@ async function updatePackages(allPackages, updateSpecification) {
  * @param packageMetadata - The metadata of the package to update.
  * @param updateSpecification - The update specification, which determines how
  * the update is performed.
+ * @param rootDir - The path to the repository root directory.
  */
 async function updatePackage(packageMetadata, updateSpecification, rootDir = WORKSPACE_ROOT) {
     await Promise.all([
-        (0,dist.writeJsonFile)(external_path_default().join(rootDir, packageMetadata.dirPath, MANIFEST_FILE_NAME), getUpdatedManifest(packageMetadata.manifest, updateSpecification)),
+        (0,dist.writeJsonFile)(external_path_default().join(rootDir, packageMetadata.dirPath, MANIFEST_FILE_NAME), getUpdatedManifest(packageMetadata, updateSpecification)),
         updateSpecification.shouldUpdateChangelog
             ? updatePackageChangelog(packageMetadata, updateSpecification)
             : Promise.resolve(),
     ]);
 }
 /**
+ * Updates the repository root `package.json` file, for both polyrepos and
+ * monorepos. Simply updates the `version` field to the new version per the
+ * specified update specification.
+ *
+ * @param rootManifest - The repository root `package.json`.
+ * @param updateSpecification - The update specification.
+ * @param rootDir - The path to the repository root directory.
+ */
+async function updateRepoRootManifest(rootManifest, updateSpecification, rootDir = WORKSPACE_ROOT) {
+    await (0,dist.writeJsonFile)(external_path_default().join(rootDir, './', MANIFEST_FILE_NAME), {
+        ...rootManifest,
+        version: updateSpecification.newVersion,
+    });
+}
+/**
  * Updates the changelog file of the given package, using
  * @metamask/auto-changelog. Assumes that the changelog file is located at the
- * package root directory and named "CHANGELOG.md".
+ * package root directory and named `CHANGELOG.md`.
  *
  * @param packageMetadata - The metadata of the package to update.
  * @param updateSpecification - The update specification, which determines how
  * the update is performed.
+ * @param rootDir - The path to the repository root directory.
  */
 async function updatePackageChangelog(packageMetadata, updateSpecification, rootDir = WORKSPACE_ROOT) {
     const { dirPath: projectRootDirectory } = packageMetadata;
@@ -12615,21 +12669,22 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
 /**
  * Updates the given manifest per the update specification as follows:
  *
- * - Updates the manifest's "version" field to the new version
+ * - Updates the manifest's `version` field to the new version
  * - If monorepo package versions are being synchronized, updates their version
  * ranges wherever they appear as dependencies
  *
- * @param currentManifest - The package's current manifest, as read from disk.
+ * @param packageMetadata - The metadata of the package to update.
  * @param updateSpecification - The update specification, which determines how
  * the update is performed.
  * @returns The updated manifest.
  */
-function getUpdatedManifest(currentManifest, updateSpecification) {
+function getUpdatedManifest(packageMetadata, updateSpecification) {
+    const { manifest: currentManifest } = packageMetadata;
     const { newVersion } = updateSpecification;
     if (isMonorepoUpdateSpecification(updateSpecification) &&
-        updateSpecification.synchronizeVersions) {
-        // If we're synchronizing the versions of our updated packages, we also
-        // synchronize their versions whenever they appear as a dependency.
+        updateSpecification.versionSyncStrategy !==
+            VersionSynchronizationStrategies.none) {
+        // Synchronize monorepo package versions wherever they appear as a dependency.
         return {
             ...currentManifest,
             ...getUpdatedDependencyFields(currentManifest, updateSpecification),
@@ -12648,33 +12703,52 @@ function getUpdatedManifest(currentManifest, updateSpecification) {
  * the update is performed.
  * @returns The updated dependency fields of the manifest.
  */
-function getUpdatedDependencyFields(manifest, updateSpecification) {
-    const { newVersion, packagesToUpdate } = updateSpecification;
+function getUpdatedDependencyFields(currentManifest, updateSpecification) {
+    const { newVersion, changedPackages, versionSyncStrategy, } = updateSpecification;
     return Object.values(dist.ManifestDependencyFieldNames).reduce((newDepsFields, fieldName) => {
-        if (fieldName in manifest) {
-            newDepsFields[fieldName] = getUpdatedDependencyField(manifest[fieldName], packagesToUpdate, newVersion);
+        if (fieldName in currentManifest) {
+            newDepsFields[fieldName] = getUpdatedDependencyField(currentManifest[fieldName], newVersion, versionSyncStrategy, changedPackages);
         }
         return newDepsFields;
     }, {});
 }
 /**
  * Updates the version range of every package in the list that's present in the
- * dependency object to "^<VERSION>", where <VERSION> is the specified new
+ * dependency object to `^<VERSION>`, where `<VERSION>` is the specified new
  * version.
  *
  * @param dependencyObject - The package.json dependency object to update.
- * @param packagesToUpdate - The packages to update the version of.
  * @param newVersion - The new version of the given packages.
+ * @param versionSyncStrategy - The current version synchronization strategy.
+ * @param changedPackages - The set of packages that have changed.
  * @returns The updated dependency object.
  */
-function getUpdatedDependencyField(dependencyObject, packagesToUpdate, newVersion) {
+function getUpdatedDependencyField(dependencyObject, newVersion, versionSyncStrategy, changedPackages) {
     const newVersionRange = `^${newVersion}`;
     return Object.keys(dependencyObject).reduce((newDeps, packageName) => {
-        newDeps[packageName] = packagesToUpdate.has(packageName)
+        newDeps[packageName] = shouldUpdateDependencyVersion(packageName, versionSyncStrategy, changedPackages)
             ? newVersionRange
             : dependencyObject[packageName];
         return newDeps;
     }, {});
+}
+/**
+ * @param packageName - The name of the dependency.
+ * @param versionSyncStrategy - The current version synchronization strategy.
+ * @param changedPackages - The set of packages that have changed.
+ * @returns Whether the version of thet specified dependency should be updated.
+ */
+function shouldUpdateDependencyVersion(packageName, versionSyncStrategy, changedPackages) {
+    switch (versionSyncStrategy) {
+        case VersionSynchronizationStrategies.all:
+            return true;
+        case VersionSynchronizationStrategies.dependenciesOnly:
+            return changedPackages.has(packageName);
+        case VersionSynchronizationStrategies.none:
+            return false;
+        default:
+            throw new Error(`Unknown version synchronization strategy: "${versionSyncStrategy}"`);
+    }
 }
 /**
  * Type guard for checking if an update specification is a monorepo update
@@ -12685,12 +12759,10 @@ function getUpdatedDependencyField(dependencyObject, packagesToUpdate, newVersio
  * specification.
  */
 function isMonorepoUpdateSpecification(specification) {
-    return ('packagesToUpdate' in specification &&
-        'synchronizeVersions' in specification);
+    return Object.hasOwnProperty.call(specification, 'versionSyncStrategy');
 }
 //# sourceMappingURL=package-operations.js.map
 ;// CONCATENATED MODULE: ./lib/update.js
-
 
 
 
@@ -12706,6 +12778,7 @@ function isMonorepoUpdateSpecification(specification) {
  * @see updateMonorepo - For details on monorepo workflow.
  * @see updatePolyrepo - For details on polyrepo (i.e. single-package
  * repository) workflow.
+ * @param actionInputs - The parsed inputs to the Action.
  */
 async function performUpdate(actionInputs) {
     const repositoryUrl = await getRepositoryHttpsUrl();
@@ -12725,12 +12798,22 @@ async function performUpdate(actionInputs) {
         newVersion = actionInputs.ReleaseVersion;
         versionDiff = diff_default()(currentVersion, newVersion);
     }
+    let versionSyncStrategy;
+    if (actionInputs.VersionSynchronizationStrategy) {
+        versionSyncStrategy = actionInputs.VersionSynchronizationStrategy;
+    }
+    else if ((0,dist.isMajorSemverDiff)(versionDiff)) {
+        versionSyncStrategy = VersionSynchronizationStrategies.all;
+    }
+    else {
+        versionSyncStrategy = VersionSynchronizationStrategies.dependenciesOnly;
+    }
     // Ensure that the new version is greater than the current version, and that
     // there's no existing tag for it.
     validateVersion(currentVersion, newVersion, tags);
     if (dist.ManifestFieldNames.Workspaces in rootManifest) {
         console.log('Project appears to have workspaces. Applying monorepo workflow.');
-        await updateMonorepo(newVersion, versionDiff, (0,dist.validateMonorepoPackageManifest)(rootManifest, WORKSPACE_ROOT), repositoryUrl, tags);
+        await updateMonorepo(newVersion, versionSyncStrategy, (0,dist.validateMonorepoPackageManifest)(rootManifest, WORKSPACE_ROOT), repositoryUrl, tags);
     }
     else {
         console.log('Project does not appear to have any workspaces. Applying polyrepo workflow.');
@@ -12747,7 +12830,12 @@ async function performUpdate(actionInputs) {
  * @param repositoryUrl - The HTTPS URL of the repository.
  */
 async function updatePolyrepo(newVersion, manifest, repositoryUrl) {
-    await updatePackage({ dirPath: './', manifest }, { newVersion, repositoryUrl, shouldUpdateChangelog: true });
+    const updateSpecification = {
+        newVersion,
+        repositoryUrl,
+    };
+    await updateRepoRootManifest(manifest, updateSpecification);
+    await updatePackageChangelog({ dirPath: './', manifest }, updateSpecification);
 }
 /**
  * Given that the checked out repository is a monorepo:
@@ -12758,33 +12846,31 @@ async function updatePolyrepo(newVersion, manifest, repositoryUrl) {
  * The changelog of any updated package will also be updated.
  *
  * @param newVersion - The new version of the package(s) to update.
- * @param versionDiff - A SemVer version diff, e.g. "major" or "prerelease".
+ * @param versionSyncStrategy - The monorepo package version synchronization
+ * strategy.
  * @param rootManifest - The parsed root package.json file of the monorepo.
  * @param repositoryUrl - The HTTPS URL of the repository.
- * @param tags - All tags reachable from the current git HEAD, as from "git
- * tag --merged".
+ * @param tags - All tags reachable from the current git HEAD, as from `git
+ * tag --merged`.
  */
-async function updateMonorepo(newVersion, versionDiff, rootManifest, repositoryUrl, tags) {
-    // If the version bump is major or the new major version is still "0", we
-    // synchronize the versions of all monorepo packages, meaning the "version"
-    // field of their manifests and their version range specified wherever they
-    // appear as a dependency.
-    const synchronizeVersions = (0,dist.isMajorSemverDiff)(versionDiff) || major_default()(newVersion) === 0;
+async function updateMonorepo(newVersion, versionSyncStrategy, rootManifest, repositoryUrl, tags) {
     // Collect required information to perform updates
-    const allPackages = await getMetadataForAllPackages(rootManifest.workspaces);
-    const packagesToUpdate = await getPackagesToUpdate(allPackages, synchronizeVersions, tags);
+    const [allPackageMetadata, changedPackages] = await getMetadataForAllPackages(rootManifest.workspaces, tags, versionSyncStrategy);
     const updateSpecification = {
+        allPackageMetadata,
+        changedPackages,
         newVersion,
-        packagesToUpdate,
         repositoryUrl,
-        synchronizeVersions,
+        versionSyncStrategy,
         shouldUpdateChangelog: true,
     };
     // Finally, bump the version of all packages and the root manifest, update the
     // changelogs of all updated packages, and add the new version as an output of
     // this Action.
-    await updatePackages(allPackages, updateSpecification);
-    await updatePackage({ dirPath: './', manifest: rootManifest }, { ...updateSpecification, shouldUpdateChangelog: false });
+    await Promise.all([
+        updateRepoRootManifest(rootManifest, updateSpecification),
+        updatePackages(updateSpecification),
+    ]);
 }
 /**
  * Throws an error if the current version is equal to the new version, if a

@@ -4,6 +4,7 @@ import { isValidSemver, tabs } from '@metamask/action-utils';
 export enum InputKeys {
   ReleaseType = 'RELEASE_TYPE',
   ReleaseVersion = 'RELEASE_VERSION',
+  VersionSynchronizationStrategy = 'VERSION_SYNCHRONIZATION_STRATEGY',
 }
 
 /**
@@ -13,6 +14,39 @@ export enum AcceptedSemverReleaseTypes {
   Major = 'major',
   Minor = 'minor',
   Patch = 'patch',
+}
+
+/**
+ * The different monorepo package version synchronization strategies employed
+ * by this Action.
+ */
+export enum VersionSynchronizationStrategies {
+  /**
+   * All packages will be updated to the new version, and the version of every
+   * monorepo package will be updated to the new version wherever it appears as
+   * a dependency.
+   *
+   * This is the default if the release is a new major version.
+   */
+  all = 'all',
+
+  /**
+   * Only changed packages will be updated to the new version, but the version
+   * of every monorepo package will be updated to the new version wherever it
+   * appears as a dependency.
+   *
+   * This is the default _unless_ the release is a new major version.
+   */
+  dependenciesOnly = 'dependenciesOnly',
+
+  /**
+   * Only changed packages will be updated to the new version, and no version of
+   * any monorepo package will be updated to a new version where it appears as a
+   * dependency.
+   *
+   * This is never the default.
+   */
+  none = 'none',
 }
 
 /**
@@ -26,6 +60,7 @@ declare global {
       GITHUB_WORKSPACE: string;
       [InputKeys.ReleaseType]: string;
       [InputKeys.ReleaseVersion]: string;
+      [InputKeys.VersionSynchronizationStrategy]: VersionSynchronizationStrategies;
     }
   }
 }
@@ -36,11 +71,13 @@ declare global {
 export enum InputNames {
   ReleaseType = 'release-type',
   ReleaseVersion = 'release-version',
+  VersionSynchronizationStrategy = 'version-synchronization-strategy',
 }
 
 export interface ActionInputs {
   readonly ReleaseType: AcceptedSemverReleaseTypes | null;
   readonly ReleaseVersion: string | null;
+  readonly VersionSynchronizationStrategy: VersionSynchronizationStrategies | null;
 }
 
 export const WORKSPACE_ROOT = process.env.GITHUB_WORKSPACE;
@@ -59,20 +96,45 @@ export function getActionInputs(): ActionInputs {
         InputKeys.ReleaseType,
       ) as AcceptedSemverReleaseTypes) || null,
     ReleaseVersion: getProcessEnvValue(InputKeys.ReleaseVersion) || null,
+    VersionSynchronizationStrategy: getVersionSynchronizationStrategyInput(),
   };
   validateActionInputs(inputs);
   return inputs;
 }
 
 /**
- * Utility function to get the trimmed value of a particular key of process.env.
+ * Gets the trimmed value of a particular key of process.env.
  *
- * @param key - The key of process.env to access.
- * @returns The trimmed string value of the process.env key. Returns an empty
+ * @param key - The key of `process.env` to access.
+ * @returns The trimmed string value of the `process.env` key. Returns an empty
  * string if the key is not set.
  */
 function getProcessEnvValue(key: string): string {
   return process.env[key]?.trim() || '';
+}
+
+/**
+ * @returns The version synchronization strategy input of the Action, or the
+ * default value if no input was specified.
+ */
+function getVersionSynchronizationStrategyInput(): VersionSynchronizationStrategies | null {
+  const rawInput =
+    getProcessEnvValue(InputKeys.VersionSynchronizationStrategy) || null;
+
+  if (
+    rawInput !== null &&
+    !Object.hasOwnProperty.call(VersionSynchronizationStrategies, rawInput)
+  ) {
+    const tab = tabs(1, '\n');
+    throw new Error(
+      `Invalid "${
+        InputNames.VersionSynchronizationStrategy
+      }". Received "${rawInput}". Must be one of:${tab}${Object.values(
+        VersionSynchronizationStrategies,
+      ).join(tab)}`,
+    );
+  }
+  return rawInput as VersionSynchronizationStrategies | null;
 }
 
 /**
@@ -100,7 +162,7 @@ function validateActionInputs(inputs: ActionInputs): void {
     throw new Error(
       `Unrecognized "${
         InputNames.ReleaseType
-      }". Must be one of:${tab}${Object.keys(AcceptedSemverReleaseTypes).join(
+      }". Must be one of:${tab}${Object.values(AcceptedSemverReleaseTypes).join(
         tab,
       )}`,
     );

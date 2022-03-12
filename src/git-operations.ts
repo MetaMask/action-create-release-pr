@@ -1,7 +1,6 @@
 import semverClean from 'semver/functions/clean';
 import execa from 'execa';
-import { isValidSemver } from '@metamask/action-utils';
-import type { PackageMetadata } from './package-operations';
+import { isValidSemver, PackageManifest } from '@metamask/action-utils';
 import { WORKSPACE_ROOT } from './utils';
 
 const HEAD = 'HEAD';
@@ -122,13 +121,15 @@ async function hasCompleteGitHistory(): Promise<boolean> {
  * "v<VERSION>", where <VERSION> is equal to the manifest's "version" field.
  *
  * @param tags - All tags for the release's base git branch.
+ * @param manifest - The contents of the package's `package.json` file.
  * @param packageData - The metadata of the package to diff.
  * @returns Whether the package changed since its last release. `true` is
  * returned if there are no releases in the repository's history.
  */
 export async function didPackageChange(
   tags: ReadonlySet<string>,
-  packageData: PackageMetadata,
+  manifest: PackageManifest,
+  packagePath: string,
 ): Promise<boolean> {
   // In this case, we assume that it's the first release, and every package
   // is implicitly considered to have "changed".
@@ -136,9 +137,7 @@ export async function didPackageChange(
     return true;
   }
 
-  const {
-    manifest: { name: packageName, version: currentVersion },
-  } = packageData;
+  const { name: packageName, version: currentVersion } = manifest;
   const tagOfCurrentVersion = versionToTag(currentVersion);
 
   if (!tags.has(tagOfCurrentVersion)) {
@@ -146,23 +145,18 @@ export async function didPackageChange(
       `Package "${packageName}" has version "${currentVersion}" in its manifest, but no corresponding tag "${tagOfCurrentVersion}" exists.`,
     );
   }
-  return hasDiff(packageData, tagOfCurrentVersion);
+  return hasDiff(packagePath, tagOfCurrentVersion);
 }
 
 /**
  * Retrieves the diff for the given tag from the cache or performs the git diff
  * operation, caching the result and returning it.
  *
- * @param packageData - The metadata of the package to diff.
+ * @param packagePath - The path to the package.
  * @param tag - The tag corresponding to the package's latest release.
  * @returns Whether the package changed since its last release.
  */
-async function hasDiff(
-  packageData: PackageMetadata,
-  tag: string,
-): Promise<boolean> {
-  const { dirPath: packagePath } = packageData;
-
+async function hasDiff(packagePath: string, tag: string): Promise<boolean> {
   let diff: string[];
   if (DIFFS.has(tag)) {
     diff = DIFFS.get(tag) as string[];

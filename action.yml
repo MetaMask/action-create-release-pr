@@ -2,6 +2,13 @@ name: 'Create Release PR'
 description: "Update a repository's npm package(s). Monorepo-compatible."
 
 inputs:
+  artifacts-path:
+    description: 'The path to the directory where this action will create its artifact files.'
+    required: false
+  created-pr-status:
+    default: 'draft'
+    description: 'The status of the pull request when created. Allowed options are "draft" and "open".'
+    required: true
   release-branch-prefix:
     description: "The prefix of the release PR branch name, to which the release's SemVer version will be appended."
     default: 'release/'
@@ -12,13 +19,9 @@ inputs:
   release-version:
     description: 'A plain SemVer version string, specifying the version to bump to. Mutually exclusive with "release-type".'
     required: false
-  artifacts-path:
-    description: 'The path to the directory where this action will create its artifact files.'
+  version-synchronization-strategy:
+    description: 'Monorepos only. Whether and how to synchronize monorepo package versions. See Action readme for details.'
     required: false
-  created-pr-status:
-    default: 'draft'
-    description: 'The status of the pull request when created. Allowed options are "draft" and "open"'
-    required: true
 
 runs:
   using: 'composite'
@@ -29,6 +32,7 @@ runs:
       env:
         RELEASE_TYPE: ${{ inputs.release-type }}
         RELEASE_VERSION: ${{ inputs.release-version }}
+        VERSION_SYNCHRONIZATION_STRATEGY: ${{ inputs.version-synchronization-strategy}}
     - id: create-release-pr
       shell: bash
       run: |

@@ -9,9 +9,10 @@ import * as autoChangelog from '@metamask/auto-changelog';
 import * as gitOps from './git-operations';
 import {
   getMetadataForAllPackages,
-  getPackagesToUpdate,
   updatePackage,
   updatePackages,
+  updatePackageChangelog,
+  updateRepoRootManifest,
 } from './package-operations';
 
 jest.mock('fs', () => ({
@@ -131,50 +132,6 @@ describe('package-operations', () => {
         [names[1]]: getMockPackageMetadata(1),
         [names[2]]: getMockPackageMetadata(2),
       });
-    });
-  });
-
-  describe('getPackagesToUpdate', () => {
-    let didPackageChangeMock: jest.SpyInstance;
-
-    const packageNames = ['name1', 'name2', 'name3'];
-
-    const mockMetadataRecord = {
-      [packageNames[0]]: {},
-      [packageNames[1]]: {},
-      [packageNames[2]]: {},
-    };
-
-    beforeEach(() => {
-      didPackageChangeMock = jest.spyOn(gitOps, 'didPackageChange');
-    });
-
-    it('returns all packages if synchronizeVersions is true', async () => {
-      expect(
-        await getPackagesToUpdate(mockMetadataRecord as any, true, new Set()),
-      ).toStrictEqual(new Set(packageNames));
-      expect(didPackageChangeMock).not.toHaveBeenCalled();
-    });
-
-    it('returns changed packages if synchronizeVersions is false', async () => {
-      didPackageChangeMock
-        .mockImplementationOnce(async () => false)
-        .mockImplementationOnce(async () => true)
-        .mockImplementationOnce(async () => false);
-
-      expect(
-        await getPackagesToUpdate(mockMetadataRecord as any, false, new Set()),
-      ).toStrictEqual(new Set([packageNames[1]]));
-      expect(didPackageChangeMock).toHaveBeenCalledTimes(3);
-    });
-
-    it('throws an error if there are no packages to update', async () => {
-      didPackageChangeMock.mockImplementation(async () => false);
-
-      await expect(
-        getPackagesToUpdate(mockMetadataRecord as any, false, new Set()),
-      ).rejects.toThrow(/no packages to update/u);
-      expect(didPackageChangeMock).toHaveBeenCalledTimes(3);
     });
   });
 

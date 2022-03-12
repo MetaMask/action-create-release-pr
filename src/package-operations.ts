@@ -10,7 +10,7 @@ import {
   writeJsonFile,
 } from '@metamask/action-utils';
 import { didPackageChange } from './git-operations';
-import { WORKSPACE_ROOT } from './utils';
+import { VersionSynchronizationStrategies, WORKSPACE_ROOT } from './utils';
 
 export interface PackageMetadata {
   readonly dirName: string;
@@ -22,12 +22,13 @@ export interface PackageMetadata {
 interface UpdateSpecification {
   readonly newVersion: string;
   readonly repositoryUrl: string;
-  readonly shouldUpdateChangelog: boolean;
 }
 
 interface MonorepoUpdateSpecification extends UpdateSpecification {
-  readonly packagesToUpdate: ReadonlySet<string>;
-  readonly synchronizeVersions: boolean;
+  readonly allPackageMetadata: Record<string, PackageMetadata>;
+  readonly changedPackages: ReadonlySet<string>;
+  readonly versionSyncStrategy: VersionSynchronizationStrategies;
+  readonly shouldUpdateChangelog: boolean;
 }
 
 const MANIFEST_FILE_NAME = 'package.json';
@@ -38,68 +39,63 @@ const CHANGELOG_FILE_NAME = 'CHANGELOG.md';
  * metadata for each package.
  *
  * @param workspaces - The list of workspace patterns given in the root manifest.
+ * @param tags - All tags for the release's base git branch.
+ * @param versionSyncStrategy - The monorepo package version synchronization
+ * strategy.
  * @param rootDir - The monorepo root directory.
- * @returns The metadata for all packages in the monorepo.
+ * @returns The metadata for all packages in the monorepo, and the set of
+ * changed packages.
  */
 export async function getMetadataForAllPackages(
   workspaces: string[],
+  tags: ReadonlySet<string>,
+  versionSyncStrategy: VersionSynchronizationStrategies,
   rootDir: string = WORKSPACE_ROOT,
-): Promise<Record<string, PackageMetadata>> {
+): Promise<[Record<string, PackageMetadata>, ReadonlySet<string>]> {
   const workspaceLocations = await getWorkspaceLocations(workspaces, rootDir);
 
-  const result: Record<string, PackageMetadata> = {};
+  let hasChangedPackages = false;
+  const allPackageMetadata: Record<string, PackageMetadata> = {};
+  const changedPackages: Set<string> = new Set();
+
   await Promise.all(
-    workspaceLocations.map(async (workspaceDirectory) => {
-      const fullWorkspacePath = pathUtils.join(rootDir, workspaceDirectory);
+    workspaceLocations.map(async (packagePath) => {
+      const fullWorkspacePath = pathUtils.join(rootDir, packagePath);
       if ((await fs.lstat(fullWorkspacePath)).isDirectory()) {
         const rawManifest = await getPackageManifest(fullWorkspacePath);
         const manifest = validatePolyrepoPackageManifest(
           rawManifest,
-          workspaceDirectory,
+          packagePath,
         );
-        result[manifest.name] = {
-          dirName: pathUtils.basename(workspaceDirectory),
+        const { name: packageName } = manifest;
+
+        // Record package metadata
+        allPackageMetadata[packageName] = {
+          dirName: pathUtils.basename(packagePath),
           manifest,
-          name: manifest.name,
-          dirPath: workspaceDirectory,
+          name: packageName,
+          dirPath: packagePath,
         };
+
+        // Record whether package changed
+        const didChange = await didPackageChange(tags, manifest, packagePath);
+        if (didChange) {
+          changedPackages.add(packageName);
+        }
+        hasChangedPackages = hasChangedPackages || didChange;
       }
     }),
   );
-  return result;
-}
 
-/**
- * @param allPackages - The metadata of all packages in the monorepo.
- * @param synchronizeVersions - Whether to synchronize the versions of all
- * packages.
- * @param tags - All tags for the release's base git branch.
- * @returns The names of the packages to update.
- */
-export async function getPackagesToUpdate(
-  allPackages: Record<string, PackageMetadata>,
-  synchronizeVersions: boolean,
-  tags: ReadonlySet<string>,
-): Promise<ReadonlySet<string>> {
-  // In order to synchronize versions, we must update every package.
-  if (synchronizeVersions) {
-    return new Set(Object.keys(allPackages));
-  }
-
-  // If we're not synchronizing versions, we only update changed packages.
-  const shouldBeUpdated: Set<string> = new Set();
-  // We use a for-loop here instead of Promise.all because didPackageChange
-  // must be called serially.
-  for (const packageName of Object.keys(allPackages)) {
-    if (await didPackageChange(tags, allPackages[packageName])) {
-      shouldBeUpdated.add(packageName);
-    }
-  }
-
-  if (shouldBeUpdated.size === 0) {
+  // If no packages were changed, and our strategy is not to bump the versions
+  // of all packages, there's nothing to do, and we exit with an error.
+  if (
+    !hasChangedPackages &&
+    versionSyncStrategy !== VersionSynchronizationStrategies.all
+  ) {
     throw new Error(`There are no packages to update.`);
   }
-  return shouldBeUpdated;
+  return [allPackageMetadata, changedPackages];
 }
 
 /**
@@ -111,17 +107,15 @@ export async function getPackagesToUpdate(
  * - If package versions are being synchronized, updates their version ranges
  * wherever they appear as dependencies
  *
- * @param allPackages - The metadata of all monorepo packages
  * @param updateSpecification - The update specification.
  */
 export async function updatePackages(
-  allPackages: Record<string, Pick<PackageMetadata, 'dirPath' | 'manifest'>>,
   updateSpecification: MonorepoUpdateSpecification,
 ): Promise<void> {
-  const { packagesToUpdate } = updateSpecification;
+  const { allPackageMetadata } = updateSpecification;
   await Promise.all(
-    Array.from(packagesToUpdate.keys()).map(async (packageName) =>
-      updatePackage(allPackages[packageName], updateSpecification),
+    Object.keys(allPackageMetadata).map(async (packageName) =>
+      updatePackage(allPackageMetadata[packageName], updateSpecification),
     ),
   );
 }
@@ -138,16 +132,17 @@ export async function updatePackages(
  * @param packageMetadata - The metadata of the package to update.
  * @param updateSpecification - The update specification, which determines how
  * the update is performed.
+ * @param rootDir - The path to the repository root directory.
  */
 export async function updatePackage(
-  packageMetadata: { dirPath: string; manifest: Partial<PackageManifest> },
-  updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
+  packageMetadata: PackageMetadata,
+  updateSpecification: MonorepoUpdateSpecification,
   rootDir: string = WORKSPACE_ROOT,
 ): Promise<void> {
   await Promise.all([
     writeJsonFile(
       pathUtils.join(rootDir, packageMetadata.dirPath, MANIFEST_FILE_NAME),
-      getUpdatedManifest(packageMetadata.manifest, updateSpecification),
+      getUpdatedManifest(packageMetadata, updateSpecification),
     ),
     updateSpecification.shouldUpdateChangelog
       ? updatePackageChangelog(packageMetadata, updateSpecification)
@@ -156,19 +151,40 @@ export async function updatePackage(
 }
 
 /**
+ * Updates the repository root `package.json` file, for both polyrepos and
+ * monorepos. Simply updates the `version` field to the new version per the
+ * specified update specification.
+ *
+ * @param rootManifest - The repository root `package.json`.
+ * @param updateSpecification - The update specification.
+ * @param rootDir - The path to the repository root directory.
+ */
+export async function updateRepoRootManifest(
+  rootManifest: Partial<PackageManifest>,
+  updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
+  rootDir: string = WORKSPACE_ROOT,
+): Promise<void> {
+  await writeJsonFile(pathUtils.join(rootDir, './', MANIFEST_FILE_NAME), {
+    ...rootManifest,
+    version: updateSpecification.newVersion,
+  });
+}
+
+/**
  * Updates the changelog file of the given package, using
  * @metamask/auto-changelog. Assumes that the changelog file is located at the
- * package root directory and named "CHANGELOG.md".
+ * package root directory and named `CHANGELOG.md`.
  *
  * @param packageMetadata - The metadata of the package to update.
  * @param updateSpecification - The update specification, which determines how
  * the update is performed.
+ * @param rootDir - The path to the repository root directory.
  */
-async function updatePackageChangelog(
+export async function updatePackageChangelog(
   packageMetadata: { dirPath: string; manifest: Partial<PackageManifest> },
   updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
   rootDir: string = WORKSPACE_ROOT,
-) {
+): Promise<void> {
   const { dirPath: projectRootDirectory } = packageMetadata;
   const { newVersion, repositoryUrl } = updateSpecification;
 
@@ -205,26 +221,27 @@ async function updatePackageChangelog(
 /**
  * Updates the given manifest per the update specification as follows:
  *
- * - Updates the manifest's "version" field to the new version
+ * - Updates the manifest's `version` field to the new version
  * - If monorepo package versions are being synchronized, updates their version
  * ranges wherever they appear as dependencies
  *
- * @param currentManifest - The package's current manifest, as read from disk.
+ * @param packageMetadata - The metadata of the package to update.
  * @param updateSpecification - The update specification, which determines how
  * the update is performed.
  * @returns The updated manifest.
  */
 function getUpdatedManifest(
-  currentManifest: Partial<PackageManifest>,
+  packageMetadata: PackageMetadata,
   updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
-) {
+): PackageManifest {
+  const { manifest: currentManifest } = packageMetadata;
   const { newVersion } = updateSpecification;
   if (
     isMonorepoUpdateSpecification(updateSpecification) &&
-    updateSpecification.synchronizeVersions
+    updateSpecification.versionSyncStrategy !==
+      VersionSynchronizationStrategies.none
   ) {
-    // If we're synchronizing the versions of our updated packages, we also
-    // synchronize their versions whenever they appear as a dependency.
+    // Synchronize monorepo package versions wherever they appear as a dependency.
     return {
       ...currentManifest,
       ...getUpdatedDependencyFields(currentManifest, updateSpecification),
@@ -246,17 +263,23 @@ function getUpdatedManifest(
  * @returns The updated dependency fields of the manifest.
  */
 function getUpdatedDependencyFields(
-  manifest: Partial<PackageManifest>,
+  currentManifest: Partial<PackageManifest>,
   updateSpecification: MonorepoUpdateSpecification,
 ): Partial<Pick<PackageManifest, ManifestDependencyFieldNames>> {
-  const { newVersion, packagesToUpdate } = updateSpecification;
+  const {
+    newVersion,
+    changedPackages,
+    versionSyncStrategy,
+  } = updateSpecification;
+
   return Object.values(ManifestDependencyFieldNames).reduce(
     (newDepsFields: Record<string, unknown>, fieldName) => {
-      if (fieldName in manifest) {
+      if (fieldName in currentManifest) {
         newDepsFields[fieldName] = getUpdatedDependencyField(
-          manifest[fieldName] as Record<string, string>,
-          packagesToUpdate,
+          currentManifest[fieldName] as Record<string, string>,
           newVersion,
+          versionSyncStrategy,
+          changedPackages,
         );
       }
 
@@ -268,23 +291,29 @@ function getUpdatedDependencyFields(
 
 /**
  * Updates the version range of every package in the list that's present in the
- * dependency object to "^<VERSION>", where <VERSION> is the specified new
+ * dependency object to `^<VERSION>`, where `<VERSION>` is the specified new
  * version.
  *
  * @param dependencyObject - The package.json dependency object to update.
- * @param packagesToUpdate - The packages to update the version of.
  * @param newVersion - The new version of the given packages.
+ * @param versionSyncStrategy - The current version synchronization strategy.
+ * @param changedPackages - The set of packages that have changed.
  * @returns The updated dependency object.
  */
 function getUpdatedDependencyField(
   dependencyObject: Record<string, string>,
-  packagesToUpdate: ReadonlySet<string>,
   newVersion: string,
+  versionSyncStrategy: VersionSynchronizationStrategies,
+  changedPackages: ReadonlySet<string>,
 ): Record<string, string> {
   const newVersionRange = `^${newVersion}`;
   return Object.keys(dependencyObject).reduce(
     (newDeps: Record<string, string>, packageName) => {
-      newDeps[packageName] = packagesToUpdate.has(packageName)
+      newDeps[packageName] = shouldUpdateDependencyVersion(
+        packageName,
+        versionSyncStrategy,
+        changedPackages,
+      )
         ? newVersionRange
         : dependencyObject[packageName];
 
@@ -292,6 +321,34 @@ function getUpdatedDependencyField(
     },
     {},
   );
+}
+
+/**
+ * @param packageName - The name of the dependency.
+ * @param versionSyncStrategy - The current version synchronization strategy.
+ * @param changedPackages - The set of packages that have changed.
+ * @returns Whether the version of thet specified dependency should be updated.
+ */
+function shouldUpdateDependencyVersion(
+  packageName: string,
+  versionSyncStrategy: VersionSynchronizationStrategies,
+  changedPackages: ReadonlySet<string>,
+): boolean {
+  switch (versionSyncStrategy) {
+    case VersionSynchronizationStrategies.all:
+      return true;
+
+    case VersionSynchronizationStrategies.dependenciesOnly:
+      return changedPackages.has(packageName);
+
+    case VersionSynchronizationStrategies.none:
+      return false;
+
+    default:
+      throw new Error(
+        `Unknown version synchronization strategy: "${versionSyncStrategy}"`,
+      );
+  }
 }
 
 /**
@@ -305,8 +362,5 @@ function getUpdatedDependencyField(
 function isMonorepoUpdateSpecification(
   specification: UpdateSpecification | MonorepoUpdateSpecification,
 ): specification is MonorepoUpdateSpecification {
-  return (
-    'packagesToUpdate' in specification &&
-    'synchronizeVersions' in specification
-  );
+  return Object.hasOwnProperty.call(specification, 'versionSyncStrategy');
 }
