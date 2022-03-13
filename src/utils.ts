@@ -26,25 +26,34 @@ export enum VersionSynchronizationStrategies {
    * monorepo package will be updated to the new version wherever it appears as
    * a dependency.
    *
-   * This is the default if the release is a new major version.
+   * This is the default behavior if the release is a new major version.
    */
   all = 'all',
+
+  /**
+   * Changed packages and their dependents in the monorepo will be updated to
+   * the new version, and the version of every monorepo package will be updated
+   * to the new version wherever it appears as a dependency.
+   *
+   * This is the default behavior _unless_ the release is a new major version.
+   */
+  transitive = 'transitive',
 
   /**
    * Only changed packages will be updated to the new version, but the version
    * of every monorepo package will be updated to the new version wherever it
    * appears as a dependency.
    *
-   * This is the default _unless_ the release is a new major version.
+   * This is never the default behavior.
    */
-  dependenciesOnly = 'dependenciesOnly',
+  internalOnly = 'internalOnly',
 
   /**
    * Only changed packages will be updated to the new version, and no version of
    * any monorepo package will be updated to a new version where it appears as a
    * dependency.
    *
-   * This is never the default.
+   * This is never the default behavior.
    */
   none = 'none',
 }

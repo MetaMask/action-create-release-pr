@@ -17,8 +17,9 @@ import { getRepositoryHttpsUrl, getTags } from './git-operations';
 import {
   getMetadataForAllPackages,
   updateRepoRootManifest,
-  updatePackages,
+  updateMonorepoPackages,
   updatePackageChangelog,
+  MonorepoUpdateSpecification,
 } from './package-operations';
 import {
   ActionInputs,
@@ -69,7 +70,7 @@ export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
   } else if (isMajorSemverDiff(versionDiff)) {
     versionSyncStrategy = VersionSynchronizationStrategies.all;
   } else {
-    versionSyncStrategy = VersionSynchronizationStrategies.dependenciesOnly;
+    versionSyncStrategy = VersionSynchronizationStrategies.transitive;
   }
 
   // Ensure that the new version is greater than the current version, and that
@@ -156,7 +157,7 @@ async function updateMonorepo(
     versionSyncStrategy,
   );
 
-  const updateSpecification = {
+  const updateSpecification: MonorepoUpdateSpecification = {
     allPackageMetadata,
     changedPackages,
     newVersion,
@@ -170,7 +171,7 @@ async function updateMonorepo(
   // this Action.
   await Promise.all([
     updateRepoRootManifest(rootManifest, updateSpecification),
-    updatePackages(updateSpecification),
+    updateMonorepoPackages(updateSpecification),
   ]);
 }
 

@@ -33,7 +33,7 @@ jest.mock('./package-operations', () => {
     getMetadataForAllPackages: jest.fn(),
     getPackagesToUpdate: jest.fn(),
     updatePackage: jest.fn(),
-    updatePackages: jest.fn(),
+    updateMonorepoPackages: jest.fn(),
   };
 });
 
@@ -188,8 +188,8 @@ describe('performUpdate', () => {
       new Set(['v1.0.0', 'v1.1.0']),
     );
 
-    expect(packageOperations.updatePackages).toHaveBeenCalledTimes(1);
-    expect(packageOperations.updatePackages).toHaveBeenCalledWith(
+    expect(packageOperations.updateMonorepoPackages).toHaveBeenCalledTimes(1);
+    expect(packageOperations.updateMonorepoPackages).toHaveBeenCalledWith(
       { a: {}, b: {}, c: {} },
       {
         newVersion,
@@ -271,8 +271,8 @@ describe('performUpdate', () => {
       new Set(['v1.0.0', 'v1.1.0']),
     );
 
-    expect(packageOperations.updatePackages).toHaveBeenCalledTimes(1);
-    expect(packageOperations.updatePackages).toHaveBeenCalledWith(
+    expect(packageOperations.updateMonorepoPackages).toHaveBeenCalledTimes(1);
+    expect(packageOperations.updateMonorepoPackages).toHaveBeenCalledWith(
       { a: {}, b: {}, c: {} },
       {
         newVersion,
@@ -354,8 +354,8 @@ describe('performUpdate', () => {
       new Set(['v0.0.0', 'v0.1.0']),
     );
 
-    expect(packageOperations.updatePackages).toHaveBeenCalledTimes(1);
-    expect(packageOperations.updatePackages).toHaveBeenCalledWith(
+    expect(packageOperations.updateMonorepoPackages).toHaveBeenCalledTimes(1);
+    expect(packageOperations.updateMonorepoPackages).toHaveBeenCalledWith(
       { a: {}, b: {}, c: {} },
       {
         newVersion,
