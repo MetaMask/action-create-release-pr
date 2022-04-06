@@ -68,7 +68,7 @@ export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
   if (actionInputs.VersionSynchronizationStrategy) {
     versionSyncStrategy = actionInputs.VersionSynchronizationStrategy;
   } else if (isMajorSemverDiff(versionDiff)) {
-    versionSyncStrategy = VersionSynchronizationStrategies.all;
+    versionSyncStrategy = VersionSynchronizationStrategies.fixed;
   } else {
     versionSyncStrategy = VersionSynchronizationStrategies.transitive;
   }

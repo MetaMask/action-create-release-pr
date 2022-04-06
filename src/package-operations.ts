@@ -91,7 +91,7 @@ export async function getMetadataForAllPackages(
         // of all packages, regard all packages as changed. Otherwise, go by the
         // git history.
         if (
-          versionSyncStrategy === VersionSynchronizationStrategies.all ||
+          versionSyncStrategy === VersionSynchronizationStrategies.fixed ||
           (await didPackageChange(tags, manifest, packagePath))
         ) {
           changedPackages.add(packageName);
@@ -111,7 +111,7 @@ export async function getMetadataForAllPackages(
   // If our strategy is not to bump the versions of all packages and no packages
   // changed, there's nothing to do, and we exit with an error.
   if (
-    versionSyncStrategy !== VersionSynchronizationStrategies.all &&
+    versionSyncStrategy !== VersionSynchronizationStrategies.fixed &&
     changedPackages.size === 0
   ) {
     throw new Error(`There are no packages to update.`);
@@ -217,7 +217,7 @@ export function shouldUpdateMonorepoPackage(
   versionSyncStrategy: VersionSynchronizationStrategies,
 ): boolean {
   const shouldUpdate =
-    versionSyncStrategy === VersionSynchronizationStrategies.all ||
+    versionSyncStrategy === VersionSynchronizationStrategies.fixed ||
     packagesToUpdate.has(packageName) ||
     dependencyGraph
       .dependenciesOf(packageName)
@@ -461,15 +461,12 @@ function shouldUpdateDependencyVersion(
   changedPackages: ReadonlySet<string>,
 ): boolean {
   switch (versionSyncStrategy) {
-    case VersionSynchronizationStrategies.all:
+    case VersionSynchronizationStrategies.fixed:
       return true;
 
     case VersionSynchronizationStrategies.transitive:
-    case VersionSynchronizationStrategies.internalOnly:
+    case VersionSynchronizationStrategies.independent:
       return changedPackages.has(packageName);
-
-    case VersionSynchronizationStrategies.none:
-      return false;
 
     default:
       throw new Error(

@@ -26,36 +26,35 @@ export enum VersionSynchronizationStrategies {
    * monorepo package will be updated to the new version wherever it appears as
    * a dependency.
    *
-   * This is the default behavior if the release is a new major version.
+   * The published versions of all monorepo packages are "fixed".
+   *
+   * This is the default behavior _if_ the release is a new major version.
    */
-  all = 'all',
+  fixed = 'fixed',
 
   /**
    * Changed packages and their dependents in the monorepo will be updated to
    * the new version, and the version of every monorepo package will be updated
    * to the new version wherever it appears as a dependency.
    *
+   * The published versions of all monorepo packages will reflect their
+   * dependency relationships.
+   *
    * This is the default behavior _unless_ the release is a new major version.
    */
   transitive = 'transitive',
 
   /**
-   * Only changed packages will be updated to the new version, but the version
+   * Only changed packages will be updated to the new version, and the version
    * of every monorepo package will be updated to the new version wherever it
-   * appears as a dependency.
+   * appears as a dependency. Synchronizing the monorepo package versions
+   * internally is necessary for the functioning of `yarn`'s workspace feature.
+   *
+   * The the published versions of all monorepo packages are "independent".
    *
    * This is never the default behavior.
    */
-  internalOnly = 'internalOnly',
-
-  /**
-   * Only changed packages will be updated to the new version, and no version of
-   * any monorepo package will be updated to a new version where it appears as a
-   * dependency.
-   *
-   * This is never the default behavior.
-   */
-  none = 'none',
+  independent = 'independent',
 }
 
 /**

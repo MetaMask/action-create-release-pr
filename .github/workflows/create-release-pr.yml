@@ -18,10 +18,9 @@ on:
         description: 'Monorepos only. Whether and how to synchronize monorepo package versions. See Action readme for details.'
         required: false
         options:
-          - all
+          - fixed
           - transitive
-          - internalOnly
-          - none
+          - independent
 
 jobs:
   create-release-pr:

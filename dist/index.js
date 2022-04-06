@@ -3621,6 +3621,378 @@ module.exports.default = pathKey;
 
 /***/ }),
 
+/***/ 6232:
+/***/ ((__unused_webpack_module, exports) => {
+
+var __webpack_unused_export__;
+/**
+ * A simple dependency graph
+ */
+
+/**
+ * Helper for creating a Topological Sort using Depth-First-Search on a set of edges.
+ *
+ * Detects cycles and throws an Error if one is detected (unless the "circular"
+ * parameter is "true" in which case it ignores them).
+ *
+ * @param edges The set of edges to DFS through
+ * @param leavesOnly Whether to only return "leaf" nodes (ones who have no edges)
+ * @param result An array in which the results will be populated
+ * @param circular A boolean to allow circular dependencies
+ */
+function createDFS(edges, leavesOnly, result, circular) {
+  var visited = {};
+  return function (start) {
+    if (visited[start]) {
+      return;
+    }
+    var inCurrentPath = {};
+    var currentPath = [];
+    var todo = []; // used as a stack
+    todo.push({ node: start, processed: false });
+    while (todo.length > 0) {
+      var current = todo[todo.length - 1]; // peek at the todo stack
+      var processed = current.processed;
+      var node = current.node;
+      if (!processed) {
+        // Haven't visited edges yet (visiting phase)
+        if (visited[node]) {
+          todo.pop();
+          continue;
+        } else if (inCurrentPath[node]) {
+          // It's not a DAG
+          if (circular) {
+            todo.pop();
+            // If we're tolerating cycles, don't revisit the node
+            continue;
+          }
+          currentPath.push(node);
+          throw new DepGraphCycleError(currentPath);
+        }
+
+        inCurrentPath[node] = true;
+        currentPath.push(node);
+        var nodeEdges = edges[node];
+        // (push edges onto the todo stack in reverse order to be order-compatible with the old DFS implementation)
+        for (var i = nodeEdges.length - 1; i >= 0; i--) {
+          todo.push({ node: nodeEdges[i], processed: false });
+        }
+        current.processed = true;
+      } else {
+        // Have visited edges (stack unrolling phase)
+        todo.pop();
+        currentPath.pop();
+        inCurrentPath[node] = false;
+        visited[node] = true;
+        if (!leavesOnly || edges[node].length === 0) {
+          result.push(node);
+        }
+      }
+    }
+  };
+}
+
+/**
+ * Simple Dependency Graph
+ */
+var DepGraph = (exports.f = function DepGraph(opts) {
+  this.nodes = {}; // Node -> Node/Data (treated like a Set)
+  this.outgoingEdges = {}; // Node -> [Dependency Node]
+  this.incomingEdges = {}; // Node -> [Dependant Node]
+  this.circular = opts && !!opts.circular; // Allows circular deps
+});
+DepGraph.prototype = {
+  /**
+   * The number of nodes in the graph.
+   */
+  size: function () {
+    return Object.keys(this.nodes).length;
+  },
+  /**
+   * Add a node to the dependency graph. If a node already exists, this method will do nothing.
+   */
+  addNode: function (node, data) {
+    if (!this.hasNode(node)) {
+      // Checking the arguments length allows the user to add a node with undefined data
+      if (arguments.length === 2) {
+        this.nodes[node] = data;
+      } else {
+        this.nodes[node] = node;
+      }
+      this.outgoingEdges[node] = [];
+      this.incomingEdges[node] = [];
+    }
+  },
+  /**
+   * Remove a node from the dependency graph. If a node does not exist, this method will do nothing.
+   */
+  removeNode: function (node) {
+    if (this.hasNode(node)) {
+      delete this.nodes[node];
+      delete this.outgoingEdges[node];
+      delete this.incomingEdges[node];
+      [this.incomingEdges, this.outgoingEdges].forEach(function (edgeList) {
+        Object.keys(edgeList).forEach(function (key) {
+          var idx = edgeList[key].indexOf(node);
+          if (idx >= 0) {
+            edgeList[key].splice(idx, 1);
+          }
+        }, this);
+      });
+    }
+  },
+  /**
+   * Check if a node exists in the graph
+   */
+  hasNode: function (node) {
+    return this.nodes.hasOwnProperty(node);
+  },
+  /**
+   * Get the data associated with a node name
+   */
+  getNodeData: function (node) {
+    if (this.hasNode(node)) {
+      return this.nodes[node];
+    } else {
+      throw new Error("Node does not exist: " + node);
+    }
+  },
+  /**
+   * Set the associated data for a given node name. If the node does not exist, this method will throw an error
+   */
+  setNodeData: function (node, data) {
+    if (this.hasNode(node)) {
+      this.nodes[node] = data;
+    } else {
+      throw new Error("Node does not exist: " + node);
+    }
+  },
+  /**
+   * Add a dependency between two nodes. If either of the nodes does not exist,
+   * an Error will be thrown.
+   */
+  addDependency: function (from, to) {
+    if (!this.hasNode(from)) {
+      throw new Error("Node does not exist: " + from);
+    }
+    if (!this.hasNode(to)) {
+      throw new Error("Node does not exist: " + to);
+    }
+    if (this.outgoingEdges[from].indexOf(to) === -1) {
+      this.outgoingEdges[from].push(to);
+    }
+    if (this.incomingEdges[to].indexOf(from) === -1) {
+      this.incomingEdges[to].push(from);
+    }
+    return true;
+  },
+  /**
+   * Remove a dependency between two nodes.
+   */
+  removeDependency: function (from, to) {
+    var idx;
+    if (this.hasNode(from)) {
+      idx = this.outgoingEdges[from].indexOf(to);
+      if (idx >= 0) {
+        this.outgoingEdges[from].splice(idx, 1);
+      }
+    }
+
+    if (this.hasNode(to)) {
+      idx = this.incomingEdges[to].indexOf(from);
+      if (idx >= 0) {
+        this.incomingEdges[to].splice(idx, 1);
+      }
+    }
+  },
+  /**
+   * Return a clone of the dependency graph. If any custom data is attached
+   * to the nodes, it will only be shallow copied.
+   */
+  clone: function () {
+    var source = this;
+    var result = new DepGraph();
+    var keys = Object.keys(source.nodes);
+    keys.forEach(function (n) {
+      result.nodes[n] = source.nodes[n];
+      result.outgoingEdges[n] = source.outgoingEdges[n].slice(0);
+      result.incomingEdges[n] = source.incomingEdges[n].slice(0);
+    });
+    return result;
+  },
+  /**
+   * Get an array containing the direct dependencies of the specified node.
+   *
+   * Throws an Error if the specified node does not exist.
+   */
+  directDependenciesOf: function (node) {
+    if (this.hasNode(node)) {
+      return this.outgoingEdges[node].slice(0);
+    } else {
+      throw new Error("Node does not exist: " + node);
+    }
+  },
+  /**
+   * Get an array containing the nodes that directly depend on the specified node.
+   *
+   * Throws an Error if the specified node does not exist.
+   */
+  directDependantsOf: function (node) {
+    if (this.hasNode(node)) {
+      return this.incomingEdges[node].slice(0);
+    } else {
+      throw new Error("Node does not exist: " + node);
+    }
+  },
+  /**
+   * Get an array containing the nodes that the specified node depends on (transitively).
+   *
+   * Throws an Error if the graph has a cycle, or the specified node does not exist.
+   *
+   * If `leavesOnly` is true, only nodes that do not depend on any other nodes will be returned
+   * in the array.
+   */
+  dependenciesOf: function (node, leavesOnly) {
+    if (this.hasNode(node)) {
+      var result = [];
+      var DFS = createDFS(
+        this.outgoingEdges,
+        leavesOnly,
+        result,
+        this.circular
+      );
+      DFS(node);
+      var idx = result.indexOf(node);
+      if (idx >= 0) {
+        result.splice(idx, 1);
+      }
+      return result;
+    } else {
+      throw new Error("Node does not exist: " + node);
+    }
+  },
+  /**
+   * get an array containing the nodes that depend on the specified node (transitively).
+   *
+   * Throws an Error if the graph has a cycle, or the specified node does not exist.
+   *
+   * If `leavesOnly` is true, only nodes that do not have any dependants will be returned in the array.
+   */
+  dependantsOf: function (node, leavesOnly) {
+    if (this.hasNode(node)) {
+      var result = [];
+      var DFS = createDFS(
+        this.incomingEdges,
+        leavesOnly,
+        result,
+        this.circular
+      );
+      DFS(node);
+      var idx = result.indexOf(node);
+      if (idx >= 0) {
+        result.splice(idx, 1);
+      }
+      return result;
+    } else {
+      throw new Error("Node does not exist: " + node);
+    }
+  },
+  /**
+   * Construct the overall processing order for the dependency graph.
+   *
+   * Throws an Error if the graph has a cycle.
+   *
+   * If `leavesOnly` is true, only nodes that do not depend on any other nodes will be returned.
+   */
+  overallOrder: function (leavesOnly) {
+    var self = this;
+    var result = [];
+    var keys = Object.keys(this.nodes);
+    if (keys.length === 0) {
+      return result; // Empty graph
+    } else {
+      if (!this.circular) {
+        // Look for cycles - we run the DFS starting at all the nodes in case there
+        // are several disconnected subgraphs inside this dependency graph.
+        var CycleDFS = createDFS(this.outgoingEdges, false, [], this.circular);
+        keys.forEach(function (n) {
+          CycleDFS(n);
+        });
+      }
+
+      var DFS = createDFS(
+        this.outgoingEdges,
+        leavesOnly,
+        result,
+        this.circular
+      );
+      // Find all potential starting points (nodes with nothing depending on them) an
+      // run a DFS starting at these points to get the order
+      keys
+        .filter(function (node) {
+          return self.incomingEdges[node].length === 0;
+        })
+        .forEach(function (n) {
+          DFS(n);
+        });
+
+      // If we're allowing cycles - we need to run the DFS against any remaining
+      // nodes that did not end up in the initial result (as they are part of a
+      // subgraph that does not have a clear starting point)
+      if (this.circular) {
+        keys
+          .filter(function (node) {
+            return result.indexOf(node) === -1;
+          })
+          .forEach(function (n) {
+            DFS(n);
+          });
+      }
+
+      return result;
+    }
+  },
+  /**
+   * Get an array of nodes that have no dependants (i.e. nothing depends on them).
+   */
+  entryNodes: function () {
+    var self = this;
+    return Object.keys(this.nodes).filter(function (node) {
+      return self.incomingEdges[node].length === 0;
+    });
+  }
+};
+
+// Create some aliases
+DepGraph.prototype.directDependentsOf = DepGraph.prototype.directDependantsOf;
+DepGraph.prototype.dependentsOf = DepGraph.prototype.dependantsOf;
+
+/**
+ * Cycle error, including the path of the cycle.
+ */
+var DepGraphCycleError = (__webpack_unused_export__ = function (cyclePath) {
+  var message = "Dependency Cycle Found: " + cyclePath.join(" -> ");
+  var instance = new Error(message);
+  instance.cyclePath = cyclePath;
+  Object.setPrototypeOf(instance, Object.getPrototypeOf(this));
+  if (Error.captureStackTrace) {
+    Error.captureStackTrace(instance, DepGraphCycleError);
+  }
+  return instance;
+});
+DepGraphCycleError.prototype = Object.create(Error.prototype, {
+  constructor: {
+    value: Error,
+    enumerable: false,
+    writable: true,
+    configurable: true
+  }
+});
+Object.setPrototypeOf(DepGraphCycleError, Error);
+
+
+/***/ }),
+
 /***/ 1205:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -12259,25 +12631,32 @@ var VersionSynchronizationStrategies;
      * monorepo package will be updated to the new version wherever it appears as
      * a dependency.
      *
-     * This is the default if the release is a new major version.
+     * The published versions of all monorepo packages are "fixed".
+     *
+     * This is the default behavior _if_ the release is a new major version.
      */
-    VersionSynchronizationStrategies["all"] = "all";
+    VersionSynchronizationStrategies["fixed"] = "fixed";
+    /**
+     * Changed packages and their dependents in the monorepo will be updated to
+     * the new version, and the version of every monorepo package will be updated
+     * to the new version wherever it appears as a dependency.
+     *
+     * The published versions of all monorepo packages will reflect their
+     * dependency relationships.
+     *
+     * This is the default behavior _unless_ the release is a new major version.
+     */
+    VersionSynchronizationStrategies["transitive"] = "transitive";
     /**
      * Only changed packages will be updated to the new version, but the version
      * of every monorepo package will be updated to the new version wherever it
      * appears as a dependency.
      *
-     * This is the default _unless_ the release is a new major version.
-     */
-    VersionSynchronizationStrategies["dependenciesOnly"] = "dependenciesOnly";
-    /**
-     * Only changed packages will be updated to the new version, and no version of
-     * any monorepo package will be updated to a new version where it appears as a
-     * dependency.
+     * The the published versions of all monorepo packages are "independent".
      *
-     * This is never the default.
+     * This is never the default behavior.
      */
-    VersionSynchronizationStrategies["none"] = "none";
+    VersionSynchronizationStrategies["independent"] = "independent";
 })(VersionSynchronizationStrategies || (VersionSynchronizationStrategies = {}));
 /**
  * The names of the inputs to the Action, per action.yml.
@@ -12523,7 +12902,62 @@ var external_path_ = __nccwpck_require__(5622);
 var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
 // EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/dist/index.js
 var auto_changelog_dist = __nccwpck_require__(9272);
+// EXTERNAL MODULE: ./node_modules/dependency-graph/lib/dep_graph.js
+var dep_graph = __nccwpck_require__(6232);
+;// CONCATENATED MODULE: ./lib/graph-utils.js
+
+
+/**
+ * Gets the dependency graph of the monorepo's packages. In the graph, each
+ * monorepo package is a node, and there is a directed edge from PackageA
+ * to PackageB if PackageA lists PackageB in any of the dependency fields in its
+ * `package.json`.
+ *
+ * @param intermediatePackageMetadata - The intermediate package metadata of all
+ * monorepo packages.
+ * @returns The internal dependency graph of the monorepo.
+ */
+function getMonorepoDependencyGraph(intermediatePackageMetadata) {
+    // Initialize the dependency graph object. Before we can record dependencies,
+    // we have to add every package as a node.
+    const dependencyGraph = new dep_graph/* DepGraph */.f({ circular: true });
+    for (const packageName of intermediatePackageMetadata.keys()) {
+        dependencyGraph.addNode(packageName);
+    }
+    // Next, iterate over every dependency field of every `package.json` file in
+    // the monorepo, and record the internal dependencies for each package. Then
+    // return the complete graph.
+    for (const [packageName, { manifest }] of intermediatePackageMetadata) {
+        getInternalDependencies(manifest, intermediatePackageMetadata).forEach((dependencyName) => {
+            dependencyGraph.addDependency(packageName, dependencyName);
+        });
+    }
+    return dependencyGraph;
+}
+/**
+ * Gets the list of monorepo packages depended on by a particular monorepo
+ * package.
+ *
+ * @param manifest - The `package.json` file of the package.
+ * @param intermediatePackageMetadata - The intermediate package metadata of all
+ * monorepo packages.
+ * @returns The dependencies internal to the monorepo of the specified package.
+ */
+function getInternalDependencies(manifest, intermediatePackageMetadata) {
+    return Object.values(dist.ManifestDependencyFieldNames).reduce((internalDependencies, fieldName) => {
+        if (Object.hasOwnProperty.call(manifest, fieldName)) {
+            for (const packageName of intermediatePackageMetadata.keys()) {
+                if (Object.hasOwnProperty.call(manifest[fieldName], packageName)) {
+                    internalDependencies.push(packageName);
+                }
+            }
+        }
+        return internalDependencies;
+    }, []);
+}
+//# sourceMappingURL=graph-utils.js.map
 ;// CONCATENATED MODULE: ./lib/package-operations.js
+
 
 
 
@@ -12533,8 +12967,9 @@ var auto_changelog_dist = __nccwpck_require__(9272);
 const MANIFEST_FILE_NAME = 'package.json';
 const CHANGELOG_FILE_NAME = 'CHANGELOG.md';
 /**
- * Finds the package manifest for each workspace, and collects
- * metadata for each package.
+ * Finds the package manifest for each workspace, determines which packages
+ * have changed since the last release, and collects necessary metadata for
+ * about package.
  *
  * @param workspaces - The list of workspace patterns given in the root manifest.
  * @param tags - All tags for the release's base git branch.
@@ -12546,37 +12981,119 @@ const CHANGELOG_FILE_NAME = 'CHANGELOG.md';
  */
 async function getMetadataForAllPackages(workspaces, tags, versionSyncStrategy, rootDir = WORKSPACE_ROOT) {
     const workspaceLocations = await (0,dist.getWorkspaceLocations)(workspaces, rootDir);
-    let hasChangedPackages = false;
-    const allPackageMetadata = {};
+    // These are populated in the .map() below.
     const changedPackages = new Set();
+    const intermediatePackageMetadata = new Map();
+    // We could have reduced here, but instead we parallelize our operations using
+    // Promise.all.
     await Promise.all(workspaceLocations.map(async (packagePath) => {
         const fullWorkspacePath = external_path_default().join(rootDir, packagePath);
         if ((await external_fs_.promises.lstat(fullWorkspacePath)).isDirectory()) {
             const rawManifest = await (0,dist.getPackageManifest)(fullWorkspacePath);
             const manifest = (0,dist.validatePolyrepoPackageManifest)(rawManifest, packagePath);
             const { name: packageName } = manifest;
-            // Record package metadata
-            allPackageMetadata[packageName] = {
+            // Record whether package changed. If we're synchronizing the versions
+            // of all packages, regard all packages as changed. Otherwise, go by the
+            // git history.
+            if (versionSyncStrategy === VersionSynchronizationStrategies.fixed ||
+                (await didPackageChange(tags, manifest, packagePath))) {
+                changedPackages.add(packageName);
+            }
+            // Record intermediate package metadata.
+            intermediatePackageMetadata.set(packageName, {
                 dirName: external_path_default().basename(packagePath),
                 manifest,
                 name: packageName,
                 dirPath: packagePath,
-            };
-            // Record whether package changed
-            const didChange = await didPackageChange(tags, manifest, packagePath);
-            if (didChange) {
-                changedPackages.add(packageName);
-            }
-            hasChangedPackages = hasChangedPackages || didChange;
+            });
         }
     }));
-    // If no packages were changed, and our strategy is not to bump the versions
-    // of all packages, there's nothing to do, and we exit with an error.
-    if (!hasChangedPackages &&
-        versionSyncStrategy !== VersionSynchronizationStrategies.all) {
+    // If our strategy is not to bump the versions of all packages and no packages
+    // changed, there's nothing to do, and we exit with an error.
+    if (versionSyncStrategy !== VersionSynchronizationStrategies.fixed &&
+        changedPackages.size === 0) {
         throw new Error(`There are no packages to update.`);
     }
-    return [allPackageMetadata, changedPackages];
+    return [
+        getCompletePackageMetadata(intermediatePackageMetadata, changedPackages, versionSyncStrategy),
+        changedPackages,
+    ];
+}
+/**
+ * Given the intermediate equivalent, gets the _complete_ metadata for all
+ * packages in the monorepo, which amounts to a boolean for each package
+ * indicating whether it should be updated. This is computed by analyzing the
+ * monorepo's dependency graph.
+ *
+ * @param intermediatePackageMetadata - The intermediate package metadata of all
+ * monorepo packages.
+ * @param changedPackages - The set of packages that have changed.
+ * @param versionSyncStrategy - The version synchronization strategy.
+ * @returns The complete package metadata for all packages in the monorepo.
+ */
+function getCompletePackageMetadata(intermediatePackageMetadata, changedPackages, versionSyncStrategy) {
+    const dependencyGraph = getMonorepoDependencyGraph(intermediatePackageMetadata);
+    // This mutable set will be modified as the dependency graph is traversed.
+    const packagesToUpdate = new Set(changedPackages.values());
+    /**
+     * Sidebar: Topological order
+     *
+     * "...a topological sort or topological ordering of a directed graph is a
+     * linear ordering of its vertices such that for every directed edge uv from
+     * vertex u to vertex v, u comes before v in the ordering."
+     * Ref: https://en.wikipedia.org/wiki/Topological_sorting
+     *
+     * In our usage, there is a directed edge from PackageA to PackageB if
+     * PackageA lists PackageB in any of the dependency fields in its
+     * `package.json`.
+     *
+     * `overallOrder` is a convention of the `dependency-graph` library, which by
+     * all appearances is the opposite of topological order.
+     * Ref: https://github.com/jriecken/dependency-graph/tree/072cdcc3eef1ee4531114e7a675e3cbe828fb33e#examples
+     */
+    // Traverse the monorepo's internal dependency graph in topological order.
+    return dependencyGraph
+        .overallOrder() // leaves -> root
+        .reverse() // root -> leaves (topological order)
+        .reduce((fullPackageMetadata, packageName) => {
+        const shouldUpdate = shouldUpdateMonorepoPackage(packageName, packagesToUpdate, dependencyGraph, versionSyncStrategy);
+        // Update the set of packages that will be updated in preparation for the
+        // next iteration.
+        if (shouldUpdate) {
+            packagesToUpdate.add(packageName);
+        }
+        fullPackageMetadata.set(packageName, {
+            // Every package is in the dependency graph, so we know that the key exists.
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            ...intermediatePackageMetadata.get(packageName),
+            shouldUpdate,
+        });
+        return fullPackageMetadata;
+    }, new Map());
+}
+/**
+ * **ATTN:** This function must be called on each monorepo package in
+ * topological order of dependency in order to return valid results.
+ *
+ * Gets whether the specified package should be updated, given the set of
+ * dependents of this package that will be updated, the monorepo dependency
+ * graph, and the active version synchronization strategy.
+ *
+ * @param packageName - The name of the package to check.
+ * @param packagesToUpdate - The (mutable) set of packages that will be updated.
+ * @param dependencyGraph - The monorepo's internal dependency graph.
+ * @param versionSyncStrategy - The version synchronization strategy.
+ * @returns Whether the package should be updated to the new version.
+ */
+function shouldUpdateMonorepoPackage(packageName, packagesToUpdate, dependencyGraph, versionSyncStrategy) {
+    const shouldUpdate = versionSyncStrategy === VersionSynchronizationStrategies.fixed ||
+        packagesToUpdate.has(packageName) ||
+        dependencyGraph
+            .dependenciesOf(packageName)
+            .reduce((hasChangedDependency, dependencyName) => {
+            return hasChangedDependency || packagesToUpdate.has(dependencyName);
+        }, false);
+    return shouldUpdate;
 }
 /**
  * Updates the manifests and changelogs of all packages in the monorepo per the
@@ -12589,9 +13106,9 @@ async function getMetadataForAllPackages(workspaces, tags, versionSyncStrategy, 
  *
  * @param updateSpecification - The update specification.
  */
-async function updatePackages(updateSpecification) {
+async function updateMonorepoPackages(updateSpecification) {
     const { allPackageMetadata } = updateSpecification;
-    await Promise.all(Object.keys(allPackageMetadata).map(async (packageName) => updatePackage(allPackageMetadata[packageName], updateSpecification)));
+    await Promise.all(Array.from(allPackageMetadata.values()).map(async (packageMetadata) => updateMonorepoPackage(packageMetadata, updateSpecification)));
 }
 /**
  * Updates the manifest and changelog of the given package per the update
@@ -12607,10 +13124,10 @@ async function updatePackages(updateSpecification) {
  * the update is performed.
  * @param rootDir - The path to the repository root directory.
  */
-async function updatePackage(packageMetadata, updateSpecification, rootDir = WORKSPACE_ROOT) {
+async function updateMonorepoPackage(packageMetadata, updateSpecification, rootDir = WORKSPACE_ROOT) {
     await Promise.all([
         (0,dist.writeJsonFile)(external_path_default().join(rootDir, packageMetadata.dirPath, MANIFEST_FILE_NAME), getUpdatedManifest(packageMetadata, updateSpecification)),
-        updateSpecification.shouldUpdateChangelog
+        packageMetadata.shouldUpdate && updateSpecification.shouldUpdateChangelog
             ? updatePackageChangelog(packageMetadata, updateSpecification)
             : Promise.resolve(),
     ]);
@@ -12679,16 +13196,14 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
  * @returns The updated manifest.
  */
 function getUpdatedManifest(packageMetadata, updateSpecification) {
-    const { manifest: currentManifest } = packageMetadata;
+    const { manifest: currentManifest, shouldUpdate } = packageMetadata;
     const { newVersion } = updateSpecification;
-    if (isMonorepoUpdateSpecification(updateSpecification) &&
-        updateSpecification.versionSyncStrategy !==
-            VersionSynchronizationStrategies.none) {
+    if (isMonorepoUpdateSpecification(updateSpecification)) {
         // Synchronize monorepo package versions wherever they appear as a dependency.
         return {
             ...currentManifest,
             ...getUpdatedDependencyFields(currentManifest, updateSpecification),
-            version: newVersion,
+            version: shouldUpdate ? newVersion : currentManifest.version,
         };
     }
     // If we're not synchronizing versions, we leave all dependencies as they are.
@@ -12704,10 +13219,9 @@ function getUpdatedManifest(packageMetadata, updateSpecification) {
  * @returns The updated dependency fields of the manifest.
  */
 function getUpdatedDependencyFields(currentManifest, updateSpecification) {
-    const { newVersion, changedPackages, versionSyncStrategy, } = updateSpecification;
     return Object.values(dist.ManifestDependencyFieldNames).reduce((newDepsFields, fieldName) => {
-        if (fieldName in currentManifest) {
-            newDepsFields[fieldName] = getUpdatedDependencyField(currentManifest[fieldName], newVersion, versionSyncStrategy, changedPackages);
+        if (Object.hasOwnProperty.call(currentManifest, fieldName)) {
+            newDepsFields[fieldName] = getUpdatedDependencyField(currentManifest[fieldName], updateSpecification);
         }
         return newDepsFields;
     }, {});
@@ -12723,12 +13237,15 @@ function getUpdatedDependencyFields(currentManifest, updateSpecification) {
  * @param changedPackages - The set of packages that have changed.
  * @returns The updated dependency object.
  */
-function getUpdatedDependencyField(dependencyObject, newVersion, versionSyncStrategy, changedPackages) {
+function getUpdatedDependencyField(dependencyObject, updateSpecification) {
+    const { allPackageMetadata, changedPackages, newVersion, versionSyncStrategy, } = updateSpecification;
     const newVersionRange = `^${newVersion}`;
     return Object.keys(dependencyObject).reduce((newDeps, packageName) => {
-        newDeps[packageName] = shouldUpdateDependencyVersion(packageName, versionSyncStrategy, changedPackages)
-            ? newVersionRange
-            : dependencyObject[packageName];
+        if (allPackageMetadata.has(packageName)) {
+            newDeps[packageName] = shouldUpdateDependencyVersion(packageName, versionSyncStrategy, changedPackages)
+                ? newVersionRange
+                : dependencyObject[packageName];
+        }
         return newDeps;
     }, {});
 }
@@ -12740,12 +13257,11 @@ function getUpdatedDependencyField(dependencyObject, newVersion, versionSyncStra
  */
 function shouldUpdateDependencyVersion(packageName, versionSyncStrategy, changedPackages) {
     switch (versionSyncStrategy) {
-        case VersionSynchronizationStrategies.all:
+        case VersionSynchronizationStrategies.fixed:
             return true;
-        case VersionSynchronizationStrategies.dependenciesOnly:
+        case VersionSynchronizationStrategies.transitive:
+        case VersionSynchronizationStrategies.independent:
             return changedPackages.has(packageName);
-        case VersionSynchronizationStrategies.none:
-            return false;
         default:
             throw new Error(`Unknown version synchronization strategy: "${versionSyncStrategy}"`);
     }
@@ -12803,10 +13319,10 @@ async function performUpdate(actionInputs) {
         versionSyncStrategy = actionInputs.VersionSynchronizationStrategy;
     }
     else if ((0,dist.isMajorSemverDiff)(versionDiff)) {
-        versionSyncStrategy = VersionSynchronizationStrategies.all;
+        versionSyncStrategy = VersionSynchronizationStrategies.fixed;
     }
     else {
-        versionSyncStrategy = VersionSynchronizationStrategies.dependenciesOnly;
+        versionSyncStrategy = VersionSynchronizationStrategies.transitive;
     }
     // Ensure that the new version is greater than the current version, and that
     // there's no existing tag for it.
@@ -12869,7 +13385,7 @@ async function updateMonorepo(newVersion, versionSyncStrategy, rootManifest, rep
     // this Action.
     await Promise.all([
         updateRepoRootManifest(rootManifest, updateSpecification),
-        updatePackages(updateSpecification),
+        updateMonorepoPackages(updateSpecification),
     ]);
 }
 /**
