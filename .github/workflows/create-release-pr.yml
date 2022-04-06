@@ -14,8 +14,14 @@ on:
         description: 'A specific version to bump to. Mutually exclusive with "release-type".'
         required: false
       version-synchronization-strategy:
+        type: choice
         description: 'Monorepos only. Whether and how to synchronize monorepo package versions. See Action readme for details.'
         required: false
+        options:
+          - all
+          - transitive
+          - internalOnly
+          - none
 
 jobs:
   create-release-pr:
