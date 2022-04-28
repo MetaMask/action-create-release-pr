@@ -17,6 +17,7 @@ on:
         type: choice
         description: 'Monorepos only. Whether and how to synchronize monorepo package versions. See Action readme for details.'
         required: false
+        default: 'transitive'
         options:
           - fixed
           - transitive
