@@ -2,6 +2,8 @@ import * as actionsCore from '@actions/core';
 import * as actionModule from './update';
 import * as utils from './utils';
 
+import { ActionInputs } from './utils';
+
 jest.mock('@actions/core', () => {
   return {
     error: jest.fn(),
@@ -26,7 +28,12 @@ describe('main entry file', () => {
     const getActionInputsMock = jest
       .spyOn(utils, 'getActionInputs')
       .mockImplementationOnce(() => {
-        return { ReleaseType: null, ReleaseVersion: '1.0.0' };
+        const inputs: ActionInputs = {
+          ReleaseType: null,
+          ReleaseVersion: '1.0.0',
+          VersionSynchronizationStrategy: null,
+        };
+        return inputs;
       });
     const performUpdateMock = jest
       .spyOn(actionModule, 'performUpdate')
