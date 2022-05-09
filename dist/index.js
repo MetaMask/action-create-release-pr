@@ -12648,9 +12648,10 @@ var VersionSynchronizationStrategies;
      */
     VersionSynchronizationStrategies["transitive"] = "transitive";
     /**
-     * Only changed packages will be updated to the new version, but the version
+     * Only changed packages will be updated to the new version, and the version
      * of every monorepo package will be updated to the new version wherever it
-     * appears as a dependency.
+     * appears as a dependency. Synchronizing the monorepo package versions
+     * internally is necessary for the functioning of `yarn`'s workspace feature.
      *
      * The the published versions of all monorepo packages are "independent".
      *

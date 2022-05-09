@@ -151,11 +151,15 @@ async function updateMonorepo(
   tags: ReadonlySet<string>,
 ): Promise<void> {
   // Collect required information to perform updates
-  const [allPackageMetadata, changedPackages] = await getMetadataForAllPackages(
+  const getMeta = await getMetadataForAllPackages(
     rootManifest.workspaces,
     tags,
     versionSyncStrategy,
   );
+
+  console.log({ getMeta });
+
+  const [allPackageMetadata, changedPackages] = getMeta;
 
   const updateSpecification: MonorepoUpdateSpecification = {
     allPackageMetadata,
