@@ -89,14 +89,27 @@ const getMockManifest = (
   return { name, version, ...dependencyFields };
 };
 
+const version = '1.0.0';
+const names = Object.freeze(['name1', 'name2', 'name3', 'name4', 'name5']);
+const dirs = Object.freeze(['dir1', 'dir2', 'dir3', 'dir4', 'dir5']);
+
+const getMockPackageMetadata = (index: number, shouldUpdate: boolean) => {
+  return {
+    dirName: dirs[index],
+    manifest: getMockManifest(names[index], version),
+    [ManifestFieldNames.Name]: names[index],
+    dirPath: `${MOCK_PACKAGES_DIR}/${dirs[index]}`,
+    shouldUpdate,
+  };
+};
+
+// console.log([names[1], getMockPackageMetadata(1, true)]);
+
 describe('package-operations', () => {
   describe('getMetadataForAllPackages', () => {
     let didPackageChangeMock: jest.SpyInstance;
 
-    const names = Object.freeze(['name1', 'name2', 'name3', 'name4', 'name5']);
-    const dirs = Object.freeze(['dir1', 'dir2', 'dir3', 'dir4', 'dir5']);
     const didChange = Object.freeze([true, false, true, true, false]);
-    const version = '1.0.0';
     const SOME_FILE = 'someFile';
 
     const getDependencyGraphMock = (cycle = true) => () => {
@@ -108,16 +121,6 @@ describe('package-operations', () => {
 
       // 1 -> 2 -> 4 -> 1
       return graph;
-    };
-
-    const getMockPackageMetadata = (index: number, shouldUpdate: boolean) => {
-      return {
-        dirName: dirs[index],
-        manifest: getMockManifest(names[index], version),
-        [ManifestFieldNames.Name]: names[index],
-        dirPath: `${MOCK_PACKAGES_DIR}/${dirs[index]}`,
-        shouldUpdate,
-      };
     };
 
     function getMockReadJsonFile() {

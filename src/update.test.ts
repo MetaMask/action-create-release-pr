@@ -5,6 +5,8 @@ import * as packageOperations from './package-operations';
 import * as utils from './utils';
 import { performUpdate } from './update';
 
+// import { PackageMetadata } from './package-operations';
+
 jest.mock('@actions/core', () => {
   return {
     setOutput: jest.fn(),
@@ -44,6 +46,18 @@ jest.mock('./utils', () => {
     WORKSPACE_ROOT: 'rootDir',
   };
 });
+
+// const m = Array.from({ length: 4 }, (_, i) => i + 1).map((v) => [
+//   `name${v}`,
+//   {
+//     dirName: `dir${v}`,
+//     manifest: { name: `name${v}`, version: '1.0.0' },
+//     name: `name${v}`,
+//     dirPath: `packages/dir${v}`,
+//     shouldUpdate: true,
+//   },
+// ]);
+// console.log(typeof m);
 
 describe('performUpdate', () => {
   const mockRepoUrl = 'https://fake';
@@ -169,7 +183,49 @@ describe('performUpdate', () => {
     const getPackagesMetadataMock = jest
       .spyOn(packageOperations, 'getMetadataForAllPackages')
       .mockImplementationOnce(async () => {
-        return { a: {}, b: {}, c: {} } as any;
+        const m = new Map([
+          [
+            'name1',
+            {
+              dirName: 'dir1',
+              manifest: { name: 'name1', version: '1.0.0' },
+              name: 'name1',
+              dirPath: 'packages/dir1',
+              shouldUpdate: true,
+            },
+          ],
+          [
+            'name2',
+            {
+              dirName: 'dir2',
+              manifest: { name: 'name2', version: '1.0.0' },
+              name: 'name2',
+              dirPath: 'packages/dir2',
+              shouldUpdate: true,
+            },
+          ],
+          [
+            'name3',
+            {
+              dirName: 'dir3',
+              manifest: { name: 'name3', version: '1.0.0' },
+              name: 'name3',
+              dirPath: 'packages/dir3',
+              shouldUpdate: true,
+            },
+          ],
+          [
+            'name4',
+            {
+              dirName: 'dir4',
+              manifest: { name: 'name4', version: '1.0.0' },
+              name: 'name4',
+              dirPath: 'packages/dir4',
+              shouldUpdate: true,
+            },
+          ],
+        ]);
+        return Promise.resolve([m, new Set(['name1', 'name3', 'name4'])]);
       });
 
     // const getPackagesToUpdateMock = jest
@@ -256,7 +312,49 @@ describe('performUpdate', () => {
     const getPackagesMetadataMock = jest
       .spyOn(packageOperations, 'getMetadataForAllPackages')
       .mockImplementationOnce(async () => {
-        return { a: {}, b: {}, c: {} } as any;
+        const m = new Map([
+          [
+            'name1',
+            {
+              dirName: 'dir1',
+              manifest: { name: 'name1', version: '1.0.0' },
+              name: 'name1',
+              dirPath: 'packages/dir1',
+              shouldUpdate: true,
+            },
+          ],
+          [
+            'name2',
+            {
+              dirName: 'dir2',
+              manifest: { name: 'name2', version: '1.0.0' },
+              name: 'name2',
+              dirPath: 'packages/dir2',
+              shouldUpdate: true,
+            },
+          ],
+          [
+            'name3',
+            {
+              dirName: 'dir3',
+              manifest: { name: 'name3', version: '1.0.0' },
+              name: 'name3',
+              dirPath: 'packages/dir3',
+              shouldUpdate: true,
+            },
+          ],
+          [
+            'name4',
+            {
+              dirName: 'dir4',
+              manifest: { name: 'name4', version: '1.0.0' },
+              name: 'name4',
+              dirPath: 'packages/dir4',
+              shouldUpdate: true,
+            },
+          ],
+        ]);
+        return Promise.resolve([m, new Set(['name1', 'name3', 'name4'])]);
       });
 
     // const getPackagesToUpdateMock = jest
@@ -343,7 +441,49 @@ describe('performUpdate', () => {
     const getPackagesMetadataMock = jest
       .spyOn(packageOperations, 'getMetadataForAllPackages')
       .mockImplementationOnce(async () => {
-        return { a: {}, b: {}, c: {} } as any;
+        const m = new Map([
+          [
+            'name1',
+            {
+              dirName: 'dir1',
+              manifest: { name: 'name1', version: '1.0.0' },
+              name: 'name1',
+              dirPath: 'packages/dir1',
+              shouldUpdate: true,
+            },
+          ],
+          [
+            'name2',
+            {
+              dirName: 'dir2',
+              manifest: { name: 'name2', version: '1.0.0' },
+              name: 'name2',
+              dirPath: 'packages/dir2',
+              shouldUpdate: true,
+            },
+          ],
+          [
+            'name3',
+            {
+              dirName: 'dir3',
+              manifest: { name: 'name3', version: '1.0.0' },
+              name: 'name3',
+              dirPath: 'packages/dir3',
+              shouldUpdate: true,
+            },
+          ],
+          [
+            'name4',
+            {
+              dirName: 'dir4',
+              manifest: { name: 'name4', version: '1.0.0' },
+              name: 'name4',
+              dirPath: 'packages/dir4',
+              shouldUpdate: true,
+            },
+          ],
+        ]);
+        return Promise.resolve([m, new Set(['name1', 'name3', 'name4'])]);
       });
 
     // const getPackagesToUpdateMock = jest

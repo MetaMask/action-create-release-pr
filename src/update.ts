@@ -100,6 +100,8 @@ export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
       repositoryUrl,
     );
   }
+  console.log({ newVersion });
+  console.log(setActionOutput('NEW_VERSION', newVersion));
   setActionOutput('NEW_VERSION', newVersion);
 }
 
@@ -151,15 +153,11 @@ async function updateMonorepo(
   tags: ReadonlySet<string>,
 ): Promise<void> {
   // Collect required information to perform updates
-  const getMeta = await getMetadataForAllPackages(
+  const [allPackageMetadata, changedPackages] = await getMetadataForAllPackages(
     rootManifest.workspaces,
     tags,
     versionSyncStrategy,
   );
-
-  console.log({ getMeta });
-
-  const [allPackageMetadata, changedPackages] = getMeta;
 
   const updateSpecification: MonorepoUpdateSpecification = {
     allPackageMetadata,
