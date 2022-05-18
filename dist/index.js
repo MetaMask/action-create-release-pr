@@ -13298,11 +13298,13 @@ function isMonorepoUpdateSpecification(specification) {
  * @param actionInputs - The parsed inputs to the Action.
  */
 async function performUpdate(actionInputs) {
+    console.log({ actionInputs });
     const repositoryUrl = await getRepositoryHttpsUrl();
     // Get all git tags. An error is thrown if "git tag" returns no tags and the
     // local git history is incomplete.
     const [tags] = await getTags();
     const rawRootManifest = await (0,dist.getPackageManifest)(WORKSPACE_ROOT);
+    console.log({ rawRootManifest });
     const rootManifest = (0,dist.validatePackageManifestVersion)(rawRootManifest, WORKSPACE_ROOT);
     const { version: currentVersion } = rootManifest;
     // Compute the new version and version diff from the inputs and root manifest

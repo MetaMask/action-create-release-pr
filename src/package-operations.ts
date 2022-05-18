@@ -294,7 +294,9 @@ export async function updateRepoRootManifest(
   updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
   rootDir: string = WORKSPACE_ROOT,
 ): Promise<void> {
-  await writeJsonFile(pathUtils.join(rootDir, './', MANIFEST_FILE_NAME), {
+  const filename = pathUtils.join(rootDir, './', MANIFEST_FILE_NAME);
+  console.log({ filename });
+  await writeJsonFile(filename, {
     ...rootManifest,
     version: updateSpecification.newVersion,
   });

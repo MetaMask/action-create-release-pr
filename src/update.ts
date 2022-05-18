@@ -37,17 +37,22 @@ import {
  * @param actionInputs - The parsed inputs to the Action.
  */
 export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
+  // console.log({ actionInputs });
   const repositoryUrl = await getRepositoryHttpsUrl();
 
   // Get all git tags. An error is thrown if "git tag" returns no tags and the
   // local git history is incomplete.
   const [tags] = await getTags();
 
+  // console.log({ tags });
+
   const rawRootManifest = await getPackageManifest(WORKSPACE_ROOT);
+  // console.log({ rawRootManifest });
   const rootManifest = validatePackageManifestVersion(
     rawRootManifest,
     WORKSPACE_ROOT,
   );
+  // console.log({ rootManifest });
 
   const { version: currentVersion } = rootManifest;
 
@@ -64,18 +69,22 @@ export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
     versionDiff = semverDiff(currentVersion, newVersion) as SemverReleaseType;
   }
 
-  let versionSyncStrategy: VersionSynchronizationStrategies;
-  if (actionInputs.VersionSynchronizationStrategy) {
-    versionSyncStrategy = actionInputs.VersionSynchronizationStrategy;
-  } else if (isMajorSemverDiff(versionDiff)) {
-    versionSyncStrategy = VersionSynchronizationStrategies.fixed;
-  } else {
-    versionSyncStrategy = VersionSynchronizationStrategies.transitive;
-  }
+  const { VersionSynchronizationStrategy = null } = actionInputs;
+  const { fixed, transitive } = VersionSynchronizationStrategies;
+
+  const versionSyncStrategy: VersionSynchronizationStrategies =
+    VersionSynchronizationStrategy ||
+    (isMajorSemverDiff(versionDiff) && fixed) ||
+    transitive;
 
   // Ensure that the new version is greater than the current version, and that
   // there's no existing tag for it.
+  // console.log({ currentVersion, newVersion, tags });
+
   validateVersion(currentVersion, newVersion, tags);
+
+  // console.log('lol');
+  // console.log(ManifestFieldNames.Workspaces in rootManifest);
 
   if (ManifestFieldNames.Workspaces in rootManifest) {
     console.log(
@@ -100,8 +109,9 @@ export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
       repositoryUrl,
     );
   }
-  console.log({ newVersion });
-  console.log(setActionOutput('NEW_VERSION', newVersion));
+
+  // console.log({ newVersion });
+  // console.log(setActionOutput('NEW_VERSION', newVersion));
   setActionOutput('NEW_VERSION', newVersion);
 }
 
@@ -197,6 +207,7 @@ function validateVersion(
       `The new version "${newVersion}" is not greater than the current version "${currentVersion}".`,
     );
   }
+  // console.log({ tags, newVersion });
   if (tags.has(`v${newVersion}`)) {
     throw new Error(
       `Tag "v${newVersion}" for new version "${newVersion}" already exists.`,
