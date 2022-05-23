@@ -5,7 +5,11 @@ import {
   getPackageManifest,
   getWorkspaceLocations,
   ManifestDependencyFieldNames,
+  ManifestFieldNames,
   PackageManifest,
+  MonorepoPackageManifest,
+  validateMonorepoPackageManifest,
+  validatePackageManifestVersion,
   validatePolyrepoPackageManifest,
   writeJsonFile,
 } from '@metamask/action-utils';
@@ -14,7 +18,7 @@ import { WORKSPACE_ROOT } from './utils';
 
 export interface PackageMetadata {
   readonly dirName: string;
-  readonly manifest: PackageManifest;
+  readonly manifest: PackageManifest | MonorepoPackageManifest;
   readonly name: string;
   readonly dirPath: string;
 }
@@ -34,7 +38,7 @@ const MANIFEST_FILE_NAME = 'package.json';
 const CHANGELOG_FILE_NAME = 'CHANGELOG.md';
 
 /**
- * Finds the package manifest for each workspace, and collects
+ * Recursively finds the package manifest for each workspace, and collects
  * metadata for each package.
  *
  * @param workspaces - The list of workspace patterns given in the root manifest.
@@ -47,26 +51,67 @@ export async function getMetadataForAllPackages(
 ): Promise<Record<string, PackageMetadata>> {
   const workspaceLocations = await getWorkspaceLocations(workspaces, rootDir);
 
-  const result: Record<string, PackageMetadata> = {};
-  await Promise.all(
-    workspaceLocations.map(async (workspaceDirectory) => {
+  return workspaceLocations.reduce<Promise<Record<string, PackageMetadata>>>(
+    async (promise, workspaceDirectory) => {
+      const result = await promise;
+
       const fullWorkspacePath = pathUtils.join(rootDir, workspaceDirectory);
       if ((await fs.lstat(fullWorkspacePath)).isDirectory()) {
         const rawManifest = await getPackageManifest(fullWorkspacePath);
+
+        // If the package is a sub-workspace, resolve all packages in the sub-workspace and add them
+        // to the result.
+        if (ManifestFieldNames.Workspaces in rawManifest) {
+          const rootManifest = validatePackageManifestVersion(
+            rawManifest,
+            workspaceDirectory,
+          );
+
+          const manifest = validateMonorepoPackageManifest(
+            rootManifest,
+            workspaceDirectory,
+          );
+
+          const name = manifest[ManifestFieldNames.Name];
+          if (!name) {
+            throw new Error('Expected sub-workspace to have a name.');
+          }
+
+          return {
+            ...result,
+            ...(await getMetadataForAllPackages(
+              manifest.workspaces,
+              workspaceDirectory,
+            )),
+            [name]: {
+              dirName: pathUtils.basename(workspaceDirectory),
+              manifest,
+              name,
+              dirPath: workspaceDirectory,
+            },
+          };
+        }
+
         const manifest = validatePolyrepoPackageManifest(
           rawManifest,
           workspaceDirectory,
         );
-        result[manifest.name] = {
-          dirName: pathUtils.basename(workspaceDirectory),
-          manifest,
-          name: manifest.name,
-          dirPath: workspaceDirectory,
+
+        return {
+          ...result,
+          [manifest.name]: {
+            dirName: pathUtils.basename(workspaceDirectory),
+            manifest,
+            name: manifest.name,
+            dirPath: workspaceDirectory,
+          },
         };
       }
-    }),
+
+      return result;
+    },
+    Promise.resolve({}),
   );
-  return result;
 }
 
 /**
