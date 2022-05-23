@@ -227,8 +227,9 @@ async function updatePackageChangelog(
   try {
     changelogContent = await fs.readFile(changelogPath, 'utf-8');
   } catch (error) {
-    console.error(`Failed to read changelog in "${projectRootDirectory}".`);
-    throw error;
+    return console.warn(
+      `Failed to read changelog in "${projectRootDirectory}".`,
+    );
   }
 
   const newChangelogContent = await updateChangelog({
@@ -247,7 +248,7 @@ async function updatePackageChangelog(
     );
   }
 
-  await fs.writeFile(changelogPath, newChangelogContent);
+  return await fs.writeFile(changelogPath, newChangelogContent);
 }
 
 /**

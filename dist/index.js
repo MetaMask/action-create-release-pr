@@ -12620,8 +12620,7 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
         changelogContent = await external_fs_.promises.readFile(changelogPath, 'utf-8');
     }
     catch (error) {
-        console.error(`Failed to read changelog in "${projectRootDirectory}".`);
-        throw error;
+        return console.warn(`Failed to read changelog in "${projectRootDirectory}".`);
     }
     const newChangelogContent = await (0,auto_changelog_dist.updateChangelog)({
         changelogContent,
@@ -12634,7 +12633,7 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
         const packageName = packageMetadata.manifest.name;
         throw new Error(`"updateChangelog" returned an empty value for package ${packageName ? `"${packageName}"` : `at "${packagePath}"`}.`);
     }
-    await external_fs_.promises.writeFile(changelogPath, newChangelogContent);
+    return await external_fs_.promises.writeFile(changelogPath, newChangelogContent);
 }
 /**
  * Updates the given manifest per the update specification as follows:
