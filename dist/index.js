@@ -12511,7 +12511,7 @@ async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT, p
                 const manifest = (0,dist.validateMonorepoPackageManifest)(rootManifest, workspaceDirectory);
                 const name = manifest[dist.ManifestFieldNames.Name];
                 if (!name) {
-                    throw new Error('Expected sub-workspace to have a name.');
+                    throw new Error(`Expected sub-workspace in "${workspaceDirectory}" to have a name.`);
                 }
                 return {
                     ...result,
