@@ -5,7 +5,11 @@ import {
   getPackageManifest,
   getWorkspaceLocations,
   ManifestDependencyFieldNames,
+  ManifestFieldNames,
   PackageManifest,
+  MonorepoPackageManifest,
+  validateMonorepoPackageManifest,
+  validatePackageManifestVersion,
   validatePolyrepoPackageManifest,
   writeJsonFile,
 } from '@metamask/action-utils';
@@ -14,7 +18,7 @@ import { WORKSPACE_ROOT } from './utils';
 
 export interface PackageMetadata {
   readonly dirName: string;
-  readonly manifest: PackageManifest;
+  readonly manifest: PackageManifest | MonorepoPackageManifest;
   readonly name: string;
   readonly dirPath: string;
 }
@@ -34,39 +38,85 @@ const MANIFEST_FILE_NAME = 'package.json';
 const CHANGELOG_FILE_NAME = 'CHANGELOG.md';
 
 /**
- * Finds the package manifest for each workspace, and collects
+ * Recursively finds the package manifest for each workspace, and collects
  * metadata for each package.
  *
  * @param workspaces - The list of workspace patterns given in the root manifest.
  * @param rootDir - The monorepo root directory.
+ * @param parentDir - The parent directory of the current package.
  * @returns The metadata for all packages in the monorepo.
  */
 export async function getMetadataForAllPackages(
   workspaces: string[],
   rootDir: string = WORKSPACE_ROOT,
+  parentDir = '',
 ): Promise<Record<string, PackageMetadata>> {
   const workspaceLocations = await getWorkspaceLocations(workspaces, rootDir);
 
-  const result: Record<string, PackageMetadata> = {};
-  await Promise.all(
-    workspaceLocations.map(async (workspaceDirectory) => {
+  return workspaceLocations.reduce<Promise<Record<string, PackageMetadata>>>(
+    async (promise, workspaceDirectory) => {
+      const result = await promise;
+
       const fullWorkspacePath = pathUtils.join(rootDir, workspaceDirectory);
       if ((await fs.lstat(fullWorkspacePath)).isDirectory()) {
         const rawManifest = await getPackageManifest(fullWorkspacePath);
+
+        // If the package is a sub-workspace, resolve all packages in the sub-workspace and add them
+        // to the result.
+        if (ManifestFieldNames.Workspaces in rawManifest) {
+          const rootManifest = validatePackageManifestVersion(
+            rawManifest,
+            workspaceDirectory,
+          );
+
+          const manifest = validateMonorepoPackageManifest(
+            rootManifest,
+            workspaceDirectory,
+          );
+
+          const name = manifest[ManifestFieldNames.Name];
+          if (!name) {
+            throw new Error(
+              `Expected sub-workspace in "${workspaceDirectory}" to have a name.`,
+            );
+          }
+
+          return {
+            ...result,
+            ...(await getMetadataForAllPackages(
+              manifest.workspaces,
+              workspaceDirectory,
+              workspaceDirectory,
+            )),
+            [name]: {
+              dirName: pathUtils.basename(workspaceDirectory),
+              manifest,
+              name,
+              dirPath: pathUtils.join(parentDir, workspaceDirectory),
+            },
+          };
+        }
+
         const manifest = validatePolyrepoPackageManifest(
           rawManifest,
           workspaceDirectory,
         );
-        result[manifest.name] = {
-          dirName: pathUtils.basename(workspaceDirectory),
-          manifest,
-          name: manifest.name,
-          dirPath: workspaceDirectory,
+
+        return {
+          ...result,
+          [manifest.name]: {
+            dirName: pathUtils.basename(workspaceDirectory),
+            manifest,
+            name: manifest.name,
+            dirPath: pathUtils.join(parentDir, workspaceDirectory),
+          },
         };
       }
-    }),
+
+      return result;
+    },
+    Promise.resolve({}),
   );
-  return result;
 }
 
 /**
@@ -179,8 +229,15 @@ async function updatePackageChangelog(
   try {
     changelogContent = await fs.readFile(changelogPath, 'utf-8');
   } catch (error) {
-    console.error(`Failed to read changelog in "${projectRootDirectory}".`);
-    throw error;
+    // If the error is not a file not found error, throw it
+    if (error.code !== 'ENOENT') {
+      console.error(`Failed to read changelog in "${projectRootDirectory}".`);
+      throw error;
+    }
+
+    return console.warn(
+      `Failed to read changelog in "${projectRootDirectory}".`,
+    );
   }
 
   const newChangelogContent = await updateChangelog({
@@ -199,7 +256,7 @@ async function updatePackageChangelog(
     );
   }
 
-  await fs.writeFile(changelogPath, newChangelogContent);
+  return await fs.writeFile(changelogPath, newChangelogContent);
 }
 
 /**

@@ -12489,30 +12489,54 @@ var auto_changelog_dist = __nccwpck_require__(9272);
 const MANIFEST_FILE_NAME = 'package.json';
 const CHANGELOG_FILE_NAME = 'CHANGELOG.md';
 /**
- * Finds the package manifest for each workspace, and collects
+ * Recursively finds the package manifest for each workspace, and collects
  * metadata for each package.
  *
  * @param workspaces - The list of workspace patterns given in the root manifest.
  * @param rootDir - The monorepo root directory.
+ * @param parentDir - The parent directory of the current package.
  * @returns The metadata for all packages in the monorepo.
  */
-async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT) {
+async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT, parentDir = '') {
     const workspaceLocations = await (0,dist.getWorkspaceLocations)(workspaces, rootDir);
-    const result = {};
-    await Promise.all(workspaceLocations.map(async (workspaceDirectory) => {
+    return workspaceLocations.reduce(async (promise, workspaceDirectory) => {
+        const result = await promise;
         const fullWorkspacePath = external_path_default().join(rootDir, workspaceDirectory);
         if ((await external_fs_.promises.lstat(fullWorkspacePath)).isDirectory()) {
             const rawManifest = await (0,dist.getPackageManifest)(fullWorkspacePath);
+            // If the package is a sub-workspace, resolve all packages in the sub-workspace and add them
+            // to the result.
+            if (dist.ManifestFieldNames.Workspaces in rawManifest) {
+                const rootManifest = (0,dist.validatePackageManifestVersion)(rawManifest, workspaceDirectory);
+                const manifest = (0,dist.validateMonorepoPackageManifest)(rootManifest, workspaceDirectory);
+                const name = manifest[dist.ManifestFieldNames.Name];
+                if (!name) {
+                    throw new Error(`Expected sub-workspace in "${workspaceDirectory}" to have a name.`);
+                }
+                return {
+                    ...result,
+                    ...(await getMetadataForAllPackages(manifest.workspaces, workspaceDirectory, workspaceDirectory)),
+                    [name]: {
+                        dirName: external_path_default().basename(workspaceDirectory),
+                        manifest,
+                        name,
+                        dirPath: external_path_default().join(parentDir, workspaceDirectory),
+                    },
+                };
+            }
             const manifest = (0,dist.validatePolyrepoPackageManifest)(rawManifest, workspaceDirectory);
-            result[manifest.name] = {
-                dirName: external_path_default().basename(workspaceDirectory),
-                manifest,
-                name: manifest.name,
-                dirPath: workspaceDirectory,
+            return {
+                ...result,
+                [manifest.name]: {
+                    dirName: external_path_default().basename(workspaceDirectory),
+                    manifest,
+                    name: manifest.name,
+                    dirPath: external_path_default().join(parentDir, workspaceDirectory),
+                },
             };
         }
-    }));
-    return result;
+        return result;
+    }, Promise.resolve({}));
 }
 /**
  * @param allPackages - The metadata of all packages in the monorepo.
@@ -12596,8 +12620,12 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
         changelogContent = await external_fs_.promises.readFile(changelogPath, 'utf-8');
     }
     catch (error) {
-        console.error(`Failed to read changelog in "${projectRootDirectory}".`);
-        throw error;
+        // If the error is not a file not found error, throw it
+        if (error.code !== 'ENOENT') {
+            console.error(`Failed to read changelog in "${projectRootDirectory}".`);
+            throw error;
+        }
+        return console.warn(`Failed to read changelog in "${projectRootDirectory}".`);
     }
     const newChangelogContent = await (0,auto_changelog_dist.updateChangelog)({
         changelogContent,
@@ -12610,7 +12638,7 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
         const packageName = packageMetadata.manifest.name;
         throw new Error(`"updateChangelog" returned an empty value for package ${packageName ? `"${packageName}"` : `at "${packagePath}"`}.`);
     }
-    await external_fs_.promises.writeFile(changelogPath, newChangelogContent);
+    return await external_fs_.promises.writeFile(changelogPath, newChangelogContent);
 }
 /**
  * Updates the given manifest per the update specification as follows:
