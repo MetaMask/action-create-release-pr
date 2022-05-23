@@ -227,6 +227,12 @@ async function updatePackageChangelog(
   try {
     changelogContent = await fs.readFile(changelogPath, 'utf-8');
   } catch (error) {
+    // If the error is not a file not found error, throw it
+    if (error.code !== 'ENOENT') {
+      console.error(`Failed to read changelog in "${projectRootDirectory}".`);
+      throw error;
+    }
+
     return console.warn(
       `Failed to read changelog in "${projectRootDirectory}".`,
     );

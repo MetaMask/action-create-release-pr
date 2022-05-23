@@ -1,6 +1,6 @@
 import fs from 'fs';
 import cloneDeep from 'lodash.clonedeep';
-import * as actionUtils from '@metamask/action-utils/dist/file-utils';
+import * as actionUtils from '@metamask/action-utils';
 import {
   ManifestDependencyFieldNames,
   ManifestFieldNames,
