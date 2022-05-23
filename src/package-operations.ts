@@ -106,7 +106,7 @@ export async function getMetadataForAllPackages(
             dirName: pathUtils.basename(workspaceDirectory),
             manifest,
             name: manifest.name,
-            dirPath: workspaceDirectory,
+            dirPath: pathUtils.join(parentDir, workspaceDirectory),
           },
         };
       }

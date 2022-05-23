@@ -12531,7 +12531,7 @@ async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT, p
                     dirName: external_path_default().basename(workspaceDirectory),
                     manifest,
                     name: manifest.name,
-                    dirPath: workspaceDirectory,
+                    dirPath: external_path_default().join(parentDir, workspaceDirectory),
                 },
             };
         }
