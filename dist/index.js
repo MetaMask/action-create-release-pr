@@ -12519,7 +12519,7 @@ async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT) {
                         dirName: external_path_default().basename(workspaceDirectory),
                         manifest,
                         name,
-                        dirPath: workspaceDirectory,
+                        dirPath: fullWorkspacePath,
                     },
                 };
             }
@@ -12530,7 +12530,7 @@ async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT) {
                     dirName: external_path_default().basename(workspaceDirectory),
                     manifest,
                     name: manifest.name,
-                    dirPath: workspaceDirectory,
+                    dirPath: fullWorkspacePath,
                 },
             };
         }
