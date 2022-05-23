@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0]
+### Uncategorized
+- Resolve workspaces recursively for better Yarn 3 support ([#85](https://github.com/MetaMask/action-create-release-pr/pull/85))
+- add shellcheck action ([#82](https://github.com/MetaMask/action-create-release-pr/pull/82))
+
 ## [1.3.0]
 ### Fixed
 - Synchronize monorepo packages for versions in range 0.x.x ([#80](https://github.com/MetaMask/action-create-release-pr/pull/80))
@@ -92,7 +97,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.0.2...v1.1.0
