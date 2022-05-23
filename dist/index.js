@@ -12494,9 +12494,10 @@ const CHANGELOG_FILE_NAME = 'CHANGELOG.md';
  *
  * @param workspaces - The list of workspace patterns given in the root manifest.
  * @param rootDir - The monorepo root directory.
+ * @param parentDir - The parent directory of the current package.
  * @returns The metadata for all packages in the monorepo.
  */
-async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT) {
+async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT, parentDir = '') {
     const workspaceLocations = await (0,dist.getWorkspaceLocations)(workspaces, rootDir);
     return workspaceLocations.reduce(async (promise, workspaceDirectory) => {
         const result = await promise;
@@ -12514,12 +12515,12 @@ async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT) {
                 }
                 return {
                     ...result,
-                    ...(await getMetadataForAllPackages(manifest.workspaces, fullWorkspacePath)),
+                    ...(await getMetadataForAllPackages(manifest.workspaces, workspaceDirectory, workspaceDirectory)),
                     [name]: {
                         dirName: external_path_default().basename(workspaceDirectory),
                         manifest,
                         name,
-                        dirPath: fullWorkspacePath,
+                        dirPath: external_path_default().join(parentDir, workspaceDirectory),
                     },
                 };
             }
@@ -12530,7 +12531,7 @@ async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT) {
                     dirName: external_path_default().basename(workspaceDirectory),
                     manifest,
                     name: manifest.name,
-                    dirPath: fullWorkspacePath,
+                    dirPath: workspaceDirectory,
                 },
             };
         }
