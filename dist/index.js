@@ -12489,7 +12489,7 @@ var auto_changelog_dist = __nccwpck_require__(9272);
 const MANIFEST_FILE_NAME = 'package.json';
 const CHANGELOG_FILE_NAME = 'CHANGELOG.md';
 /**
- * Finds the package manifest for each workspace, and collects
+ * Recursively finds the package manifest for each workspace, and collects
  * metadata for each package.
  *
  * @param workspaces - The list of workspace patterns given in the root manifest.
@@ -12498,21 +12498,44 @@ const CHANGELOG_FILE_NAME = 'CHANGELOG.md';
  */
 async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT) {
     const workspaceLocations = await (0,dist.getWorkspaceLocations)(workspaces, rootDir);
-    const result = {};
-    await Promise.all(workspaceLocations.map(async (workspaceDirectory) => {
+    return workspaceLocations.reduce(async (promise, workspaceDirectory) => {
+        const result = await promise;
         const fullWorkspacePath = external_path_default().join(rootDir, workspaceDirectory);
         if ((await external_fs_.promises.lstat(fullWorkspacePath)).isDirectory()) {
             const rawManifest = await (0,dist.getPackageManifest)(fullWorkspacePath);
+            // If the package is a sub-workspace, resolve all packages in the sub-workspace and add them
+            // to the result.
+            if (dist.ManifestFieldNames.Workspaces in rawManifest) {
+                const rootManifest = (0,dist.validatePackageManifestVersion)(rawManifest, workspaceDirectory);
+                const manifest = (0,dist.validateMonorepoPackageManifest)(rootManifest, workspaceDirectory);
+                const name = manifest[dist.ManifestFieldNames.Name];
+                if (!name) {
+                    throw new Error('Expected sub-workspace to have a name.');
+                }
+                return {
+                    ...result,
+                    ...(await getMetadataForAllPackages(manifest.workspaces, workspaceDirectory)),
+                    [name]: {
+                        dirName: external_path_default().basename(workspaceDirectory),
+                        manifest,
+                        name,
+                        dirPath: workspaceDirectory,
+                    },
+                };
+            }
             const manifest = (0,dist.validatePolyrepoPackageManifest)(rawManifest, workspaceDirectory);
-            result[manifest.name] = {
-                dirName: external_path_default().basename(workspaceDirectory),
-                manifest,
-                name: manifest.name,
-                dirPath: workspaceDirectory,
+            return {
+                ...result,
+                [manifest.name]: {
+                    dirName: external_path_default().basename(workspaceDirectory),
+                    manifest,
+                    name: manifest.name,
+                    dirPath: workspaceDirectory,
+                },
             };
         }
-    }));
-    return result;
+        return result;
+    }, Promise.resolve({}));
 }
 /**
  * @param allPackages - The metadata of all packages in the monorepo.
