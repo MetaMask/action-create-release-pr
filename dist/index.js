@@ -12620,6 +12620,11 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
         changelogContent = await external_fs_.promises.readFile(changelogPath, 'utf-8');
     }
     catch (error) {
+        // If the error is not a file not found error, throw it
+        if (error.code !== 'ENOENT') {
+            console.error(`Failed to read changelog in "${projectRootDirectory}".`);
+            throw error;
+        }
         return console.warn(`Failed to read changelog in "${projectRootDirectory}".`);
     }
     const newChangelogContent = await (0,auto_changelog_dist.updateChangelog)({
