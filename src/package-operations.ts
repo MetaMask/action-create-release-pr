@@ -76,7 +76,9 @@ export async function getMetadataForAllPackages(
 
           const name = manifest[ManifestFieldNames.Name];
           if (!name) {
-            throw new Error('Expected sub-workspace to have a name.');
+            throw new Error(
+              `Expected sub-workspace in "${workspaceDirectory}" to have a name.`,
+            );
           }
 
           return {
