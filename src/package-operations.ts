@@ -81,7 +81,7 @@ export async function getMetadataForAllPackages(
             ...result,
             ...(await getMetadataForAllPackages(
               manifest.workspaces,
-              workspaceDirectory,
+              fullWorkspacePath,
             )),
             [name]: {
               dirName: pathUtils.basename(workspaceDirectory),

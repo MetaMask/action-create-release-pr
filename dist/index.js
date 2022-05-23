@@ -12514,7 +12514,7 @@ async function getMetadataForAllPackages(workspaces, rootDir = WORKSPACE_ROOT) {
                 }
                 return {
                     ...result,
-                    ...(await getMetadataForAllPackages(manifest.workspaces, workspaceDirectory)),
+                    ...(await getMetadataForAllPackages(manifest.workspaces, fullWorkspacePath)),
                     [name]: {
                         dirName: external_path_default().basename(workspaceDirectory),
                         manifest,
