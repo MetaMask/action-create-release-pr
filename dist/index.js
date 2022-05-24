@@ -8717,9 +8717,11 @@ function getManifestErrorMessagePrefix(invalidField, manifest, manifestDirPath) 
  * @param recursive - Whether to search recursively.
  * @returns The location of each workspace directory relative to the root directory
  */
-async function getWorkspaceLocations(workspaces, rootDir, recursive = false) {
+async function getWorkspaceLocations(workspaces, rootDir, recursive = false, prefix = '') {
     const resolvedWorkspaces = await workspaces.reduce(async (promise, pattern) => {
-        return [...(await promise), ...(await glob(pattern, { cwd: rootDir }))];
+        const array = await promise;
+        const matches = (await glob(pattern, { cwd: rootDir })).map((match) => path_1.default.join(prefix, match));
+        return [...array, ...matches];
     }, Promise.resolve([]));
     if (recursive) {
         // This reads all the package JSON files in each workspace, checks if they are a monorepo, and
@@ -8727,12 +8729,12 @@ async function getWorkspaceLocations(workspaces, rootDir, recursive = false) {
         const resolvedSubWorkspaces = await resolvedWorkspaces.reduce(async (promise, workspacePath) => {
             const array = await promise;
             const rawManifest = await getPackageManifest(workspacePath);
-            const manifest = validatePackageManifestVersion(rawManifest, workspacePath);
-            if (ManifestFieldNames.Workspaces in manifest) {
+            if (ManifestFieldNames.Workspaces in rawManifest) {
+                const manifest = validatePackageManifestVersion(rawManifest, workspacePath);
                 const monorepoManifest = validateMonorepoPackageManifest(manifest, workspacePath);
                 return [
                     ...array,
-                    ...(await getWorkspaceLocations(monorepoManifest[ManifestFieldNames.Workspaces], workspacePath, recursive)),
+                    ...(await getWorkspaceLocations(monorepoManifest[ManifestFieldNames.Workspaces], workspacePath, recursive, workspacePath)),
                 ];
             }
             return array;
