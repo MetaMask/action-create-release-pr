@@ -1,6 +1,7 @@
 module.exports = {
   collectCoverage: true,
   collectCoverageFrom: ['src/**/*.ts', '!**/*.d.ts'],
+  coverageProvider: 'babel',
   coverageReporters: ['text', 'html'],
   coverageThreshold: {
     global: {
