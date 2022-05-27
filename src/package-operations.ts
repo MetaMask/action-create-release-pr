@@ -5,11 +5,8 @@ import {
   getPackageManifest,
   getWorkspaceLocations,
   ManifestDependencyFieldNames,
-  ManifestFieldNames,
   PackageManifest,
   MonorepoPackageManifest,
-  validateMonorepoPackageManifest,
-  validatePackageManifestVersion,
   validatePolyrepoPackageManifest,
   writeJsonFile,
 } from '@metamask/action-utils';

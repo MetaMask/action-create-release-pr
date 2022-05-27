@@ -44,7 +44,7 @@
   "homepage": "https://github.com/MetaMask/action-create-release-pr#readme",
   "dependencies": {
     "@actions/core": "^1.2.7",
-    "@metamask/action-utils": "^0.0.2",
+    "@metamask/action-utils": "https://github.com/MetaMask/action-utils.git#568ffc24e079134a093048017ee607056d566506",
     "@metamask/auto-changelog": "^2.4.0",
     "execa": "^4.1.0",
     "glob": "^7.1.7",
