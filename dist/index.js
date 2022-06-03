@@ -12234,7 +12234,8 @@ var InputNames;
     InputNames["ReleaseType"] = "release-type";
     InputNames["ReleaseVersion"] = "release-version";
 })(InputNames || (InputNames = {}));
-const WORKSPACE_ROOT = process.env.GITHUB_WORKSPACE;
+const env = process.env;
+const WORKSPACE_ROOT = env.GITHUB_WORKSPACE;
 /**
  * Validates and returns the inputs to the Action.
  * We perform additional validation because the GitHub Actions configuration
@@ -12259,7 +12260,7 @@ function getActionInputs() {
  */
 function getProcessEnvValue(key) {
     var _a;
-    return ((_a = process.env[key]) === null || _a === void 0 ? void 0 : _a.trim()) || '';
+    return ((_a = env[key]) === null || _a === void 0 ? void 0 : _a.trim()) || '';
 }
 /**
  * Validates the inputs to the Action, defined earlier in this file.
