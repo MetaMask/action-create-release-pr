@@ -7,9 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.4.0]
-### Uncategorized
+### Changed
 - Resolve workspaces recursively for better Yarn 3 support ([#85](https://github.com/MetaMask/action-create-release-pr/pull/85))
-- add shellcheck action ([#82](https://github.com/MetaMask/action-create-release-pr/pull/82))
 
 ## [1.3.0]
 ### Fixed
