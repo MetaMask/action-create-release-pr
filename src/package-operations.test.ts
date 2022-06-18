@@ -1,11 +1,12 @@
 import fs from 'fs';
 import cloneDeep from 'lodash.clonedeep';
-import * as actionUtils from '@metamask/action-utils/dist/file-utils';
+import * as actionUtils from '@metamask/action-utils';
 import {
   ManifestDependencyFieldNames,
   ManifestFieldNames,
 } from '@metamask/action-utils';
 import * as autoChangelog from '@metamask/auto-changelog';
+import glob from 'glob';
 import * as gitOps from './git-operations';
 import {
   getMetadataForAllPackages,
@@ -23,20 +24,7 @@ jest.mock('fs', () => ({
   },
 }));
 
-jest.mock('glob', () => {
-  return (
-    _pattern: string,
-    _options: Record<string, unknown>,
-    callback: (error: Error | null, results: string[]) => unknown,
-  ) => {
-    callback(null, [
-      'packages/dir1',
-      'packages/dir2',
-      'packages/dir3',
-      'packages/someFile',
-    ]);
-  };
-});
+jest.mock('glob');
 
 jest.mock('@metamask/action-utils/dist/file-utils', () => {
   const actualModule = jest.requireActual(
@@ -119,18 +107,97 @@ describe('package-operations', () => {
           ? { isDirectory: () => false }
           : { isDirectory: () => true };
       }) as any);
+    });
+
+    it('does not throw', async () => {
+      (glob as jest.MockedFunction<any>).mockImplementation(
+        (
+          _pattern: string,
+          _options: unknown,
+          callback: (error: null, data: string[]) => void,
+        ) =>
+          callback(null, [
+            'packages/dir1',
+            'packages/dir2',
+            'packages/dir3',
+            'packages/someFile',
+          ]),
+      );
 
       jest
         .spyOn(actionUtils, 'readJsonObjectFile')
         .mockImplementation(getMockReadJsonFile());
-    });
 
-    it('does not throw', async () => {
       expect(await getMetadataForAllPackages(['packages/*'])).toStrictEqual({
         [names[0]]: getMockPackageMetadata(0),
         [names[1]]: getMockPackageMetadata(1),
         [names[2]]: getMockPackageMetadata(2),
       });
+    });
+
+    it('resolves recursive workspaces', async () => {
+      (glob as jest.MockedFunction<any>)
+        .mockImplementationOnce(
+          (
+            _pattern: string,
+            _options: unknown,
+            callback: (error: null, data: string[]) => void,
+          ) => callback(null, ['packages/dir1']),
+        )
+        .mockImplementationOnce(
+          (
+            _pattern: string,
+            _options: unknown,
+            callback: (error: null, data: string[]) => void,
+          ) => callback(null, ['packages/dir2']),
+        );
+
+      jest
+        .spyOn(actionUtils, 'readJsonObjectFile')
+        .mockImplementationOnce(async () => ({
+          ...getMockManifest(names[0], version),
+          private: true,
+          workspaces: ['packages/*'],
+        }))
+        .mockImplementationOnce(async () => getMockManifest(names[1], version));
+
+      expect(await getMetadataForAllPackages(['packages/*'])).toStrictEqual({
+        [names[0]]: {
+          ...getMockPackageMetadata(0),
+          manifest: {
+            ...getMockManifest(names[0], version),
+            private: true,
+            workspaces: ['packages/*'],
+          },
+        },
+        [names[1]]: {
+          ...getMockPackageMetadata(1),
+          dirPath: 'packages/dir1/packages/dir2',
+        },
+      });
+    });
+
+    it('throws if a sub-workspace does not have a name', async () => {
+      (glob as jest.MockedFunction<any>).mockImplementationOnce(
+        (
+          _pattern: string,
+          _options: unknown,
+          callback: (error: null, data: string[]) => void,
+        ) => callback(null, ['packages/dir1']),
+      );
+
+      jest
+        .spyOn(actionUtils, 'readJsonObjectFile')
+        .mockImplementationOnce(async () => ({
+          ...getMockManifest(names[0], version),
+          private: true,
+          workspaces: ['packages/*'],
+          name: undefined,
+        }));
+
+      await expect(getMetadataForAllPackages(['packages/*'])).rejects.toThrow(
+        'Expected sub-workspace in "packages/dir1" to have a name.',
+      );
     });
   });
 
@@ -309,6 +376,42 @@ describe('package-operations', () => {
         expect(updateChangelogMock).not.toHaveBeenCalled();
         expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
         expect(consoleErrorSpy).toHaveBeenCalledWith(
+          expect.stringMatching(/^Failed to read changelog/u),
+        );
+      });
+
+      it('does not throw if the file cannot be found', async () => {
+        const originalVersion = '1.0.0';
+        const newVersion = '1.0.1';
+        const dir = mockDirs[0];
+        const name = packageNames[0];
+        const manifest = getMockManifest(name, originalVersion);
+
+        readFileMock.mockImplementationOnce(async () => {
+          const error = new Error('readError');
+          (error as any).code = 'ENOENT';
+
+          throw error;
+        });
+
+        const packageMetadata = getMockPackageMetadata(dir, manifest);
+        const updateSpecification = {
+          newVersion,
+          packagesToUpdate: new Set(packageNames),
+          repositoryUrl: 'https://fake',
+          shouldUpdateChangelog: true,
+          synchronizeVersions: false,
+        };
+
+        const consoleWarnSpy = jest
+          .spyOn(console, 'warn')
+          .mockImplementationOnce(() => undefined);
+
+        await updatePackage(packageMetadata, updateSpecification);
+
+        expect(updateChangelogMock).not.toHaveBeenCalled();
+        expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
           expect.stringMatching(/^Failed to read changelog/u),
         );
       });
