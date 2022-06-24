@@ -3,6 +3,7 @@
   "compilerOptions": {
     "declaration": true,
     "inlineSources": true,
+    "module": "ES6",
     "noEmit": false,
     "outDir": "lib",
     "rootDir": "src",
