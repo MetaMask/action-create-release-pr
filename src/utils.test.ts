@@ -21,6 +21,7 @@ const mockProcessEnv = ({
   if (releaseType !== undefined) {
     process.env[InputKeys.ReleaseType] = releaseType;
   }
+
   if (releaseVersion !== undefined) {
     process.env[InputKeys.ReleaseVersion] = releaseVersion;
   }
