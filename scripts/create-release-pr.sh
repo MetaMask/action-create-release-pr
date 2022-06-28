@@ -75,12 +75,12 @@ if [[ -n $ARTIFACTS_DIR_PATH ]]; then
   for i in {1..7} # 6 + 1 times total
   do
     PR_NUMBER=$(gh pr view --json number | jq '.number')
-    if [[ -z $PR_NUMBER ]]; then
+    if [[ -n $PR_NUMBER ]]; then
       break
     fi
 
     # sleep 6 times for 10 seconds each, for a total of 60 seconds
-    if (( i < 7)); then
+    if (( i < 7 )); then
       sleep 10
     fi
   done
