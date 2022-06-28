@@ -7,10 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.4.1]
-### Uncategorized
-- Retry getting the release PR number on a timeout ([#96](https://github.com/MetaMask/action-create-release-pr/pull/96))
-- Bump Jest to 28.x and bump TypeScript to 4.3.0 ([#91](https://github.com/MetaMask/action-create-release-pr/pull/91))
-- Transpile module syntax into CJS in dev ([#90](https://github.com/MetaMask/action-create-release-pr/pull/90))
+### Fixed
+- Handle GitHub being slow to create a pull request ([#96](https://github.com/MetaMask/action-create-release-pr/pull/96))
 
 ## [1.4.0]
 ### Changed
