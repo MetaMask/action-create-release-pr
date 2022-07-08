@@ -180,6 +180,7 @@ describe('didPackageChange', () => {
         dirPath: `packages/${PACKAGES.A.dir}`,
       }),
     ).toStrictEqual(true);
+
     expect(
       await didPackageChange(PARSED_MOCK_TAGS, {
         name: PACKAGES.B.name,
@@ -216,6 +217,7 @@ describe('didPackageChange', () => {
         dirPath: `packages/${PACKAGES.A.dir}`,
       }),
     ).toStrictEqual(true);
+
     expect(
       await didPackageChange(PARSED_MOCK_TAGS, {
         name: PACKAGES.B.name,
