@@ -101,7 +101,12 @@ describe('package-operations', () => {
     function getMockReadJsonFile() {
       let mockIndex = -1;
       return async () => {
-        mockIndex += 1;
+        if (mockIndex >= names.length) {
+          mockIndex = 0;
+        } else {
+          mockIndex += 1;
+        }
+
         return getMockManifest(names[mockIndex], version);
       };
     }
@@ -140,71 +145,6 @@ describe('package-operations', () => {
         [names[1]]: getMockPackageMetadata(1),
         [names[2]]: getMockPackageMetadata(2),
       });
-    });
-
-    it('resolves recursive workspaces', async () => {
-      (glob as jest.MockedFunction<any>)
-        .mockImplementationOnce(
-          (
-            _pattern: string,
-            _options: unknown,
-            callback: (error: null, data: string[]) => void,
-          ) => callback(null, ['packages/dir1']),
-        )
-        .mockImplementationOnce(
-          (
-            _pattern: string,
-            _options: unknown,
-            callback: (error: null, data: string[]) => void,
-          ) => callback(null, ['packages/dir2']),
-        );
-
-      jest
-        .spyOn(actionUtils, 'readJsonObjectFile')
-        .mockImplementationOnce(async () => ({
-          ...getMockManifest(names[0], version),
-          private: true,
-          workspaces: ['packages/*'],
-        }))
-        .mockImplementationOnce(async () => getMockManifest(names[1], version));
-
-      expect(await getMetadataForAllPackages(['packages/*'])).toStrictEqual({
-        [names[0]]: {
-          ...getMockPackageMetadata(0),
-          manifest: {
-            ...getMockManifest(names[0], version),
-            private: true,
-            workspaces: ['packages/*'],
-          },
-        },
-        [names[1]]: {
-          ...getMockPackageMetadata(1),
-          dirPath: 'packages/dir1/packages/dir2',
-        },
-      });
-    });
-
-    it('throws if a sub-workspace does not have a name', async () => {
-      (glob as jest.MockedFunction<any>).mockImplementationOnce(
-        (
-          _pattern: string,
-          _options: unknown,
-          callback: (error: null, data: string[]) => void,
-        ) => callback(null, ['packages/dir1']),
-      );
-
-      jest
-        .spyOn(actionUtils, 'readJsonObjectFile')
-        .mockImplementationOnce(async () => ({
-          ...getMockManifest(names[0], version),
-          private: true,
-          workspaces: ['packages/*'],
-          name: undefined,
-        }));
-
-      await expect(getMetadataForAllPackages(['packages/*'])).rejects.toThrow(
-        'Expected sub-workspace in "packages/dir1" to have a name.',
-      );
     });
   });
 

@@ -5,11 +5,8 @@ import {
   getPackageManifest,
   getWorkspaceLocations,
   ManifestDependencyFieldNames,
-  ManifestFieldNames,
   PackageManifest,
   MonorepoPackageManifest,
-  validateMonorepoPackageManifest,
-  validatePackageManifestVersion,
   validatePolyrepoPackageManifest,
   writeJsonFile,
 } from '@metamask/action-utils';
@@ -51,7 +48,11 @@ export async function getMetadataForAllPackages(
   rootDir: string = WORKSPACE_ROOT,
   parentDir = '',
 ): Promise<Record<string, PackageMetadata>> {
-  const workspaceLocations = await getWorkspaceLocations(workspaces, rootDir);
+  const workspaceLocations = await getWorkspaceLocations(
+    workspaces,
+    rootDir,
+    true,
+  );
 
   return workspaceLocations.reduce<Promise<Record<string, PackageMetadata>>>(
     async (promise, workspaceDirectory) => {
@@ -60,43 +61,6 @@ export async function getMetadataForAllPackages(
       const fullWorkspacePath = pathUtils.join(rootDir, workspaceDirectory);
       if ((await fs.lstat(fullWorkspacePath)).isDirectory()) {
         const rawManifest = await getPackageManifest(fullWorkspacePath);
-
-        // If the package is a sub-workspace, resolve all packages in the sub-workspace and add them
-        // to the result.
-        if (ManifestFieldNames.Workspaces in rawManifest) {
-          const rootManifest = validatePackageManifestVersion(
-            rawManifest,
-            workspaceDirectory,
-          );
-
-          const manifest = validateMonorepoPackageManifest(
-            rootManifest,
-            workspaceDirectory,
-          );
-
-          const name = manifest[ManifestFieldNames.Name];
-          if (!name) {
-            throw new Error(
-              `Expected sub-workspace in "${workspaceDirectory}" to have a name.`,
-            );
-          }
-
-          return {
-            ...result,
-            ...(await getMetadataForAllPackages(
-              manifest.workspaces,
-              workspaceDirectory,
-              workspaceDirectory,
-            )),
-            [name]: {
-              dirName: pathUtils.basename(workspaceDirectory),
-              manifest,
-              name,
-              dirPath: pathUtils.join(parentDir, workspaceDirectory),
-            },
-          };
-        }
-
         const manifest = validatePolyrepoPackageManifest(
           rawManifest,
           workspaceDirectory,
