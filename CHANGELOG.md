@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.4.2]
-### Uncategorized
-- Bump actions ([#98](https://github.com/MetaMask/action-create-release-pr/pull/98))
+### Changed
+- Bump actions, removing deprecation warning ([#98](https://github.com/MetaMask/action-create-release-pr/pull/98))
 - Add JSDoc linting rules, update lint deps ([#95](https://github.com/MetaMask/action-create-release-pr/pull/95))
 
 ## [1.4.1]
