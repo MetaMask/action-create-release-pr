@@ -8,8 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.4.2]
 ### Changed
-- Remove `set-output` ([#100](https://github.com/MetaMask/action-create-release-pr/pull/100))
-- Bump actions ([#98](https://github.com/MetaMask/action-create-release-pr/pull/98))
+- Resolve GitHub action deprecation warnings ([#98](https://github.com/MetaMask/action-create-release-pr/pull/98), [#100](https://github.com/MetaMask/action-create-release-pr/pull/100))
+  - GitHub actions have been updated to v3, and the deprecated `set-output` command is no longer used.
 
 ## [1.4.1]
 ### Fixed
