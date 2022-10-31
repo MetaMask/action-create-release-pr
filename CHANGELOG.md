@@ -7,10 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.4.2]
-### Uncategorized
+### Changed
 - Remove `set-output` ([#100](https://github.com/MetaMask/action-create-release-pr/pull/100))
 - Bump actions ([#98](https://github.com/MetaMask/action-create-release-pr/pull/98))
-- Add JSDoc linting rules, update lint deps ([#95](https://github.com/MetaMask/action-create-release-pr/pull/95))
 
 ## [1.4.1]
 ### Fixed
