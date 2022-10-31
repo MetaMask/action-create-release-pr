@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.4.3]
-### Uncategorized
+### Changed
 - Bump `@actions/core` ([#102](https://github.com/MetaMask/action-create-release-pr/pull/102))
 
 ## [1.4.2]
