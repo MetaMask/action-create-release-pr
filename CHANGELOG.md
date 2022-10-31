@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.3]
+### Uncategorized
+- Bump `@actions/core` ([#102](https://github.com/MetaMask/action-create-release-pr/pull/102))
+
 ## [1.4.2]
 ### Changed
 - Resolve GitHub action deprecation warnings ([#98](https://github.com/MetaMask/action-create-release-pr/pull/98), [#100](https://github.com/MetaMask/action-create-release-pr/pull/100))
@@ -105,7 +109,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.2...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.3...HEAD
+[1.4.3]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.3.0...v1.4.0
