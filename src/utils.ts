@@ -1,4 +1,4 @@
-import { isValidSemver, tabs } from '@metamask/action-utils';
+import { isValidSemver, tabs } from '@ethjs-staging/action-utils';
 
 // Our custom input env keys
 export enum InputKeys {

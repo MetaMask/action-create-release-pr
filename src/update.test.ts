@@ -1,5 +1,5 @@
 import * as actionsCore from '@actions/core';
-import * as actionUtils from '@metamask/action-utils';
+import * as actionUtils from '@ethjs-staging/action-utils';
 import * as gitOperations from './git-operations';
 import * as packageOperations from './package-operations';
 import * as utils from './utils';
@@ -11,8 +11,8 @@ jest.mock('@actions/core', () => {
   };
 });
 
-jest.mock('@metamask/action-utils', () => {
-  const actualModule = jest.requireActual('@metamask/action-utils');
+jest.mock('@ethjs-staging/action-utils', () => {
+  const actualModule = jest.requireActual('@ethjs-staging/action-utils');
   return {
     ...actualModule,
     getPackageManifest: jest.fn(),

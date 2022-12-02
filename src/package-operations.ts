@@ -12,7 +12,7 @@ import {
   validatePackageManifestVersion,
   validatePolyrepoPackageManifest,
   writeJsonFile,
-} from '@metamask/action-utils';
+} from '@ethjs-staging/action-utils';
 import { didPackageChange } from './git-operations';
 import { WORKSPACE_ROOT, isErrorWithCode } from './utils';
 

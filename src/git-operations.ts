@@ -1,6 +1,6 @@
 import semverClean from 'semver/functions/clean';
 import execa from 'execa';
-import { isValidSemver } from '@metamask/action-utils';
+import { isValidSemver } from '@ethjs-staging/action-utils';
 import type { PackageMetadata } from './package-operations';
 import { WORKSPACE_ROOT } from './utils';
 

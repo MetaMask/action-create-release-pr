@@ -13,7 +13,7 @@ import {
   validateMonorepoPackageManifest,
   validatePackageManifestName,
   validatePackageManifestVersion,
-} from '@metamask/action-utils';
+} from '@ethjs-staging/action-utils';
 import { getRepositoryHttpsUrl, getTags } from './git-operations';
 import {
   getMetadataForAllPackages,

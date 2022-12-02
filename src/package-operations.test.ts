@@ -1,10 +1,10 @@
 import fs from 'fs';
 import cloneDeep from 'lodash.clonedeep';
-import * as actionUtils from '@metamask/action-utils';
+import * as actionUtils from '@ethjs-staging/action-utils';
 import {
   ManifestDependencyFieldNames,
   ManifestFieldNames,
-} from '@metamask/action-utils';
+} from '@ethjs-staging/action-utils';
 import * as autoChangelog from '@metamask/auto-changelog';
 import glob from 'glob';
 import * as gitOps from './git-operations';
@@ -26,9 +26,9 @@ jest.mock('fs', () => ({
 
 jest.mock('glob');
 
-jest.mock('@metamask/action-utils/dist/file-utils', () => {
+jest.mock('@ethjs-staging/action-utils/dist/file-utils', () => {
   const actualModule = jest.requireActual(
-    '@metamask/action-utils/dist/file-utils',
+    '@ethjs-staging/action-utils/dist/file-utils',
   );
   return {
     ...actualModule,
