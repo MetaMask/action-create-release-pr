@@ -6,6 +6,7 @@ import {
   getWorkspaceLocations,
   ManifestDependencyFieldNames,
   ManifestFieldNames,
+  PackageManagers,
   PackageManifest,
   MonorepoPackageManifest,
   validateMonorepoPackageManifest,
@@ -207,12 +208,70 @@ export async function updatePackage(
       pathUtils.join(rootDir, packageMetadata.dirPath, MANIFEST_FILE_NAME),
       getUpdatedManifest(packageMetadata.manifest, updateSpecification),
     ),
+    updatePackageLockfile(packageMetadata, updateSpecification),
     updateSpecification.shouldUpdateChangelog
       ? updatePackageChangelog(packageMetadata, updateSpecification)
       : Promise.resolve(),
   ]);
 }
 
+/**
+ * Updates the package version in the lockfile of the corresponding package manager.
+ *
+ * @param packageMetadata - The metadata of the package to update.
+ * @param packageMetadata.dirPath - The full path to the directory that holds
+ * the package.
+ * @param packageMetadata.manifest - The information within the `package.json`
+ * file for the package.
+ * @param updateSpecification - The update specification, which determines how
+ * the update is performed.
+ * @param rootDir - The full path to the project.
+ * @returns The result of writing to the changelog.
+ */
+async function updatePackageLockfile(
+  packageMetadata: { dirPath: string; manifest: Partial<PackageManifest> },
+  updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
+  rootDir: string = WORKSPACE_ROOT,
+): Promise<number | void> {
+  const { dirPath: projectRootDirectory, manifest: { engines } } = packageMetadata;
+
+  if (!engines?.npm) {
+    return;
+  }
+
+  const { newVersion } = updateSpecification;
+
+  let lockfileContent: string;
+  let lockfileData: {};
+  const packagePath = pathUtils.join(rootDir, projectRootDirectory);
+  const lockfilePath = pathUtils.join(packagePath, 'package-lock.json');
+
+  try {
+    lockfileContent = await fs.readFile(lockfilePath, 'utf-8');
+  } catch (error) {
+    // If the error is not a file not found error, throw it
+    if (!isErrorWithCode(error) || error.code !== 'ENOENT') {
+      console.error(`Failed to read lockfile at ${lockfilePath}.`);
+      throw error;
+    }
+
+    console.warn(`Failed to read lockfile at ${lockfilePath}.`);
+    return undefined;
+  }
+  try {
+    lockfileData = JSON.parse(lockfileContent);
+  } catch (error) {
+    console.error(`Failed to parse lockfile at "${lockfilePath}".`);
+    throw error;
+  }
+
+  const newChangelogContent = JSON.stringify({
+    ...lockfileData,
+    version: newVersion,
+  }, undefined, 2);
+
+  return await fs.writeFile(lockfilePath, newChangelogContent);
+}
 /**
  * Updates the changelog file of the given package, using
  * `@metamask/auto-changelog`. Assumes that the changelog file is located at the
