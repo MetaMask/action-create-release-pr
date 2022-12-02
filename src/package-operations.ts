@@ -6,7 +6,6 @@ import {
   getWorkspaceLocations,
   ManifestDependencyFieldNames,
   ManifestFieldNames,
-  PackageManagers,
   PackageManifest,
   MonorepoPackageManifest,
   validateMonorepoPackageManifest,
