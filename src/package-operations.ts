@@ -264,12 +264,12 @@ async function updatePackageLockfile(
     throw error;
   }
 
-  const newChangelogContent = JSON.stringify({
+  const newLockfileContent = JSON.stringify({
     ...lockfileData,
     version: newVersion,
-  }, undefined, 2);
+  }, undefined, 2) + '\n';
 
-  return await fs.writeFile(lockfilePath, newChangelogContent);
+  return await fs.writeFile(lockfilePath, newLockfileContent);
 }
 /**
  * Updates the changelog file of the given package, using
