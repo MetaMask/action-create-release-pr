@@ -15140,11 +15140,11 @@ async function updatePackageLockfile(packageMetadata, updateSpecification, rootD
         console.error(`Failed to parse lockfile at "${lockfilePath}".`);
         throw error;
     }
-    const newChangelogContent = JSON.stringify({
+    const newLockfileContent = JSON.stringify({
         ...lockfileData,
         version: newVersion,
-    }, undefined, 2);
-    return await external_fs_.promises.writeFile(lockfilePath, newChangelogContent);
+    }, undefined, 2) + '\n';
+    return await external_fs_.promises.writeFile(lockfilePath, newLockfileContent);
 }
 /**
  * Updates the changelog file of the given package, using
