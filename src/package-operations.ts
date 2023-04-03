@@ -354,9 +354,11 @@ function getUpdatedDependencyField(
   const newVersionRange = `^${newVersion}`;
   return Object.keys(dependencyObject).reduce(
     (newDeps: Record<string, string>, packageName) => {
-      newDeps[packageName] = packagesToUpdate.has(packageName)
-        ? newVersionRange
-        : dependencyObject[packageName];
+      newDeps[packageName] =
+        packagesToUpdate.has(packageName) &&
+        !dependencyObject[packageName].startsWith('workspace:')
+          ? newVersionRange
+          : dependencyObject[packageName];
 
       return newDeps;
     },
