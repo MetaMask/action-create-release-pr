@@ -356,7 +356,7 @@ function getUpdatedDependencyField(
     (newDeps: Record<string, string>, packageName) => {
       newDeps[packageName] =
         packagesToUpdate.has(packageName) &&
-        dependencyObject[packageName] !== 'workspace:^'
+        !dependencyObject[packageName].startsWith('workspace:')
           ? newVersionRange
           : dependencyObject[packageName];
 
