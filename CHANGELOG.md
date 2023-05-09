@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0]
+### Changed
+- Check for `workspace:^` before replacing the version in package.json ([#108](https://github.com/MetaMask/action-create-release-pr/pull/108))
+
 ## [1.4.3]
 ### Changed
 - Bump `@actions/core` ([#102](https://github.com/MetaMask/action-create-release-pr/pull/102))
@@ -109,7 +113,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.3...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.3...v1.5.0
 [1.4.3]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.0...v1.4.1
