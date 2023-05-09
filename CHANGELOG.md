@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [2.0.0]
-### Uncategorized
+### Changed
+- **BREAKING**: Bump minimum Node version to 16 ([#111](https://github.com/MetaMask/action-create-release-pr/pull/111))
 - build(deps): bump @metamask/auto-changelog from 2.6.0 to 3.1.0 ([#105](https://github.com/MetaMask/action-create-release-pr/pull/105))
-- BREAKING: Bump minimum Node version to 16 ([#111](https://github.com/MetaMask/action-create-release-pr/pull/111))
 
 ## [1.5.0]
 ### Changed
