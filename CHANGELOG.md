@@ -6,6 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0]
+### Changed
+- **BREAKING**: Bump minimum Node version to 16 ([#111](https://github.com/MetaMask/action-create-release-pr/pull/111))
+- build(deps): bump @metamask/auto-changelog from 2.6.0 to 3.1.0 ([#105](https://github.com/MetaMask/action-create-release-pr/pull/105))
+
 ## [1.5.0]
 ### Changed
 - Check for `workspace:^` before replacing the version in package.json ([#108](https://github.com/MetaMask/action-create-release-pr/pull/108))
@@ -113,7 +118,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Uncategorized
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.5.0...v2.0.0
 [1.5.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.3...v1.5.0
 [1.4.3]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.1...v1.4.2
