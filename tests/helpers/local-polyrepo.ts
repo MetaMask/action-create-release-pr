@@ -35,14 +35,18 @@ export default class LocalPolyrepo extends LocalRepo {
   }
 
   /**
-   * Returns the name of the package represented by this repo.
+   * Gets the name of the package represented by this repo.
+   *
+   * @returns The name of the package represented by this repo.
    */
   protected getPackageName() {
     return this.#packageName;
   }
 
   /**
-   * Returns the version of the package represented by this repo.
+   * Gets the version of the package represented by this repo.
+   *
+   * @returns The name of the package represented by this repo.
    */
   protected getPackageVersion() {
     return this.#packageVersion;

@@ -69,7 +69,21 @@ fi
 
 if [[ -n $ARTIFACTS_DIR_PATH ]]; then
   # Write PR number to file so that it can be uploaded as an artifact
-  PR_NUMBER=$(gh pr view --json number | jq '.number')
+
+  # Retry getting the number on a timeout in case GitHub is slow to create the PR
+  PR_NUMBER=''
+  for i in {1..7} # 6 + 1 times total
+  do
+    PR_NUMBER=$(gh pr view --json number | jq '.number')
+    if [[ -n $PR_NUMBER ]]; then
+      break
+    fi
+
+    # sleep 6 times for 10 seconds each, for a total of 60 seconds
+    if (( i < 7 )); then
+      sleep 10
+    fi
+  done
 
   if [[ -z $PR_NUMBER ]]; then
     echo 'Error: "gh pr view" did not return a PR number.'

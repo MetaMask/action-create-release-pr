@@ -16,7 +16,9 @@ export default class RemoteRepo extends Repo {
   }
 
   /**
-   * Returns the directory where this repo is located.
+   * Gets the directory where this repo is located.
+   *
+   * @returns The directory where this repo is located.
    */
   protected getWorkingDir() {
     return path.join(this.environmentDir, 'remote-repo');

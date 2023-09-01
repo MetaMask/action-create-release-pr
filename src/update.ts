@@ -27,9 +27,7 @@ import { ActionInputs, WORKSPACE_ROOT } from './utils';
  * Action entry function. Gets git tags, reads the work space root package.json,
  * and updates the package(s) of the repository per the Action inputs.
  *
- * @see updateMonorepo - For details on monorepo workflow.
- * @see updatePolyrepo - For details on polyrepo (i.e. single-package
- * repository) workflow.
+ * @param actionInputs - The inputs to this action.
  */
 export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
   const repositoryUrl = await getRepositoryHttpsUrl();
@@ -182,6 +180,7 @@ function validateVersion(
       `The new version "${newVersion}" is not greater than the current version "${currentVersion}".`,
     );
   }
+
   if (tags.has(`v${newVersion}`)) {
     throw new Error(
       `Tag "v${newVersion}" for new version "${newVersion}" already exists.`,

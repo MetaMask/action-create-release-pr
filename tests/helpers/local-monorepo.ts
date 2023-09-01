@@ -81,14 +81,18 @@ export default class LocalMonorepo<
   }
 
   /**
-   * Returns the name of the root package.
+   * Gets the name of the root package.
+   *
+   * @returns The name of the root package.
    */
   protected getPackageName() {
     return this.#packages.$root$.name;
   }
 
   /**
-   * Returns the version of the root package.
+   * Gets the version of the root package.
+   *
+   * @returns The name of the root package.
    */
   protected getPackageVersion() {
     return this.#packages.$root$.version;

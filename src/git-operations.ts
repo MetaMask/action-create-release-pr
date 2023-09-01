@@ -20,7 +20,7 @@ const DIFFS: DiffMap = new Map();
  * thrown.
  *
  * @returns The HTTPS URL of the repository, e.g.
- * https://github.com/OrganizationName/RepositoryName
+ * `https://github.com/OrganizationName/RepositoryName`.
  */
 export async function getRepositoryHttpsUrl(): Promise<string> {
   const httpsPrefix = 'https://github.com';

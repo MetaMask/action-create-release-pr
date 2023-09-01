@@ -75,6 +75,8 @@ function getProcessEnvValue(key: string): string {
 /**
  * Validates the inputs to the Action, defined earlier in this file.
  * Throws an error if validation fails.
+ *
+ * @param inputs - The inputs to this action.
  */
 function validateActionInputs(inputs: ActionInputs): void {
   if (!inputs.ReleaseType && !inputs.ReleaseVersion) {
@@ -110,4 +112,16 @@ function validateActionInputs(inputs: ActionInputs): void {
       );
     }
   }
+}
+
+/**
+ * Type guard for determining whether the given value is an error object with a
+ * `code` property, such as the kind of error that Node throws for filesystem
+ * operations.
+ *
+ * @param error - The object to check.
+ * @returns True or false, depending on the result.
+ */
+export function isErrorWithCode(error: unknown): error is { code: string } {
+  return typeof error === 'object' && error !== null && 'code' in error;
 }

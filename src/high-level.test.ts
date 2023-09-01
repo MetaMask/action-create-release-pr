@@ -102,6 +102,7 @@ describe('action-create-release-pr', () => {
                   name: 'root',
                   version: '1.0.0',
                 });
+
                 await environment.writeFile(
                   'CHANGELOG.md',
                   buildChangelog(`
@@ -288,6 +289,7 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'CHANGELOG.md',
                 buildChangelog(`
@@ -431,6 +433,7 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'CHANGELOG.md',
                 buildChangelog(`
@@ -574,6 +577,7 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'CHANGELOG.md',
                 buildChangelog(`
@@ -664,12 +668,14 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '2.0.0',
                   });
+
                   expect(
                     await environment.readJsonFile('packages/a/package.json'),
                   ).toMatchObject({
                     name: 'a',
                     version: '2.0.0',
                   });
+
                   expect(
                     await environment.readJsonFile('packages/b/package.json'),
                   ).toMatchObject({
@@ -716,6 +722,7 @@ describe('action-create-release-pr', () => {
                       [Unreleased]: https://github.com/example-org/example-repo
                     `),
                   );
+
                   await environment.writeFile(
                     'packages/b/CHANGELOG.md',
                     buildChangelog(`
@@ -753,6 +760,7 @@ describe('action-create-release-pr', () => {
                       [2.0.0]: https://github.com/example-org/example-repo/releases/tag/v2.0.0
                     `),
                   );
+
                   expect(
                     await environment.readFile('packages/b/CHANGELOG.md'),
                   ).toStrictEqual(
@@ -819,6 +827,7 @@ describe('action-create-release-pr', () => {
                   await environment.updateJsonFile('package.json', {
                     version: '0.1.3',
                   });
+
                   await environment.updateJsonFile('packages/a/package.json', {
                     version: '0.1.3',
                   });
@@ -838,12 +847,14 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '2.0.0',
                   });
+
                   expect(
                     await environment.readJsonFile('packages/a/package.json'),
                   ).toMatchObject({
                     name: 'a',
                     version: '2.0.0',
                   });
+
                   expect(
                     await environment.readJsonFile('packages/b/package.json'),
                   ).toMatchObject({
@@ -869,10 +880,12 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '1.0.0',
                   });
+
                   await environment.writeJsonFile('packages/a/package.json', {
                     name: 'a',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/a/CHANGELOG.md',
                     buildChangelog(`
@@ -886,10 +899,12 @@ describe('action-create-release-pr', () => {
                       [1.0.0]: https://github.com/example-org/example-repo/releases/tag/v1.0.0
                     `),
                   );
+
                   await environment.writeJsonFile('packages/b/package.json', {
                     name: 'b',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/b/CHANGELOG.md',
                     buildChangelog(`
@@ -941,6 +956,7 @@ describe('action-create-release-pr', () => {
                       [1.0.0]: https://github.com/example-org/example-repo/releases/tag/v1.0.0
                     `),
                   );
+
                   expect(
                     await environment.readFile('packages/b/CHANGELOG.md'),
                   ).toStrictEqual(
@@ -991,10 +1007,12 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '1.0.0',
                   });
+
                   await environment.writeJsonFile('packages/a/package.json', {
                     name: 'a',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/a/CHANGELOG.md',
                     buildChangelog(`
@@ -1003,10 +1021,12 @@ describe('action-create-release-pr', () => {
                       [Unreleased]: https://github.com/example-org/example-repo
                     `),
                   );
+
                   await environment.writeJsonFile('packages/b/package.json', {
                     name: 'b',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/b/CHANGELOG.md',
                     buildChangelog(`
@@ -1042,6 +1062,7 @@ describe('action-create-release-pr', () => {
                       [2.0.0]: https://github.com/example-org/example-repo/releases/tag/v2.0.0
                     `),
                   );
+
                   expect(
                     await environment.readFile('packages/b/CHANGELOG.md'),
                   ).toStrictEqual(
@@ -1078,10 +1099,12 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '1.0.0',
                   });
+
                   await environment.writeJsonFile('packages/a/package.json', {
                     name: 'a',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/a/CHANGELOG.md',
                     buildChangelog(`
@@ -1152,12 +1175,14 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '1.2.3',
                   });
+
                   expect(
                     await environment.readJsonFile('packages/a/package.json'),
                   ).toMatchObject({
                     name: 'a',
                     version: '1.2.3',
                   });
+
                   expect(
                     await environment.readJsonFile('packages/b/package.json'),
                   ).toMatchObject({
@@ -1204,6 +1229,7 @@ describe('action-create-release-pr', () => {
                       [Unreleased]: https://github.com/example-org/example-repo
                     `),
                   );
+
                   await environment.writeFile(
                     'packages/b/CHANGELOG.md',
                     buildChangelog(`
@@ -1241,6 +1267,7 @@ describe('action-create-release-pr', () => {
                       [1.2.3]: https://github.com/example-org/example-repo/releases/tag/v1.2.3
                     `),
                   );
+
                   expect(
                     await environment.readFile('packages/b/CHANGELOG.md'),
                   ).toStrictEqual(
@@ -1307,6 +1334,7 @@ describe('action-create-release-pr', () => {
                   await environment.updateJsonFile('package.json', {
                     version: '1.1.0',
                   });
+
                   await environment.updateJsonFile('packages/a/package.json', {
                     version: '1.1.0',
                   });
@@ -1326,12 +1354,14 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '1.2.0',
                   });
+
                   expect(
                     await environment.readJsonFile('packages/a/package.json'),
                   ).toMatchObject({
                     name: 'a',
                     version: '1.1.0',
                   });
+
                   expect(
                     await environment.readJsonFile('packages/b/package.json'),
                   ).toMatchObject({
@@ -1357,10 +1387,12 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '1.0.0',
                   });
+
                   await environment.writeJsonFile('packages/a/package.json', {
                     name: 'a',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/a/CHANGELOG.md',
                     buildChangelog(`
@@ -1374,10 +1406,12 @@ describe('action-create-release-pr', () => {
                       [1.0.0]: https://github.com/example-org/example-repo/releases/tag/v1.0.0
                     `),
                   );
+
                   await environment.writeJsonFile('packages/b/package.json', {
                     name: 'b',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/b/CHANGELOG.md',
                     buildChangelog(`
@@ -1427,6 +1461,7 @@ describe('action-create-release-pr', () => {
                       [1.0.0]: https://github.com/example-org/example-repo/releases/tag/v1.0.0
                     `),
                   );
+
                   expect(
                     await environment.readFile('packages/b/CHANGELOG.md'),
                   ).toStrictEqual(
@@ -1474,10 +1509,12 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '1.0.0',
                   });
+
                   await environment.writeJsonFile('packages/a/package.json', {
                     name: 'a',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/a/CHANGELOG.md',
                     buildChangelog(`
@@ -1486,10 +1523,12 @@ describe('action-create-release-pr', () => {
                       [Unreleased]: https://github.com/example-org/example-repo
                     `),
                   );
+
                   await environment.writeJsonFile('packages/b/package.json', {
                     name: 'b',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/b/CHANGELOG.md',
                     buildChangelog(`
@@ -1527,6 +1566,7 @@ describe('action-create-release-pr', () => {
                       [Unreleased]: https://github.com/example-org/example-repo
                     `),
                   );
+
                   expect(
                     await environment.readFile('packages/b/CHANGELOG.md'),
                   ).toStrictEqual(
@@ -1560,10 +1600,12 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '1.0.0',
                   });
+
                   await environment.writeJsonFile('packages/a/package.json', {
                     name: 'a',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/a/CHANGELOG.md',
                     buildChangelog(`
@@ -1637,12 +1679,14 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '1.1.1',
                   });
+
                   expect(
                     await environment.readJsonFile('packages/a/package.json'),
                   ).toMatchObject({
                     name: 'a',
                     version: '1.1.1',
                   });
+
                   expect(
                     await environment.readJsonFile('packages/b/package.json'),
                   ).toMatchObject({
@@ -1689,6 +1733,7 @@ describe('action-create-release-pr', () => {
                       [Unreleased]: https://github.com/example-org/example-repo
                     `),
                   );
+
                   await environment.writeFile(
                     'packages/b/CHANGELOG.md',
                     buildChangelog(`
@@ -1726,6 +1771,7 @@ describe('action-create-release-pr', () => {
                       [1.1.1]: https://github.com/example-org/example-repo/releases/tag/v1.1.1
                     `),
                   );
+
                   expect(
                     await environment.readFile('packages/b/CHANGELOG.md'),
                   ).toStrictEqual(
@@ -1792,6 +1838,7 @@ describe('action-create-release-pr', () => {
                   await environment.updateJsonFile('package.json', {
                     version: '1.0.1',
                   });
+
                   await environment.updateJsonFile('packages/a/package.json', {
                     version: '1.0.1',
                   });
@@ -1811,12 +1858,14 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '1.1.1',
                   });
+
                   expect(
                     await environment.readJsonFile('packages/a/package.json'),
                   ).toMatchObject({
                     name: 'a',
                     version: '1.0.1',
                   });
+
                   expect(
                     await environment.readJsonFile('packages/b/package.json'),
                   ).toMatchObject({
@@ -1842,10 +1891,12 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '1.0.0',
                   });
+
                   await environment.writeJsonFile('packages/a/package.json', {
                     name: 'a',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/a/CHANGELOG.md',
                     buildChangelog(`
@@ -1859,10 +1910,12 @@ describe('action-create-release-pr', () => {
                       [1.0.0]: https://github.com/example-org/example-repo/releases/tag/v1.0.0
                     `),
                   );
+
                   await environment.writeJsonFile('packages/b/package.json', {
                     name: 'b',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/b/CHANGELOG.md',
                     buildChangelog(`
@@ -1912,6 +1965,7 @@ describe('action-create-release-pr', () => {
                       [1.0.0]: https://github.com/example-org/example-repo/releases/tag/v1.0.0
                     `),
                   );
+
                   expect(
                     await environment.readFile('packages/b/CHANGELOG.md'),
                   ).toStrictEqual(
@@ -1959,10 +2013,12 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '1.0.0',
                   });
+
                   await environment.writeJsonFile('packages/a/package.json', {
                     name: 'a',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/a/CHANGELOG.md',
                     buildChangelog(`
@@ -1971,10 +2027,12 @@ describe('action-create-release-pr', () => {
                       [Unreleased]: https://github.com/example-org/example-repo
                     `),
                   );
+
                   await environment.writeJsonFile('packages/b/package.json', {
                     name: 'b',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/b/CHANGELOG.md',
                     buildChangelog(`
@@ -2012,6 +2070,7 @@ describe('action-create-release-pr', () => {
                       [Unreleased]: https://github.com/example-org/example-repo
                     `),
                   );
+
                   expect(
                     await environment.readFile('packages/b/CHANGELOG.md'),
                   ).toStrictEqual(
@@ -2045,10 +2104,12 @@ describe('action-create-release-pr', () => {
                     name: 'root',
                     version: '1.0.0',
                   });
+
                   await environment.writeJsonFile('packages/a/package.json', {
                     name: 'a',
                     version: '1.0.0',
                   });
+
                   await environment.writeFile(
                     'packages/a/CHANGELOG.md',
                     buildChangelog(`
@@ -2123,12 +2184,14 @@ describe('action-create-release-pr', () => {
                   name: 'root',
                   version: '0.7.9',
                 });
+
                 expect(
                   await environment.readJsonFile('packages/a/package.json'),
                 ).toMatchObject({
                   name: 'a',
                   version: '0.7.9',
                 });
+
                 expect(
                   await environment.readJsonFile('packages/b/package.json'),
                 ).toMatchObject({
@@ -2175,6 +2238,7 @@ describe('action-create-release-pr', () => {
                     [Unreleased]: https://github.com/example-org/example-repo
                   `),
                 );
+
                 await environment.writeFile(
                   'packages/b/CHANGELOG.md',
                   buildChangelog(`
@@ -2212,6 +2276,7 @@ describe('action-create-release-pr', () => {
                     [0.7.9]: https://github.com/example-org/example-repo/releases/tag/v0.7.9
                   `),
                 );
+
                 expect(
                   await environment.readFile('packages/b/CHANGELOG.md'),
                 ).toStrictEqual(
@@ -2278,6 +2343,7 @@ describe('action-create-release-pr', () => {
                 await environment.updateJsonFile('package.json', {
                   version: '0.1.4',
                 });
+
                 await environment.updateJsonFile('packages/a/package.json', {
                   version: '0.1.4',
                 });
@@ -2297,12 +2363,14 @@ describe('action-create-release-pr', () => {
                   name: 'root',
                   version: '0.2.0',
                 });
+
                 expect(
                   await environment.readJsonFile('packages/a/package.json'),
                 ).toMatchObject({
                   name: 'a',
                   version: '0.2.0',
                 });
+
                 expect(
                   await environment.readJsonFile('packages/b/package.json'),
                 ).toMatchObject({
@@ -2328,10 +2396,12 @@ describe('action-create-release-pr', () => {
                   name: 'root',
                   version: '0.1.0',
                 });
+
                 await environment.writeJsonFile('packages/a/package.json', {
                   name: 'a',
                   version: '0.1.0',
                 });
+
                 await environment.writeFile(
                   'packages/a/CHANGELOG.md',
                   buildChangelog(`
@@ -2345,10 +2415,12 @@ describe('action-create-release-pr', () => {
                     [0.1.0]: https://github.com/example-org/example-repo/releases/tag/v0.1.0
                   `),
                 );
+
                 await environment.writeJsonFile('packages/b/package.json', {
                   name: 'b',
                   version: '0.1.0',
                 });
+
                 await environment.writeFile(
                   'packages/b/CHANGELOG.md',
                   buildChangelog(`
@@ -2398,6 +2470,7 @@ describe('action-create-release-pr', () => {
                     [0.1.0]: https://github.com/example-org/example-repo/releases/tag/v0.1.0
                   `),
                 );
+
                 expect(
                   await environment.readFile('packages/b/CHANGELOG.md'),
                 ).toStrictEqual(
@@ -2448,10 +2521,12 @@ describe('action-create-release-pr', () => {
                   name: 'root',
                   version: '0.1.0',
                 });
+
                 await environment.writeJsonFile('packages/a/package.json', {
                   name: 'a',
                   version: '0.1.0',
                 });
+
                 await environment.writeFile(
                   'packages/a/CHANGELOG.md',
                   buildChangelog(`
@@ -2460,10 +2535,12 @@ describe('action-create-release-pr', () => {
                     [Unreleased]: https://github.com/example-org/example-repo
                   `),
                 );
+
                 await environment.writeJsonFile('packages/b/package.json', {
                   name: 'b',
                   version: '0.1.0',
                 });
+
                 await environment.writeFile(
                   'packages/b/CHANGELOG.md',
                   buildChangelog(`
@@ -2499,6 +2576,7 @@ describe('action-create-release-pr', () => {
                     [0.2.0]: https://github.com/example-org/example-repo/releases/tag/v0.2.0
                   `),
                 );
+
                 expect(
                   await environment.readFile('packages/b/CHANGELOG.md'),
                 ).toStrictEqual(
@@ -2535,10 +2613,12 @@ describe('action-create-release-pr', () => {
                   name: 'root',
                   version: '0.1.0',
                 });
+
                 await environment.writeJsonFile('packages/a/package.json', {
                   name: 'a',
                   version: '0.1.0',
                 });
+
                 await environment.writeFile(
                   'packages/a/CHANGELOG.md',
                   buildChangelog(`
@@ -2672,6 +2752,7 @@ describe('action-create-release-pr', () => {
                 name: 'a',
                 version: '0.2.0',
               });
+
               await environment.writeFile(
                 'packages/a/CHANGELOG.md',
                 buildChangelog(`
@@ -2717,6 +2798,7 @@ describe('action-create-release-pr', () => {
                 name: 'a',
                 version: '0.1.1',
               });
+
               await environment.writeFile(
                 'packages/a/CHANGELOG.md',
                 buildChangelog(`
@@ -2782,12 +2864,14 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '2.0.0',
               });
+
               expect(
                 await environment.readJsonFile('packages/a/package.json'),
               ).toMatchObject({
                 name: 'a',
                 version: '2.0.0',
               });
+
               expect(
                 await environment.readJsonFile('packages/b/package.json'),
               ).toMatchObject({
@@ -2833,6 +2917,7 @@ describe('action-create-release-pr', () => {
                   [Unreleased]: https://github.com/example-org/example-repo
                 `),
               );
+
               await environment.writeFile(
                 'packages/b/CHANGELOG.md',
                 buildChangelog(`
@@ -2859,6 +2944,7 @@ describe('action-create-release-pr', () => {
                   [2.0.0]: https://github.com/example-org/example-repo/releases/tag/v2.0.0
                 `),
               );
+
               expect(
                 await environment.readFile('packages/b/CHANGELOG.md'),
               ).toStrictEqual(
@@ -2925,6 +3011,7 @@ describe('action-create-release-pr', () => {
               await environment.updateJsonFile('package.json', {
                 version: '1.1.10',
               });
+
               await environment.updateJsonFile('packages/a/package.json', {
                 version: '1.1.10',
               });
@@ -2944,12 +3031,14 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '2.0.0',
               });
+
               expect(
                 await environment.readJsonFile('packages/a/package.json'),
               ).toMatchObject({
                 name: 'a',
                 version: '2.0.0',
               });
+
               expect(
                 await environment.readJsonFile('packages/b/package.json'),
               ).toMatchObject({
@@ -2975,10 +3064,12 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.0.0',
               });
+
               await environment.writeJsonFile('packages/a/package.json', {
                 name: 'a',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/a/CHANGELOG.md',
                 buildChangelog(`
@@ -2992,10 +3083,12 @@ describe('action-create-release-pr', () => {
                   [1.0.0]: https://github.com/example-org/example-repo/releases/tag/v1.0.0
                 `),
               );
+
               await environment.writeJsonFile('packages/b/package.json', {
                 name: 'b',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/b/CHANGELOG.md',
                 buildChangelog(`
@@ -3047,6 +3140,7 @@ describe('action-create-release-pr', () => {
                   [1.0.0]: https://github.com/example-org/example-repo/releases/tag/v1.0.0
                 `),
               );
+
               expect(
                 await environment.readFile('packages/b/CHANGELOG.md'),
               ).toStrictEqual(
@@ -3097,10 +3191,12 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.0.0',
               });
+
               await environment.writeJsonFile('packages/a/package.json', {
                 name: 'a',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/a/CHANGELOG.md',
                 buildChangelog(`
@@ -3109,10 +3205,12 @@ describe('action-create-release-pr', () => {
                   [Unreleased]: https://github.com/example-org/example-repo
                 `),
               );
+
               await environment.writeJsonFile('packages/b/package.json', {
                 name: 'b',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/b/CHANGELOG.md',
                 buildChangelog(`
@@ -3148,6 +3246,7 @@ describe('action-create-release-pr', () => {
                   [2.0.0]: https://github.com/example-org/example-repo/releases/tag/v2.0.0
                 `),
               );
+
               expect(
                 await environment.readFile('packages/b/CHANGELOG.md'),
               ).toStrictEqual(
@@ -3184,10 +3283,12 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.0.0',
               });
+
               await environment.writeJsonFile('packages/a/package.json', {
                 name: 'a',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/a/CHANGELOG.md',
                 buildChangelog(`
@@ -3258,12 +3359,14 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.2.0',
               });
+
               expect(
                 await environment.readJsonFile('packages/a/package.json'),
               ).toMatchObject({
                 name: 'a',
                 version: '1.2.0',
               });
+
               expect(
                 await environment.readJsonFile('packages/b/package.json'),
               ).toMatchObject({
@@ -3310,6 +3413,7 @@ describe('action-create-release-pr', () => {
                   [Unreleased]: https://github.com/example-org/example-repo
                 `),
               );
+
               await environment.writeFile(
                 'packages/b/CHANGELOG.md',
                 buildChangelog(`
@@ -3347,6 +3451,7 @@ describe('action-create-release-pr', () => {
                   [1.2.0]: https://github.com/example-org/example-repo/releases/tag/v1.2.0
                 `),
               );
+
               expect(
                 await environment.readFile('packages/b/CHANGELOG.md'),
               ).toStrictEqual(
@@ -3413,6 +3518,7 @@ describe('action-create-release-pr', () => {
               await environment.updateJsonFile('package.json', {
                 version: '1.1.0',
               });
+
               await environment.updateJsonFile('packages/a/package.json', {
                 version: '1.1.0',
               });
@@ -3432,12 +3538,14 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.2.0',
               });
+
               expect(
                 await environment.readJsonFile('packages/a/package.json'),
               ).toMatchObject({
                 name: 'a',
                 version: '1.1.0',
               });
+
               expect(
                 await environment.readJsonFile('packages/b/package.json'),
               ).toMatchObject({
@@ -3463,10 +3571,12 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.0.0',
               });
+
               await environment.writeJsonFile('packages/a/package.json', {
                 name: 'a',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/a/CHANGELOG.md',
                 buildChangelog(`
@@ -3480,10 +3590,12 @@ describe('action-create-release-pr', () => {
                   [1.0.0]: https://github.com/example-org/example-repo/releases/tag/v1.0.0
                 `),
               );
+
               await environment.writeJsonFile('packages/b/package.json', {
                 name: 'b',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/b/CHANGELOG.md',
                 buildChangelog(`
@@ -3533,6 +3645,7 @@ describe('action-create-release-pr', () => {
                   [1.0.0]: https://github.com/example-org/example-repo/releases/tag/v1.0.0
                 `),
               );
+
               expect(
                 await environment.readFile('packages/b/CHANGELOG.md'),
               ).toStrictEqual(
@@ -3580,10 +3693,12 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.0.0',
               });
+
               await environment.writeJsonFile('packages/a/package.json', {
                 name: 'a',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/a/CHANGELOG.md',
                 buildChangelog(`
@@ -3592,10 +3707,12 @@ describe('action-create-release-pr', () => {
                   [Unreleased]: https://github.com/example-org/example-repo
                 `),
               );
+
               await environment.writeJsonFile('packages/b/package.json', {
                 name: 'b',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/b/CHANGELOG.md',
                 buildChangelog(`
@@ -3633,6 +3750,7 @@ describe('action-create-release-pr', () => {
                   [Unreleased]: https://github.com/example-org/example-repo
                 `),
               );
+
               expect(
                 await environment.readFile('packages/b/CHANGELOG.md'),
               ).toStrictEqual(
@@ -3666,10 +3784,12 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.0.0',
               });
+
               await environment.writeJsonFile('packages/a/package.json', {
                 name: 'a',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/a/CHANGELOG.md',
                 buildChangelog(`
@@ -3743,12 +3863,14 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.1.1',
               });
+
               expect(
                 await environment.readJsonFile('packages/a/package.json'),
               ).toMatchObject({
                 name: 'a',
                 version: '1.1.1',
               });
+
               expect(
                 await environment.readJsonFile('packages/b/package.json'),
               ).toMatchObject({
@@ -3795,6 +3917,7 @@ describe('action-create-release-pr', () => {
                   [Unreleased]: https://github.com/example-org/example-repo
                 `),
               );
+
               await environment.writeFile(
                 'packages/b/CHANGELOG.md',
                 buildChangelog(`
@@ -3832,6 +3955,7 @@ describe('action-create-release-pr', () => {
                   [1.1.1]: https://github.com/example-org/example-repo/releases/tag/v1.1.1
                 `),
               );
+
               expect(
                 await environment.readFile('packages/b/CHANGELOG.md'),
               ).toStrictEqual(
@@ -3898,6 +4022,7 @@ describe('action-create-release-pr', () => {
               await environment.updateJsonFile('package.json', {
                 version: '1.0.1',
               });
+
               await environment.updateJsonFile('packages/a/package.json', {
                 version: '1.0.1',
               });
@@ -3917,12 +4042,14 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.0.2',
               });
+
               expect(
                 await environment.readJsonFile('packages/a/package.json'),
               ).toMatchObject({
                 name: 'a',
                 version: '1.0.1',
               });
+
               expect(
                 await environment.readJsonFile('packages/b/package.json'),
               ).toMatchObject({
@@ -3948,10 +4075,12 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.0.0',
               });
+
               await environment.writeJsonFile('packages/a/package.json', {
                 name: 'a',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/a/CHANGELOG.md',
                 buildChangelog(`
@@ -3965,10 +4094,12 @@ describe('action-create-release-pr', () => {
                   [1.0.0]: https://github.com/example-org/example-repo/releases/tag/v1.0.0
                 `),
               );
+
               await environment.writeJsonFile('packages/b/package.json', {
                 name: 'b',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/b/CHANGELOG.md',
                 buildChangelog(`
@@ -4018,6 +4149,7 @@ describe('action-create-release-pr', () => {
                   [1.0.0]: https://github.com/example-org/example-repo/releases/tag/v1.0.0
                 `),
               );
+
               expect(
                 await environment.readFile('packages/b/CHANGELOG.md'),
               ).toStrictEqual(
@@ -4065,10 +4197,12 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.0.0',
               });
+
               await environment.writeJsonFile('packages/a/package.json', {
                 name: 'a',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/a/CHANGELOG.md',
                 buildChangelog(`
@@ -4077,10 +4211,12 @@ describe('action-create-release-pr', () => {
                   [Unreleased]: https://github.com/example-org/example-repo
                 `),
               );
+
               await environment.writeJsonFile('packages/b/package.json', {
                 name: 'b',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/b/CHANGELOG.md',
                 buildChangelog(`
@@ -4118,6 +4254,7 @@ describe('action-create-release-pr', () => {
                   [Unreleased]: https://github.com/example-org/example-repo
                 `),
               );
+
               expect(
                 await environment.readFile('packages/b/CHANGELOG.md'),
               ).toStrictEqual(
@@ -4151,10 +4288,12 @@ describe('action-create-release-pr', () => {
                 name: 'root',
                 version: '1.0.0',
               });
+
               await environment.writeJsonFile('packages/a/package.json', {
                 name: 'a',
                 version: '1.0.0',
               });
+
               await environment.writeFile(
                 'packages/a/CHANGELOG.md',
                 buildChangelog(`

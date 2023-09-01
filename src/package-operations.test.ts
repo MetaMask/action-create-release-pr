@@ -91,6 +91,13 @@ describe('package-operations', () => {
       };
     };
 
+    /**
+     * Returns a mock implementation for `readJsonObjectFile` which is used to
+     * obtain a mock manifest for a package used within the tests in this test
+     * group.
+     *
+     * @returns A function that returns a mock manifest.
+     */
     function getMockReadJsonFile() {
       let mockIndex = -1;
       return async () => {
@@ -339,6 +346,7 @@ describe('package-operations', () => {
           projectRootDirectory: dir,
           repoUrl,
         });
+
         expect(writeFileMock).toHaveBeenNthCalledWith(
           2,
           getMockWritePath(dir, 'CHANGELOG.md'),
@@ -623,6 +631,7 @@ describe('package-operations', () => {
             [ManifestFieldNames.Version]: newVersion,
           }),
         );
+
         expect(writeFileMock).toHaveBeenNthCalledWith(
           2,
           getMockWritePath(dir2, 'package.json'),

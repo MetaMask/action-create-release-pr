@@ -29,6 +29,7 @@ export async function withInitializedEnvironmentsDir<T>(
       throw error;
     }
   }
+
   if (process.env.DEBUG) {
     console.log('Removed temp directory', environmentsDir);
   }

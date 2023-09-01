@@ -113,7 +113,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   }
 
   /**
-   * Returns the directory where this repo is located.
+   * Gets the directory where this repo is located.
+   *
+   * @returns The directory where this repo is located.
    */
   protected getWorkingDir() {
     return path.join(this.environmentDir, 'local-repo');
