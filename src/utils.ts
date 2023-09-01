@@ -18,16 +18,11 @@ export enum AcceptedSemverReleaseTypes {
 /**
  * Add missing properties to "process.env" interface.
  */
-declare global {
-  // eslint-disable-next-line @typescript-eslint/no-namespace
-  namespace NodeJS {
-    interface ProcessEnv {
-      // The root of the workspace running this action
-      GITHUB_WORKSPACE: string;
-      [InputKeys.ReleaseType]: string;
-      [InputKeys.ReleaseVersion]: string;
-    }
-  }
+interface ActionEnv extends NodeJS.ProcessEnv {
+  // The root of the workspace running this action
+  GITHUB_WORKSPACE: string;
+  [InputKeys.ReleaseType]: string;
+  [InputKeys.ReleaseVersion]: string;
 }
 
 /**
@@ -43,7 +38,9 @@ export interface ActionInputs {
   readonly ReleaseVersion: string | null;
 }
 
-export const WORKSPACE_ROOT = process.env.GITHUB_WORKSPACE;
+const env = process.env as ActionEnv;
+
+export const WORKSPACE_ROOT = env.GITHUB_WORKSPACE;
 
 /**
  * Validates and returns the inputs to the Action.
@@ -72,7 +69,7 @@ export function getActionInputs(): ActionInputs {
  * string if the key is not set.
  */
 function getProcessEnvValue(key: string): string {
-  return process.env[key]?.trim() || '';
+  return env[key]?.trim() || '';
 }
 
 /**

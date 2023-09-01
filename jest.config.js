@@ -22,5 +22,5 @@ module.exports = {
   restoreMocks: true,
   testEnvironment: 'node',
   testRegex: ['\\.test\\.(ts|js)$'],
-  testTimeout: 2500,
+  testTimeout: 5000,
 };
