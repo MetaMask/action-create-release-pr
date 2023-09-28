@@ -9,6 +9,7 @@ import * as autoChangelog from '@metamask/auto-changelog';
 import glob from 'glob';
 import * as gitOps from './git-operations';
 import {
+  formatChangelog,
   getMetadataForAllPackages,
   getPackagesToUpdate,
   updatePackage,
@@ -22,6 +23,7 @@ jest.mock('fs', () => ({
     readFile: jest.fn(),
     writeFile: jest.fn(),
   },
+  existsSync: jest.fn(),
 }));
 
 jest.mock('glob');
@@ -345,6 +347,7 @@ describe('package-operations', () => {
           isReleaseCandidate: true,
           projectRootDirectory: dir,
           repoUrl,
+          formatter: expect.any(Function),
         });
 
         expect(writeFileMock).toHaveBeenNthCalledWith(
@@ -468,6 +471,7 @@ describe('package-operations', () => {
           isReleaseCandidate: true,
           projectRootDirectory: dir,
           repoUrl,
+          formatter: expect.any(Function),
         });
       });
 
@@ -516,6 +520,7 @@ describe('package-operations', () => {
           isReleaseCandidate: true,
           projectRootDirectory: dir,
           repoUrl,
+          formatter: expect.any(Function),
         });
       });
 
@@ -641,6 +646,32 @@ describe('package-operations', () => {
           }),
         );
       });
+    });
+  });
+
+  describe('formatChangelog', () => {
+    it('formats a changelog', () => {
+      const unformattedChangelog = `#  Changelog
+##     1.0.0
+
+ - Some change
+## 0.0.1
+
+- Some other change
+`;
+
+      expect(formatChangelog(unformattedChangelog)).toMatchInlineSnapshot(`
+        "# Changelog
+
+        ## 1.0.0
+
+        - Some change
+
+        ## 0.0.1
+
+        - Some other change
+        "
+      `);
     });
   });
 });

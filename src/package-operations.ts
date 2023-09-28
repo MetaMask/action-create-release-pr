@@ -215,6 +215,17 @@ export async function updatePackage(
 }
 
 /**
+ * Format the given changelog using Prettier. This is extracted into a separate
+ * function for coverage purposes.
+ *
+ * @param changelog - The changelog to format.
+ * @returns The formatted changelog.
+ */
+export function formatChangelog(changelog: string) {
+  return prettier.format(changelog, { parser: 'markdown' });
+}
+
+/**
  * Updates the changelog file of the given package, using
  * `@metamask/auto-changelog`. Assumes that the changelog file is located at the
  * package root directory and named "CHANGELOG.md".
@@ -260,8 +271,7 @@ async function updatePackageChangelog(
     isReleaseCandidate: true,
     projectRootDirectory,
     repoUrl: repositoryUrl,
-    formatter: (changelog) =>
-      prettier.format(changelog, { parser: 'markdown' }),
+    formatter: formatChangelog,
   });
   if (!newChangelogContent) {
     const packageName = packageMetadata.manifest.name;
