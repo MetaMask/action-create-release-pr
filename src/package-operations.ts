@@ -13,6 +13,7 @@ import {
   validatePolyrepoPackageManifest,
   writeJsonFile,
 } from '@metamask/action-utils';
+import prettier from 'prettier';
 import { didPackageChange } from './git-operations';
 import { WORKSPACE_ROOT, isErrorWithCode } from './utils';
 
@@ -259,6 +260,8 @@ async function updatePackageChangelog(
     isReleaseCandidate: true,
     projectRootDirectory,
     repoUrl: repositoryUrl,
+    formatter: (changelog) =>
+      prettier.format(changelog, { parser: 'markdown' }),
   });
   if (!newChangelogContent) {
     const packageName = packageMetadata.manifest.name;
