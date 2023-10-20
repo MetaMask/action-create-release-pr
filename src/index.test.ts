@@ -1,4 +1,5 @@
 import * as actionsCore from '@actions/core';
+
 import * as actionModule from './update';
 import * as utils from './utils';
 

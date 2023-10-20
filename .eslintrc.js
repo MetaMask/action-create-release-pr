@@ -4,7 +4,7 @@ module.exports = {
   extends: ['@metamask/eslint-config', '@metamask/eslint-config-nodejs'],
 
   rules: {
-    'node/no-process-env': 'off',
+    'n/no-process-env': 'off',
   },
 
   overrides: [
@@ -12,8 +12,13 @@ module.exports = {
       files: ['**/*.ts'],
       extends: ['@metamask/eslint-config-typescript'],
       rules: {
-        'no-shadow': 'off',
+        '@typescript-eslint/consistent-type-definitions': [
+          'error',
+          'interface',
+        ],
+        '@typescript-eslint/naming-convention': 'off',
         '@typescript-eslint/no-shadow': ['error', { builtinGlobals: true }],
+        'no-shadow': 'off',
       },
     },
     {
@@ -25,6 +30,9 @@ module.exports = {
     {
       files: ['**/*.test.js', '**/*.test.ts'],
       extends: ['@metamask/eslint-config-jest'],
+      rules: {
+        '@typescript-eslint/restrict-template-expressions': 'off',
+      },
     },
   ],
 

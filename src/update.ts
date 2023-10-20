@@ -1,19 +1,22 @@
 import { setOutput as setActionOutput } from '@actions/core';
-import semverIncrement from 'semver/functions/inc';
-import semverDiff from 'semver/functions/diff';
-import semverGt from 'semver/functions/gt';
-import semverMajor from 'semver/functions/major';
-import type { ReleaseType as SemverReleaseType } from 'semver';
+import type {
+  MonorepoPackageManifest,
+  PolyrepoPackageManifest,
+} from '@metamask/action-utils';
 import {
   getPackageManifest,
   isMajorSemverDiff,
   ManifestFieldNames,
-  MonorepoPackageManifest,
-  PolyrepoPackageManifest,
   validateMonorepoPackageManifest,
   validatePackageManifestName,
   validatePackageManifestVersion,
 } from '@metamask/action-utils';
+import type { ReleaseType as SemverReleaseType } from 'semver';
+import semverDiff from 'semver/functions/diff';
+import semverGt from 'semver/functions/gt';
+import semverIncrement from 'semver/functions/inc';
+import semverMajor from 'semver/functions/major';
+
 import { getRepositoryHttpsUrl, getTags } from './git-operations';
 import {
   getMetadataForAllPackages,
@@ -21,7 +24,8 @@ import {
   updatePackage,
   updatePackages,
 } from './package-operations';
-import { ActionInputs, WORKSPACE_ROOT } from './utils';
+import type { ActionInputs } from './utils';
+import { WORKSPACE_ROOT } from './utils';
 
 /**
  * Action entry function. Gets git tags, reads the work space root package.json,

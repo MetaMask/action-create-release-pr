@@ -1,19 +1,22 @@
-import { promises as fs } from 'fs';
-import pathUtils from 'path';
-import { updateChangelog } from '@metamask/auto-changelog';
+import type {
+  PackageManifest,
+  MonorepoPackageManifest,
+} from '@metamask/action-utils';
 import {
   getPackageManifest,
   getWorkspaceLocations,
   ManifestDependencyFieldNames,
   ManifestFieldNames,
-  PackageManifest,
-  MonorepoPackageManifest,
   validateMonorepoPackageManifest,
   validatePackageManifestVersion,
   validatePolyrepoPackageManifest,
   writeJsonFile,
 } from '@metamask/action-utils';
+import { updateChangelog } from '@metamask/auto-changelog';
+import { promises as fs } from 'fs';
+import pathUtils from 'path';
 import prettier from 'prettier';
+
 import { didPackageChange } from './git-operations';
 import { WORKSPACE_ROOT, isErrorWithCode } from './utils';
 
