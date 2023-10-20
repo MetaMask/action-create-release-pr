@@ -3,6 +3,7 @@
 process.env.GITHUB_WORKSPACE = 'root';
 
 import execa from 'execa';
+
 import {
   didPackageChange,
   getRepositoryHttpsUrl,
@@ -10,7 +11,7 @@ import {
 } from './git-operations';
 
 jest.mock('execa');
-const execaMock: jest.Mock<any, any> = execa as any;
+const execaMock: jest.Mock = execa as any;
 
 enum VERSIONS {
   First = '1.0.0',
@@ -163,7 +164,7 @@ describe('getTags', () => {
 
 describe('didPackageChange', () => {
   it('returns true if there are no tags', async () => {
-    expect(await didPackageChange(new Set(), {} as any)).toStrictEqual(true);
+    expect(await didPackageChange(new Set(), {} as any)).toBe(true);
     expect(execaMock).not.toHaveBeenCalled();
   });
 
@@ -179,7 +180,7 @@ describe('didPackageChange', () => {
         dirName: PACKAGES.A.dir,
         dirPath: `packages/${PACKAGES.A.dir}`,
       }),
-    ).toStrictEqual(true);
+    ).toBe(true);
 
     expect(
       await didPackageChange(PARSED_MOCK_TAGS, {
@@ -188,7 +189,7 @@ describe('didPackageChange', () => {
         dirName: PACKAGES.B.dir,
         dirPath: `packages/${PACKAGES.B.dir}`,
       }),
-    ).toStrictEqual(true);
+    ).toBe(true);
     expect(execaMock).toHaveBeenCalledTimes(1);
   });
 
@@ -200,7 +201,7 @@ describe('didPackageChange', () => {
         dirName: PACKAGES.A.dir,
         dirPath: `packages/${PACKAGES.A.dir}`,
       }),
-    ).toStrictEqual(true);
+    ).toBe(true);
     expect(execaMock).not.toHaveBeenCalled();
   });
 
@@ -216,7 +217,7 @@ describe('didPackageChange', () => {
         dirName: PACKAGES.A.dir,
         dirPath: `packages/${PACKAGES.A.dir}`,
       }),
-    ).toStrictEqual(true);
+    ).toBe(true);
 
     expect(
       await didPackageChange(PARSED_MOCK_TAGS, {
@@ -225,7 +226,7 @@ describe('didPackageChange', () => {
         dirName: PACKAGES.B.dir,
         dirPath: `packages/${PACKAGES.B.dir}`,
       }),
-    ).toStrictEqual(false);
+    ).toBe(false);
     expect(execaMock).toHaveBeenCalledTimes(1);
   });
 

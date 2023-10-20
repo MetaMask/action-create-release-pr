@@ -1,9 +1,10 @@
 import * as actionsCore from '@actions/core';
 import * as actionUtils from '@metamask/action-utils';
+
 import * as gitOperations from './git-operations';
 import * as packageOperations from './package-operations';
-import * as utils from './utils';
 import { performUpdate } from './update';
+import * as utils from './utils';
 
 jest.mock('@actions/core', () => {
   return {
