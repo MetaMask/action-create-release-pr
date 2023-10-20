@@ -9,6 +9,7 @@ import {
   getRepositoryHttpsUrl,
   getTags,
 } from './git-operations';
+import type { PackageMetadata } from './package-operations';
 
 jest.mock('execa');
 const execaMock: jest.Mock = execa as any;
@@ -239,6 +240,17 @@ describe('didPackageChange', () => {
         dirPath: `packages/${PACKAGES.A.dir}`,
       }),
     ).rejects.toThrow(/no corresponding tag/u);
+    expect(execaMock).not.toHaveBeenCalled();
+  });
+
+  it('throws if metadata is empty', async () => {
+    await expect(
+      didPackageChange(PARSED_MOCK_TAGS, {
+        manifest: {},
+        dirName: PACKAGES.A.dir,
+        dirPath: `packages/${PACKAGES.A.dir}`,
+      } as PackageMetadata),
+    ).rejects.toThrow(/undefined.*vundefined/u);
     expect(execaMock).not.toHaveBeenCalled();
   });
 });
