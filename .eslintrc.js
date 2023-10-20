@@ -4,7 +4,7 @@ module.exports = {
   extends: ['@metamask/eslint-config', '@metamask/eslint-config-nodejs'],
 
   rules: {
-    'node/no-process-env': 'off',
+    'n/no-process-env': 'off',
   },
 
   overrides: [
