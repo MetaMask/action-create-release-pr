@@ -72,7 +72,7 @@ export function getActionInputs(): ActionInputs {
  * string if the key is not set.
  */
 function getProcessEnvValue(key: string): string {
-  return process.env[key]?.trim() || '';
+  return process.env[key]?.trim() ?? '';
 }
 
 /**
@@ -111,7 +111,11 @@ function validateActionInputs(inputs: ActionInputs): void {
   if (inputs.ReleaseVersion) {
     if (!isValidSemver(inputs.ReleaseVersion)) {
       throw new Error(
-        `"${InputNames.ReleaseVersion}" must be a plain SemVer version string. Received: ${inputs.ReleaseVersion}`,
+        `"${
+          InputNames.ReleaseVersion as string
+        }" must be a plain SemVer version string. Received: ${
+          inputs.ReleaseVersion as string
+        }`,
       );
     }
   }

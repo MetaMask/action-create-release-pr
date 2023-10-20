@@ -143,7 +143,9 @@ export async function didPackageChange(
 
   if (!tags.has(tagOfCurrentVersion)) {
     throw new Error(
-      `Package "${packageName}" has version "${currentVersion}" in its manifest, but no corresponding tag "${tagOfCurrentVersion}" exists.`,
+      `Package "${
+        packageName ?? '`undefined`'
+      }" has version "${currentVersion}" in its manifest, but no corresponding tag "${tagOfCurrentVersion}" exists.`,
     );
   }
   return hasDiff(packageData, tagOfCurrentVersion);
