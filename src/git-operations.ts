@@ -1,6 +1,7 @@
-import semverClean from 'semver/functions/clean';
-import execa from 'execa';
 import { isValidSemver } from '@metamask/action-utils';
+import execa from 'execa';
+import semverClean from 'semver/functions/clean';
+
 import type { PackageMetadata } from './package-operations';
 import { WORKSPACE_ROOT } from './utils';
 
@@ -143,7 +144,9 @@ export async function didPackageChange(
 
   if (!tags.has(tagOfCurrentVersion)) {
     throw new Error(
-      `Package "${packageName}" has version "${currentVersion}" in its manifest, but no corresponding tag "${tagOfCurrentVersion}" exists.`,
+      `Package "${
+        packageName ?? 'undefined'
+      }" has version "${currentVersion}" in its manifest, but no corresponding tag "${tagOfCurrentVersion}" exists.`,
     );
   }
   return hasDiff(packageData, tagOfCurrentVersion);

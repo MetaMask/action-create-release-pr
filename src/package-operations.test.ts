@@ -1,12 +1,11 @@
-import fs from 'fs';
-import cloneDeep from 'lodash.clonedeep';
+import type { ManifestDependencyFieldNames } from '@metamask/action-utils';
 import * as actionUtils from '@metamask/action-utils';
-import {
-  ManifestDependencyFieldNames,
-  ManifestFieldNames,
-} from '@metamask/action-utils';
+import { ManifestFieldNames } from '@metamask/action-utils';
 import * as autoChangelog from '@metamask/auto-changelog';
+import fs from 'fs';
 import glob from 'glob';
+import cloneDeep from 'lodash.clonedeep';
+
 import * as gitOps from './git-operations';
 import {
   formatChangelog,
@@ -257,7 +256,7 @@ describe('package-operations', () => {
   describe('Updating packages', () => {
     const writeFileMock = jest
       .spyOn(fs.promises, 'writeFile')
-      .mockImplementation(() => Promise.resolve());
+      .mockImplementation(async () => Promise.resolve());
     const readFileMock = jest.spyOn(fs.promises, 'readFile');
 
     const updateChangelogMock = jest.spyOn(autoChangelog, 'updateChangelog');
