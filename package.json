@@ -50,7 +50,7 @@
     "execa": "^4.1.0",
     "glob": "^7.1.7",
     "prettier": "^2.8.8",
-    "semver": "^7.3.5"
+    "semver": "^7.6.0"
   },
   "devDependencies": {
     "@lavamoat/allow-scripts": "^2.5.1",
