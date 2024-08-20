@@ -16,6 +16,8 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn setup:postinstall
       - run: yarn build
+      # below step will fail if there're still changes to commit after "yarn build"
+      # see if dist/index.js modified after "yarn build".
       - run: git diff --quiet || { echo 'working directory dirty after "yarn build"'; exit 1; }
       - run: yarn lint
       - run: yarn test
