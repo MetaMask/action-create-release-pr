@@ -12,7 +12,7 @@ import {
   validatePolyrepoPackageManifest,
   writeJsonFile,
 } from '@metamask/action-utils';
-import { updateChangelog } from '@metamask/auto-changelog';
+import { parseChangelog, updateChangelog } from '@metamask/auto-changelog';
 import { promises as fs } from 'fs';
 import pathUtils from 'path';
 import prettier from 'prettier';
@@ -276,7 +276,13 @@ async function updatePackageChangelog(
     repoUrl: repositoryUrl,
     formatter: formatChangelog,
   });
-  if (!newChangelogContent) {
+
+  if (newChangelogContent) {
+    return await fs.writeFile(changelogPath, newChangelogContent);
+  }
+
+  const hasUnReleased = hasUnreleasedChanges(changelogContent, repositoryUrl);
+  if (!hasUnReleased) {
     const packageName = packageMetadata.manifest.name;
     throw new Error(
       `"updateChangelog" returned an empty value for package ${
@@ -285,7 +291,26 @@ async function updatePackageChangelog(
     );
   }
 
-  return await fs.writeFile(changelogPath, newChangelogContent);
+  return undefined;
+}
+
+/**
+ * Checks if there are unreleased changes in the changelog.
+ * @param changelogContent - The string formatted changelog.
+ * @param repositoryUrl - The repository url.
+ * @returns The boolean true if there are unreleased changes, otherwise false.
+ */
+function hasUnreleasedChanges(
+  changelogContent: string,
+  repositoryUrl: string,
+): boolean {
+  const changelog = parseChangelog({
+    changelogContent,
+    repoUrl: repositoryUrl,
+    formatter: formatChangelog,
+  });
+
+  return Object.keys(changelog.getUnreleasedChanges()).length !== 0;
 }
 
 /**
