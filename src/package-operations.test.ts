@@ -40,6 +40,7 @@ jest.mock('@metamask/action-utils/dist/file-utils', () => {
 jest.mock('@metamask/auto-changelog', () => {
   return {
     updateChangelog: jest.fn(),
+    parseChangelog: jest.fn(),
   };
 });
 
@@ -260,6 +261,7 @@ describe('package-operations', () => {
     const readFileMock = jest.spyOn(fs.promises, 'readFile');
 
     const updateChangelogMock = jest.spyOn(autoChangelog, 'updateChangelog');
+    const parseChangelogMock = jest.spyOn(autoChangelog, 'parseChangelog');
 
     const getMockPackageMetadata = (
       dirPath: string,
@@ -354,6 +356,7 @@ describe('package-operations', () => {
           getMockWritePath(dir, 'CHANGELOG.md'),
           mockNewChangelog,
         );
+        expect(parseChangelogMock).toHaveBeenCalledTimes(0);
       });
 
       it('re-throws changelog read error', async () => {
@@ -437,8 +440,19 @@ describe('package-operations', () => {
         const changelogContent = 'I am a changelog.';
         readFileMock.mockImplementationOnce(async () => changelogContent);
 
-        // This will cause an error
+        // no new changelog content and no unreleased changes will cause an error
         updateChangelogMock.mockImplementation(async () => '');
+        const actualChangelog = jest.requireActual(
+          '@metamask/auto-changelog/dist/changelog',
+        );
+        parseChangelogMock.mockImplementationOnce(() => {
+          return {
+            ...actualChangelog,
+            getUnreleasedChanges() {
+              return {};
+            },
+          };
+        });
 
         const packageMetadata = getMockPackageMetadata(dir, manifest);
         const updateSpecification = {
@@ -472,6 +486,74 @@ describe('package-operations', () => {
           repoUrl,
           formatter: expect.any(Function),
         });
+        expect(parseChangelogMock).toHaveBeenCalledTimes(1);
+        expect(parseChangelogMock).toHaveBeenCalledWith({
+          changelogContent,
+          repoUrl,
+          formatter: expect.any(Function),
+        });
+      });
+
+      it('succeeds if updated changelog is empty, but there are unreleased changes', async () => {
+        const originalVersion = '1.0.0';
+        const newVersion = '1.0.1';
+        const dir = mockDirs[0];
+        const name = packageNames[0];
+        const manifest = getMockManifest(name, originalVersion);
+
+        const repoUrl = 'https://fake';
+        const changelogContent = 'I am a changelog.';
+        readFileMock.mockImplementationOnce(async () => changelogContent);
+
+        updateChangelogMock.mockImplementation(async () => '');
+        const actualChangelog = jest.requireActual(
+          '@metamask/auto-changelog/dist/changelog',
+        );
+        parseChangelogMock.mockImplementationOnce(() => {
+          return {
+            ...actualChangelog,
+            getUnreleasedChanges() {
+              return {
+                Fixed: ['Something'],
+              };
+            },
+          };
+        });
+
+        const packageMetadata = getMockPackageMetadata(dir, manifest);
+        const updateSpecification = {
+          newVersion,
+          packagesToUpdate: new Set(packageNames),
+          repositoryUrl: repoUrl,
+          shouldUpdateChangelog: true,
+          synchronizeVersions: false,
+        };
+
+        await updatePackage(packageMetadata, updateSpecification);
+        expect(writeFileMock).toHaveBeenCalledTimes(1);
+        expect(writeFileMock).toHaveBeenNthCalledWith(
+          1,
+          getMockWritePath(dir, 'package.json'),
+          jsonStringify({
+            ...cloneDeep(manifest),
+            [ManifestFieldNames.Version]: newVersion,
+          }),
+        );
+        expect(updateChangelogMock).toHaveBeenCalledTimes(1);
+        expect(updateChangelogMock).toHaveBeenCalledWith({
+          changelogContent,
+          currentVersion: newVersion,
+          isReleaseCandidate: true,
+          projectRootDirectory: dir,
+          repoUrl,
+          formatter: expect.any(Function),
+        });
+        expect(parseChangelogMock).toHaveBeenCalledTimes(1);
+        expect(parseChangelogMock).toHaveBeenCalledWith({
+          changelogContent,
+          repoUrl,
+          formatter: expect.any(Function),
+        });
       });
 
       it('throws if updated changelog is empty, and handles missing package name', async () => {
@@ -486,8 +568,19 @@ describe('package-operations', () => {
         const changelogContent = 'I am a changelog.';
         readFileMock.mockImplementationOnce(async () => changelogContent);
 
-        // This will cause an error
+        // no new changelog content and no unreleased changes will cause an error
         updateChangelogMock.mockImplementation(async () => '');
+        const actualChangelog = jest.requireActual(
+          '@metamask/auto-changelog/dist/changelog',
+        );
+        parseChangelogMock.mockImplementationOnce(() => {
+          return {
+            ...actualChangelog,
+            getUnreleasedChanges() {
+              return {};
+            },
+          };
+        });
 
         const packageMetadata = getMockPackageMetadata(dir, manifest);
         const updateSpecification = {
@@ -518,6 +611,12 @@ describe('package-operations', () => {
           currentVersion: newVersion,
           isReleaseCandidate: true,
           projectRootDirectory: dir,
+          repoUrl,
+          formatter: expect.any(Function),
+        });
+        expect(parseChangelogMock).toHaveBeenCalledTimes(1);
+        expect(parseChangelogMock).toHaveBeenCalledWith({
+          changelogContent,
           repoUrl,
           formatter: expect.any(Function),
         });
