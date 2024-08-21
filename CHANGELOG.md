@@ -11,9 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Fixed updatePackageChangelog to not to throw when there are unreleased changes ([#139](https://github.com/MetaMask/action-create-release-pr/pull/139))
-- Enabled MetaMask security code scanner ([#130](https://github.com/MetaMask/action-create-release-pr/pull/130))
 - build(deps): bump @metamask/auto-changelog from 3.3.0 to 3.4.4 ([#127](https://github.com/MetaMask/action-create-release-pr/pull/127), [#124](https://github.com/MetaMask/action-create-release-pr/pull/124))
+
+### Fixed
+
+- Fixed updatePackageChangelog to not to throw when there are unreleased changes ([#139](https://github.com/MetaMask/action-create-release-pr/pull/139))
 
 ## [3.0.0]
 
