@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.1]
+
+### Uncategorized
+
+- fix updatePackageChangelog to not to throw when there are unreleased changes ([#139](https://github.com/MetaMask/action-create-release-pr/pull/139))
+- Update CODEOWNERS ([#136](https://github.com/MetaMask/action-create-release-pr/pull/136))
+- chore: declare yarn version 1.22.22 in package.json ([#135](https://github.com/MetaMask/action-create-release-pr/pull/135))
+- Enabling MetaMask security code scanner ([#130](https://github.com/MetaMask/action-create-release-pr/pull/130))
+- build(deps): bump @metamask/auto-changelog from 3.4.3 to 3.4.4 ([#127](https://github.com/MetaMask/action-create-release-pr/pull/127))
+- Add Shared Libraries team in codeowners file ([#128](https://github.com/MetaMask/action-create-release-pr/pull/128))
+- build(deps): bump @metamask/auto-changelog from 3.3.0 to 3.4.3 ([#124](https://github.com/MetaMask/action-create-release-pr/pull/124))
+
 ## [3.0.0]
 
 ### Changed
@@ -170,7 +182,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v3.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v3.0.1...HEAD
+[3.0.1]: https://github.com/MetaMask/action-create-release-pr/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.5.0...v2.0.0
 [1.5.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.4.3...v1.5.0
