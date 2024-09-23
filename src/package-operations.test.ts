@@ -748,7 +748,7 @@ describe('package-operations', () => {
   });
 
   describe('formatChangelog', () => {
-    it('formats a changelog', () => {
+    it('formats a changelog', async () => {
       const unformattedChangelog = `#  Changelog
 ##     1.0.0
 
@@ -758,7 +758,8 @@ describe('package-operations', () => {
 - Some other change
 `;
 
-      expect(formatChangelog(unformattedChangelog)).toMatchInlineSnapshot(`
+      expect(await formatChangelog(unformattedChangelog))
+        .toMatchInlineSnapshot(`
         "# Changelog
 
         ## 1.0.0
