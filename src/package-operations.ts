@@ -15,7 +15,8 @@ import {
 import { parseChangelog, updateChangelog } from '@metamask/auto-changelog';
 import { promises as fs } from 'fs';
 import pathUtils from 'path';
-import prettier from 'prettier';
+import * as markdown from 'prettier/plugins/markdown';
+import { format } from 'prettier/standalone';
 
 import { didPackageChange } from './git-operations';
 import { WORKSPACE_ROOT, isErrorWithCode } from './utils';
@@ -224,8 +225,11 @@ export async function updatePackage(
  * @param changelog - The changelog to format.
  * @returns The formatted changelog.
  */
-export function formatChangelog(changelog: string) {
-  return prettier.format(changelog, { parser: 'markdown' });
+export async function formatChangelog(changelog: string) {
+  return await format(changelog, {
+    parser: 'markdown',
+    plugins: [markdown],
+  });
 }
 
 /**
