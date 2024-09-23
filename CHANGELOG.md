@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0]
+
+### Uncategorized
+
+- BREAKING: Bump `@metamask/auto-changelog` to `^4.0.0`, and bump related dependencies ([#142](https://github.com/MetaMask/action-create-release-pr/pull/142))
+
 ## [3.0.1]
 
 ### Changed
@@ -180,7 +186,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v3.0.1...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v3.0.1...v4.0.0
 [3.0.1]: https://github.com/MetaMask/action-create-release-pr/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v1.5.0...v2.0.0
