@@ -9,9 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [4.0.0]
 
-### Uncategorized
+### Changed
 
-- BREAKING: Bump `@metamask/auto-changelog` to `^4.0.0`, and bump related dependencies ([#142](https://github.com/MetaMask/action-create-release-pr/pull/142))
+- **BREAKING:** Bump minimum Node.js version to `^18.18` ([#142](https://github.com/MetaMask/action-create-release-pr/pull/142))
+- **BREAKING:** Bump `@metamask/auto-changelog` to `^4.0.0` ([#142](https://github.com/MetaMask/action-create-release-pr/pull/142))
+  - This requires `prettier@>=3.0.0`.
 
 ## [3.0.1]
 
