@@ -668,9 +668,9 @@
     semver "^7.3.5"
 
 "@metamask/auto-changelog@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/@metamask/auto-changelog/-/auto-changelog-4.0.0.tgz#acf3aad47ddf37b339e2dfacedf6bff15b855a2d"
-  integrity sha512-L9eIi8Fa8598T9+mu7drjHGyKqrydCNRvjZOiD4aCptT/mgndkDu2kh+G7NnlqkIBj27hoVthlzA33dgrBIskQ==
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/@metamask/auto-changelog/-/auto-changelog-4.1.0.tgz#edf8e184993aba19bc0e97ab3f257dd9eac4a961"
+  integrity sha512-hOorMm/9pJ93ISthGQCOGiEdCLAnrYmCbKhFI0DM1DPexCTKEWOpGyxA+9oGoLGU6vKSmFaTGCX8mioBadqOAg==
   dependencies:
     diff "^5.0.0"
     execa "^5.1.1"
