@@ -667,10 +667,10 @@
     glob "^7.1.7"
     semver "^7.3.5"
 
-"@metamask/auto-changelog@^4.0.0":
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/@metamask/auto-changelog/-/auto-changelog-4.0.0.tgz#acf3aad47ddf37b339e2dfacedf6bff15b855a2d"
-  integrity sha512-L9eIi8Fa8598T9+mu7drjHGyKqrydCNRvjZOiD4aCptT/mgndkDu2kh+G7NnlqkIBj27hoVthlzA33dgrBIskQ==
+"@metamask/auto-changelog@^5.0.1":
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/@metamask/auto-changelog/-/auto-changelog-5.0.1.tgz#8195e4c02cc80ab80c49a4570b6cfc9a297d82c1"
+  integrity sha512-OJTm5VXSPP2kEP2Y5IGU7dpA6pvwthL8Jgeaz8UdoyHkO0fO81aqlekjPH0Zm9m/emXskiQp0pTSZGoQ1Pfd5w==
   dependencies:
     diff "^5.0.0"
     execa "^5.1.1"
