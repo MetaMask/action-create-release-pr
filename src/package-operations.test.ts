@@ -179,7 +179,13 @@ describe('package-operations', () => {
           private: true,
           workspaces: ['packages/*'],
         }))
-        .mockImplementationOnce(async () => getMockManifest(names[1], version));
+        .mockImplementationOnce(
+          async () =>
+            getMockManifest(names[1], version) as unknown as Record<
+              string,
+              unknown
+            >,
+        );
 
       expect(await getMetadataForAllPackages(['packages/*'])).toStrictEqual({
         [names[0]]: {
