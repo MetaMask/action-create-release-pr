@@ -1,7 +1,9 @@
-import type { ManifestDependencyFieldNames } from '@metamask/action-utils';
+import type {
+  ManifestDependencyFieldNames,
+  PackageManifest,
+} from '@metamask/action-utils';
 import * as actionUtils from '@metamask/action-utils';
 import { ManifestFieldNames } from '@metamask/action-utils';
-import type { PackageManifest } from '@metamask/action-utils/dist/package-utils';
 import * as autoChangelog from '@metamask/auto-changelog';
 import fs from 'fs';
 import glob from 'glob';
