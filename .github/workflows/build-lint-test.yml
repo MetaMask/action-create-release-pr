@@ -9,11 +9,10 @@ jobs:
   build-lint-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Checkout and setup environment
+        uses: MetaMask/action-checkout-and-setup@v3
         with:
-          node-version-file: '.nvmrc'
-      - run: yarn install --frozen-lockfile
+          is-high-risk-environment: false
       - run: yarn setup:postinstall
       - run: yarn build
       # below step will fail if there're still changes to commit after "yarn build"
