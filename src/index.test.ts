@@ -37,7 +37,7 @@ describe('main entry file', () => {
     const logErrorMock = jest.spyOn(actionsCore, 'error');
     const setFailedMock = jest.spyOn(actionsCore, 'setFailed');
 
-    import('.');
+    await import('.');
     await new Promise<void>((resolve) => {
       setImmediate(() => {
         expect(getActionInputsMock).toHaveBeenCalledTimes(1);

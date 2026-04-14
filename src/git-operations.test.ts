@@ -1,4 +1,4 @@
-/* eslint-disable import/first */
+/* eslint-disable import-x/first */
 // This must be set before the import, so that the default root workspace is set
 process.env.GITHUB_WORKSPACE = 'root';
 

@@ -178,7 +178,7 @@ function validateVersion(
   currentVersion: string,
   newVersion: string,
   tags: ReadonlySet<string>,
-) {
+): void {
   if (!semverGt(newVersion, currentVersion)) {
     throw new Error(
       `The new version "${newVersion}" is not greater than the current version "${currentVersion}".`,

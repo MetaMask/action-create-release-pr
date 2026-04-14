@@ -17,7 +17,7 @@ const mockProcessEnv = ({
 }: {
   releaseType?: string;
   releaseVersion?: string;
-}) => {
+}): void => {
   if (releaseType !== undefined) {
     process.env[InputKeys.ReleaseType] = releaseType;
   }
@@ -27,7 +27,7 @@ const mockProcessEnv = ({
   }
 };
 
-const unmockProcessEnv = () => {
+const unmockProcessEnv = (): void => {
   Object.values(InputKeys).forEach((key) => delete process.env[key]);
 };
 

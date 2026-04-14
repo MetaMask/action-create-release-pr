@@ -15763,6 +15763,10 @@ async function updatePackage(packageMetadata, updateSpecification, rootDir = WOR
  * @returns The formatted changelog.
  */
 async function formatChangelog(changelog) {
+    // TypeScript is loading Jest's `@types/prettier`, which uses Prettier 2
+    // (non-async). This function will be removed in a future refactor, so
+    // ignoring the type error for now.
+    // eslint-disable-next-line @typescript-eslint/await-thenable
     return await gu(changelog, {
         parser: 'markdown',
         plugins: [markdown_namespaceObject],
@@ -15821,6 +15825,7 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
 }
 /**
  * Checks if there are unreleased changes in the changelog.
+ *
  * @param changelogContent - The string formatted changelog.
  * @param repositoryUrl - The repository url.
  * @returns The boolean true if there are unreleased changes, otherwise false.

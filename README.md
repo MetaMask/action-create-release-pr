@@ -92,6 +92,5 @@ The project follows the same release process as the other GitHub Actions in the 
    - If changes are made to the base branch, the release branch will need to be updated with these changes and review/QA will need to restart again. As such, it's probably best to avoid merging other PRs into the base branch while review is underway.
 
 6. Squash & Merge the release.
-
    - This should trigger the [`action-publish-release`](https://github.com/MetaMask/action-publish-release) workflow to tag the final release commit and publish the release on GitHub. Since this repository is a GitHub Action, this completes the release process.
      - Note that the shorthand major version tag is automatically updated when the release PR is merged. See [`publish-release.yml`](https://github.com/MetaMask/action-create-release-pr/blob/main/.github/workflows/publish-release.yml) for details.

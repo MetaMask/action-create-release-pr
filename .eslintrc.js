@@ -24,7 +24,7 @@ module.exports = {
     {
       files: ['**/*.d.ts'],
       rules: {
-        'import/unambiguous': 'off',
+        'import-x/unambiguous': 'off',
       },
     },
     {
