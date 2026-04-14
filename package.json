@@ -49,7 +49,7 @@
     "@metamask/auto-changelog": "^6.1.0",
     "execa": "^4.1.0",
     "glob": "^7.1.7",
-    "prettier": "^2.7.1",
+    "prettier": "^3.3.3",
     "semver": "^7.3.5"
   },
   "devDependencies": {
@@ -73,7 +73,7 @@
     "eslint-plugin-jest": "^27.9.0",
     "eslint-plugin-jsdoc": "^47.0.2",
     "eslint-plugin-n": "^16.6.2",
-    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-promise": "^6.1.1",
     "jest": "^28.1.0",
     "lodash.clonedeep": "^4.5.0",

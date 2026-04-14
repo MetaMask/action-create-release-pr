@@ -225,7 +225,11 @@ export async function updatePackage(
  * @param changelog - The changelog to format.
  * @returns The formatted changelog.
  */
-export async function formatChangelog(changelog: string) {
+export async function formatChangelog(changelog: string): Promise<string> {
+  // TypeScript is loading Jest's `@types/prettier`, which uses Prettier 2
+  // (non-async). This function will be removed in a future refactor, so
+  // ignoring the type error for now.
+  // eslint-disable-next-line @typescript-eslint/await-thenable
   return await format(changelog, {
     parser: 'markdown',
     plugins: [markdown],
@@ -300,6 +304,7 @@ async function updatePackageChangelog(
 
 /**
  * Checks if there are unreleased changes in the changelog.
+ *
  * @param changelogContent - The string formatted changelog.
  * @param repositoryUrl - The repository url.
  * @returns The boolean true if there are unreleased changes, otherwise false.
@@ -332,7 +337,7 @@ function hasUnreleasedChanges(
 function getUpdatedManifest(
   currentManifest: Partial<PackageManifest>,
   updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
-) {
+): Partial<PackageManifest> {
   const { newVersion } = updateSpecification;
   if (
     isMonorepoUpdateSpecification(updateSpecification) &&

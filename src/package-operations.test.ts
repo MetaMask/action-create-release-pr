@@ -1,6 +1,7 @@
 import type { ManifestDependencyFieldNames } from '@metamask/action-utils';
 import * as actionUtils from '@metamask/action-utils';
 import { ManifestFieldNames } from '@metamask/action-utils';
+import type { PackageManifest } from '@metamask/action-utils/dist/package-utils';
 import * as autoChangelog from '@metamask/auto-changelog';
 import fs from 'fs';
 import glob from 'glob';
@@ -22,6 +23,7 @@ jest.mock('fs', () => ({
     readFile: jest.fn(),
     writeFile: jest.fn(),
   },
+  // eslint-disable-next-line n/no-sync
   existsSync: jest.fn(),
 }));
 
@@ -67,13 +69,14 @@ type DependencyFieldsDict = Partial<
 >;
 
 // Convenience method to match behavior of utils.writeJsonFile
-const jsonStringify = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
+const jsonStringify = (value: unknown): string =>
+  `${JSON.stringify(value, null, 2)}\n`;
 
 const getMockManifest = (
   name: string,
   version: string,
   dependencyFields: DependencyFieldsDict = {},
-) => {
+): PackageManifest => {
   return { name, version, ...dependencyFields };
 };
 
@@ -84,7 +87,12 @@ describe('package-operations', () => {
     const version = '1.0.0';
     const SOME_FILE = 'someFile';
 
-    const getMockPackageMetadata = (index: number) => {
+    const getMockPackageMetadata: (index: number) => {
+      dirName: string;
+      manifest: PackageManifest;
+      name: string;
+      dirPath: string;
+    } = (index: number) => {
       return {
         dirName: dirs[index],
         manifest: getMockManifest(names[index], version),
@@ -102,9 +110,12 @@ describe('package-operations', () => {
      */
     function getMockReadJsonFile() {
       let mockIndex = -1;
-      return async () => {
+      return async (): Promise<Record<string, unknown>> => {
         mockIndex += 1;
-        return getMockManifest(names[mockIndex], version);
+        return getMockManifest(names[mockIndex], version) as unknown as Record<
+          string,
+          unknown
+        >;
       };
     }
 
@@ -113,8 +124,8 @@ describe('package-operations', () => {
         path: string,
       ) => {
         return path.endsWith(SOME_FILE)
-          ? { isDirectory: () => false }
-          : { isDirectory: () => true };
+          ? { isDirectory: (): boolean => false }
+          : { isDirectory: (): boolean => true };
       }) as any);
     });
 
@@ -265,15 +276,15 @@ describe('package-operations', () => {
 
     const getMockPackageMetadata = (
       dirPath: string,
-      manifest: ReturnType<typeof getMockManifest>,
-    ) => {
+      manifest: PackageManifest,
+    ): { dirPath: string; manifest: PackageManifest } => {
       return {
         dirPath,
         manifest,
       };
     };
 
-    const getMockWritePath = (dirPath: string, fileName: string) =>
+    const getMockWritePath = (dirPath: string, fileName: string): string =>
       `root/${dirPath}/${fileName}`;
 
     const mockDirs = ['dir1', 'dir2', 'dir3'];
@@ -448,7 +459,7 @@ describe('package-operations', () => {
         parseChangelogMock.mockImplementationOnce(() => {
           return {
             ...actualChangelog,
-            getUnreleasedChanges() {
+            getUnreleasedChanges(): Record<string, never> {
               return {};
             },
           };
@@ -512,7 +523,7 @@ describe('package-operations', () => {
         parseChangelogMock.mockImplementationOnce(() => {
           return {
             ...actualChangelog,
-            getUnreleasedChanges() {
+            getUnreleasedChanges(): { Fixed: string[] } {
               return {
                 Fixed: ['Something'],
               };
@@ -576,7 +587,7 @@ describe('package-operations', () => {
         parseChangelogMock.mockImplementationOnce(() => {
           return {
             ...actualChangelog,
-            getUnreleasedChanges() {
+            getUnreleasedChanges(): Record<string, never> {
               return {};
             },
           };

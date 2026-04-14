@@ -2143,1173 +2143,6 @@ exports.isMajorSemverDiff = isMajorSemverDiff;
 
 /***/ }),
 
-/***/ 1610:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __classPrivateFieldSet = (this && this.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
-    if (kind === "m") throw new TypeError("Private method is not writable");
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
-    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
-};
-var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (receiver, state, kind, f) {
-    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
-    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
-    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
-};
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-var _Changelog_releases, _Changelog_changes, _Changelog_repoUrl, _Changelog_tagPrefix, _Changelog_formatter, _Changelog_packageRename;
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getKnownPropertyNames = exports.format = void 0;
-const markdown = __importStar(__nccwpck_require__(9014));
-const standalone_1 = __nccwpck_require__(9882);
-const semver_1 = __importDefault(__nccwpck_require__(1383));
-const constants_1 = __nccwpck_require__(1373);
-/**
- * Format a Markdown changelog string.
- *
- * @param changelog - The changelog string to format.
- * @returns The formatted changelog string.
- */
-async function format(changelog) {
-    return (0, standalone_1.format)(changelog, {
-        parser: 'markdown',
-        plugins: [markdown],
-    });
-}
-exports.format = format;
-/**
- * `Object.getOwnPropertyNames()` is intentionally generic: it returns the
- * immediate property names of an object, but it cannot make guarantees about
- * the contents of that object, so the type of the property names is merely
- * `string[]`. While this is technically accurate, it is also unnecessary if we
- * have an object with a type that we own (such as an enum).
- *
- * IMPORTANT: This is copied from `@metamask/utils` in order to avoid a circular
- * dependency between this package and `@metamask/utils`.
- *
- * @param object - The plain object.
- * @returns The own property names of the object which are assigned a type
- * derived from the object itself.
- */
-function getKnownPropertyNames(object) {
-    return Object.getOwnPropertyNames(object);
-}
-exports.getKnownPropertyNames = getKnownPropertyNames;
-const changelogTitle = '# Changelog';
-const changelogDescription = `All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).`;
-// Stringification helpers
-/**
- * Stringify a changelog category section.
- *
- * @param category - The title of the changelog category.
- * @param changes - The changes included in this category.
- * @returns The stringified category section.
- */
-function stringifyCategory(category, changes) {
-    const categoryHeader = `### ${category}`;
-    if (changes.length === 0) {
-        return categoryHeader;
-    }
-    const changeDescriptions = changes
-        .map((description) => `- ${description}`)
-        .join('\n');
-    return `${categoryHeader}\n${changeDescriptions}`;
-}
-/**
- * Stringify a changelog release section.
- *
- * @param version - The release version.
- * @param categories - The categories of changes included in this release.
- * @param options - Additional release options.
- * @param options.date - The date of the release.
- * @param options.status - The status of the release (e.g., "DEPRECATED").
- * @returns The stringified release section.
- */
-function stringifyRelease(version, categories, { date, status } = {}) {
-    const releaseHeader = `## [${version}]${date ? ` - ${date}` : ''}${status ? ` [${status}]` : ''}`;
-    const categorizedChanges = constants_1.orderedChangeCategories
-        .filter((category) => categories[category])
-        .map((category) => {
-        var _a;
-        const changes = (_a = categories[category]) !== null && _a !== void 0 ? _a : [];
-        return stringifyCategory(category, changes);
-    })
-        .join('\n\n');
-    if (categorizedChanges === '') {
-        return releaseHeader;
-    }
-    return `${releaseHeader}\n${categorizedChanges}`;
-}
-/**
- * Stringify a set of changelog release sections.
- *
- * @param releases - The releases to stringify.
- * @param changes - The set of changes to include, organized by release.
- * @returns The stringified set of release sections.
- */
-function stringifyReleases(releases, changes) {
-    const stringifiedUnreleased = stringifyRelease(constants_1.unreleased, changes[constants_1.unreleased]);
-    const stringifiedReleases = releases.map(({ version, date, status }) => {
-        const categories = changes[version];
-        return stringifyRelease(version, categories, { date, status });
-    });
-    return [stringifiedUnreleased, ...stringifiedReleases].join('\n\n');
-}
-/**
- * Return the given URL with a trailing slash. It is returned unaltered if it
- * already has a trailing slash.
- *
- * @param url - The URL string.
- * @returns The URL string with a trailing slash.
- */
-function withTrailingSlash(url) {
-    return url.endsWith('/') ? url : `${url}/`;
-}
-/**
- * Get the GitHub URL for comparing two git commits.
- *
- * @param repoUrl - The URL for the GitHub repository.
- * @param firstRef - A reference (e.g., commit hash, tag, etc.) to the first commit to compare.
- * @param secondRef - A reference (e.g., commit hash, tag, etc.) to the second commit to compare.
- * @returns The comparison URL for the two given commits.
- */
-function getCompareUrl(repoUrl, firstRef, secondRef) {
-    return `${withTrailingSlash(repoUrl)}compare/${firstRef}...${secondRef}`;
-}
-/**
- * Get a GitHub tag URL.
- *
- * @param repoUrl - The URL for the GitHub repository.
- * @param tag - The tag name.
- * @returns The URL for the given tag.
- */
-function getTagUrl(repoUrl, tag) {
-    return `${withTrailingSlash(repoUrl)}releases/tag/${tag}`;
-}
-/**
- * Get a stringified list of link definitions for the given set of releases. The first release is
- * linked to the corresponding tag, and each subsequent release is linked to a comparison with the
- * previous release.
- *
- * @param repoUrl - The URL for the GitHub repository.
- * @param tagPrefix - The prefix used in tags before the version number.
- * @param releases - The releases to generate link definitions for.
- * @param packageRename - The package rename properties
- * An optional, which is required only in case of package renamed.
- * @returns The stringified release link definitions.
- */
-function stringifyLinkReferenceDefinitions(repoUrl, tagPrefix, releases, packageRename) {
-    const unreleasedLinkReferenceDefinition = getUnreleasedLinkReferenceDefinition(repoUrl, tagPrefix, releases, packageRename);
-    const releaseLinkReferenceDefinitions = getReleaseLinkReferenceDefinitions(repoUrl, tagPrefix, releases, packageRename).join('\n');
-    return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${releases.length > 0 ? '\n' : ''}`;
-}
-/**
- * Get a string of unreleased link reference definition.
- *
- * @param repoUrl - The URL for the GitHub repository.
- * @param tagPrefix - The prefix used in tags before the version number.
- * @param releases - The releases to generate link definitions for.
- * @param packageRename - The package rename properties.
- * @returns A unreleased link reference definition string.
- */
-function getUnreleasedLinkReferenceDefinition(repoUrl, tagPrefix, releases, packageRename) {
-    // The "Unreleased" section represents all changes made since the *highest*
-    // release, not the most recent release. This is to accomodate patch releases
-    // of older versions that don't represent the latest set of changes.
-    //
-    // For example, if a library has a v2.0.0 but the v1.0.0 release needed a
-    // security update, the v1.0.1 release would then be the most recent, but the
-    // range of unreleased changes would remain `v2.0.0...HEAD`.
-    //
-    // If there have not been any releases yet, the repo URL is used directly as
-    // the link definition.
-    // A list of release versions in descending SemVer order
-    const descendingSemverVersions = releases
-        .map(({ version }) => version)
-        .sort((a, b) => {
-        return semver_1.default.gt(a, b) ? -1 : 1;
-    });
-    const latestSemverVersion = descendingSemverVersions[0];
-    const hasReleases = descendingSemverVersions.length > 0;
-    // if there is a package renamed, the tag prefix before the rename will be considered for compare
-    // [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.2...HEAD
-    const tagPrefixToCompare = packageRename && packageRename.versionBeforeRename === latestSemverVersion
-        ? packageRename.tagPrefixBeforeRename
-        : tagPrefix;
-    return `[${constants_1.unreleased}]: ${hasReleases
-        ? getCompareUrl(repoUrl, `${tagPrefixToCompare}${latestSemverVersion}`, 'HEAD')
-        : withTrailingSlash(repoUrl)}`;
-}
-/**
- * Get a list of release link reference definitions.
- *
- * @param repoUrl - The URL for the GitHub repository.
- * @param tagPrefix - The prefix used in tags before the version number.
- * @param releases - The releases to generate link definitions for.
- * @param packageRename - The package rename properties.
- * @returns A list of release link reference definitions.
- */
-function getReleaseLinkReferenceDefinitions(repoUrl, tagPrefix, releases, packageRename) {
-    // The "previous" release that should be used for comparison is not always
-    // the most recent release chronologically. The _highest_ version that is
-    // lower than the current release is used as the previous release, so that
-    // patch releases on older releases can be accomodated.
-    const chronologicalVersions = releases.map(({ version }) => version);
-    let tagPrefixToCompare = tagPrefix;
-    const releaseLinkReferenceDefinitions = releases.map(({ version }) => {
-        let diffUrl;
-        // once the version matches with versionBeforeRename, rest of the lines in changelog will be assumed as migrated tags
-        if (packageRename && packageRename.versionBeforeRename === version) {
-            tagPrefixToCompare = packageRename.tagPrefixBeforeRename;
-        }
-        if (version === chronologicalVersions[chronologicalVersions.length - 1]) {
-            diffUrl = getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
-        }
-        else {
-            const versionIndex = chronologicalVersions.indexOf(version);
-            const previousVersion = chronologicalVersions
-                .slice(versionIndex)
-                .find((releaseVersion) => {
-                return semver_1.default.gt(version, releaseVersion);
-            });
-            if (previousVersion) {
-                if (packageRename &&
-                    packageRename.versionBeforeRename === previousVersion) {
-                    // The package was renamed at this version
-                    // (the tag prefix holds the new name).
-                    diffUrl = getCompareUrl(repoUrl, `${packageRename.tagPrefixBeforeRename}${previousVersion}`, `${tagPrefix}${version}`);
-                }
-                else {
-                    // If the package was ever renamed, it was not renamed at this version,
-                    // so use either the old tag prefix or the new tag prefix.
-                    // If the package was never renamed, use the tag prefix as it is.
-                    diffUrl = getCompareUrl(repoUrl, `${tagPrefixToCompare}${previousVersion}`, `${tagPrefixToCompare}${version}`);
-                }
-            }
-            else {
-                // This is the smallest release.
-                diffUrl = getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
-            }
-        }
-        return `[${version}]: ${diffUrl}`;
-    });
-    return releaseLinkReferenceDefinitions;
-}
-/**
- * A changelog that complies with the
- * ["Keep a Changelog" v1.1.0 guidelines](https://keepachangelog.com/en/1.0.0/).
- *
- * This changelog starts out completely empty, and allows new releases and
- * changes to be added such that the changelog remains compliant at all times.
- * This can be used to help validate the contents of a changelog, normalize
- * formatting, update a changelog, or build one from scratch.
- */
-class Changelog {
-    /**
-     * Construct an empty changelog.
-     *
-     * @param options - Changelog options.
-     * @param options.repoUrl - The GitHub repository URL for the current project.
-     * @param options.tagPrefix - The prefix used in tags before the version number.
-     * @param options.formatter - A function that formats the changelog string.
-     * @param options.packageRename - The package rename properties.
-     * An optional, which is required only in case of package renamed.
-     */
-    constructor({ repoUrl, tagPrefix = 'v', formatter = (changelog) => changelog, packageRename, }) {
-        _Changelog_releases.set(this, void 0);
-        _Changelog_changes.set(this, void 0);
-        _Changelog_repoUrl.set(this, void 0);
-        _Changelog_tagPrefix.set(this, void 0);
-        _Changelog_formatter.set(this, void 0);
-        _Changelog_packageRename.set(this, void 0);
-        __classPrivateFieldSet(this, _Changelog_releases, [], "f");
-        __classPrivateFieldSet(this, _Changelog_changes, { [constants_1.unreleased]: {} }, "f");
-        __classPrivateFieldSet(this, _Changelog_repoUrl, repoUrl, "f");
-        __classPrivateFieldSet(this, _Changelog_tagPrefix, tagPrefix, "f");
-        __classPrivateFieldSet(this, _Changelog_formatter, formatter, "f");
-        __classPrivateFieldSet(this, _Changelog_packageRename, packageRename, "f");
-    }
-    /**
-     * Add a release to the changelog.
-     *
-     * @param options - Release options.
-     * @param options.addToStart - Determines whether the change is added to the
-     * top or bottom of the list of changes in this category. This defaults to
-     * `true` because changes should be in reverse-chronological order. This
-     * should be set to `false` when parsing a changelog top-to-bottom.
-     * @param options.date - An ISO-8601 formatted date, representing the release
-     * date.
-     * @param options.status - The status of the release (e.g., 'WITHDRAWN',
-     * 'DEPRECATED').
-     * @param options.version - The version of the current release, which should
-     * be a [SemVer](https://semver.org/spec/v2.0.0.html)-compatible version.
-     */
-    addRelease({ addToStart = true, date, status, version }) {
-        if (!version) {
-            throw new Error('Version required');
-        }
-        else if (semver_1.default.valid(version) === null) {
-            throw new Error(`Not a valid semver version: '${version}'`);
-        }
-        else if (__classPrivateFieldGet(this, _Changelog_changes, "f")[version]) {
-            throw new Error(`Release already exists: '${version}'`);
-        }
-        __classPrivateFieldGet(this, _Changelog_changes, "f")[version] = {};
-        const newRelease = { version, date, status };
-        if (addToStart) {
-            __classPrivateFieldGet(this, _Changelog_releases, "f").unshift(newRelease);
-        }
-        else {
-            __classPrivateFieldGet(this, _Changelog_releases, "f").push(newRelease);
-        }
-    }
-    /**
-     * Add a change to the changelog.
-     *
-     * @param options - Change options.
-     * @param options.addToStart - Determines whether the change is added to the
-     * top or bottom of the list of changes in this category. This defaults to
-     * `true` because changes should be in reverse-chronological order. This
-     * should be set to `false` when parsing a changelog top-to-bottom.
-     * @param options.category - The category of the change.
-     * @param options.description - The description of the change.
-     * @param options.version - The version this change was released in. If this
-     * is not given, the change is assumed to be unreleased.
-     */
-    addChange({ addToStart = true, category, description, version, }) {
-        if (!category) {
-            throw new Error('Category required');
-        }
-        else if (!constants_1.orderedChangeCategories.includes(category)) {
-            throw new Error(`Unrecognized category: '${category}'`);
-        }
-        else if (!description) {
-            throw new Error('Description required');
-        }
-        else if (version !== undefined && !__classPrivateFieldGet(this, _Changelog_changes, "f")[version]) {
-            throw new Error(`Specified release version does not exist: '${version}'`);
-        }
-        const release = version
-            ? __classPrivateFieldGet(this, _Changelog_changes, "f")[version]
-            : __classPrivateFieldGet(this, _Changelog_changes, "f")[constants_1.unreleased];
-        if (!release[category]) {
-            release[category] = [];
-        }
-        if (addToStart) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            release[category].unshift(description);
-        }
-        else {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            release[category].push(description);
-        }
-    }
-    /**
-     * Migrate all unreleased changes to a release section.
-     *
-     * Changes are migrated in their existing categories, and placed above any
-     * pre-existing changes in that category.
-     *
-     * @param version - The release version to migrate unreleased changes to.
-     */
-    migrateUnreleasedChangesToRelease(version) {
-        var _a, _b;
-        const releaseChanges = __classPrivateFieldGet(this, _Changelog_changes, "f")[version];
-        if (!releaseChanges) {
-            throw new Error(`Specified release version does not exist: '${version}'`);
-        }
-        const unreleasedChanges = __classPrivateFieldGet(this, _Changelog_changes, "f")[constants_1.unreleased];
-        for (const category of getKnownPropertyNames(unreleasedChanges)) {
-            if (releaseChanges[category]) {
-                releaseChanges[category] = [
-                    ...((_a = unreleasedChanges[category]) !== null && _a !== void 0 ? _a : []),
-                    ...((_b = releaseChanges[category]) !== null && _b !== void 0 ? _b : []),
-                ];
-            }
-            else {
-                releaseChanges[category] = unreleasedChanges[category];
-            }
-        }
-        __classPrivateFieldGet(this, _Changelog_changes, "f")[constants_1.unreleased] = {};
-    }
-    /**
-     * Gets the metadata for all releases.
-     *
-     * @returns The metadata for each release.
-     */
-    getReleases() {
-        return __classPrivateFieldGet(this, _Changelog_releases, "f");
-    }
-    /**
-     * Gets the release of the given version.
-     *
-     * @param version - The version of the release to retrieve.
-     * @returns The specified release, or undefined if no such release exists.
-     */
-    getRelease(version) {
-        return this.getReleases().find(({ version: _version }) => _version === version);
-    }
-    /**
-     * Gets the stringified release of the given version.
-     * Throws an error if no such release exists.
-     *
-     * @param version - The version of the release to stringify.
-     * @returns The stringified release, as it appears in the changelog.
-     */
-    getStringifiedRelease(version) {
-        const release = this.getRelease(version);
-        if (!release) {
-            throw new Error(`Specified release version does not exist: '${version}'`);
-        }
-        const releaseChanges = this.getReleaseChanges(version);
-        return stringifyRelease(version, releaseChanges, release);
-    }
-    /**
-     * Gets the changes in the given release, organized by category.
-     *
-     * @param version - The version of the release being retrieved.
-     * @returns The changes included in the given released.
-     */
-    getReleaseChanges(version) {
-        return __classPrivateFieldGet(this, _Changelog_changes, "f")[version];
-    }
-    /**
-     * Gets all changes that have not yet been released.
-     *
-     * @returns The changes that have not yet been released.
-     */
-    getUnreleasedChanges() {
-        return __classPrivateFieldGet(this, _Changelog_changes, "f")[constants_1.unreleased];
-    }
-    /**
-     * The stringified changelog, formatted according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
-     *
-     * @returns The stringified changelog.
-     */
-    async toString() {
-        const changelog = `${changelogTitle}
-${changelogDescription}
-
-${stringifyReleases(__classPrivateFieldGet(this, _Changelog_releases, "f"), __classPrivateFieldGet(this, _Changelog_changes, "f"))}
-
-${stringifyLinkReferenceDefinitions(__classPrivateFieldGet(this, _Changelog_repoUrl, "f"), __classPrivateFieldGet(this, _Changelog_tagPrefix, "f"), __classPrivateFieldGet(this, _Changelog_releases, "f"), __classPrivateFieldGet(this, _Changelog_packageRename, "f"))}`;
-        return await __classPrivateFieldGet(this, _Changelog_formatter, "f").call(this, changelog);
-    }
-}
-exports["default"] = Changelog;
-_Changelog_releases = new WeakMap(), _Changelog_changes = new WeakMap(), _Changelog_repoUrl = new WeakMap(), _Changelog_tagPrefix = new WeakMap(), _Changelog_formatter = new WeakMap(), _Changelog_packageRename = new WeakMap();
-//# sourceMappingURL=changelog.js.map
-
-/***/ }),
-
-/***/ 1373:
-/***/ ((__unused_webpack_module, exports) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.unreleased = exports.orderedChangeCategories = exports.ChangeCategory = void 0;
-/**
- * Change categories.
- *
- * Most of these categories are from [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
- * The "Uncategorized" category was added because we have many changes from
- * older releases that would be difficult to categorize.
- */
-var ChangeCategory;
-(function (ChangeCategory) {
-    /**
-     * For new features.
-     */
-    ChangeCategory["Added"] = "Added";
-    /**
-     * For changes in existing functionality.
-     */
-    ChangeCategory["Changed"] = "Changed";
-    /**
-     * For soon-to-be-removed features.
-     */
-    ChangeCategory["Deprecated"] = "Deprecated";
-    /**
-     * For bug fixes.
-     */
-    ChangeCategory["Fixed"] = "Fixed";
-    /**
-     * For now removed features.
-     */
-    ChangeCategory["Removed"] = "Removed";
-    /**
-     * In case of vulnerabilities.
-     */
-    ChangeCategory["Security"] = "Security";
-    /**
-     * For any changes that have yet to be categorized.
-     */
-    ChangeCategory["Uncategorized"] = "Uncategorized";
-})(ChangeCategory = exports.ChangeCategory || (exports.ChangeCategory = {}));
-/**
- * Change categories in the order in which they should be listed in the
- * changelog.
- */
-exports.orderedChangeCategories = [
-    ChangeCategory.Uncategorized,
-    ChangeCategory.Added,
-    ChangeCategory.Changed,
-    ChangeCategory.Deprecated,
-    ChangeCategory.Removed,
-    ChangeCategory.Fixed,
-    ChangeCategory.Security,
-];
-/**
- * The header for the section of the changelog listing unreleased changes.
- */
-exports.unreleased = 'Unreleased';
-//# sourceMappingURL=constants.js.map
-
-/***/ }),
-
-/***/ 9272:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.validateChangelog = exports.ChangelogFormattingError = exports.updateChangelog = exports.parseChangelog = exports.createEmptyChangelog = exports.Changelog = void 0;
-var changelog_1 = __nccwpck_require__(1610);
-Object.defineProperty(exports, "Changelog", ({ enumerable: true, get: function () { return __importDefault(changelog_1).default; } }));
-var init_1 = __nccwpck_require__(3725);
-Object.defineProperty(exports, "createEmptyChangelog", ({ enumerable: true, get: function () { return init_1.createEmptyChangelog; } }));
-var parse_changelog_1 = __nccwpck_require__(7607);
-Object.defineProperty(exports, "parseChangelog", ({ enumerable: true, get: function () { return parse_changelog_1.parseChangelog; } }));
-var update_changelog_1 = __nccwpck_require__(9437);
-Object.defineProperty(exports, "updateChangelog", ({ enumerable: true, get: function () { return update_changelog_1.updateChangelog; } }));
-var validate_changelog_1 = __nccwpck_require__(4933);
-Object.defineProperty(exports, "ChangelogFormattingError", ({ enumerable: true, get: function () { return validate_changelog_1.ChangelogFormattingError; } }));
-Object.defineProperty(exports, "validateChangelog", ({ enumerable: true, get: function () { return validate_changelog_1.validateChangelog; } }));
-//# sourceMappingURL=index.js.map
-
-/***/ }),
-
-/***/ 3725:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.createEmptyChangelog = void 0;
-const changelog_1 = __importDefault(__nccwpck_require__(1610));
-/**
- * Creates a new empty changelog.
- *
- * @param options - Changelog options.
- * @param options.repoUrl - The GitHub repository URL for the current project.
- * @param options.tagPrefix - The prefix used in tags before the version number.
- * @returns The initial changelog text.
- */
-async function createEmptyChangelog({ repoUrl, tagPrefix = 'v', }) {
-    const changelog = new changelog_1.default({ repoUrl, tagPrefix });
-    return await changelog.toString();
-}
-exports.createEmptyChangelog = createEmptyChangelog;
-//# sourceMappingURL=init.js.map
-
-/***/ }),
-
-/***/ 7607:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.parseChangelog = void 0;
-const semver_1 = __importDefault(__nccwpck_require__(1383));
-const changelog_1 = __importDefault(__nccwpck_require__(1610));
-const constants_1 = __nccwpck_require__(1373);
-/**
- * Truncate the given string at 80 characters.
- *
- * @param line - The string to truncate.
- * @returns The truncated string.
- */
-function truncated(line) {
-    return line.length > 80 ? `${line.slice(0, 80)}...` : line;
-}
-/**
- * Returns whether the given string is recognized as a valid change category.
- *
- * @param category - The string to validate.
- * @returns Whether the given string is a valid change category.
- */
-function isValidChangeCategory(category) {
-    return constants_1.ChangeCategory[category] !== undefined;
-}
-/**
- * Constructs a Changelog instance that represents the given changelog, which
- * is parsed for release and change information.
- *
- * @param options - Options.
- * @param options.changelogContent - The changelog to parse.
- * @param options.repoUrl - The GitHub repository URL for the current project.
- * @param options.tagPrefix - The prefix used in tags before the version number.
- * @param options.formatter - A custom Markdown formatter to use.
- * @param options.packageRename - The package rename properties
- * An optional, which is required only in case of package renamed.
- * @returns A changelog instance that reflects the changelog text provided.
- */
-function parseChangelog({ changelogContent, repoUrl, tagPrefix = 'v', formatter = undefined, packageRename, }) {
-    const changelogLines = changelogContent.split('\n');
-    const changelog = new changelog_1.default({
-        repoUrl,
-        tagPrefix,
-        formatter,
-        packageRename,
-    });
-    const unreleasedHeaderIndex = changelogLines.indexOf(`## [${constants_1.unreleased}]`);
-    if (unreleasedHeaderIndex === -1) {
-        throw new Error(`Failed to find ${constants_1.unreleased} header`);
-    }
-    const unreleasedLinkReferenceDefinition = changelogLines.findIndex((line) => {
-        return line.startsWith(`[${constants_1.unreleased}]:`);
-    });
-    if (unreleasedLinkReferenceDefinition === -1) {
-        throw new Error(`Failed to find ${constants_1.unreleased} link reference definition`);
-    }
-    const contentfulChangelogLines = changelogLines.slice(unreleasedHeaderIndex + 1, unreleasedLinkReferenceDefinition);
-    let mostRecentRelease;
-    let mostRecentCategory;
-    let currentChangeEntry;
-    /**
-     * Finalize a change entry, adding it to the changelog.
-     *
-     * This is required because change entries can span multiple lines.
-     *
-     * @param options - Options.
-     * @param options.removeTrailingNewline - Indicates that the trailing newline
-     * is not a part of the change description, and should therefore be removed.
-     */
-    function finalizePreviousChange({ removeTrailingNewline = false, } = {}) {
-        if (!currentChangeEntry) {
-            return;
-        }
-        // This should never happen in practice, because `mostRecentCategory` is
-        // guaranteed to be set if `currentChangeEntry` is set.
-        /* istanbul ignore next */
-        if (!mostRecentCategory) {
-            throw new Error('Cannot finalize change without most recent category.');
-        }
-        if (removeTrailingNewline && currentChangeEntry.endsWith('\n')) {
-            currentChangeEntry = currentChangeEntry.slice(0, currentChangeEntry.length - 1);
-        }
-        changelog.addChange({
-            addToStart: false,
-            category: mostRecentCategory,
-            description: currentChangeEntry,
-            version: mostRecentRelease,
-        });
-        currentChangeEntry = undefined;
-    }
-    for (const line of contentfulChangelogLines) {
-        if (line.startsWith('## [')) {
-            const results = line.match(/^## \[([^[\]]+)\](?: - (\d\d\d\d-\d\d-\d\d))?(?: \[(\w+)\])?/u);
-            if (results === null) {
-                throw new Error(`Malformed release header: '${truncated(line)}'`);
-            }
-            if (semver_1.default.valid(results[1]) === null) {
-                throw new Error(`Invalid SemVer version in release header: '${truncated(line)}'`);
-            }
-            // Trailing newline removed because the release section is expected to
-            // be prefixed by a newline.
-            finalizePreviousChange({
-                removeTrailingNewline: true,
-            });
-            mostRecentRelease = results[1];
-            mostRecentCategory = undefined;
-            const date = results[2];
-            const status = results[3];
-            changelog.addRelease({
-                addToStart: false,
-                date,
-                status,
-                version: mostRecentRelease,
-            });
-        }
-        else if (line.startsWith('### ')) {
-            const results = line.match(/^### (\w+)$\b/u);
-            if (results === null) {
-                throw new Error(`Malformed category header: '${truncated(line)}'`);
-            }
-            const isFirstCategory = mostRecentCategory === null;
-            finalizePreviousChange({
-                removeTrailingNewline: !isFirstCategory,
-            });
-            if (!isValidChangeCategory(results[1])) {
-                throw new Error(`Invalid change category: '${results[1]}'`);
-            }
-            mostRecentCategory = results[1];
-        }
-        else if (line.startsWith('- ')) {
-            if (!mostRecentCategory) {
-                throw new Error(`Category missing for change: '${truncated(line)}'`);
-            }
-            const description = line.slice(2);
-            finalizePreviousChange();
-            currentChangeEntry = description;
-        }
-        else if (currentChangeEntry) {
-            currentChangeEntry += `\n${line}`;
-        }
-        else if (line === '') {
-            continue;
-        }
-        else {
-            throw new Error(`Unrecognized line: '${truncated(line)}'`);
-        }
-    }
-    // Trailing newline removed because the reference link definition section is
-    // expected to be separated by a newline.
-    finalizePreviousChange({ removeTrailingNewline: true });
-    return changelog;
-}
-exports.parseChangelog = parseChangelog;
-//# sourceMappingURL=parse-changelog.js.map
-
-/***/ }),
-
-/***/ 9437:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
-
-"use strict";
-
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.updateChangelog = void 0;
-const assert_1 = __nccwpck_require__(9491);
-const execa_1 = __importDefault(__nccwpck_require__(6747));
-const changelog_1 = __nccwpck_require__(1610);
-const constants_1 = __nccwpck_require__(1373);
-const parse_changelog_1 = __nccwpck_require__(7607);
-/**
- * Get the most recent tag for a project.
- *
- * @param options - Options.
- * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
- * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
- * @returns The most recent tag.
- */
-async function getMostRecentTag({ tagPrefixes, }) {
-    // Ensure we have all tags on remote
-    await runCommand('git', ['fetch', '--tags']);
-    let mostRecentTagCommitHash = null;
-    for (const tagPrefix of tagPrefixes) {
-        const revListArgs = [
-            'rev-list',
-            `--tags=${tagPrefix}*`,
-            '--max-count=1',
-            '--date-order',
-        ];
-        const results = await runCommand('git', revListArgs);
-        if (results.length) {
-            mostRecentTagCommitHash = results[0];
-            break;
-        }
-    }
-    if (mostRecentTagCommitHash === null) {
-        return null;
-    }
-    const [mostRecentTag] = await runCommand('git', [
-        'describe',
-        '--tags',
-        mostRecentTagCommitHash,
-    ]);
-    return mostRecentTag;
-}
-/**
- * Get commit details for each given commit hash.
- *
- * @param commitHashes - The list of commit hashes.
- * @returns Commit details for each commit, including description and PR number (if present).
- */
-async function getCommits(commitHashes) {
-    var _a, _b;
-    const commits = [];
-    for (const commitHash of commitHashes) {
-        const [subject] = await runCommand('git', [
-            'show',
-            '-s',
-            '--format=%s',
-            commitHash,
-        ]);
-        assert_1.strict.ok(Boolean(subject), `"git show" returned empty subject for commit "${commitHash}".`);
-        let matchResults = subject.match(/\(#(\d+)\)/u);
-        let prNumber;
-        let description = subject;
-        if (matchResults) {
-            // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
-            prNumber = matchResults[1];
-            description = (_b = (_a = subject.match(/^(.+)\s\(#\d+\)/u)) === null || _a === void 0 ? void 0 : _a[1]) !== null && _b !== void 0 ? _b : '';
-        }
-        else {
-            // Merge: the PR ID is parsed from the git subject (which is of the form `Merge pull request
-            // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
-            // If no body is found, the description is set to the commit subject
-            matchResults = subject.match(/#(\d+)\sfrom/u);
-            if (matchResults) {
-                prNumber = matchResults[1];
-                const [firstLineOfBody] = await runCommand('git', [
-                    'show',
-                    '-s',
-                    '--format=%b',
-                    commitHash,
-                ]);
-                description = firstLineOfBody || subject;
-            }
-        }
-        // Otherwise:
-        // Normal commits: The commit subject is the description, and the PR ID is omitted.
-        commits.push({ prNumber, description });
-    }
-    return commits;
-}
-/**
- * Get all change descriptions from a changelog.
- *
- * @param changelog - The changelog.
- * @returns All commit descriptions included in the given changelog.
- */
-function getAllChangeDescriptions(changelog) {
-    const releases = changelog.getReleases();
-    const changeDescriptions = Object.values(changelog.getUnreleasedChanges()).flat();
-    for (const release of releases) {
-        changeDescriptions.push(...Object.values(changelog.getReleaseChanges(release.version)).flat());
-    }
-    return changeDescriptions;
-}
-/**
- * Get all pull request numbers included in the given changelog.
- *
- * @param changelog - The changelog.
- * @returns All pull request numbers included in the given changelog.
- */
-function getAllLoggedPrNumbers(changelog) {
-    const changeDescriptions = getAllChangeDescriptions(changelog);
-    const prNumbersWithChangelogEntries = [];
-    for (const description of changeDescriptions) {
-        if (!description) {
-            continue;
-        }
-        const matchResults = description.matchAll(/\[#(\d+)\]/gu);
-        const prNumbers = Array.from(matchResults, (result) => result[1]);
-        prNumbersWithChangelogEntries.push(...prNumbers);
-    }
-    return prNumbersWithChangelogEntries;
-}
-/**
- * Get all commit hashes included in the given commit range.
- *
- * @param commitRange - The commit range.
- * @param rootDirectory - The project root directory.
- * @returns A list of commit hashes for the given range.
- */
-async function getCommitHashesInRange(commitRange, rootDirectory) {
-    const revListArgs = ['rev-list', commitRange];
-    if (rootDirectory) {
-        revListArgs.push(rootDirectory);
-    }
-    return await runCommand('git', revListArgs);
-}
-/**
- * Get the list of new change entries to add to a changelog.
- *
- * @param options - Options.
- * @param options.mostRecentTag - The most recent tag.
- * @param options.repoUrl - The GitHub repository URL for the current project.
- * @param options.loggedPrNumbers - A list of all pull request numbers included in the relevant parsed changelog.
- * @param options.projectRootDirectory - The root project directory, used to
- * filter results from various git commands. This path is assumed to be either
- * absolute, or relative to the current directory. Defaults to the root of the
- * current git repository.
- * @returns A list of new change entries to add to the changelog, based on commits made since the last release.
- */
-async function getNewChangeEntries({ mostRecentTag, repoUrl, loggedPrNumbers, projectRootDirectory, }) {
-    const commitRange = mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
-    const commitsHashesSinceLastRelease = await getCommitHashesInRange(commitRange, projectRootDirectory);
-    const commits = await getCommits(commitsHashesSinceLastRelease);
-    const newCommits = commits.filter(({ prNumber }) => !prNumber || !loggedPrNumbers.includes(prNumber));
-    return newCommits.map(({ prNumber, description }) => {
-        if (prNumber) {
-            const suffix = `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
-            return `${description} ${suffix}`;
-        }
-        return description;
-    });
-}
-/**
- * Update a changelog with any commits made since the last release. Commits for
- * PRs that are already included in the changelog are omitted.
- *
- * @param options - Update options.
- * @param options.changelogContent - The current changelog.
- * @param options.currentVersion - The current version. Required if
- * `isReleaseCandidate` is set, but optional otherwise.
- * @param options.repoUrl - The GitHub repository URL for the current project.
- * @param options.isReleaseCandidate - Denotes whether the current project.
- * is in the midst of release preparation or not. If this is set, any new
- * changes are listed under the current release header. Otherwise, they are
- * listed under the 'Unreleased' section.
- * @param options.projectRootDirectory - The root project directory, used to
- * filter results from various git commands. This path is assumed to be either
- * absolute, or relative to the current directory. Defaults to the root of the
- * current git repository.
- * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
- * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
- * @param options.formatter - A custom Markdown formatter to use.
- * @param options.packageRename - The package rename properties.
- * An optional, which is required only in case of package renamed.
- * @returns The updated changelog text.
- */
-async function updateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, projectRootDirectory, tagPrefixes = ['v'], formatter = undefined, packageRename, }) {
-    const changelog = (0, parse_changelog_1.parseChangelog)({
-        changelogContent,
-        repoUrl,
-        tagPrefix: tagPrefixes[0],
-        formatter,
-        packageRename,
-    });
-    const mostRecentTag = await getMostRecentTag({
-        tagPrefixes,
-    });
-    if (isReleaseCandidate) {
-        if (!currentVersion) {
-            throw new Error(`A version must be specified if 'isReleaseCandidate' is set.`);
-        }
-        if (mostRecentTag === `${tagPrefixes[0]}${currentVersion}`) {
-            throw new Error(`Current version already has a tag ('${mostRecentTag}'), which is unexpected for a release candidate.`);
-        }
-        // Ensure release header exists, if necessary
-        if (!changelog
-            .getReleases()
-            .find((release) => release.version === currentVersion)) {
-            changelog.addRelease({ version: currentVersion });
-        }
-        const hasUnreleasedChangesToRelease = (0, changelog_1.getKnownPropertyNames)(changelog.getUnreleasedChanges()).length > 0;
-        if (hasUnreleasedChangesToRelease) {
-            changelog.migrateUnreleasedChangesToRelease(currentVersion);
-        }
-    }
-    const newChangeEntries = await getNewChangeEntries({
-        mostRecentTag,
-        repoUrl,
-        loggedPrNumbers: getAllLoggedPrNumbers(changelog),
-        projectRootDirectory,
-    });
-    for (const description of newChangeEntries.reverse()) {
-        changelog.addChange({
-            version: isReleaseCandidate ? currentVersion : undefined,
-            category: constants_1.ChangeCategory.Uncategorized,
-            description,
-        });
-    }
-    const newChangelogContent = await changelog.toString();
-    const isChangelogUpdated = changelogContent !== newChangelogContent;
-    return isChangelogUpdated ? newChangelogContent : undefined;
-}
-exports.updateChangelog = updateChangelog;
-/**
- * Executes a shell command in a child process and returns what it wrote to
- * stdout, or rejects if the process exited with an error.
- *
- * @param command - The command to run, e.g. "git".
- * @param args - The arguments to the command.
- * @returns An array of the non-empty lines returned by the command.
- */
-async function runCommand(command, args) {
-    return (await (0, execa_1.default)(command, [...args])).stdout
-        .trim()
-        .split('\n')
-        .filter((line) => line !== '');
-}
-//# sourceMappingURL=update-changelog.js.map
-
-/***/ }),
-
-/***/ 4933:
-/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
-
-"use strict";
-
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.validateChangelog = exports.ChangelogFormattingError = exports.MissingCurrentVersionError = exports.UncategorizedChangesError = exports.UnreleasedChangesError = exports.InvalidChangelogError = void 0;
-const constants_1 = __nccwpck_require__(1373);
-const parse_changelog_1 = __nccwpck_require__(7607);
-/**
- * Indicates that the changelog is invalid.
- */
-class InvalidChangelogError extends Error {
-}
-exports.InvalidChangelogError = InvalidChangelogError;
-/**
- * Indicates that unreleased changes are still present in the changelog.
- */
-class UnreleasedChangesError extends InvalidChangelogError {
-    constructor() {
-        super('Unreleased changes present in the changelog');
-    }
-}
-exports.UnreleasedChangesError = UnreleasedChangesError;
-class UncategorizedChangesError extends InvalidChangelogError {
-    constructor() {
-        super('Uncategorized changes present in the changelog');
-    }
-}
-exports.UncategorizedChangesError = UncategorizedChangesError;
-/**
- * Indicates that the release header for the current version is missing.
- */
-class MissingCurrentVersionError extends InvalidChangelogError {
-    /**
-     * Construct a changelog missing version error.
-     *
-     * @param currentVersion - The current version.
-     */
-    constructor(currentVersion) {
-        super(`Current version missing from changelog: '${currentVersion}'`);
-    }
-}
-exports.MissingCurrentVersionError = MissingCurrentVersionError;
-/**
- * Represents a formatting error in a changelog.
- */
-class ChangelogFormattingError extends InvalidChangelogError {
-    /**
-     * Construct a changelog formatting error.
-     *
-     * @param options - Error options.
-     * @param options.validChangelog - The string contents of the well-formatted
-     * changelog.
-     * @param options.invalidChangelog - The string contents of the malformed
-     * changelog.
-     */
-    constructor({ validChangelog, invalidChangelog, }) {
-        super('Changelog is not well-formatted');
-        this.data = {
-            validChangelog,
-            invalidChangelog,
-        };
-    }
-}
-exports.ChangelogFormattingError = ChangelogFormattingError;
-/**
- * Validates that a changelog is well-formatted.
- *
- * @param options - Validation options.
- * @param options.changelogContent - The current changelog.
- * @param options.currentVersion - The current version. Required if
- * `isReleaseCandidate` is set, but optional otherwise.
- * @param options.repoUrl - The GitHub repository URL for the current
- * project.
- * @param options.isReleaseCandidate - Denotes whether the current project is in
- * the midst of release preparation or not. If this is set, this command will
- * also ensure the current version is represented in the changelog with a
- * header, and that there are no unreleased changes present.
- * @param options.tagPrefix - The prefix used in tags before the version number.
- * @param options.formatter - A custom Markdown formatter to use.
- * @param options.packageRename - The package rename properties.
- * An optional, which is required only in case of package renamed.
- * @throws `InvalidChangelogError` - Will throw if the changelog is invalid
- * @throws `MissingCurrentVersionError` - Will throw if `isReleaseCandidate` is
- * `true` and the changelog is missing the release header for the current
- * version.
- * @throws `UnreleasedChangesError` - Will throw if `isReleaseCandidate` is
- * `true` and the changelog contains unreleased changes.
- * @throws `UnreleasedChangesError` - Will throw if `isReleaseCandidate` is
- * `true` and the changelog contains uncategorized changes.
- * @throws `ChangelogFormattingError` - Will throw if there is a formatting error.
- */
-async function validateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, tagPrefix = 'v', formatter = undefined, packageRename, }) {
-    var _a, _b;
-    const changelog = (0, parse_changelog_1.parseChangelog)({
-        changelogContent,
-        repoUrl,
-        tagPrefix,
-        formatter,
-        packageRename,
-    });
-    const hasUnreleasedChanges = Object.keys(changelog.getUnreleasedChanges()).length !== 0;
-    const releaseChanges = currentVersion
-        ? changelog.getReleaseChanges(currentVersion)
-        : undefined;
-    if (isReleaseCandidate) {
-        if (!currentVersion) {
-            throw new Error(`A version must be specified if 'isReleaseCandidate' is set.`);
-        }
-        else if (!changelog
-            .getReleases()
-            .find((release) => release.version === currentVersion)) {
-            throw new MissingCurrentVersionError(currentVersion);
-        }
-        else if (hasUnreleasedChanges) {
-            throw new UnreleasedChangesError();
-        }
-        else if (((_a = releaseChanges === null || releaseChanges === void 0 ? void 0 : releaseChanges[constants_1.ChangeCategory.Uncategorized]) === null || _a === void 0 ? void 0 : _a.length) &&
-            ((_b = releaseChanges === null || releaseChanges === void 0 ? void 0 : releaseChanges[constants_1.ChangeCategory.Uncategorized]) === null || _b === void 0 ? void 0 : _b.length) !== 0) {
-            throw new UncategorizedChangesError();
-        }
-    }
-    const validChangelog = await changelog.toString();
-    if (validChangelog !== changelogContent) {
-        throw new ChangelogFormattingError({
-            validChangelog,
-            invalidChangelog: changelogContent,
-        });
-    }
-}
-exports.validateChangelog = validateChangelog;
-//# sourceMappingURL=validate-changelog.js.map
-
-/***/ }),
-
 /***/ 6747:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -4639,6 +3472,3911 @@ return{name,number,description,supported,action,forced,standard};
 
 /***/ }),
 
+/***/ 334:
+/***/ ((module) => {
+
+"use strict";
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// pkg/dist-src/index.js
+var dist_src_exports = {};
+__export(dist_src_exports, {
+  createTokenAuth: () => createTokenAuth
+});
+module.exports = __toCommonJS(dist_src_exports);
+
+// pkg/dist-src/auth.js
+var REGEX_IS_INSTALLATION_LEGACY = /^v1\./;
+var REGEX_IS_INSTALLATION = /^ghs_/;
+var REGEX_IS_USER_TO_SERVER = /^ghu_/;
+async function auth(token) {
+  const isApp = token.split(/\./).length === 3;
+  const isInstallation = REGEX_IS_INSTALLATION_LEGACY.test(token) || REGEX_IS_INSTALLATION.test(token);
+  const isUserToServer = REGEX_IS_USER_TO_SERVER.test(token);
+  const tokenType = isApp ? "app" : isInstallation ? "installation" : isUserToServer ? "user-to-server" : "oauth";
+  return {
+    type: "token",
+    token,
+    tokenType
+  };
+}
+
+// pkg/dist-src/with-authorization-prefix.js
+function withAuthorizationPrefix(token) {
+  if (token.split(/\./).length === 3) {
+    return `bearer ${token}`;
+  }
+  return `token ${token}`;
+}
+
+// pkg/dist-src/hook.js
+async function hook(token, request, route, parameters) {
+  const endpoint = request.endpoint.merge(
+    route,
+    parameters
+  );
+  endpoint.headers.authorization = withAuthorizationPrefix(token);
+  return request(endpoint);
+}
+
+// pkg/dist-src/index.js
+var createTokenAuth = function createTokenAuth2(token) {
+  if (!token) {
+    throw new Error("[@octokit/auth-token] No token passed to createTokenAuth");
+  }
+  if (typeof token !== "string") {
+    throw new Error(
+      "[@octokit/auth-token] Token passed to createTokenAuth is not a string"
+    );
+  }
+  token = token.replace(/^(token|bearer) +/i, "");
+  return Object.assign(auth.bind(null, token), {
+    hook: hook.bind(null, token)
+  });
+};
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
+
+
+/***/ }),
+
+/***/ 6762:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// pkg/dist-src/index.js
+var index_exports = {};
+__export(index_exports, {
+  Octokit: () => Octokit
+});
+module.exports = __toCommonJS(index_exports);
+var import_universal_user_agent = __nccwpck_require__(5030);
+var import_before_after_hook = __nccwpck_require__(3682);
+var import_request = __nccwpck_require__(6234);
+var import_graphql = __nccwpck_require__(8467);
+var import_auth_token = __nccwpck_require__(334);
+
+// pkg/dist-src/version.js
+var VERSION = "5.2.2";
+
+// pkg/dist-src/index.js
+var noop = () => {
+};
+var consoleWarn = console.warn.bind(console);
+var consoleError = console.error.bind(console);
+function createLogger(logger = {}) {
+  if (typeof logger.debug !== "function") {
+    logger.debug = noop;
+  }
+  if (typeof logger.info !== "function") {
+    logger.info = noop;
+  }
+  if (typeof logger.warn !== "function") {
+    logger.warn = consoleWarn;
+  }
+  if (typeof logger.error !== "function") {
+    logger.error = consoleError;
+  }
+  return logger;
+}
+var userAgentTrail = `octokit-core.js/${VERSION} ${(0, import_universal_user_agent.getUserAgent)()}`;
+var Octokit = class {
+  static {
+    this.VERSION = VERSION;
+  }
+  static defaults(defaults) {
+    const OctokitWithDefaults = class extends this {
+      constructor(...args) {
+        const options = args[0] || {};
+        if (typeof defaults === "function") {
+          super(defaults(options));
+          return;
+        }
+        super(
+          Object.assign(
+            {},
+            defaults,
+            options,
+            options.userAgent && defaults.userAgent ? {
+              userAgent: `${options.userAgent} ${defaults.userAgent}`
+            } : null
+          )
+        );
+      }
+    };
+    return OctokitWithDefaults;
+  }
+  static {
+    this.plugins = [];
+  }
+  /**
+   * Attach a plugin (or many) to your Octokit instance.
+   *
+   * @example
+   * const API = Octokit.plugin(plugin1, plugin2, plugin3, ...)
+   */
+  static plugin(...newPlugins) {
+    const currentPlugins = this.plugins;
+    const NewOctokit = class extends this {
+      static {
+        this.plugins = currentPlugins.concat(
+          newPlugins.filter((plugin) => !currentPlugins.includes(plugin))
+        );
+      }
+    };
+    return NewOctokit;
+  }
+  constructor(options = {}) {
+    const hook = new import_before_after_hook.Collection();
+    const requestDefaults = {
+      baseUrl: import_request.request.endpoint.DEFAULTS.baseUrl,
+      headers: {},
+      request: Object.assign({}, options.request, {
+        // @ts-ignore internal usage only, no need to type
+        hook: hook.bind(null, "request")
+      }),
+      mediaType: {
+        previews: [],
+        format: ""
+      }
+    };
+    requestDefaults.headers["user-agent"] = options.userAgent ? `${options.userAgent} ${userAgentTrail}` : userAgentTrail;
+    if (options.baseUrl) {
+      requestDefaults.baseUrl = options.baseUrl;
+    }
+    if (options.previews) {
+      requestDefaults.mediaType.previews = options.previews;
+    }
+    if (options.timeZone) {
+      requestDefaults.headers["time-zone"] = options.timeZone;
+    }
+    this.request = import_request.request.defaults(requestDefaults);
+    this.graphql = (0, import_graphql.withCustomRequest)(this.request).defaults(requestDefaults);
+    this.log = createLogger(options.log);
+    this.hook = hook;
+    if (!options.authStrategy) {
+      if (!options.auth) {
+        this.auth = async () => ({
+          type: "unauthenticated"
+        });
+      } else {
+        const auth = (0, import_auth_token.createTokenAuth)(options.auth);
+        hook.wrap("request", auth.hook);
+        this.auth = auth;
+      }
+    } else {
+      const { authStrategy, ...otherOptions } = options;
+      const auth = authStrategy(
+        Object.assign(
+          {
+            request: this.request,
+            log: this.log,
+            // we pass the current octokit instance as well as its constructor options
+            // to allow for authentication strategies that return a new octokit instance
+            // that shares the same internal state as the current one. The original
+            // requirement for this was the "event-octokit" authentication strategy
+            // of https://github.com/probot/octokit-auth-probot.
+            octokit: this,
+            octokitOptions: otherOptions
+          },
+          options.auth
+        )
+      );
+      hook.wrap("request", auth.hook);
+      this.auth = auth;
+    }
+    const classConstructor = this.constructor;
+    for (let i = 0; i < classConstructor.plugins.length; ++i) {
+      Object.assign(this, classConstructor.plugins[i](this, options));
+    }
+  }
+};
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
+
+
+/***/ }),
+
+/***/ 9440:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// pkg/dist-src/index.js
+var dist_src_exports = {};
+__export(dist_src_exports, {
+  endpoint: () => endpoint
+});
+module.exports = __toCommonJS(dist_src_exports);
+
+// pkg/dist-src/defaults.js
+var import_universal_user_agent = __nccwpck_require__(5030);
+
+// pkg/dist-src/version.js
+var VERSION = "9.0.6";
+
+// pkg/dist-src/defaults.js
+var userAgent = `octokit-endpoint.js/${VERSION} ${(0, import_universal_user_agent.getUserAgent)()}`;
+var DEFAULTS = {
+  method: "GET",
+  baseUrl: "https://api.github.com",
+  headers: {
+    accept: "application/vnd.github.v3+json",
+    "user-agent": userAgent
+  },
+  mediaType: {
+    format: ""
+  }
+};
+
+// pkg/dist-src/util/lowercase-keys.js
+function lowercaseKeys(object) {
+  if (!object) {
+    return {};
+  }
+  return Object.keys(object).reduce((newObj, key) => {
+    newObj[key.toLowerCase()] = object[key];
+    return newObj;
+  }, {});
+}
+
+// pkg/dist-src/util/is-plain-object.js
+function isPlainObject(value) {
+  if (typeof value !== "object" || value === null)
+    return false;
+  if (Object.prototype.toString.call(value) !== "[object Object]")
+    return false;
+  const proto = Object.getPrototypeOf(value);
+  if (proto === null)
+    return true;
+  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
+  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
+}
+
+// pkg/dist-src/util/merge-deep.js
+function mergeDeep(defaults, options) {
+  const result = Object.assign({}, defaults);
+  Object.keys(options).forEach((key) => {
+    if (isPlainObject(options[key])) {
+      if (!(key in defaults))
+        Object.assign(result, { [key]: options[key] });
+      else
+        result[key] = mergeDeep(defaults[key], options[key]);
+    } else {
+      Object.assign(result, { [key]: options[key] });
+    }
+  });
+  return result;
+}
+
+// pkg/dist-src/util/remove-undefined-properties.js
+function removeUndefinedProperties(obj) {
+  for (const key in obj) {
+    if (obj[key] === void 0) {
+      delete obj[key];
+    }
+  }
+  return obj;
+}
+
+// pkg/dist-src/merge.js
+function merge(defaults, route, options) {
+  if (typeof route === "string") {
+    let [method, url] = route.split(" ");
+    options = Object.assign(url ? { method, url } : { url: method }, options);
+  } else {
+    options = Object.assign({}, route);
+  }
+  options.headers = lowercaseKeys(options.headers);
+  removeUndefinedProperties(options);
+  removeUndefinedProperties(options.headers);
+  const mergedOptions = mergeDeep(defaults || {}, options);
+  if (options.url === "/graphql") {
+    if (defaults && defaults.mediaType.previews?.length) {
+      mergedOptions.mediaType.previews = defaults.mediaType.previews.filter(
+        (preview) => !mergedOptions.mediaType.previews.includes(preview)
+      ).concat(mergedOptions.mediaType.previews);
+    }
+    mergedOptions.mediaType.previews = (mergedOptions.mediaType.previews || []).map((preview) => preview.replace(/-preview/, ""));
+  }
+  return mergedOptions;
+}
+
+// pkg/dist-src/util/add-query-parameters.js
+function addQueryParameters(url, parameters) {
+  const separator = /\?/.test(url) ? "&" : "?";
+  const names = Object.keys(parameters);
+  if (names.length === 0) {
+    return url;
+  }
+  return url + separator + names.map((name) => {
+    if (name === "q") {
+      return "q=" + parameters.q.split("+").map(encodeURIComponent).join("+");
+    }
+    return `${name}=${encodeURIComponent(parameters[name])}`;
+  }).join("&");
+}
+
+// pkg/dist-src/util/extract-url-variable-names.js
+var urlVariableRegex = /\{[^{}}]+\}/g;
+function removeNonChars(variableName) {
+  return variableName.replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "").split(/,/);
+}
+function extractUrlVariableNames(url) {
+  const matches = url.match(urlVariableRegex);
+  if (!matches) {
+    return [];
+  }
+  return matches.map(removeNonChars).reduce((a, b) => a.concat(b), []);
+}
+
+// pkg/dist-src/util/omit.js
+function omit(object, keysToOmit) {
+  const result = { __proto__: null };
+  for (const key of Object.keys(object)) {
+    if (keysToOmit.indexOf(key) === -1) {
+      result[key] = object[key];
+    }
+  }
+  return result;
+}
+
+// pkg/dist-src/util/url-template.js
+function encodeReserved(str) {
+  return str.split(/(%[0-9A-Fa-f]{2})/g).map(function(part) {
+    if (!/%[0-9A-Fa-f]/.test(part)) {
+      part = encodeURI(part).replace(/%5B/g, "[").replace(/%5D/g, "]");
+    }
+    return part;
+  }).join("");
+}
+function encodeUnreserved(str) {
+  return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
+    return "%" + c.charCodeAt(0).toString(16).toUpperCase();
+  });
+}
+function encodeValue(operator, value, key) {
+  value = operator === "+" || operator === "#" ? encodeReserved(value) : encodeUnreserved(value);
+  if (key) {
+    return encodeUnreserved(key) + "=" + value;
+  } else {
+    return value;
+  }
+}
+function isDefined(value) {
+  return value !== void 0 && value !== null;
+}
+function isKeyOperator(operator) {
+  return operator === ";" || operator === "&" || operator === "?";
+}
+function getValues(context, operator, key, modifier) {
+  var value = context[key], result = [];
+  if (isDefined(value) && value !== "") {
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      value = value.toString();
+      if (modifier && modifier !== "*") {
+        value = value.substring(0, parseInt(modifier, 10));
+      }
+      result.push(
+        encodeValue(operator, value, isKeyOperator(operator) ? key : "")
+      );
+    } else {
+      if (modifier === "*") {
+        if (Array.isArray(value)) {
+          value.filter(isDefined).forEach(function(value2) {
+            result.push(
+              encodeValue(operator, value2, isKeyOperator(operator) ? key : "")
+            );
+          });
+        } else {
+          Object.keys(value).forEach(function(k) {
+            if (isDefined(value[k])) {
+              result.push(encodeValue(operator, value[k], k));
+            }
+          });
+        }
+      } else {
+        const tmp = [];
+        if (Array.isArray(value)) {
+          value.filter(isDefined).forEach(function(value2) {
+            tmp.push(encodeValue(operator, value2));
+          });
+        } else {
+          Object.keys(value).forEach(function(k) {
+            if (isDefined(value[k])) {
+              tmp.push(encodeUnreserved(k));
+              tmp.push(encodeValue(operator, value[k].toString()));
+            }
+          });
+        }
+        if (isKeyOperator(operator)) {
+          result.push(encodeUnreserved(key) + "=" + tmp.join(","));
+        } else if (tmp.length !== 0) {
+          result.push(tmp.join(","));
+        }
+      }
+    }
+  } else {
+    if (operator === ";") {
+      if (isDefined(value)) {
+        result.push(encodeUnreserved(key));
+      }
+    } else if (value === "" && (operator === "&" || operator === "?")) {
+      result.push(encodeUnreserved(key) + "=");
+    } else if (value === "") {
+      result.push("");
+    }
+  }
+  return result;
+}
+function parseUrl(template) {
+  return {
+    expand: expand.bind(null, template)
+  };
+}
+function expand(template, context) {
+  var operators = ["+", "#", ".", "/", ";", "?", "&"];
+  template = template.replace(
+    /\{([^\{\}]+)\}|([^\{\}]+)/g,
+    function(_, expression, literal) {
+      if (expression) {
+        let operator = "";
+        const values = [];
+        if (operators.indexOf(expression.charAt(0)) !== -1) {
+          operator = expression.charAt(0);
+          expression = expression.substr(1);
+        }
+        expression.split(/,/g).forEach(function(variable) {
+          var tmp = /([^:\*]*)(?::(\d+)|(\*))?/.exec(variable);
+          values.push(getValues(context, operator, tmp[1], tmp[2] || tmp[3]));
+        });
+        if (operator && operator !== "+") {
+          var separator = ",";
+          if (operator === "?") {
+            separator = "&";
+          } else if (operator !== "#") {
+            separator = operator;
+          }
+          return (values.length !== 0 ? operator : "") + values.join(separator);
+        } else {
+          return values.join(",");
+        }
+      } else {
+        return encodeReserved(literal);
+      }
+    }
+  );
+  if (template === "/") {
+    return template;
+  } else {
+    return template.replace(/\/$/, "");
+  }
+}
+
+// pkg/dist-src/parse.js
+function parse(options) {
+  let method = options.method.toUpperCase();
+  let url = (options.url || "/").replace(/:([a-z]\w+)/g, "{$1}");
+  let headers = Object.assign({}, options.headers);
+  let body;
+  let parameters = omit(options, [
+    "method",
+    "baseUrl",
+    "url",
+    "headers",
+    "request",
+    "mediaType"
+  ]);
+  const urlVariableNames = extractUrlVariableNames(url);
+  url = parseUrl(url).expand(parameters);
+  if (!/^http/.test(url)) {
+    url = options.baseUrl + url;
+  }
+  const omittedParameters = Object.keys(options).filter((option) => urlVariableNames.includes(option)).concat("baseUrl");
+  const remainingParameters = omit(parameters, omittedParameters);
+  const isBinaryRequest = /application\/octet-stream/i.test(headers.accept);
+  if (!isBinaryRequest) {
+    if (options.mediaType.format) {
+      headers.accept = headers.accept.split(/,/).map(
+        (format) => format.replace(
+          /application\/vnd(\.\w+)(\.v3)?(\.\w+)?(\+json)?$/,
+          `application/vnd$1$2.${options.mediaType.format}`
+        )
+      ).join(",");
+    }
+    if (url.endsWith("/graphql")) {
+      if (options.mediaType.previews?.length) {
+        const previewsFromAcceptHeader = headers.accept.match(/(?<![\w-])[\w-]+(?=-preview)/g) || [];
+        headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
+          const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
+          return `application/vnd.github.${preview}-preview${format}`;
+        }).join(",");
+      }
+    }
+  }
+  if (["GET", "HEAD"].includes(method)) {
+    url = addQueryParameters(url, remainingParameters);
+  } else {
+    if ("data" in remainingParameters) {
+      body = remainingParameters.data;
+    } else {
+      if (Object.keys(remainingParameters).length) {
+        body = remainingParameters;
+      }
+    }
+  }
+  if (!headers["content-type"] && typeof body !== "undefined") {
+    headers["content-type"] = "application/json; charset=utf-8";
+  }
+  if (["PATCH", "PUT"].includes(method) && typeof body === "undefined") {
+    body = "";
+  }
+  return Object.assign(
+    { method, url, headers },
+    typeof body !== "undefined" ? { body } : null,
+    options.request ? { request: options.request } : null
+  );
+}
+
+// pkg/dist-src/endpoint-with-defaults.js
+function endpointWithDefaults(defaults, route, options) {
+  return parse(merge(defaults, route, options));
+}
+
+// pkg/dist-src/with-defaults.js
+function withDefaults(oldDefaults, newDefaults) {
+  const DEFAULTS2 = merge(oldDefaults, newDefaults);
+  const endpoint2 = endpointWithDefaults.bind(null, DEFAULTS2);
+  return Object.assign(endpoint2, {
+    DEFAULTS: DEFAULTS2,
+    defaults: withDefaults.bind(null, DEFAULTS2),
+    merge: merge.bind(null, DEFAULTS2),
+    parse
+  });
+}
+
+// pkg/dist-src/index.js
+var endpoint = withDefaults(null, DEFAULTS);
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
+
+
+/***/ }),
+
+/***/ 8467:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// pkg/dist-src/index.js
+var index_exports = {};
+__export(index_exports, {
+  GraphqlResponseError: () => GraphqlResponseError,
+  graphql: () => graphql2,
+  withCustomRequest: () => withCustomRequest
+});
+module.exports = __toCommonJS(index_exports);
+var import_request3 = __nccwpck_require__(6234);
+var import_universal_user_agent = __nccwpck_require__(5030);
+
+// pkg/dist-src/version.js
+var VERSION = "7.1.1";
+
+// pkg/dist-src/with-defaults.js
+var import_request2 = __nccwpck_require__(6234);
+
+// pkg/dist-src/graphql.js
+var import_request = __nccwpck_require__(6234);
+
+// pkg/dist-src/error.js
+function _buildMessageForResponseErrors(data) {
+  return `Request failed due to following response errors:
+` + data.errors.map((e) => ` - ${e.message}`).join("\n");
+}
+var GraphqlResponseError = class extends Error {
+  constructor(request2, headers, response) {
+    super(_buildMessageForResponseErrors(response));
+    this.request = request2;
+    this.headers = headers;
+    this.response = response;
+    this.name = "GraphqlResponseError";
+    this.errors = response.errors;
+    this.data = response.data;
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+  }
+};
+
+// pkg/dist-src/graphql.js
+var NON_VARIABLE_OPTIONS = [
+  "method",
+  "baseUrl",
+  "url",
+  "headers",
+  "request",
+  "query",
+  "mediaType"
+];
+var FORBIDDEN_VARIABLE_OPTIONS = ["query", "method", "url"];
+var GHES_V3_SUFFIX_REGEX = /\/api\/v3\/?$/;
+function graphql(request2, query, options) {
+  if (options) {
+    if (typeof query === "string" && "query" in options) {
+      return Promise.reject(
+        new Error(`[@octokit/graphql] "query" cannot be used as variable name`)
+      );
+    }
+    for (const key in options) {
+      if (!FORBIDDEN_VARIABLE_OPTIONS.includes(key)) continue;
+      return Promise.reject(
+        new Error(
+          `[@octokit/graphql] "${key}" cannot be used as variable name`
+        )
+      );
+    }
+  }
+  const parsedOptions = typeof query === "string" ? Object.assign({ query }, options) : query;
+  const requestOptions = Object.keys(
+    parsedOptions
+  ).reduce((result, key) => {
+    if (NON_VARIABLE_OPTIONS.includes(key)) {
+      result[key] = parsedOptions[key];
+      return result;
+    }
+    if (!result.variables) {
+      result.variables = {};
+    }
+    result.variables[key] = parsedOptions[key];
+    return result;
+  }, {});
+  const baseUrl = parsedOptions.baseUrl || request2.endpoint.DEFAULTS.baseUrl;
+  if (GHES_V3_SUFFIX_REGEX.test(baseUrl)) {
+    requestOptions.url = baseUrl.replace(GHES_V3_SUFFIX_REGEX, "/api/graphql");
+  }
+  return request2(requestOptions).then((response) => {
+    if (response.data.errors) {
+      const headers = {};
+      for (const key of Object.keys(response.headers)) {
+        headers[key] = response.headers[key];
+      }
+      throw new GraphqlResponseError(
+        requestOptions,
+        headers,
+        response.data
+      );
+    }
+    return response.data.data;
+  });
+}
+
+// pkg/dist-src/with-defaults.js
+function withDefaults(request2, newDefaults) {
+  const newRequest = request2.defaults(newDefaults);
+  const newApi = (query, options) => {
+    return graphql(newRequest, query, options);
+  };
+  return Object.assign(newApi, {
+    defaults: withDefaults.bind(null, newRequest),
+    endpoint: newRequest.endpoint
+  });
+}
+
+// pkg/dist-src/index.js
+var graphql2 = withDefaults(import_request3.request, {
+  headers: {
+    "user-agent": `octokit-graphql.js/${VERSION} ${(0, import_universal_user_agent.getUserAgent)()}`
+  },
+  method: "POST",
+  url: "/graphql"
+});
+function withCustomRequest(customRequest) {
+  return withDefaults(customRequest, {
+    method: "POST",
+    url: "/graphql"
+  });
+}
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
+
+
+/***/ }),
+
+/***/ 4193:
+/***/ ((module) => {
+
+"use strict";
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// pkg/dist-src/index.js
+var index_exports = {};
+__export(index_exports, {
+  composePaginateRest: () => composePaginateRest,
+  isPaginatingEndpoint: () => isPaginatingEndpoint,
+  paginateRest: () => paginateRest,
+  paginatingEndpoints: () => paginatingEndpoints
+});
+module.exports = __toCommonJS(index_exports);
+
+// pkg/dist-src/version.js
+var VERSION = "11.4.4-cjs.2";
+
+// pkg/dist-src/normalize-paginated-list-response.js
+function normalizePaginatedListResponse(response) {
+  if (!response.data) {
+    return {
+      ...response,
+      data: []
+    };
+  }
+  const responseNeedsNormalization = "total_count" in response.data && !("url" in response.data);
+  if (!responseNeedsNormalization) return response;
+  const incompleteResults = response.data.incomplete_results;
+  const repositorySelection = response.data.repository_selection;
+  const totalCount = response.data.total_count;
+  delete response.data.incomplete_results;
+  delete response.data.repository_selection;
+  delete response.data.total_count;
+  const namespaceKey = Object.keys(response.data)[0];
+  const data = response.data[namespaceKey];
+  response.data = data;
+  if (typeof incompleteResults !== "undefined") {
+    response.data.incomplete_results = incompleteResults;
+  }
+  if (typeof repositorySelection !== "undefined") {
+    response.data.repository_selection = repositorySelection;
+  }
+  response.data.total_count = totalCount;
+  return response;
+}
+
+// pkg/dist-src/iterator.js
+function iterator(octokit, route, parameters) {
+  const options = typeof route === "function" ? route.endpoint(parameters) : octokit.request.endpoint(route, parameters);
+  const requestMethod = typeof route === "function" ? route : octokit.request;
+  const method = options.method;
+  const headers = options.headers;
+  let url = options.url;
+  return {
+    [Symbol.asyncIterator]: () => ({
+      async next() {
+        if (!url) return { done: true };
+        try {
+          const response = await requestMethod({ method, url, headers });
+          const normalizedResponse = normalizePaginatedListResponse(response);
+          url = ((normalizedResponse.headers.link || "").match(
+            /<([^<>]+)>;\s*rel="next"/
+          ) || [])[1];
+          return { value: normalizedResponse };
+        } catch (error) {
+          if (error.status !== 409) throw error;
+          url = "";
+          return {
+            value: {
+              status: 200,
+              headers: {},
+              data: []
+            }
+          };
+        }
+      }
+    })
+  };
+}
+
+// pkg/dist-src/paginate.js
+function paginate(octokit, route, parameters, mapFn) {
+  if (typeof parameters === "function") {
+    mapFn = parameters;
+    parameters = void 0;
+  }
+  return gather(
+    octokit,
+    [],
+    iterator(octokit, route, parameters)[Symbol.asyncIterator](),
+    mapFn
+  );
+}
+function gather(octokit, results, iterator2, mapFn) {
+  return iterator2.next().then((result) => {
+    if (result.done) {
+      return results;
+    }
+    let earlyExit = false;
+    function done() {
+      earlyExit = true;
+    }
+    results = results.concat(
+      mapFn ? mapFn(result.value, done) : result.value.data
+    );
+    if (earlyExit) {
+      return results;
+    }
+    return gather(octokit, results, iterator2, mapFn);
+  });
+}
+
+// pkg/dist-src/compose-paginate.js
+var composePaginateRest = Object.assign(paginate, {
+  iterator
+});
+
+// pkg/dist-src/generated/paginating-endpoints.js
+var paginatingEndpoints = [
+  "GET /advisories",
+  "GET /app/hook/deliveries",
+  "GET /app/installation-requests",
+  "GET /app/installations",
+  "GET /assignments/{assignment_id}/accepted_assignments",
+  "GET /classrooms",
+  "GET /classrooms/{classroom_id}/assignments",
+  "GET /enterprises/{enterprise}/code-security/configurations",
+  "GET /enterprises/{enterprise}/code-security/configurations/{configuration_id}/repositories",
+  "GET /enterprises/{enterprise}/dependabot/alerts",
+  "GET /enterprises/{enterprise}/secret-scanning/alerts",
+  "GET /events",
+  "GET /gists",
+  "GET /gists/public",
+  "GET /gists/starred",
+  "GET /gists/{gist_id}/comments",
+  "GET /gists/{gist_id}/commits",
+  "GET /gists/{gist_id}/forks",
+  "GET /installation/repositories",
+  "GET /issues",
+  "GET /licenses",
+  "GET /marketplace_listing/plans",
+  "GET /marketplace_listing/plans/{plan_id}/accounts",
+  "GET /marketplace_listing/stubbed/plans",
+  "GET /marketplace_listing/stubbed/plans/{plan_id}/accounts",
+  "GET /networks/{owner}/{repo}/events",
+  "GET /notifications",
+  "GET /organizations",
+  "GET /orgs/{org}/actions/cache/usage-by-repository",
+  "GET /orgs/{org}/actions/permissions/repositories",
+  "GET /orgs/{org}/actions/runner-groups",
+  "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/repositories",
+  "GET /orgs/{org}/actions/runner-groups/{runner_group_id}/runners",
+  "GET /orgs/{org}/actions/runners",
+  "GET /orgs/{org}/actions/secrets",
+  "GET /orgs/{org}/actions/secrets/{secret_name}/repositories",
+  "GET /orgs/{org}/actions/variables",
+  "GET /orgs/{org}/actions/variables/{name}/repositories",
+  "GET /orgs/{org}/attestations/{subject_digest}",
+  "GET /orgs/{org}/blocks",
+  "GET /orgs/{org}/code-scanning/alerts",
+  "GET /orgs/{org}/code-security/configurations",
+  "GET /orgs/{org}/code-security/configurations/{configuration_id}/repositories",
+  "GET /orgs/{org}/codespaces",
+  "GET /orgs/{org}/codespaces/secrets",
+  "GET /orgs/{org}/codespaces/secrets/{secret_name}/repositories",
+  "GET /orgs/{org}/copilot/billing/seats",
+  "GET /orgs/{org}/copilot/metrics",
+  "GET /orgs/{org}/copilot/usage",
+  "GET /orgs/{org}/dependabot/alerts",
+  "GET /orgs/{org}/dependabot/secrets",
+  "GET /orgs/{org}/dependabot/secrets/{secret_name}/repositories",
+  "GET /orgs/{org}/events",
+  "GET /orgs/{org}/failed_invitations",
+  "GET /orgs/{org}/hooks",
+  "GET /orgs/{org}/hooks/{hook_id}/deliveries",
+  "GET /orgs/{org}/insights/api/route-stats/{actor_type}/{actor_id}",
+  "GET /orgs/{org}/insights/api/subject-stats",
+  "GET /orgs/{org}/insights/api/user-stats/{user_id}",
+  "GET /orgs/{org}/installations",
+  "GET /orgs/{org}/invitations",
+  "GET /orgs/{org}/invitations/{invitation_id}/teams",
+  "GET /orgs/{org}/issues",
+  "GET /orgs/{org}/members",
+  "GET /orgs/{org}/members/{username}/codespaces",
+  "GET /orgs/{org}/migrations",
+  "GET /orgs/{org}/migrations/{migration_id}/repositories",
+  "GET /orgs/{org}/organization-roles/{role_id}/teams",
+  "GET /orgs/{org}/organization-roles/{role_id}/users",
+  "GET /orgs/{org}/outside_collaborators",
+  "GET /orgs/{org}/packages",
+  "GET /orgs/{org}/packages/{package_type}/{package_name}/versions",
+  "GET /orgs/{org}/personal-access-token-requests",
+  "GET /orgs/{org}/personal-access-token-requests/{pat_request_id}/repositories",
+  "GET /orgs/{org}/personal-access-tokens",
+  "GET /orgs/{org}/personal-access-tokens/{pat_id}/repositories",
+  "GET /orgs/{org}/private-registries",
+  "GET /orgs/{org}/projects",
+  "GET /orgs/{org}/properties/values",
+  "GET /orgs/{org}/public_members",
+  "GET /orgs/{org}/repos",
+  "GET /orgs/{org}/rulesets",
+  "GET /orgs/{org}/rulesets/rule-suites",
+  "GET /orgs/{org}/secret-scanning/alerts",
+  "GET /orgs/{org}/security-advisories",
+  "GET /orgs/{org}/team/{team_slug}/copilot/metrics",
+  "GET /orgs/{org}/team/{team_slug}/copilot/usage",
+  "GET /orgs/{org}/teams",
+  "GET /orgs/{org}/teams/{team_slug}/discussions",
+  "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments",
+  "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions",
+  "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions",
+  "GET /orgs/{org}/teams/{team_slug}/invitations",
+  "GET /orgs/{org}/teams/{team_slug}/members",
+  "GET /orgs/{org}/teams/{team_slug}/projects",
+  "GET /orgs/{org}/teams/{team_slug}/repos",
+  "GET /orgs/{org}/teams/{team_slug}/teams",
+  "GET /projects/columns/{column_id}/cards",
+  "GET /projects/{project_id}/collaborators",
+  "GET /projects/{project_id}/columns",
+  "GET /repos/{owner}/{repo}/actions/artifacts",
+  "GET /repos/{owner}/{repo}/actions/caches",
+  "GET /repos/{owner}/{repo}/actions/organization-secrets",
+  "GET /repos/{owner}/{repo}/actions/organization-variables",
+  "GET /repos/{owner}/{repo}/actions/runners",
+  "GET /repos/{owner}/{repo}/actions/runs",
+  "GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts",
+  "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}/jobs",
+  "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs",
+  "GET /repos/{owner}/{repo}/actions/secrets",
+  "GET /repos/{owner}/{repo}/actions/variables",
+  "GET /repos/{owner}/{repo}/actions/workflows",
+  "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs",
+  "GET /repos/{owner}/{repo}/activity",
+  "GET /repos/{owner}/{repo}/assignees",
+  "GET /repos/{owner}/{repo}/attestations/{subject_digest}",
+  "GET /repos/{owner}/{repo}/branches",
+  "GET /repos/{owner}/{repo}/check-runs/{check_run_id}/annotations",
+  "GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs",
+  "GET /repos/{owner}/{repo}/code-scanning/alerts",
+  "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances",
+  "GET /repos/{owner}/{repo}/code-scanning/analyses",
+  "GET /repos/{owner}/{repo}/codespaces",
+  "GET /repos/{owner}/{repo}/codespaces/devcontainers",
+  "GET /repos/{owner}/{repo}/codespaces/secrets",
+  "GET /repos/{owner}/{repo}/collaborators",
+  "GET /repos/{owner}/{repo}/comments",
+  "GET /repos/{owner}/{repo}/comments/{comment_id}/reactions",
+  "GET /repos/{owner}/{repo}/commits",
+  "GET /repos/{owner}/{repo}/commits/{commit_sha}/comments",
+  "GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls",
+  "GET /repos/{owner}/{repo}/commits/{ref}/check-runs",
+  "GET /repos/{owner}/{repo}/commits/{ref}/check-suites",
+  "GET /repos/{owner}/{repo}/commits/{ref}/status",
+  "GET /repos/{owner}/{repo}/commits/{ref}/statuses",
+  "GET /repos/{owner}/{repo}/contributors",
+  "GET /repos/{owner}/{repo}/dependabot/alerts",
+  "GET /repos/{owner}/{repo}/dependabot/secrets",
+  "GET /repos/{owner}/{repo}/deployments",
+  "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses",
+  "GET /repos/{owner}/{repo}/environments",
+  "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies",
+  "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/apps",
+  "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets",
+  "GET /repos/{owner}/{repo}/environments/{environment_name}/variables",
+  "GET /repos/{owner}/{repo}/events",
+  "GET /repos/{owner}/{repo}/forks",
+  "GET /repos/{owner}/{repo}/hooks",
+  "GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries",
+  "GET /repos/{owner}/{repo}/invitations",
+  "GET /repos/{owner}/{repo}/issues",
+  "GET /repos/{owner}/{repo}/issues/comments",
+  "GET /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions",
+  "GET /repos/{owner}/{repo}/issues/events",
+  "GET /repos/{owner}/{repo}/issues/{issue_number}/comments",
+  "GET /repos/{owner}/{repo}/issues/{issue_number}/events",
+  "GET /repos/{owner}/{repo}/issues/{issue_number}/labels",
+  "GET /repos/{owner}/{repo}/issues/{issue_number}/reactions",
+  "GET /repos/{owner}/{repo}/issues/{issue_number}/sub_issues",
+  "GET /repos/{owner}/{repo}/issues/{issue_number}/timeline",
+  "GET /repos/{owner}/{repo}/keys",
+  "GET /repos/{owner}/{repo}/labels",
+  "GET /repos/{owner}/{repo}/milestones",
+  "GET /repos/{owner}/{repo}/milestones/{milestone_number}/labels",
+  "GET /repos/{owner}/{repo}/notifications",
+  "GET /repos/{owner}/{repo}/pages/builds",
+  "GET /repos/{owner}/{repo}/projects",
+  "GET /repos/{owner}/{repo}/pulls",
+  "GET /repos/{owner}/{repo}/pulls/comments",
+  "GET /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions",
+  "GET /repos/{owner}/{repo}/pulls/{pull_number}/comments",
+  "GET /repos/{owner}/{repo}/pulls/{pull_number}/commits",
+  "GET /repos/{owner}/{repo}/pulls/{pull_number}/files",
+  "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews",
+  "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments",
+  "GET /repos/{owner}/{repo}/releases",
+  "GET /repos/{owner}/{repo}/releases/{release_id}/assets",
+  "GET /repos/{owner}/{repo}/releases/{release_id}/reactions",
+  "GET /repos/{owner}/{repo}/rules/branches/{branch}",
+  "GET /repos/{owner}/{repo}/rulesets",
+  "GET /repos/{owner}/{repo}/rulesets/rule-suites",
+  "GET /repos/{owner}/{repo}/secret-scanning/alerts",
+  "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}/locations",
+  "GET /repos/{owner}/{repo}/security-advisories",
+  "GET /repos/{owner}/{repo}/stargazers",
+  "GET /repos/{owner}/{repo}/subscribers",
+  "GET /repos/{owner}/{repo}/tags",
+  "GET /repos/{owner}/{repo}/teams",
+  "GET /repos/{owner}/{repo}/topics",
+  "GET /repositories",
+  "GET /search/code",
+  "GET /search/commits",
+  "GET /search/issues",
+  "GET /search/labels",
+  "GET /search/repositories",
+  "GET /search/topics",
+  "GET /search/users",
+  "GET /teams/{team_id}/discussions",
+  "GET /teams/{team_id}/discussions/{discussion_number}/comments",
+  "GET /teams/{team_id}/discussions/{discussion_number}/comments/{comment_number}/reactions",
+  "GET /teams/{team_id}/discussions/{discussion_number}/reactions",
+  "GET /teams/{team_id}/invitations",
+  "GET /teams/{team_id}/members",
+  "GET /teams/{team_id}/projects",
+  "GET /teams/{team_id}/repos",
+  "GET /teams/{team_id}/teams",
+  "GET /user/blocks",
+  "GET /user/codespaces",
+  "GET /user/codespaces/secrets",
+  "GET /user/emails",
+  "GET /user/followers",
+  "GET /user/following",
+  "GET /user/gpg_keys",
+  "GET /user/installations",
+  "GET /user/installations/{installation_id}/repositories",
+  "GET /user/issues",
+  "GET /user/keys",
+  "GET /user/marketplace_purchases",
+  "GET /user/marketplace_purchases/stubbed",
+  "GET /user/memberships/orgs",
+  "GET /user/migrations",
+  "GET /user/migrations/{migration_id}/repositories",
+  "GET /user/orgs",
+  "GET /user/packages",
+  "GET /user/packages/{package_type}/{package_name}/versions",
+  "GET /user/public_emails",
+  "GET /user/repos",
+  "GET /user/repository_invitations",
+  "GET /user/social_accounts",
+  "GET /user/ssh_signing_keys",
+  "GET /user/starred",
+  "GET /user/subscriptions",
+  "GET /user/teams",
+  "GET /users",
+  "GET /users/{username}/attestations/{subject_digest}",
+  "GET /users/{username}/events",
+  "GET /users/{username}/events/orgs/{org}",
+  "GET /users/{username}/events/public",
+  "GET /users/{username}/followers",
+  "GET /users/{username}/following",
+  "GET /users/{username}/gists",
+  "GET /users/{username}/gpg_keys",
+  "GET /users/{username}/keys",
+  "GET /users/{username}/orgs",
+  "GET /users/{username}/packages",
+  "GET /users/{username}/projects",
+  "GET /users/{username}/received_events",
+  "GET /users/{username}/received_events/public",
+  "GET /users/{username}/repos",
+  "GET /users/{username}/social_accounts",
+  "GET /users/{username}/ssh_signing_keys",
+  "GET /users/{username}/starred",
+  "GET /users/{username}/subscriptions"
+];
+
+// pkg/dist-src/paginating-endpoints.js
+function isPaginatingEndpoint(arg) {
+  if (typeof arg === "string") {
+    return paginatingEndpoints.includes(arg);
+  } else {
+    return false;
+  }
+}
+
+// pkg/dist-src/index.js
+function paginateRest(octokit) {
+  return {
+    paginate: Object.assign(paginate.bind(null, octokit), {
+      iterator: iterator.bind(null, octokit)
+    })
+  };
+}
+paginateRest.VERSION = VERSION;
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
+
+
+/***/ }),
+
+/***/ 8883:
+/***/ ((module) => {
+
+"use strict";
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// pkg/dist-src/index.js
+var dist_src_exports = {};
+__export(dist_src_exports, {
+  requestLog: () => requestLog
+});
+module.exports = __toCommonJS(dist_src_exports);
+
+// pkg/dist-src/version.js
+var VERSION = "4.0.1";
+
+// pkg/dist-src/index.js
+function requestLog(octokit) {
+  octokit.hook.wrap("request", (request, options) => {
+    octokit.log.debug("request", options);
+    const start = Date.now();
+    const requestOptions = octokit.request.endpoint.parse(options);
+    const path = requestOptions.url.replace(options.baseUrl, "");
+    return request(options).then((response) => {
+      octokit.log.info(
+        `${requestOptions.method} ${path} - ${response.status} in ${Date.now() - start}ms`
+      );
+      return response;
+    }).catch((error) => {
+      octokit.log.info(
+        `${requestOptions.method} ${path} - ${error.status} in ${Date.now() - start}ms`
+      );
+      throw error;
+    });
+  });
+}
+requestLog.VERSION = VERSION;
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
+
+
+/***/ }),
+
+/***/ 3044:
+/***/ ((module) => {
+
+"use strict";
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// pkg/dist-src/index.js
+var index_exports = {};
+__export(index_exports, {
+  legacyRestEndpointMethods: () => legacyRestEndpointMethods,
+  restEndpointMethods: () => restEndpointMethods
+});
+module.exports = __toCommonJS(index_exports);
+
+// pkg/dist-src/version.js
+var VERSION = "13.3.2-cjs.1";
+
+// pkg/dist-src/generated/endpoints.js
+var Endpoints = {
+  actions: {
+    addCustomLabelsToSelfHostedRunnerForOrg: [
+      "POST /orgs/{org}/actions/runners/{runner_id}/labels"
+    ],
+    addCustomLabelsToSelfHostedRunnerForRepo: [
+      "POST /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
+    ],
+    addRepoAccessToSelfHostedRunnerGroupInOrg: [
+      "PUT /orgs/{org}/actions/runner-groups/{runner_group_id}/repositories/{repository_id}"
+    ],
+    addSelectedRepoToOrgSecret: [
+      "PUT /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    addSelectedRepoToOrgVariable: [
+      "PUT /orgs/{org}/actions/variables/{name}/repositories/{repository_id}"
+    ],
+    approveWorkflowRun: [
+      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/approve"
+    ],
+    cancelWorkflowRun: [
+      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/cancel"
+    ],
+    createEnvironmentVariable: [
+      "POST /repos/{owner}/{repo}/environments/{environment_name}/variables"
+    ],
+    createOrUpdateEnvironmentSecret: [
+      "PUT /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
+    ],
+    createOrUpdateOrgSecret: ["PUT /orgs/{org}/actions/secrets/{secret_name}"],
+    createOrUpdateRepoSecret: [
+      "PUT /repos/{owner}/{repo}/actions/secrets/{secret_name}"
+    ],
+    createOrgVariable: ["POST /orgs/{org}/actions/variables"],
+    createRegistrationTokenForOrg: [
+      "POST /orgs/{org}/actions/runners/registration-token"
+    ],
+    createRegistrationTokenForRepo: [
+      "POST /repos/{owner}/{repo}/actions/runners/registration-token"
+    ],
+    createRemoveTokenForOrg: ["POST /orgs/{org}/actions/runners/remove-token"],
+    createRemoveTokenForRepo: [
+      "POST /repos/{owner}/{repo}/actions/runners/remove-token"
+    ],
+    createRepoVariable: ["POST /repos/{owner}/{repo}/actions/variables"],
+    createWorkflowDispatch: [
+      "POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches"
+    ],
+    deleteActionsCacheById: [
+      "DELETE /repos/{owner}/{repo}/actions/caches/{cache_id}"
+    ],
+    deleteActionsCacheByKey: [
+      "DELETE /repos/{owner}/{repo}/actions/caches{?key,ref}"
+    ],
+    deleteArtifact: [
+      "DELETE /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"
+    ],
+    deleteEnvironmentSecret: [
+      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
+    ],
+    deleteEnvironmentVariable: [
+      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
+    ],
+    deleteOrgSecret: ["DELETE /orgs/{org}/actions/secrets/{secret_name}"],
+    deleteOrgVariable: ["DELETE /orgs/{org}/actions/variables/{name}"],
+    deleteRepoSecret: [
+      "DELETE /repos/{owner}/{repo}/actions/secrets/{secret_name}"
+    ],
+    deleteRepoVariable: [
+      "DELETE /repos/{owner}/{repo}/actions/variables/{name}"
+    ],
+    deleteSelfHostedRunnerFromOrg: [
+      "DELETE /orgs/{org}/actions/runners/{runner_id}"
+    ],
+    deleteSelfHostedRunnerFromRepo: [
+      "DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}"
+    ],
+    deleteWorkflowRun: ["DELETE /repos/{owner}/{repo}/actions/runs/{run_id}"],
+    deleteWorkflowRunLogs: [
+      "DELETE /repos/{owner}/{repo}/actions/runs/{run_id}/logs"
+    ],
+    disableSelectedRepositoryGithubActionsOrganization: [
+      "DELETE /orgs/{org}/actions/permissions/repositories/{repository_id}"
+    ],
+    disableWorkflow: [
+      "PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/disable"
+    ],
+    downloadArtifact: [
+      "GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}/{archive_format}"
+    ],
+    downloadJobLogsForWorkflowRun: [
+      "GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs"
+    ],
+    downloadWorkflowRunAttemptLogs: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}/logs"
+    ],
+    downloadWorkflowRunLogs: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/logs"
+    ],
+    enableSelectedRepositoryGithubActionsOrganization: [
+      "PUT /orgs/{org}/actions/permissions/repositories/{repository_id}"
+    ],
+    enableWorkflow: [
+      "PUT /repos/{owner}/{repo}/actions/workflows/{workflow_id}/enable"
+    ],
+    forceCancelWorkflowRun: [
+      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/force-cancel"
+    ],
+    generateRunnerJitconfigForOrg: [
+      "POST /orgs/{org}/actions/runners/generate-jitconfig"
+    ],
+    generateRunnerJitconfigForRepo: [
+      "POST /repos/{owner}/{repo}/actions/runners/generate-jitconfig"
+    ],
+    getActionsCacheList: ["GET /repos/{owner}/{repo}/actions/caches"],
+    getActionsCacheUsage: ["GET /repos/{owner}/{repo}/actions/cache/usage"],
+    getActionsCacheUsageByRepoForOrg: [
+      "GET /orgs/{org}/actions/cache/usage-by-repository"
+    ],
+    getActionsCacheUsageForOrg: ["GET /orgs/{org}/actions/cache/usage"],
+    getAllowedActionsOrganization: [
+      "GET /orgs/{org}/actions/permissions/selected-actions"
+    ],
+    getAllowedActionsRepository: [
+      "GET /repos/{owner}/{repo}/actions/permissions/selected-actions"
+    ],
+    getArtifact: ["GET /repos/{owner}/{repo}/actions/artifacts/{artifact_id}"],
+    getCustomOidcSubClaimForRepo: [
+      "GET /repos/{owner}/{repo}/actions/oidc/customization/sub"
+    ],
+    getEnvironmentPublicKey: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets/public-key"
+    ],
+    getEnvironmentSecret: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets/{secret_name}"
+    ],
+    getEnvironmentVariable: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
+    ],
+    getGithubActionsDefaultWorkflowPermissionsOrganization: [
+      "GET /orgs/{org}/actions/permissions/workflow"
+    ],
+    getGithubActionsDefaultWorkflowPermissionsRepository: [
+      "GET /repos/{owner}/{repo}/actions/permissions/workflow"
+    ],
+    getGithubActionsPermissionsOrganization: [
+      "GET /orgs/{org}/actions/permissions"
+    ],
+    getGithubActionsPermissionsRepository: [
+      "GET /repos/{owner}/{repo}/actions/permissions"
+    ],
+    getJobForWorkflowRun: ["GET /repos/{owner}/{repo}/actions/jobs/{job_id}"],
+    getOrgPublicKey: ["GET /orgs/{org}/actions/secrets/public-key"],
+    getOrgSecret: ["GET /orgs/{org}/actions/secrets/{secret_name}"],
+    getOrgVariable: ["GET /orgs/{org}/actions/variables/{name}"],
+    getPendingDeploymentsForRun: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/pending_deployments"
+    ],
+    getRepoPermissions: [
+      "GET /repos/{owner}/{repo}/actions/permissions",
+      {},
+      { renamed: ["actions", "getGithubActionsPermissionsRepository"] }
+    ],
+    getRepoPublicKey: ["GET /repos/{owner}/{repo}/actions/secrets/public-key"],
+    getRepoSecret: ["GET /repos/{owner}/{repo}/actions/secrets/{secret_name}"],
+    getRepoVariable: ["GET /repos/{owner}/{repo}/actions/variables/{name}"],
+    getReviewsForRun: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/approvals"
+    ],
+    getSelfHostedRunnerForOrg: ["GET /orgs/{org}/actions/runners/{runner_id}"],
+    getSelfHostedRunnerForRepo: [
+      "GET /repos/{owner}/{repo}/actions/runners/{runner_id}"
+    ],
+    getWorkflow: ["GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}"],
+    getWorkflowAccessToRepository: [
+      "GET /repos/{owner}/{repo}/actions/permissions/access"
+    ],
+    getWorkflowRun: ["GET /repos/{owner}/{repo}/actions/runs/{run_id}"],
+    getWorkflowRunAttempt: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}"
+    ],
+    getWorkflowRunUsage: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/timing"
+    ],
+    getWorkflowUsage: [
+      "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/timing"
+    ],
+    listArtifactsForRepo: ["GET /repos/{owner}/{repo}/actions/artifacts"],
+    listEnvironmentSecrets: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/secrets"
+    ],
+    listEnvironmentVariables: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/variables"
+    ],
+    listJobsForWorkflowRun: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/jobs"
+    ],
+    listJobsForWorkflowRunAttempt: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt_number}/jobs"
+    ],
+    listLabelsForSelfHostedRunnerForOrg: [
+      "GET /orgs/{org}/actions/runners/{runner_id}/labels"
+    ],
+    listLabelsForSelfHostedRunnerForRepo: [
+      "GET /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
+    ],
+    listOrgSecrets: ["GET /orgs/{org}/actions/secrets"],
+    listOrgVariables: ["GET /orgs/{org}/actions/variables"],
+    listRepoOrganizationSecrets: [
+      "GET /repos/{owner}/{repo}/actions/organization-secrets"
+    ],
+    listRepoOrganizationVariables: [
+      "GET /repos/{owner}/{repo}/actions/organization-variables"
+    ],
+    listRepoSecrets: ["GET /repos/{owner}/{repo}/actions/secrets"],
+    listRepoVariables: ["GET /repos/{owner}/{repo}/actions/variables"],
+    listRepoWorkflows: ["GET /repos/{owner}/{repo}/actions/workflows"],
+    listRunnerApplicationsForOrg: ["GET /orgs/{org}/actions/runners/downloads"],
+    listRunnerApplicationsForRepo: [
+      "GET /repos/{owner}/{repo}/actions/runners/downloads"
+    ],
+    listSelectedReposForOrgSecret: [
+      "GET /orgs/{org}/actions/secrets/{secret_name}/repositories"
+    ],
+    listSelectedReposForOrgVariable: [
+      "GET /orgs/{org}/actions/variables/{name}/repositories"
+    ],
+    listSelectedRepositoriesEnabledGithubActionsOrganization: [
+      "GET /orgs/{org}/actions/permissions/repositories"
+    ],
+    listSelfHostedRunnersForOrg: ["GET /orgs/{org}/actions/runners"],
+    listSelfHostedRunnersForRepo: ["GET /repos/{owner}/{repo}/actions/runners"],
+    listWorkflowRunArtifacts: [
+      "GET /repos/{owner}/{repo}/actions/runs/{run_id}/artifacts"
+    ],
+    listWorkflowRuns: [
+      "GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs"
+    ],
+    listWorkflowRunsForRepo: ["GET /repos/{owner}/{repo}/actions/runs"],
+    reRunJobForWorkflowRun: [
+      "POST /repos/{owner}/{repo}/actions/jobs/{job_id}/rerun"
+    ],
+    reRunWorkflow: ["POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun"],
+    reRunWorkflowFailedJobs: [
+      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/rerun-failed-jobs"
+    ],
+    removeAllCustomLabelsFromSelfHostedRunnerForOrg: [
+      "DELETE /orgs/{org}/actions/runners/{runner_id}/labels"
+    ],
+    removeAllCustomLabelsFromSelfHostedRunnerForRepo: [
+      "DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
+    ],
+    removeCustomLabelFromSelfHostedRunnerForOrg: [
+      "DELETE /orgs/{org}/actions/runners/{runner_id}/labels/{name}"
+    ],
+    removeCustomLabelFromSelfHostedRunnerForRepo: [
+      "DELETE /repos/{owner}/{repo}/actions/runners/{runner_id}/labels/{name}"
+    ],
+    removeSelectedRepoFromOrgSecret: [
+      "DELETE /orgs/{org}/actions/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    removeSelectedRepoFromOrgVariable: [
+      "DELETE /orgs/{org}/actions/variables/{name}/repositories/{repository_id}"
+    ],
+    reviewCustomGatesForRun: [
+      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/deployment_protection_rule"
+    ],
+    reviewPendingDeploymentsForRun: [
+      "POST /repos/{owner}/{repo}/actions/runs/{run_id}/pending_deployments"
+    ],
+    setAllowedActionsOrganization: [
+      "PUT /orgs/{org}/actions/permissions/selected-actions"
+    ],
+    setAllowedActionsRepository: [
+      "PUT /repos/{owner}/{repo}/actions/permissions/selected-actions"
+    ],
+    setCustomLabelsForSelfHostedRunnerForOrg: [
+      "PUT /orgs/{org}/actions/runners/{runner_id}/labels"
+    ],
+    setCustomLabelsForSelfHostedRunnerForRepo: [
+      "PUT /repos/{owner}/{repo}/actions/runners/{runner_id}/labels"
+    ],
+    setCustomOidcSubClaimForRepo: [
+      "PUT /repos/{owner}/{repo}/actions/oidc/customization/sub"
+    ],
+    setGithubActionsDefaultWorkflowPermissionsOrganization: [
+      "PUT /orgs/{org}/actions/permissions/workflow"
+    ],
+    setGithubActionsDefaultWorkflowPermissionsRepository: [
+      "PUT /repos/{owner}/{repo}/actions/permissions/workflow"
+    ],
+    setGithubActionsPermissionsOrganization: [
+      "PUT /orgs/{org}/actions/permissions"
+    ],
+    setGithubActionsPermissionsRepository: [
+      "PUT /repos/{owner}/{repo}/actions/permissions"
+    ],
+    setSelectedReposForOrgSecret: [
+      "PUT /orgs/{org}/actions/secrets/{secret_name}/repositories"
+    ],
+    setSelectedReposForOrgVariable: [
+      "PUT /orgs/{org}/actions/variables/{name}/repositories"
+    ],
+    setSelectedRepositoriesEnabledGithubActionsOrganization: [
+      "PUT /orgs/{org}/actions/permissions/repositories"
+    ],
+    setWorkflowAccessToRepository: [
+      "PUT /repos/{owner}/{repo}/actions/permissions/access"
+    ],
+    updateEnvironmentVariable: [
+      "PATCH /repos/{owner}/{repo}/environments/{environment_name}/variables/{name}"
+    ],
+    updateOrgVariable: ["PATCH /orgs/{org}/actions/variables/{name}"],
+    updateRepoVariable: [
+      "PATCH /repos/{owner}/{repo}/actions/variables/{name}"
+    ]
+  },
+  activity: {
+    checkRepoIsStarredByAuthenticatedUser: ["GET /user/starred/{owner}/{repo}"],
+    deleteRepoSubscription: ["DELETE /repos/{owner}/{repo}/subscription"],
+    deleteThreadSubscription: [
+      "DELETE /notifications/threads/{thread_id}/subscription"
+    ],
+    getFeeds: ["GET /feeds"],
+    getRepoSubscription: ["GET /repos/{owner}/{repo}/subscription"],
+    getThread: ["GET /notifications/threads/{thread_id}"],
+    getThreadSubscriptionForAuthenticatedUser: [
+      "GET /notifications/threads/{thread_id}/subscription"
+    ],
+    listEventsForAuthenticatedUser: ["GET /users/{username}/events"],
+    listNotificationsForAuthenticatedUser: ["GET /notifications"],
+    listOrgEventsForAuthenticatedUser: [
+      "GET /users/{username}/events/orgs/{org}"
+    ],
+    listPublicEvents: ["GET /events"],
+    listPublicEventsForRepoNetwork: ["GET /networks/{owner}/{repo}/events"],
+    listPublicEventsForUser: ["GET /users/{username}/events/public"],
+    listPublicOrgEvents: ["GET /orgs/{org}/events"],
+    listReceivedEventsForUser: ["GET /users/{username}/received_events"],
+    listReceivedPublicEventsForUser: [
+      "GET /users/{username}/received_events/public"
+    ],
+    listRepoEvents: ["GET /repos/{owner}/{repo}/events"],
+    listRepoNotificationsForAuthenticatedUser: [
+      "GET /repos/{owner}/{repo}/notifications"
+    ],
+    listReposStarredByAuthenticatedUser: ["GET /user/starred"],
+    listReposStarredByUser: ["GET /users/{username}/starred"],
+    listReposWatchedByUser: ["GET /users/{username}/subscriptions"],
+    listStargazersForRepo: ["GET /repos/{owner}/{repo}/stargazers"],
+    listWatchedReposForAuthenticatedUser: ["GET /user/subscriptions"],
+    listWatchersForRepo: ["GET /repos/{owner}/{repo}/subscribers"],
+    markNotificationsAsRead: ["PUT /notifications"],
+    markRepoNotificationsAsRead: ["PUT /repos/{owner}/{repo}/notifications"],
+    markThreadAsDone: ["DELETE /notifications/threads/{thread_id}"],
+    markThreadAsRead: ["PATCH /notifications/threads/{thread_id}"],
+    setRepoSubscription: ["PUT /repos/{owner}/{repo}/subscription"],
+    setThreadSubscription: [
+      "PUT /notifications/threads/{thread_id}/subscription"
+    ],
+    starRepoForAuthenticatedUser: ["PUT /user/starred/{owner}/{repo}"],
+    unstarRepoForAuthenticatedUser: ["DELETE /user/starred/{owner}/{repo}"]
+  },
+  apps: {
+    addRepoToInstallation: [
+      "PUT /user/installations/{installation_id}/repositories/{repository_id}",
+      {},
+      { renamed: ["apps", "addRepoToInstallationForAuthenticatedUser"] }
+    ],
+    addRepoToInstallationForAuthenticatedUser: [
+      "PUT /user/installations/{installation_id}/repositories/{repository_id}"
+    ],
+    checkToken: ["POST /applications/{client_id}/token"],
+    createFromManifest: ["POST /app-manifests/{code}/conversions"],
+    createInstallationAccessToken: [
+      "POST /app/installations/{installation_id}/access_tokens"
+    ],
+    deleteAuthorization: ["DELETE /applications/{client_id}/grant"],
+    deleteInstallation: ["DELETE /app/installations/{installation_id}"],
+    deleteToken: ["DELETE /applications/{client_id}/token"],
+    getAuthenticated: ["GET /app"],
+    getBySlug: ["GET /apps/{app_slug}"],
+    getInstallation: ["GET /app/installations/{installation_id}"],
+    getOrgInstallation: ["GET /orgs/{org}/installation"],
+    getRepoInstallation: ["GET /repos/{owner}/{repo}/installation"],
+    getSubscriptionPlanForAccount: [
+      "GET /marketplace_listing/accounts/{account_id}"
+    ],
+    getSubscriptionPlanForAccountStubbed: [
+      "GET /marketplace_listing/stubbed/accounts/{account_id}"
+    ],
+    getUserInstallation: ["GET /users/{username}/installation"],
+    getWebhookConfigForApp: ["GET /app/hook/config"],
+    getWebhookDelivery: ["GET /app/hook/deliveries/{delivery_id}"],
+    listAccountsForPlan: ["GET /marketplace_listing/plans/{plan_id}/accounts"],
+    listAccountsForPlanStubbed: [
+      "GET /marketplace_listing/stubbed/plans/{plan_id}/accounts"
+    ],
+    listInstallationReposForAuthenticatedUser: [
+      "GET /user/installations/{installation_id}/repositories"
+    ],
+    listInstallationRequestsForAuthenticatedApp: [
+      "GET /app/installation-requests"
+    ],
+    listInstallations: ["GET /app/installations"],
+    listInstallationsForAuthenticatedUser: ["GET /user/installations"],
+    listPlans: ["GET /marketplace_listing/plans"],
+    listPlansStubbed: ["GET /marketplace_listing/stubbed/plans"],
+    listReposAccessibleToInstallation: ["GET /installation/repositories"],
+    listSubscriptionsForAuthenticatedUser: ["GET /user/marketplace_purchases"],
+    listSubscriptionsForAuthenticatedUserStubbed: [
+      "GET /user/marketplace_purchases/stubbed"
+    ],
+    listWebhookDeliveries: ["GET /app/hook/deliveries"],
+    redeliverWebhookDelivery: [
+      "POST /app/hook/deliveries/{delivery_id}/attempts"
+    ],
+    removeRepoFromInstallation: [
+      "DELETE /user/installations/{installation_id}/repositories/{repository_id}",
+      {},
+      { renamed: ["apps", "removeRepoFromInstallationForAuthenticatedUser"] }
+    ],
+    removeRepoFromInstallationForAuthenticatedUser: [
+      "DELETE /user/installations/{installation_id}/repositories/{repository_id}"
+    ],
+    resetToken: ["PATCH /applications/{client_id}/token"],
+    revokeInstallationAccessToken: ["DELETE /installation/token"],
+    scopeToken: ["POST /applications/{client_id}/token/scoped"],
+    suspendInstallation: ["PUT /app/installations/{installation_id}/suspended"],
+    unsuspendInstallation: [
+      "DELETE /app/installations/{installation_id}/suspended"
+    ],
+    updateWebhookConfigForApp: ["PATCH /app/hook/config"]
+  },
+  billing: {
+    getGithubActionsBillingOrg: ["GET /orgs/{org}/settings/billing/actions"],
+    getGithubActionsBillingUser: [
+      "GET /users/{username}/settings/billing/actions"
+    ],
+    getGithubBillingUsageReportOrg: [
+      "GET /organizations/{org}/settings/billing/usage"
+    ],
+    getGithubPackagesBillingOrg: ["GET /orgs/{org}/settings/billing/packages"],
+    getGithubPackagesBillingUser: [
+      "GET /users/{username}/settings/billing/packages"
+    ],
+    getSharedStorageBillingOrg: [
+      "GET /orgs/{org}/settings/billing/shared-storage"
+    ],
+    getSharedStorageBillingUser: [
+      "GET /users/{username}/settings/billing/shared-storage"
+    ]
+  },
+  checks: {
+    create: ["POST /repos/{owner}/{repo}/check-runs"],
+    createSuite: ["POST /repos/{owner}/{repo}/check-suites"],
+    get: ["GET /repos/{owner}/{repo}/check-runs/{check_run_id}"],
+    getSuite: ["GET /repos/{owner}/{repo}/check-suites/{check_suite_id}"],
+    listAnnotations: [
+      "GET /repos/{owner}/{repo}/check-runs/{check_run_id}/annotations"
+    ],
+    listForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/check-runs"],
+    listForSuite: [
+      "GET /repos/{owner}/{repo}/check-suites/{check_suite_id}/check-runs"
+    ],
+    listSuitesForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/check-suites"],
+    rerequestRun: [
+      "POST /repos/{owner}/{repo}/check-runs/{check_run_id}/rerequest"
+    ],
+    rerequestSuite: [
+      "POST /repos/{owner}/{repo}/check-suites/{check_suite_id}/rerequest"
+    ],
+    setSuitesPreferences: [
+      "PATCH /repos/{owner}/{repo}/check-suites/preferences"
+    ],
+    update: ["PATCH /repos/{owner}/{repo}/check-runs/{check_run_id}"]
+  },
+  codeScanning: {
+    commitAutofix: [
+      "POST /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/autofix/commits"
+    ],
+    createAutofix: [
+      "POST /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/autofix"
+    ],
+    createVariantAnalysis: [
+      "POST /repos/{owner}/{repo}/code-scanning/codeql/variant-analyses"
+    ],
+    deleteAnalysis: [
+      "DELETE /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}{?confirm_delete}"
+    ],
+    deleteCodeqlDatabase: [
+      "DELETE /repos/{owner}/{repo}/code-scanning/codeql/databases/{language}"
+    ],
+    getAlert: [
+      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}",
+      {},
+      { renamedParameters: { alert_id: "alert_number" } }
+    ],
+    getAnalysis: [
+      "GET /repos/{owner}/{repo}/code-scanning/analyses/{analysis_id}"
+    ],
+    getAutofix: [
+      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/autofix"
+    ],
+    getCodeqlDatabase: [
+      "GET /repos/{owner}/{repo}/code-scanning/codeql/databases/{language}"
+    ],
+    getDefaultSetup: ["GET /repos/{owner}/{repo}/code-scanning/default-setup"],
+    getSarif: ["GET /repos/{owner}/{repo}/code-scanning/sarifs/{sarif_id}"],
+    getVariantAnalysis: [
+      "GET /repos/{owner}/{repo}/code-scanning/codeql/variant-analyses/{codeql_variant_analysis_id}"
+    ],
+    getVariantAnalysisRepoTask: [
+      "GET /repos/{owner}/{repo}/code-scanning/codeql/variant-analyses/{codeql_variant_analysis_id}/repos/{repo_owner}/{repo_name}"
+    ],
+    listAlertInstances: [
+      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances"
+    ],
+    listAlertsForOrg: ["GET /orgs/{org}/code-scanning/alerts"],
+    listAlertsForRepo: ["GET /repos/{owner}/{repo}/code-scanning/alerts"],
+    listAlertsInstances: [
+      "GET /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}/instances",
+      {},
+      { renamed: ["codeScanning", "listAlertInstances"] }
+    ],
+    listCodeqlDatabases: [
+      "GET /repos/{owner}/{repo}/code-scanning/codeql/databases"
+    ],
+    listRecentAnalyses: ["GET /repos/{owner}/{repo}/code-scanning/analyses"],
+    updateAlert: [
+      "PATCH /repos/{owner}/{repo}/code-scanning/alerts/{alert_number}"
+    ],
+    updateDefaultSetup: [
+      "PATCH /repos/{owner}/{repo}/code-scanning/default-setup"
+    ],
+    uploadSarif: ["POST /repos/{owner}/{repo}/code-scanning/sarifs"]
+  },
+  codeSecurity: {
+    attachConfiguration: [
+      "POST /orgs/{org}/code-security/configurations/{configuration_id}/attach"
+    ],
+    attachEnterpriseConfiguration: [
+      "POST /enterprises/{enterprise}/code-security/configurations/{configuration_id}/attach"
+    ],
+    createConfiguration: ["POST /orgs/{org}/code-security/configurations"],
+    createConfigurationForEnterprise: [
+      "POST /enterprises/{enterprise}/code-security/configurations"
+    ],
+    deleteConfiguration: [
+      "DELETE /orgs/{org}/code-security/configurations/{configuration_id}"
+    ],
+    deleteConfigurationForEnterprise: [
+      "DELETE /enterprises/{enterprise}/code-security/configurations/{configuration_id}"
+    ],
+    detachConfiguration: [
+      "DELETE /orgs/{org}/code-security/configurations/detach"
+    ],
+    getConfiguration: [
+      "GET /orgs/{org}/code-security/configurations/{configuration_id}"
+    ],
+    getConfigurationForRepository: [
+      "GET /repos/{owner}/{repo}/code-security-configuration"
+    ],
+    getConfigurationsForEnterprise: [
+      "GET /enterprises/{enterprise}/code-security/configurations"
+    ],
+    getConfigurationsForOrg: ["GET /orgs/{org}/code-security/configurations"],
+    getDefaultConfigurations: [
+      "GET /orgs/{org}/code-security/configurations/defaults"
+    ],
+    getDefaultConfigurationsForEnterprise: [
+      "GET /enterprises/{enterprise}/code-security/configurations/defaults"
+    ],
+    getRepositoriesForConfiguration: [
+      "GET /orgs/{org}/code-security/configurations/{configuration_id}/repositories"
+    ],
+    getRepositoriesForEnterpriseConfiguration: [
+      "GET /enterprises/{enterprise}/code-security/configurations/{configuration_id}/repositories"
+    ],
+    getSingleConfigurationForEnterprise: [
+      "GET /enterprises/{enterprise}/code-security/configurations/{configuration_id}"
+    ],
+    setConfigurationAsDefault: [
+      "PUT /orgs/{org}/code-security/configurations/{configuration_id}/defaults"
+    ],
+    setConfigurationAsDefaultForEnterprise: [
+      "PUT /enterprises/{enterprise}/code-security/configurations/{configuration_id}/defaults"
+    ],
+    updateConfiguration: [
+      "PATCH /orgs/{org}/code-security/configurations/{configuration_id}"
+    ],
+    updateEnterpriseConfiguration: [
+      "PATCH /enterprises/{enterprise}/code-security/configurations/{configuration_id}"
+    ]
+  },
+  codesOfConduct: {
+    getAllCodesOfConduct: ["GET /codes_of_conduct"],
+    getConductCode: ["GET /codes_of_conduct/{key}"]
+  },
+  codespaces: {
+    addRepositoryForSecretForAuthenticatedUser: [
+      "PUT /user/codespaces/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    addSelectedRepoToOrgSecret: [
+      "PUT /orgs/{org}/codespaces/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    checkPermissionsForDevcontainer: [
+      "GET /repos/{owner}/{repo}/codespaces/permissions_check"
+    ],
+    codespaceMachinesForAuthenticatedUser: [
+      "GET /user/codespaces/{codespace_name}/machines"
+    ],
+    createForAuthenticatedUser: ["POST /user/codespaces"],
+    createOrUpdateOrgSecret: [
+      "PUT /orgs/{org}/codespaces/secrets/{secret_name}"
+    ],
+    createOrUpdateRepoSecret: [
+      "PUT /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"
+    ],
+    createOrUpdateSecretForAuthenticatedUser: [
+      "PUT /user/codespaces/secrets/{secret_name}"
+    ],
+    createWithPrForAuthenticatedUser: [
+      "POST /repos/{owner}/{repo}/pulls/{pull_number}/codespaces"
+    ],
+    createWithRepoForAuthenticatedUser: [
+      "POST /repos/{owner}/{repo}/codespaces"
+    ],
+    deleteForAuthenticatedUser: ["DELETE /user/codespaces/{codespace_name}"],
+    deleteFromOrganization: [
+      "DELETE /orgs/{org}/members/{username}/codespaces/{codespace_name}"
+    ],
+    deleteOrgSecret: ["DELETE /orgs/{org}/codespaces/secrets/{secret_name}"],
+    deleteRepoSecret: [
+      "DELETE /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"
+    ],
+    deleteSecretForAuthenticatedUser: [
+      "DELETE /user/codespaces/secrets/{secret_name}"
+    ],
+    exportForAuthenticatedUser: [
+      "POST /user/codespaces/{codespace_name}/exports"
+    ],
+    getCodespacesForUserInOrg: [
+      "GET /orgs/{org}/members/{username}/codespaces"
+    ],
+    getExportDetailsForAuthenticatedUser: [
+      "GET /user/codespaces/{codespace_name}/exports/{export_id}"
+    ],
+    getForAuthenticatedUser: ["GET /user/codespaces/{codespace_name}"],
+    getOrgPublicKey: ["GET /orgs/{org}/codespaces/secrets/public-key"],
+    getOrgSecret: ["GET /orgs/{org}/codespaces/secrets/{secret_name}"],
+    getPublicKeyForAuthenticatedUser: [
+      "GET /user/codespaces/secrets/public-key"
+    ],
+    getRepoPublicKey: [
+      "GET /repos/{owner}/{repo}/codespaces/secrets/public-key"
+    ],
+    getRepoSecret: [
+      "GET /repos/{owner}/{repo}/codespaces/secrets/{secret_name}"
+    ],
+    getSecretForAuthenticatedUser: [
+      "GET /user/codespaces/secrets/{secret_name}"
+    ],
+    listDevcontainersInRepositoryForAuthenticatedUser: [
+      "GET /repos/{owner}/{repo}/codespaces/devcontainers"
+    ],
+    listForAuthenticatedUser: ["GET /user/codespaces"],
+    listInOrganization: [
+      "GET /orgs/{org}/codespaces",
+      {},
+      { renamedParameters: { org_id: "org" } }
+    ],
+    listInRepositoryForAuthenticatedUser: [
+      "GET /repos/{owner}/{repo}/codespaces"
+    ],
+    listOrgSecrets: ["GET /orgs/{org}/codespaces/secrets"],
+    listRepoSecrets: ["GET /repos/{owner}/{repo}/codespaces/secrets"],
+    listRepositoriesForSecretForAuthenticatedUser: [
+      "GET /user/codespaces/secrets/{secret_name}/repositories"
+    ],
+    listSecretsForAuthenticatedUser: ["GET /user/codespaces/secrets"],
+    listSelectedReposForOrgSecret: [
+      "GET /orgs/{org}/codespaces/secrets/{secret_name}/repositories"
+    ],
+    preFlightWithRepoForAuthenticatedUser: [
+      "GET /repos/{owner}/{repo}/codespaces/new"
+    ],
+    publishForAuthenticatedUser: [
+      "POST /user/codespaces/{codespace_name}/publish"
+    ],
+    removeRepositoryForSecretForAuthenticatedUser: [
+      "DELETE /user/codespaces/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    removeSelectedRepoFromOrgSecret: [
+      "DELETE /orgs/{org}/codespaces/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    repoMachinesForAuthenticatedUser: [
+      "GET /repos/{owner}/{repo}/codespaces/machines"
+    ],
+    setRepositoriesForSecretForAuthenticatedUser: [
+      "PUT /user/codespaces/secrets/{secret_name}/repositories"
+    ],
+    setSelectedReposForOrgSecret: [
+      "PUT /orgs/{org}/codespaces/secrets/{secret_name}/repositories"
+    ],
+    startForAuthenticatedUser: ["POST /user/codespaces/{codespace_name}/start"],
+    stopForAuthenticatedUser: ["POST /user/codespaces/{codespace_name}/stop"],
+    stopInOrganization: [
+      "POST /orgs/{org}/members/{username}/codespaces/{codespace_name}/stop"
+    ],
+    updateForAuthenticatedUser: ["PATCH /user/codespaces/{codespace_name}"]
+  },
+  copilot: {
+    addCopilotSeatsForTeams: [
+      "POST /orgs/{org}/copilot/billing/selected_teams"
+    ],
+    addCopilotSeatsForUsers: [
+      "POST /orgs/{org}/copilot/billing/selected_users"
+    ],
+    cancelCopilotSeatAssignmentForTeams: [
+      "DELETE /orgs/{org}/copilot/billing/selected_teams"
+    ],
+    cancelCopilotSeatAssignmentForUsers: [
+      "DELETE /orgs/{org}/copilot/billing/selected_users"
+    ],
+    copilotMetricsForOrganization: ["GET /orgs/{org}/copilot/metrics"],
+    copilotMetricsForTeam: ["GET /orgs/{org}/team/{team_slug}/copilot/metrics"],
+    getCopilotOrganizationDetails: ["GET /orgs/{org}/copilot/billing"],
+    getCopilotSeatDetailsForUser: [
+      "GET /orgs/{org}/members/{username}/copilot"
+    ],
+    listCopilotSeats: ["GET /orgs/{org}/copilot/billing/seats"],
+    usageMetricsForOrg: ["GET /orgs/{org}/copilot/usage"],
+    usageMetricsForTeam: ["GET /orgs/{org}/team/{team_slug}/copilot/usage"]
+  },
+  dependabot: {
+    addSelectedRepoToOrgSecret: [
+      "PUT /orgs/{org}/dependabot/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    createOrUpdateOrgSecret: [
+      "PUT /orgs/{org}/dependabot/secrets/{secret_name}"
+    ],
+    createOrUpdateRepoSecret: [
+      "PUT /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"
+    ],
+    deleteOrgSecret: ["DELETE /orgs/{org}/dependabot/secrets/{secret_name}"],
+    deleteRepoSecret: [
+      "DELETE /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"
+    ],
+    getAlert: ["GET /repos/{owner}/{repo}/dependabot/alerts/{alert_number}"],
+    getOrgPublicKey: ["GET /orgs/{org}/dependabot/secrets/public-key"],
+    getOrgSecret: ["GET /orgs/{org}/dependabot/secrets/{secret_name}"],
+    getRepoPublicKey: [
+      "GET /repos/{owner}/{repo}/dependabot/secrets/public-key"
+    ],
+    getRepoSecret: [
+      "GET /repos/{owner}/{repo}/dependabot/secrets/{secret_name}"
+    ],
+    listAlertsForEnterprise: [
+      "GET /enterprises/{enterprise}/dependabot/alerts"
+    ],
+    listAlertsForOrg: ["GET /orgs/{org}/dependabot/alerts"],
+    listAlertsForRepo: ["GET /repos/{owner}/{repo}/dependabot/alerts"],
+    listOrgSecrets: ["GET /orgs/{org}/dependabot/secrets"],
+    listRepoSecrets: ["GET /repos/{owner}/{repo}/dependabot/secrets"],
+    listSelectedReposForOrgSecret: [
+      "GET /orgs/{org}/dependabot/secrets/{secret_name}/repositories"
+    ],
+    removeSelectedRepoFromOrgSecret: [
+      "DELETE /orgs/{org}/dependabot/secrets/{secret_name}/repositories/{repository_id}"
+    ],
+    setSelectedReposForOrgSecret: [
+      "PUT /orgs/{org}/dependabot/secrets/{secret_name}/repositories"
+    ],
+    updateAlert: [
+      "PATCH /repos/{owner}/{repo}/dependabot/alerts/{alert_number}"
+    ]
+  },
+  dependencyGraph: {
+    createRepositorySnapshot: [
+      "POST /repos/{owner}/{repo}/dependency-graph/snapshots"
+    ],
+    diffRange: [
+      "GET /repos/{owner}/{repo}/dependency-graph/compare/{basehead}"
+    ],
+    exportSbom: ["GET /repos/{owner}/{repo}/dependency-graph/sbom"]
+  },
+  emojis: { get: ["GET /emojis"] },
+  gists: {
+    checkIsStarred: ["GET /gists/{gist_id}/star"],
+    create: ["POST /gists"],
+    createComment: ["POST /gists/{gist_id}/comments"],
+    delete: ["DELETE /gists/{gist_id}"],
+    deleteComment: ["DELETE /gists/{gist_id}/comments/{comment_id}"],
+    fork: ["POST /gists/{gist_id}/forks"],
+    get: ["GET /gists/{gist_id}"],
+    getComment: ["GET /gists/{gist_id}/comments/{comment_id}"],
+    getRevision: ["GET /gists/{gist_id}/{sha}"],
+    list: ["GET /gists"],
+    listComments: ["GET /gists/{gist_id}/comments"],
+    listCommits: ["GET /gists/{gist_id}/commits"],
+    listForUser: ["GET /users/{username}/gists"],
+    listForks: ["GET /gists/{gist_id}/forks"],
+    listPublic: ["GET /gists/public"],
+    listStarred: ["GET /gists/starred"],
+    star: ["PUT /gists/{gist_id}/star"],
+    unstar: ["DELETE /gists/{gist_id}/star"],
+    update: ["PATCH /gists/{gist_id}"],
+    updateComment: ["PATCH /gists/{gist_id}/comments/{comment_id}"]
+  },
+  git: {
+    createBlob: ["POST /repos/{owner}/{repo}/git/blobs"],
+    createCommit: ["POST /repos/{owner}/{repo}/git/commits"],
+    createRef: ["POST /repos/{owner}/{repo}/git/refs"],
+    createTag: ["POST /repos/{owner}/{repo}/git/tags"],
+    createTree: ["POST /repos/{owner}/{repo}/git/trees"],
+    deleteRef: ["DELETE /repos/{owner}/{repo}/git/refs/{ref}"],
+    getBlob: ["GET /repos/{owner}/{repo}/git/blobs/{file_sha}"],
+    getCommit: ["GET /repos/{owner}/{repo}/git/commits/{commit_sha}"],
+    getRef: ["GET /repos/{owner}/{repo}/git/ref/{ref}"],
+    getTag: ["GET /repos/{owner}/{repo}/git/tags/{tag_sha}"],
+    getTree: ["GET /repos/{owner}/{repo}/git/trees/{tree_sha}"],
+    listMatchingRefs: ["GET /repos/{owner}/{repo}/git/matching-refs/{ref}"],
+    updateRef: ["PATCH /repos/{owner}/{repo}/git/refs/{ref}"]
+  },
+  gitignore: {
+    getAllTemplates: ["GET /gitignore/templates"],
+    getTemplate: ["GET /gitignore/templates/{name}"]
+  },
+  interactions: {
+    getRestrictionsForAuthenticatedUser: ["GET /user/interaction-limits"],
+    getRestrictionsForOrg: ["GET /orgs/{org}/interaction-limits"],
+    getRestrictionsForRepo: ["GET /repos/{owner}/{repo}/interaction-limits"],
+    getRestrictionsForYourPublicRepos: [
+      "GET /user/interaction-limits",
+      {},
+      { renamed: ["interactions", "getRestrictionsForAuthenticatedUser"] }
+    ],
+    removeRestrictionsForAuthenticatedUser: ["DELETE /user/interaction-limits"],
+    removeRestrictionsForOrg: ["DELETE /orgs/{org}/interaction-limits"],
+    removeRestrictionsForRepo: [
+      "DELETE /repos/{owner}/{repo}/interaction-limits"
+    ],
+    removeRestrictionsForYourPublicRepos: [
+      "DELETE /user/interaction-limits",
+      {},
+      { renamed: ["interactions", "removeRestrictionsForAuthenticatedUser"] }
+    ],
+    setRestrictionsForAuthenticatedUser: ["PUT /user/interaction-limits"],
+    setRestrictionsForOrg: ["PUT /orgs/{org}/interaction-limits"],
+    setRestrictionsForRepo: ["PUT /repos/{owner}/{repo}/interaction-limits"],
+    setRestrictionsForYourPublicRepos: [
+      "PUT /user/interaction-limits",
+      {},
+      { renamed: ["interactions", "setRestrictionsForAuthenticatedUser"] }
+    ]
+  },
+  issues: {
+    addAssignees: [
+      "POST /repos/{owner}/{repo}/issues/{issue_number}/assignees"
+    ],
+    addLabels: ["POST /repos/{owner}/{repo}/issues/{issue_number}/labels"],
+    addSubIssue: [
+      "POST /repos/{owner}/{repo}/issues/{issue_number}/sub_issues"
+    ],
+    checkUserCanBeAssigned: ["GET /repos/{owner}/{repo}/assignees/{assignee}"],
+    checkUserCanBeAssignedToIssue: [
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/assignees/{assignee}"
+    ],
+    create: ["POST /repos/{owner}/{repo}/issues"],
+    createComment: [
+      "POST /repos/{owner}/{repo}/issues/{issue_number}/comments"
+    ],
+    createLabel: ["POST /repos/{owner}/{repo}/labels"],
+    createMilestone: ["POST /repos/{owner}/{repo}/milestones"],
+    deleteComment: [
+      "DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}"
+    ],
+    deleteLabel: ["DELETE /repos/{owner}/{repo}/labels/{name}"],
+    deleteMilestone: [
+      "DELETE /repos/{owner}/{repo}/milestones/{milestone_number}"
+    ],
+    get: ["GET /repos/{owner}/{repo}/issues/{issue_number}"],
+    getComment: ["GET /repos/{owner}/{repo}/issues/comments/{comment_id}"],
+    getEvent: ["GET /repos/{owner}/{repo}/issues/events/{event_id}"],
+    getLabel: ["GET /repos/{owner}/{repo}/labels/{name}"],
+    getMilestone: ["GET /repos/{owner}/{repo}/milestones/{milestone_number}"],
+    list: ["GET /issues"],
+    listAssignees: ["GET /repos/{owner}/{repo}/assignees"],
+    listComments: ["GET /repos/{owner}/{repo}/issues/{issue_number}/comments"],
+    listCommentsForRepo: ["GET /repos/{owner}/{repo}/issues/comments"],
+    listEvents: ["GET /repos/{owner}/{repo}/issues/{issue_number}/events"],
+    listEventsForRepo: ["GET /repos/{owner}/{repo}/issues/events"],
+    listEventsForTimeline: [
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/timeline"
+    ],
+    listForAuthenticatedUser: ["GET /user/issues"],
+    listForOrg: ["GET /orgs/{org}/issues"],
+    listForRepo: ["GET /repos/{owner}/{repo}/issues"],
+    listLabelsForMilestone: [
+      "GET /repos/{owner}/{repo}/milestones/{milestone_number}/labels"
+    ],
+    listLabelsForRepo: ["GET /repos/{owner}/{repo}/labels"],
+    listLabelsOnIssue: [
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/labels"
+    ],
+    listMilestones: ["GET /repos/{owner}/{repo}/milestones"],
+    listSubIssues: [
+      "GET /repos/{owner}/{repo}/issues/{issue_number}/sub_issues"
+    ],
+    lock: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/lock"],
+    removeAllLabels: [
+      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels"
+    ],
+    removeAssignees: [
+      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/assignees"
+    ],
+    removeLabel: [
+      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/labels/{name}"
+    ],
+    removeSubIssue: [
+      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/sub_issue"
+    ],
+    reprioritizeSubIssue: [
+      "PATCH /repos/{owner}/{repo}/issues/{issue_number}/sub_issues/priority"
+    ],
+    setLabels: ["PUT /repos/{owner}/{repo}/issues/{issue_number}/labels"],
+    unlock: ["DELETE /repos/{owner}/{repo}/issues/{issue_number}/lock"],
+    update: ["PATCH /repos/{owner}/{repo}/issues/{issue_number}"],
+    updateComment: ["PATCH /repos/{owner}/{repo}/issues/comments/{comment_id}"],
+    updateLabel: ["PATCH /repos/{owner}/{repo}/labels/{name}"],
+    updateMilestone: [
+      "PATCH /repos/{owner}/{repo}/milestones/{milestone_number}"
+    ]
+  },
+  licenses: {
+    get: ["GET /licenses/{license}"],
+    getAllCommonlyUsed: ["GET /licenses"],
+    getForRepo: ["GET /repos/{owner}/{repo}/license"]
+  },
+  markdown: {
+    render: ["POST /markdown"],
+    renderRaw: [
+      "POST /markdown/raw",
+      { headers: { "content-type": "text/plain; charset=utf-8" } }
+    ]
+  },
+  meta: {
+    get: ["GET /meta"],
+    getAllVersions: ["GET /versions"],
+    getOctocat: ["GET /octocat"],
+    getZen: ["GET /zen"],
+    root: ["GET /"]
+  },
+  migrations: {
+    deleteArchiveForAuthenticatedUser: [
+      "DELETE /user/migrations/{migration_id}/archive"
+    ],
+    deleteArchiveForOrg: [
+      "DELETE /orgs/{org}/migrations/{migration_id}/archive"
+    ],
+    downloadArchiveForOrg: [
+      "GET /orgs/{org}/migrations/{migration_id}/archive"
+    ],
+    getArchiveForAuthenticatedUser: [
+      "GET /user/migrations/{migration_id}/archive"
+    ],
+    getStatusForAuthenticatedUser: ["GET /user/migrations/{migration_id}"],
+    getStatusForOrg: ["GET /orgs/{org}/migrations/{migration_id}"],
+    listForAuthenticatedUser: ["GET /user/migrations"],
+    listForOrg: ["GET /orgs/{org}/migrations"],
+    listReposForAuthenticatedUser: [
+      "GET /user/migrations/{migration_id}/repositories"
+    ],
+    listReposForOrg: ["GET /orgs/{org}/migrations/{migration_id}/repositories"],
+    listReposForUser: [
+      "GET /user/migrations/{migration_id}/repositories",
+      {},
+      { renamed: ["migrations", "listReposForAuthenticatedUser"] }
+    ],
+    startForAuthenticatedUser: ["POST /user/migrations"],
+    startForOrg: ["POST /orgs/{org}/migrations"],
+    unlockRepoForAuthenticatedUser: [
+      "DELETE /user/migrations/{migration_id}/repos/{repo_name}/lock"
+    ],
+    unlockRepoForOrg: [
+      "DELETE /orgs/{org}/migrations/{migration_id}/repos/{repo_name}/lock"
+    ]
+  },
+  oidc: {
+    getOidcCustomSubTemplateForOrg: [
+      "GET /orgs/{org}/actions/oidc/customization/sub"
+    ],
+    updateOidcCustomSubTemplateForOrg: [
+      "PUT /orgs/{org}/actions/oidc/customization/sub"
+    ]
+  },
+  orgs: {
+    addSecurityManagerTeam: [
+      "PUT /orgs/{org}/security-managers/teams/{team_slug}",
+      {},
+      {
+        deprecated: "octokit.rest.orgs.addSecurityManagerTeam() is deprecated, see https://docs.github.com/rest/orgs/security-managers#add-a-security-manager-team"
+      }
+    ],
+    assignTeamToOrgRole: [
+      "PUT /orgs/{org}/organization-roles/teams/{team_slug}/{role_id}"
+    ],
+    assignUserToOrgRole: [
+      "PUT /orgs/{org}/organization-roles/users/{username}/{role_id}"
+    ],
+    blockUser: ["PUT /orgs/{org}/blocks/{username}"],
+    cancelInvitation: ["DELETE /orgs/{org}/invitations/{invitation_id}"],
+    checkBlockedUser: ["GET /orgs/{org}/blocks/{username}"],
+    checkMembershipForUser: ["GET /orgs/{org}/members/{username}"],
+    checkPublicMembershipForUser: ["GET /orgs/{org}/public_members/{username}"],
+    convertMemberToOutsideCollaborator: [
+      "PUT /orgs/{org}/outside_collaborators/{username}"
+    ],
+    createInvitation: ["POST /orgs/{org}/invitations"],
+    createOrUpdateCustomProperties: ["PATCH /orgs/{org}/properties/schema"],
+    createOrUpdateCustomPropertiesValuesForRepos: [
+      "PATCH /orgs/{org}/properties/values"
+    ],
+    createOrUpdateCustomProperty: [
+      "PUT /orgs/{org}/properties/schema/{custom_property_name}"
+    ],
+    createWebhook: ["POST /orgs/{org}/hooks"],
+    delete: ["DELETE /orgs/{org}"],
+    deleteWebhook: ["DELETE /orgs/{org}/hooks/{hook_id}"],
+    enableOrDisableSecurityProductOnAllOrgRepos: [
+      "POST /orgs/{org}/{security_product}/{enablement}",
+      {},
+      {
+        deprecated: "octokit.rest.orgs.enableOrDisableSecurityProductOnAllOrgRepos() is deprecated, see https://docs.github.com/rest/orgs/orgs#enable-or-disable-a-security-feature-for-an-organization"
+      }
+    ],
+    get: ["GET /orgs/{org}"],
+    getAllCustomProperties: ["GET /orgs/{org}/properties/schema"],
+    getCustomProperty: [
+      "GET /orgs/{org}/properties/schema/{custom_property_name}"
+    ],
+    getMembershipForAuthenticatedUser: ["GET /user/memberships/orgs/{org}"],
+    getMembershipForUser: ["GET /orgs/{org}/memberships/{username}"],
+    getOrgRole: ["GET /orgs/{org}/organization-roles/{role_id}"],
+    getWebhook: ["GET /orgs/{org}/hooks/{hook_id}"],
+    getWebhookConfigForOrg: ["GET /orgs/{org}/hooks/{hook_id}/config"],
+    getWebhookDelivery: [
+      "GET /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}"
+    ],
+    list: ["GET /organizations"],
+    listAppInstallations: ["GET /orgs/{org}/installations"],
+    listAttestations: ["GET /orgs/{org}/attestations/{subject_digest}"],
+    listBlockedUsers: ["GET /orgs/{org}/blocks"],
+    listCustomPropertiesValuesForRepos: ["GET /orgs/{org}/properties/values"],
+    listFailedInvitations: ["GET /orgs/{org}/failed_invitations"],
+    listForAuthenticatedUser: ["GET /user/orgs"],
+    listForUser: ["GET /users/{username}/orgs"],
+    listInvitationTeams: ["GET /orgs/{org}/invitations/{invitation_id}/teams"],
+    listMembers: ["GET /orgs/{org}/members"],
+    listMembershipsForAuthenticatedUser: ["GET /user/memberships/orgs"],
+    listOrgRoleTeams: ["GET /orgs/{org}/organization-roles/{role_id}/teams"],
+    listOrgRoleUsers: ["GET /orgs/{org}/organization-roles/{role_id}/users"],
+    listOrgRoles: ["GET /orgs/{org}/organization-roles"],
+    listOrganizationFineGrainedPermissions: [
+      "GET /orgs/{org}/organization-fine-grained-permissions"
+    ],
+    listOutsideCollaborators: ["GET /orgs/{org}/outside_collaborators"],
+    listPatGrantRepositories: [
+      "GET /orgs/{org}/personal-access-tokens/{pat_id}/repositories"
+    ],
+    listPatGrantRequestRepositories: [
+      "GET /orgs/{org}/personal-access-token-requests/{pat_request_id}/repositories"
+    ],
+    listPatGrantRequests: ["GET /orgs/{org}/personal-access-token-requests"],
+    listPatGrants: ["GET /orgs/{org}/personal-access-tokens"],
+    listPendingInvitations: ["GET /orgs/{org}/invitations"],
+    listPublicMembers: ["GET /orgs/{org}/public_members"],
+    listSecurityManagerTeams: [
+      "GET /orgs/{org}/security-managers",
+      {},
+      {
+        deprecated: "octokit.rest.orgs.listSecurityManagerTeams() is deprecated, see https://docs.github.com/rest/orgs/security-managers#list-security-manager-teams"
+      }
+    ],
+    listWebhookDeliveries: ["GET /orgs/{org}/hooks/{hook_id}/deliveries"],
+    listWebhooks: ["GET /orgs/{org}/hooks"],
+    pingWebhook: ["POST /orgs/{org}/hooks/{hook_id}/pings"],
+    redeliverWebhookDelivery: [
+      "POST /orgs/{org}/hooks/{hook_id}/deliveries/{delivery_id}/attempts"
+    ],
+    removeCustomProperty: [
+      "DELETE /orgs/{org}/properties/schema/{custom_property_name}"
+    ],
+    removeMember: ["DELETE /orgs/{org}/members/{username}"],
+    removeMembershipForUser: ["DELETE /orgs/{org}/memberships/{username}"],
+    removeOutsideCollaborator: [
+      "DELETE /orgs/{org}/outside_collaborators/{username}"
+    ],
+    removePublicMembershipForAuthenticatedUser: [
+      "DELETE /orgs/{org}/public_members/{username}"
+    ],
+    removeSecurityManagerTeam: [
+      "DELETE /orgs/{org}/security-managers/teams/{team_slug}",
+      {},
+      {
+        deprecated: "octokit.rest.orgs.removeSecurityManagerTeam() is deprecated, see https://docs.github.com/rest/orgs/security-managers#remove-a-security-manager-team"
+      }
+    ],
+    reviewPatGrantRequest: [
+      "POST /orgs/{org}/personal-access-token-requests/{pat_request_id}"
+    ],
+    reviewPatGrantRequestsInBulk: [
+      "POST /orgs/{org}/personal-access-token-requests"
+    ],
+    revokeAllOrgRolesTeam: [
+      "DELETE /orgs/{org}/organization-roles/teams/{team_slug}"
+    ],
+    revokeAllOrgRolesUser: [
+      "DELETE /orgs/{org}/organization-roles/users/{username}"
+    ],
+    revokeOrgRoleTeam: [
+      "DELETE /orgs/{org}/organization-roles/teams/{team_slug}/{role_id}"
+    ],
+    revokeOrgRoleUser: [
+      "DELETE /orgs/{org}/organization-roles/users/{username}/{role_id}"
+    ],
+    setMembershipForUser: ["PUT /orgs/{org}/memberships/{username}"],
+    setPublicMembershipForAuthenticatedUser: [
+      "PUT /orgs/{org}/public_members/{username}"
+    ],
+    unblockUser: ["DELETE /orgs/{org}/blocks/{username}"],
+    update: ["PATCH /orgs/{org}"],
+    updateMembershipForAuthenticatedUser: [
+      "PATCH /user/memberships/orgs/{org}"
+    ],
+    updatePatAccess: ["POST /orgs/{org}/personal-access-tokens/{pat_id}"],
+    updatePatAccesses: ["POST /orgs/{org}/personal-access-tokens"],
+    updateWebhook: ["PATCH /orgs/{org}/hooks/{hook_id}"],
+    updateWebhookConfigForOrg: ["PATCH /orgs/{org}/hooks/{hook_id}/config"]
+  },
+  packages: {
+    deletePackageForAuthenticatedUser: [
+      "DELETE /user/packages/{package_type}/{package_name}"
+    ],
+    deletePackageForOrg: [
+      "DELETE /orgs/{org}/packages/{package_type}/{package_name}"
+    ],
+    deletePackageForUser: [
+      "DELETE /users/{username}/packages/{package_type}/{package_name}"
+    ],
+    deletePackageVersionForAuthenticatedUser: [
+      "DELETE /user/packages/{package_type}/{package_name}/versions/{package_version_id}"
+    ],
+    deletePackageVersionForOrg: [
+      "DELETE /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}"
+    ],
+    deletePackageVersionForUser: [
+      "DELETE /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}"
+    ],
+    getAllPackageVersionsForAPackageOwnedByAnOrg: [
+      "GET /orgs/{org}/packages/{package_type}/{package_name}/versions",
+      {},
+      { renamed: ["packages", "getAllPackageVersionsForPackageOwnedByOrg"] }
+    ],
+    getAllPackageVersionsForAPackageOwnedByTheAuthenticatedUser: [
+      "GET /user/packages/{package_type}/{package_name}/versions",
+      {},
+      {
+        renamed: [
+          "packages",
+          "getAllPackageVersionsForPackageOwnedByAuthenticatedUser"
+        ]
+      }
+    ],
+    getAllPackageVersionsForPackageOwnedByAuthenticatedUser: [
+      "GET /user/packages/{package_type}/{package_name}/versions"
+    ],
+    getAllPackageVersionsForPackageOwnedByOrg: [
+      "GET /orgs/{org}/packages/{package_type}/{package_name}/versions"
+    ],
+    getAllPackageVersionsForPackageOwnedByUser: [
+      "GET /users/{username}/packages/{package_type}/{package_name}/versions"
+    ],
+    getPackageForAuthenticatedUser: [
+      "GET /user/packages/{package_type}/{package_name}"
+    ],
+    getPackageForOrganization: [
+      "GET /orgs/{org}/packages/{package_type}/{package_name}"
+    ],
+    getPackageForUser: [
+      "GET /users/{username}/packages/{package_type}/{package_name}"
+    ],
+    getPackageVersionForAuthenticatedUser: [
+      "GET /user/packages/{package_type}/{package_name}/versions/{package_version_id}"
+    ],
+    getPackageVersionForOrganization: [
+      "GET /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}"
+    ],
+    getPackageVersionForUser: [
+      "GET /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}"
+    ],
+    listDockerMigrationConflictingPackagesForAuthenticatedUser: [
+      "GET /user/docker/conflicts"
+    ],
+    listDockerMigrationConflictingPackagesForOrganization: [
+      "GET /orgs/{org}/docker/conflicts"
+    ],
+    listDockerMigrationConflictingPackagesForUser: [
+      "GET /users/{username}/docker/conflicts"
+    ],
+    listPackagesForAuthenticatedUser: ["GET /user/packages"],
+    listPackagesForOrganization: ["GET /orgs/{org}/packages"],
+    listPackagesForUser: ["GET /users/{username}/packages"],
+    restorePackageForAuthenticatedUser: [
+      "POST /user/packages/{package_type}/{package_name}/restore{?token}"
+    ],
+    restorePackageForOrg: [
+      "POST /orgs/{org}/packages/{package_type}/{package_name}/restore{?token}"
+    ],
+    restorePackageForUser: [
+      "POST /users/{username}/packages/{package_type}/{package_name}/restore{?token}"
+    ],
+    restorePackageVersionForAuthenticatedUser: [
+      "POST /user/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"
+    ],
+    restorePackageVersionForOrg: [
+      "POST /orgs/{org}/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"
+    ],
+    restorePackageVersionForUser: [
+      "POST /users/{username}/packages/{package_type}/{package_name}/versions/{package_version_id}/restore"
+    ]
+  },
+  privateRegistries: {
+    createOrgPrivateRegistry: ["POST /orgs/{org}/private-registries"],
+    deleteOrgPrivateRegistry: [
+      "DELETE /orgs/{org}/private-registries/{secret_name}"
+    ],
+    getOrgPrivateRegistry: ["GET /orgs/{org}/private-registries/{secret_name}"],
+    getOrgPublicKey: ["GET /orgs/{org}/private-registries/public-key"],
+    listOrgPrivateRegistries: ["GET /orgs/{org}/private-registries"],
+    updateOrgPrivateRegistry: [
+      "PATCH /orgs/{org}/private-registries/{secret_name}"
+    ]
+  },
+  projects: {
+    addCollaborator: ["PUT /projects/{project_id}/collaborators/{username}"],
+    createCard: ["POST /projects/columns/{column_id}/cards"],
+    createColumn: ["POST /projects/{project_id}/columns"],
+    createForAuthenticatedUser: ["POST /user/projects"],
+    createForOrg: ["POST /orgs/{org}/projects"],
+    createForRepo: ["POST /repos/{owner}/{repo}/projects"],
+    delete: ["DELETE /projects/{project_id}"],
+    deleteCard: ["DELETE /projects/columns/cards/{card_id}"],
+    deleteColumn: ["DELETE /projects/columns/{column_id}"],
+    get: ["GET /projects/{project_id}"],
+    getCard: ["GET /projects/columns/cards/{card_id}"],
+    getColumn: ["GET /projects/columns/{column_id}"],
+    getPermissionForUser: [
+      "GET /projects/{project_id}/collaborators/{username}/permission"
+    ],
+    listCards: ["GET /projects/columns/{column_id}/cards"],
+    listCollaborators: ["GET /projects/{project_id}/collaborators"],
+    listColumns: ["GET /projects/{project_id}/columns"],
+    listForOrg: ["GET /orgs/{org}/projects"],
+    listForRepo: ["GET /repos/{owner}/{repo}/projects"],
+    listForUser: ["GET /users/{username}/projects"],
+    moveCard: ["POST /projects/columns/cards/{card_id}/moves"],
+    moveColumn: ["POST /projects/columns/{column_id}/moves"],
+    removeCollaborator: [
+      "DELETE /projects/{project_id}/collaborators/{username}"
+    ],
+    update: ["PATCH /projects/{project_id}"],
+    updateCard: ["PATCH /projects/columns/cards/{card_id}"],
+    updateColumn: ["PATCH /projects/columns/{column_id}"]
+  },
+  pulls: {
+    checkIfMerged: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
+    create: ["POST /repos/{owner}/{repo}/pulls"],
+    createReplyForReviewComment: [
+      "POST /repos/{owner}/{repo}/pulls/{pull_number}/comments/{comment_id}/replies"
+    ],
+    createReview: ["POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
+    createReviewComment: [
+      "POST /repos/{owner}/{repo}/pulls/{pull_number}/comments"
+    ],
+    deletePendingReview: [
+      "DELETE /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"
+    ],
+    deleteReviewComment: [
+      "DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}"
+    ],
+    dismissReview: [
+      "PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/dismissals"
+    ],
+    get: ["GET /repos/{owner}/{repo}/pulls/{pull_number}"],
+    getReview: [
+      "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"
+    ],
+    getReviewComment: ["GET /repos/{owner}/{repo}/pulls/comments/{comment_id}"],
+    list: ["GET /repos/{owner}/{repo}/pulls"],
+    listCommentsForReview: [
+      "GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/comments"
+    ],
+    listCommits: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/commits"],
+    listFiles: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/files"],
+    listRequestedReviewers: [
+      "GET /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"
+    ],
+    listReviewComments: [
+      "GET /repos/{owner}/{repo}/pulls/{pull_number}/comments"
+    ],
+    listReviewCommentsForRepo: ["GET /repos/{owner}/{repo}/pulls/comments"],
+    listReviews: ["GET /repos/{owner}/{repo}/pulls/{pull_number}/reviews"],
+    merge: ["PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge"],
+    removeRequestedReviewers: [
+      "DELETE /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"
+    ],
+    requestReviewers: [
+      "POST /repos/{owner}/{repo}/pulls/{pull_number}/requested_reviewers"
+    ],
+    submitReview: [
+      "POST /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}/events"
+    ],
+    update: ["PATCH /repos/{owner}/{repo}/pulls/{pull_number}"],
+    updateBranch: [
+      "PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch"
+    ],
+    updateReview: [
+      "PUT /repos/{owner}/{repo}/pulls/{pull_number}/reviews/{review_id}"
+    ],
+    updateReviewComment: [
+      "PATCH /repos/{owner}/{repo}/pulls/comments/{comment_id}"
+    ]
+  },
+  rateLimit: { get: ["GET /rate_limit"] },
+  reactions: {
+    createForCommitComment: [
+      "POST /repos/{owner}/{repo}/comments/{comment_id}/reactions"
+    ],
+    createForIssue: [
+      "POST /repos/{owner}/{repo}/issues/{issue_number}/reactions"
+    ],
+    createForIssueComment: [
+      "POST /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions"
+    ],
+    createForPullRequestReviewComment: [
+      "POST /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions"
+    ],
+    createForRelease: [
+      "POST /repos/{owner}/{repo}/releases/{release_id}/reactions"
+    ],
+    createForTeamDiscussionCommentInOrg: [
+      "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions"
+    ],
+    createForTeamDiscussionInOrg: [
+      "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions"
+    ],
+    deleteForCommitComment: [
+      "DELETE /repos/{owner}/{repo}/comments/{comment_id}/reactions/{reaction_id}"
+    ],
+    deleteForIssue: [
+      "DELETE /repos/{owner}/{repo}/issues/{issue_number}/reactions/{reaction_id}"
+    ],
+    deleteForIssueComment: [
+      "DELETE /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions/{reaction_id}"
+    ],
+    deleteForPullRequestComment: [
+      "DELETE /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions/{reaction_id}"
+    ],
+    deleteForRelease: [
+      "DELETE /repos/{owner}/{repo}/releases/{release_id}/reactions/{reaction_id}"
+    ],
+    deleteForTeamDiscussion: [
+      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions/{reaction_id}"
+    ],
+    deleteForTeamDiscussionComment: [
+      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions/{reaction_id}"
+    ],
+    listForCommitComment: [
+      "GET /repos/{owner}/{repo}/comments/{comment_id}/reactions"
+    ],
+    listForIssue: ["GET /repos/{owner}/{repo}/issues/{issue_number}/reactions"],
+    listForIssueComment: [
+      "GET /repos/{owner}/{repo}/issues/comments/{comment_id}/reactions"
+    ],
+    listForPullRequestReviewComment: [
+      "GET /repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions"
+    ],
+    listForRelease: [
+      "GET /repos/{owner}/{repo}/releases/{release_id}/reactions"
+    ],
+    listForTeamDiscussionCommentInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}/reactions"
+    ],
+    listForTeamDiscussionInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/reactions"
+    ]
+  },
+  repos: {
+    acceptInvitation: [
+      "PATCH /user/repository_invitations/{invitation_id}",
+      {},
+      { renamed: ["repos", "acceptInvitationForAuthenticatedUser"] }
+    ],
+    acceptInvitationForAuthenticatedUser: [
+      "PATCH /user/repository_invitations/{invitation_id}"
+    ],
+    addAppAccessRestrictions: [
+      "POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps",
+      {},
+      { mapToData: "apps" }
+    ],
+    addCollaborator: ["PUT /repos/{owner}/{repo}/collaborators/{username}"],
+    addStatusCheckContexts: [
+      "POST /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
+      {},
+      { mapToData: "contexts" }
+    ],
+    addTeamAccessRestrictions: [
+      "POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams",
+      {},
+      { mapToData: "teams" }
+    ],
+    addUserAccessRestrictions: [
+      "POST /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users",
+      {},
+      { mapToData: "users" }
+    ],
+    cancelPagesDeployment: [
+      "POST /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}/cancel"
+    ],
+    checkAutomatedSecurityFixes: [
+      "GET /repos/{owner}/{repo}/automated-security-fixes"
+    ],
+    checkCollaborator: ["GET /repos/{owner}/{repo}/collaborators/{username}"],
+    checkPrivateVulnerabilityReporting: [
+      "GET /repos/{owner}/{repo}/private-vulnerability-reporting"
+    ],
+    checkVulnerabilityAlerts: [
+      "GET /repos/{owner}/{repo}/vulnerability-alerts"
+    ],
+    codeownersErrors: ["GET /repos/{owner}/{repo}/codeowners/errors"],
+    compareCommits: ["GET /repos/{owner}/{repo}/compare/{base}...{head}"],
+    compareCommitsWithBasehead: [
+      "GET /repos/{owner}/{repo}/compare/{basehead}"
+    ],
+    createAttestation: ["POST /repos/{owner}/{repo}/attestations"],
+    createAutolink: ["POST /repos/{owner}/{repo}/autolinks"],
+    createCommitComment: [
+      "POST /repos/{owner}/{repo}/commits/{commit_sha}/comments"
+    ],
+    createCommitSignatureProtection: [
+      "POST /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures"
+    ],
+    createCommitStatus: ["POST /repos/{owner}/{repo}/statuses/{sha}"],
+    createDeployKey: ["POST /repos/{owner}/{repo}/keys"],
+    createDeployment: ["POST /repos/{owner}/{repo}/deployments"],
+    createDeploymentBranchPolicy: [
+      "POST /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies"
+    ],
+    createDeploymentProtectionRule: [
+      "POST /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules"
+    ],
+    createDeploymentStatus: [
+      "POST /repos/{owner}/{repo}/deployments/{deployment_id}/statuses"
+    ],
+    createDispatchEvent: ["POST /repos/{owner}/{repo}/dispatches"],
+    createForAuthenticatedUser: ["POST /user/repos"],
+    createFork: ["POST /repos/{owner}/{repo}/forks"],
+    createInOrg: ["POST /orgs/{org}/repos"],
+    createOrUpdateCustomPropertiesValues: [
+      "PATCH /repos/{owner}/{repo}/properties/values"
+    ],
+    createOrUpdateEnvironment: [
+      "PUT /repos/{owner}/{repo}/environments/{environment_name}"
+    ],
+    createOrUpdateFileContents: ["PUT /repos/{owner}/{repo}/contents/{path}"],
+    createOrgRuleset: ["POST /orgs/{org}/rulesets"],
+    createPagesDeployment: ["POST /repos/{owner}/{repo}/pages/deployments"],
+    createPagesSite: ["POST /repos/{owner}/{repo}/pages"],
+    createRelease: ["POST /repos/{owner}/{repo}/releases"],
+    createRepoRuleset: ["POST /repos/{owner}/{repo}/rulesets"],
+    createUsingTemplate: [
+      "POST /repos/{template_owner}/{template_repo}/generate"
+    ],
+    createWebhook: ["POST /repos/{owner}/{repo}/hooks"],
+    declineInvitation: [
+      "DELETE /user/repository_invitations/{invitation_id}",
+      {},
+      { renamed: ["repos", "declineInvitationForAuthenticatedUser"] }
+    ],
+    declineInvitationForAuthenticatedUser: [
+      "DELETE /user/repository_invitations/{invitation_id}"
+    ],
+    delete: ["DELETE /repos/{owner}/{repo}"],
+    deleteAccessRestrictions: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions"
+    ],
+    deleteAdminBranchProtection: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"
+    ],
+    deleteAnEnvironment: [
+      "DELETE /repos/{owner}/{repo}/environments/{environment_name}"
+    ],
+    deleteAutolink: ["DELETE /repos/{owner}/{repo}/autolinks/{autolink_id}"],
+    deleteBranchProtection: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection"
+    ],
+    deleteCommitComment: ["DELETE /repos/{owner}/{repo}/comments/{comment_id}"],
+    deleteCommitSignatureProtection: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures"
+    ],
+    deleteDeployKey: ["DELETE /repos/{owner}/{repo}/keys/{key_id}"],
+    deleteDeployment: [
+      "DELETE /repos/{owner}/{repo}/deployments/{deployment_id}"
+    ],
+    deleteDeploymentBranchPolicy: [
+      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}"
+    ],
+    deleteFile: ["DELETE /repos/{owner}/{repo}/contents/{path}"],
+    deleteInvitation: [
+      "DELETE /repos/{owner}/{repo}/invitations/{invitation_id}"
+    ],
+    deleteOrgRuleset: ["DELETE /orgs/{org}/rulesets/{ruleset_id}"],
+    deletePagesSite: ["DELETE /repos/{owner}/{repo}/pages"],
+    deletePullRequestReviewProtection: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"
+    ],
+    deleteRelease: ["DELETE /repos/{owner}/{repo}/releases/{release_id}"],
+    deleteReleaseAsset: [
+      "DELETE /repos/{owner}/{repo}/releases/assets/{asset_id}"
+    ],
+    deleteRepoRuleset: ["DELETE /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
+    deleteWebhook: ["DELETE /repos/{owner}/{repo}/hooks/{hook_id}"],
+    disableAutomatedSecurityFixes: [
+      "DELETE /repos/{owner}/{repo}/automated-security-fixes"
+    ],
+    disableDeploymentProtectionRule: [
+      "DELETE /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}"
+    ],
+    disablePrivateVulnerabilityReporting: [
+      "DELETE /repos/{owner}/{repo}/private-vulnerability-reporting"
+    ],
+    disableVulnerabilityAlerts: [
+      "DELETE /repos/{owner}/{repo}/vulnerability-alerts"
+    ],
+    downloadArchive: [
+      "GET /repos/{owner}/{repo}/zipball/{ref}",
+      {},
+      { renamed: ["repos", "downloadZipballArchive"] }
+    ],
+    downloadTarballArchive: ["GET /repos/{owner}/{repo}/tarball/{ref}"],
+    downloadZipballArchive: ["GET /repos/{owner}/{repo}/zipball/{ref}"],
+    enableAutomatedSecurityFixes: [
+      "PUT /repos/{owner}/{repo}/automated-security-fixes"
+    ],
+    enablePrivateVulnerabilityReporting: [
+      "PUT /repos/{owner}/{repo}/private-vulnerability-reporting"
+    ],
+    enableVulnerabilityAlerts: [
+      "PUT /repos/{owner}/{repo}/vulnerability-alerts"
+    ],
+    generateReleaseNotes: [
+      "POST /repos/{owner}/{repo}/releases/generate-notes"
+    ],
+    get: ["GET /repos/{owner}/{repo}"],
+    getAccessRestrictions: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions"
+    ],
+    getAdminBranchProtection: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"
+    ],
+    getAllDeploymentProtectionRules: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules"
+    ],
+    getAllEnvironments: ["GET /repos/{owner}/{repo}/environments"],
+    getAllStatusCheckContexts: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts"
+    ],
+    getAllTopics: ["GET /repos/{owner}/{repo}/topics"],
+    getAppsWithAccessToProtectedBranch: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps"
+    ],
+    getAutolink: ["GET /repos/{owner}/{repo}/autolinks/{autolink_id}"],
+    getBranch: ["GET /repos/{owner}/{repo}/branches/{branch}"],
+    getBranchProtection: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection"
+    ],
+    getBranchRules: ["GET /repos/{owner}/{repo}/rules/branches/{branch}"],
+    getClones: ["GET /repos/{owner}/{repo}/traffic/clones"],
+    getCodeFrequencyStats: ["GET /repos/{owner}/{repo}/stats/code_frequency"],
+    getCollaboratorPermissionLevel: [
+      "GET /repos/{owner}/{repo}/collaborators/{username}/permission"
+    ],
+    getCombinedStatusForRef: ["GET /repos/{owner}/{repo}/commits/{ref}/status"],
+    getCommit: ["GET /repos/{owner}/{repo}/commits/{ref}"],
+    getCommitActivityStats: ["GET /repos/{owner}/{repo}/stats/commit_activity"],
+    getCommitComment: ["GET /repos/{owner}/{repo}/comments/{comment_id}"],
+    getCommitSignatureProtection: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_signatures"
+    ],
+    getCommunityProfileMetrics: ["GET /repos/{owner}/{repo}/community/profile"],
+    getContent: ["GET /repos/{owner}/{repo}/contents/{path}"],
+    getContributorsStats: ["GET /repos/{owner}/{repo}/stats/contributors"],
+    getCustomDeploymentProtectionRule: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/{protection_rule_id}"
+    ],
+    getCustomPropertiesValues: ["GET /repos/{owner}/{repo}/properties/values"],
+    getDeployKey: ["GET /repos/{owner}/{repo}/keys/{key_id}"],
+    getDeployment: ["GET /repos/{owner}/{repo}/deployments/{deployment_id}"],
+    getDeploymentBranchPolicy: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}"
+    ],
+    getDeploymentStatus: [
+      "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses/{status_id}"
+    ],
+    getEnvironment: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}"
+    ],
+    getLatestPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/latest"],
+    getLatestRelease: ["GET /repos/{owner}/{repo}/releases/latest"],
+    getOrgRuleSuite: ["GET /orgs/{org}/rulesets/rule-suites/{rule_suite_id}"],
+    getOrgRuleSuites: ["GET /orgs/{org}/rulesets/rule-suites"],
+    getOrgRuleset: ["GET /orgs/{org}/rulesets/{ruleset_id}"],
+    getOrgRulesets: ["GET /orgs/{org}/rulesets"],
+    getPages: ["GET /repos/{owner}/{repo}/pages"],
+    getPagesBuild: ["GET /repos/{owner}/{repo}/pages/builds/{build_id}"],
+    getPagesDeployment: [
+      "GET /repos/{owner}/{repo}/pages/deployments/{pages_deployment_id}"
+    ],
+    getPagesHealthCheck: ["GET /repos/{owner}/{repo}/pages/health"],
+    getParticipationStats: ["GET /repos/{owner}/{repo}/stats/participation"],
+    getPullRequestReviewProtection: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"
+    ],
+    getPunchCardStats: ["GET /repos/{owner}/{repo}/stats/punch_card"],
+    getReadme: ["GET /repos/{owner}/{repo}/readme"],
+    getReadmeInDirectory: ["GET /repos/{owner}/{repo}/readme/{dir}"],
+    getRelease: ["GET /repos/{owner}/{repo}/releases/{release_id}"],
+    getReleaseAsset: ["GET /repos/{owner}/{repo}/releases/assets/{asset_id}"],
+    getReleaseByTag: ["GET /repos/{owner}/{repo}/releases/tags/{tag}"],
+    getRepoRuleSuite: [
+      "GET /repos/{owner}/{repo}/rulesets/rule-suites/{rule_suite_id}"
+    ],
+    getRepoRuleSuites: ["GET /repos/{owner}/{repo}/rulesets/rule-suites"],
+    getRepoRuleset: ["GET /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
+    getRepoRulesets: ["GET /repos/{owner}/{repo}/rulesets"],
+    getStatusChecksProtection: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"
+    ],
+    getTeamsWithAccessToProtectedBranch: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams"
+    ],
+    getTopPaths: ["GET /repos/{owner}/{repo}/traffic/popular/paths"],
+    getTopReferrers: ["GET /repos/{owner}/{repo}/traffic/popular/referrers"],
+    getUsersWithAccessToProtectedBranch: [
+      "GET /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users"
+    ],
+    getViews: ["GET /repos/{owner}/{repo}/traffic/views"],
+    getWebhook: ["GET /repos/{owner}/{repo}/hooks/{hook_id}"],
+    getWebhookConfigForRepo: [
+      "GET /repos/{owner}/{repo}/hooks/{hook_id}/config"
+    ],
+    getWebhookDelivery: [
+      "GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries/{delivery_id}"
+    ],
+    listActivities: ["GET /repos/{owner}/{repo}/activity"],
+    listAttestations: [
+      "GET /repos/{owner}/{repo}/attestations/{subject_digest}"
+    ],
+    listAutolinks: ["GET /repos/{owner}/{repo}/autolinks"],
+    listBranches: ["GET /repos/{owner}/{repo}/branches"],
+    listBranchesForHeadCommit: [
+      "GET /repos/{owner}/{repo}/commits/{commit_sha}/branches-where-head"
+    ],
+    listCollaborators: ["GET /repos/{owner}/{repo}/collaborators"],
+    listCommentsForCommit: [
+      "GET /repos/{owner}/{repo}/commits/{commit_sha}/comments"
+    ],
+    listCommitCommentsForRepo: ["GET /repos/{owner}/{repo}/comments"],
+    listCommitStatusesForRef: [
+      "GET /repos/{owner}/{repo}/commits/{ref}/statuses"
+    ],
+    listCommits: ["GET /repos/{owner}/{repo}/commits"],
+    listContributors: ["GET /repos/{owner}/{repo}/contributors"],
+    listCustomDeploymentRuleIntegrations: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment_protection_rules/apps"
+    ],
+    listDeployKeys: ["GET /repos/{owner}/{repo}/keys"],
+    listDeploymentBranchPolicies: [
+      "GET /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies"
+    ],
+    listDeploymentStatuses: [
+      "GET /repos/{owner}/{repo}/deployments/{deployment_id}/statuses"
+    ],
+    listDeployments: ["GET /repos/{owner}/{repo}/deployments"],
+    listForAuthenticatedUser: ["GET /user/repos"],
+    listForOrg: ["GET /orgs/{org}/repos"],
+    listForUser: ["GET /users/{username}/repos"],
+    listForks: ["GET /repos/{owner}/{repo}/forks"],
+    listInvitations: ["GET /repos/{owner}/{repo}/invitations"],
+    listInvitationsForAuthenticatedUser: ["GET /user/repository_invitations"],
+    listLanguages: ["GET /repos/{owner}/{repo}/languages"],
+    listPagesBuilds: ["GET /repos/{owner}/{repo}/pages/builds"],
+    listPublic: ["GET /repositories"],
+    listPullRequestsAssociatedWithCommit: [
+      "GET /repos/{owner}/{repo}/commits/{commit_sha}/pulls"
+    ],
+    listReleaseAssets: [
+      "GET /repos/{owner}/{repo}/releases/{release_id}/assets"
+    ],
+    listReleases: ["GET /repos/{owner}/{repo}/releases"],
+    listTags: ["GET /repos/{owner}/{repo}/tags"],
+    listTeams: ["GET /repos/{owner}/{repo}/teams"],
+    listWebhookDeliveries: [
+      "GET /repos/{owner}/{repo}/hooks/{hook_id}/deliveries"
+    ],
+    listWebhooks: ["GET /repos/{owner}/{repo}/hooks"],
+    merge: ["POST /repos/{owner}/{repo}/merges"],
+    mergeUpstream: ["POST /repos/{owner}/{repo}/merge-upstream"],
+    pingWebhook: ["POST /repos/{owner}/{repo}/hooks/{hook_id}/pings"],
+    redeliverWebhookDelivery: [
+      "POST /repos/{owner}/{repo}/hooks/{hook_id}/deliveries/{delivery_id}/attempts"
+    ],
+    removeAppAccessRestrictions: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps",
+      {},
+      { mapToData: "apps" }
+    ],
+    removeCollaborator: [
+      "DELETE /repos/{owner}/{repo}/collaborators/{username}"
+    ],
+    removeStatusCheckContexts: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
+      {},
+      { mapToData: "contexts" }
+    ],
+    removeStatusCheckProtection: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"
+    ],
+    removeTeamAccessRestrictions: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams",
+      {},
+      { mapToData: "teams" }
+    ],
+    removeUserAccessRestrictions: [
+      "DELETE /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users",
+      {},
+      { mapToData: "users" }
+    ],
+    renameBranch: ["POST /repos/{owner}/{repo}/branches/{branch}/rename"],
+    replaceAllTopics: ["PUT /repos/{owner}/{repo}/topics"],
+    requestPagesBuild: ["POST /repos/{owner}/{repo}/pages/builds"],
+    setAdminBranchProtection: [
+      "POST /repos/{owner}/{repo}/branches/{branch}/protection/enforce_admins"
+    ],
+    setAppAccessRestrictions: [
+      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/apps",
+      {},
+      { mapToData: "apps" }
+    ],
+    setStatusCheckContexts: [
+      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks/contexts",
+      {},
+      { mapToData: "contexts" }
+    ],
+    setTeamAccessRestrictions: [
+      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/teams",
+      {},
+      { mapToData: "teams" }
+    ],
+    setUserAccessRestrictions: [
+      "PUT /repos/{owner}/{repo}/branches/{branch}/protection/restrictions/users",
+      {},
+      { mapToData: "users" }
+    ],
+    testPushWebhook: ["POST /repos/{owner}/{repo}/hooks/{hook_id}/tests"],
+    transfer: ["POST /repos/{owner}/{repo}/transfer"],
+    update: ["PATCH /repos/{owner}/{repo}"],
+    updateBranchProtection: [
+      "PUT /repos/{owner}/{repo}/branches/{branch}/protection"
+    ],
+    updateCommitComment: ["PATCH /repos/{owner}/{repo}/comments/{comment_id}"],
+    updateDeploymentBranchPolicy: [
+      "PUT /repos/{owner}/{repo}/environments/{environment_name}/deployment-branch-policies/{branch_policy_id}"
+    ],
+    updateInformationAboutPagesSite: ["PUT /repos/{owner}/{repo}/pages"],
+    updateInvitation: [
+      "PATCH /repos/{owner}/{repo}/invitations/{invitation_id}"
+    ],
+    updateOrgRuleset: ["PUT /orgs/{org}/rulesets/{ruleset_id}"],
+    updatePullRequestReviewProtection: [
+      "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_pull_request_reviews"
+    ],
+    updateRelease: ["PATCH /repos/{owner}/{repo}/releases/{release_id}"],
+    updateReleaseAsset: [
+      "PATCH /repos/{owner}/{repo}/releases/assets/{asset_id}"
+    ],
+    updateRepoRuleset: ["PUT /repos/{owner}/{repo}/rulesets/{ruleset_id}"],
+    updateStatusCheckPotection: [
+      "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks",
+      {},
+      { renamed: ["repos", "updateStatusCheckProtection"] }
+    ],
+    updateStatusCheckProtection: [
+      "PATCH /repos/{owner}/{repo}/branches/{branch}/protection/required_status_checks"
+    ],
+    updateWebhook: ["PATCH /repos/{owner}/{repo}/hooks/{hook_id}"],
+    updateWebhookConfigForRepo: [
+      "PATCH /repos/{owner}/{repo}/hooks/{hook_id}/config"
+    ],
+    uploadReleaseAsset: [
+      "POST /repos/{owner}/{repo}/releases/{release_id}/assets{?name,label}",
+      { baseUrl: "https://uploads.github.com" }
+    ]
+  },
+  search: {
+    code: ["GET /search/code"],
+    commits: ["GET /search/commits"],
+    issuesAndPullRequests: ["GET /search/issues"],
+    labels: ["GET /search/labels"],
+    repos: ["GET /search/repositories"],
+    topics: ["GET /search/topics"],
+    users: ["GET /search/users"]
+  },
+  secretScanning: {
+    createPushProtectionBypass: [
+      "POST /repos/{owner}/{repo}/secret-scanning/push-protection-bypasses"
+    ],
+    getAlert: [
+      "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"
+    ],
+    getScanHistory: ["GET /repos/{owner}/{repo}/secret-scanning/scan-history"],
+    listAlertsForEnterprise: [
+      "GET /enterprises/{enterprise}/secret-scanning/alerts"
+    ],
+    listAlertsForOrg: ["GET /orgs/{org}/secret-scanning/alerts"],
+    listAlertsForRepo: ["GET /repos/{owner}/{repo}/secret-scanning/alerts"],
+    listLocationsForAlert: [
+      "GET /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}/locations"
+    ],
+    updateAlert: [
+      "PATCH /repos/{owner}/{repo}/secret-scanning/alerts/{alert_number}"
+    ]
+  },
+  securityAdvisories: {
+    createFork: [
+      "POST /repos/{owner}/{repo}/security-advisories/{ghsa_id}/forks"
+    ],
+    createPrivateVulnerabilityReport: [
+      "POST /repos/{owner}/{repo}/security-advisories/reports"
+    ],
+    createRepositoryAdvisory: [
+      "POST /repos/{owner}/{repo}/security-advisories"
+    ],
+    createRepositoryAdvisoryCveRequest: [
+      "POST /repos/{owner}/{repo}/security-advisories/{ghsa_id}/cve"
+    ],
+    getGlobalAdvisory: ["GET /advisories/{ghsa_id}"],
+    getRepositoryAdvisory: [
+      "GET /repos/{owner}/{repo}/security-advisories/{ghsa_id}"
+    ],
+    listGlobalAdvisories: ["GET /advisories"],
+    listOrgRepositoryAdvisories: ["GET /orgs/{org}/security-advisories"],
+    listRepositoryAdvisories: ["GET /repos/{owner}/{repo}/security-advisories"],
+    updateRepositoryAdvisory: [
+      "PATCH /repos/{owner}/{repo}/security-advisories/{ghsa_id}"
+    ]
+  },
+  teams: {
+    addOrUpdateMembershipForUserInOrg: [
+      "PUT /orgs/{org}/teams/{team_slug}/memberships/{username}"
+    ],
+    addOrUpdateProjectPermissionsInOrg: [
+      "PUT /orgs/{org}/teams/{team_slug}/projects/{project_id}"
+    ],
+    addOrUpdateRepoPermissionsInOrg: [
+      "PUT /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
+    ],
+    checkPermissionsForProjectInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/projects/{project_id}"
+    ],
+    checkPermissionsForRepoInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
+    ],
+    create: ["POST /orgs/{org}/teams"],
+    createDiscussionCommentInOrg: [
+      "POST /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments"
+    ],
+    createDiscussionInOrg: ["POST /orgs/{org}/teams/{team_slug}/discussions"],
+    deleteDiscussionCommentInOrg: [
+      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"
+    ],
+    deleteDiscussionInOrg: [
+      "DELETE /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"
+    ],
+    deleteInOrg: ["DELETE /orgs/{org}/teams/{team_slug}"],
+    getByName: ["GET /orgs/{org}/teams/{team_slug}"],
+    getDiscussionCommentInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"
+    ],
+    getDiscussionInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"
+    ],
+    getMembershipForUserInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/memberships/{username}"
+    ],
+    list: ["GET /orgs/{org}/teams"],
+    listChildInOrg: ["GET /orgs/{org}/teams/{team_slug}/teams"],
+    listDiscussionCommentsInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments"
+    ],
+    listDiscussionsInOrg: ["GET /orgs/{org}/teams/{team_slug}/discussions"],
+    listForAuthenticatedUser: ["GET /user/teams"],
+    listMembersInOrg: ["GET /orgs/{org}/teams/{team_slug}/members"],
+    listPendingInvitationsInOrg: [
+      "GET /orgs/{org}/teams/{team_slug}/invitations"
+    ],
+    listProjectsInOrg: ["GET /orgs/{org}/teams/{team_slug}/projects"],
+    listReposInOrg: ["GET /orgs/{org}/teams/{team_slug}/repos"],
+    removeMembershipForUserInOrg: [
+      "DELETE /orgs/{org}/teams/{team_slug}/memberships/{username}"
+    ],
+    removeProjectInOrg: [
+      "DELETE /orgs/{org}/teams/{team_slug}/projects/{project_id}"
+    ],
+    removeRepoInOrg: [
+      "DELETE /orgs/{org}/teams/{team_slug}/repos/{owner}/{repo}"
+    ],
+    updateDiscussionCommentInOrg: [
+      "PATCH /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}/comments/{comment_number}"
+    ],
+    updateDiscussionInOrg: [
+      "PATCH /orgs/{org}/teams/{team_slug}/discussions/{discussion_number}"
+    ],
+    updateInOrg: ["PATCH /orgs/{org}/teams/{team_slug}"]
+  },
+  users: {
+    addEmailForAuthenticated: [
+      "POST /user/emails",
+      {},
+      { renamed: ["users", "addEmailForAuthenticatedUser"] }
+    ],
+    addEmailForAuthenticatedUser: ["POST /user/emails"],
+    addSocialAccountForAuthenticatedUser: ["POST /user/social_accounts"],
+    block: ["PUT /user/blocks/{username}"],
+    checkBlocked: ["GET /user/blocks/{username}"],
+    checkFollowingForUser: ["GET /users/{username}/following/{target_user}"],
+    checkPersonIsFollowedByAuthenticated: ["GET /user/following/{username}"],
+    createGpgKeyForAuthenticated: [
+      "POST /user/gpg_keys",
+      {},
+      { renamed: ["users", "createGpgKeyForAuthenticatedUser"] }
+    ],
+    createGpgKeyForAuthenticatedUser: ["POST /user/gpg_keys"],
+    createPublicSshKeyForAuthenticated: [
+      "POST /user/keys",
+      {},
+      { renamed: ["users", "createPublicSshKeyForAuthenticatedUser"] }
+    ],
+    createPublicSshKeyForAuthenticatedUser: ["POST /user/keys"],
+    createSshSigningKeyForAuthenticatedUser: ["POST /user/ssh_signing_keys"],
+    deleteEmailForAuthenticated: [
+      "DELETE /user/emails",
+      {},
+      { renamed: ["users", "deleteEmailForAuthenticatedUser"] }
+    ],
+    deleteEmailForAuthenticatedUser: ["DELETE /user/emails"],
+    deleteGpgKeyForAuthenticated: [
+      "DELETE /user/gpg_keys/{gpg_key_id}",
+      {},
+      { renamed: ["users", "deleteGpgKeyForAuthenticatedUser"] }
+    ],
+    deleteGpgKeyForAuthenticatedUser: ["DELETE /user/gpg_keys/{gpg_key_id}"],
+    deletePublicSshKeyForAuthenticated: [
+      "DELETE /user/keys/{key_id}",
+      {},
+      { renamed: ["users", "deletePublicSshKeyForAuthenticatedUser"] }
+    ],
+    deletePublicSshKeyForAuthenticatedUser: ["DELETE /user/keys/{key_id}"],
+    deleteSocialAccountForAuthenticatedUser: ["DELETE /user/social_accounts"],
+    deleteSshSigningKeyForAuthenticatedUser: [
+      "DELETE /user/ssh_signing_keys/{ssh_signing_key_id}"
+    ],
+    follow: ["PUT /user/following/{username}"],
+    getAuthenticated: ["GET /user"],
+    getById: ["GET /user/{account_id}"],
+    getByUsername: ["GET /users/{username}"],
+    getContextForUser: ["GET /users/{username}/hovercard"],
+    getGpgKeyForAuthenticated: [
+      "GET /user/gpg_keys/{gpg_key_id}",
+      {},
+      { renamed: ["users", "getGpgKeyForAuthenticatedUser"] }
+    ],
+    getGpgKeyForAuthenticatedUser: ["GET /user/gpg_keys/{gpg_key_id}"],
+    getPublicSshKeyForAuthenticated: [
+      "GET /user/keys/{key_id}",
+      {},
+      { renamed: ["users", "getPublicSshKeyForAuthenticatedUser"] }
+    ],
+    getPublicSshKeyForAuthenticatedUser: ["GET /user/keys/{key_id}"],
+    getSshSigningKeyForAuthenticatedUser: [
+      "GET /user/ssh_signing_keys/{ssh_signing_key_id}"
+    ],
+    list: ["GET /users"],
+    listAttestations: ["GET /users/{username}/attestations/{subject_digest}"],
+    listBlockedByAuthenticated: [
+      "GET /user/blocks",
+      {},
+      { renamed: ["users", "listBlockedByAuthenticatedUser"] }
+    ],
+    listBlockedByAuthenticatedUser: ["GET /user/blocks"],
+    listEmailsForAuthenticated: [
+      "GET /user/emails",
+      {},
+      { renamed: ["users", "listEmailsForAuthenticatedUser"] }
+    ],
+    listEmailsForAuthenticatedUser: ["GET /user/emails"],
+    listFollowedByAuthenticated: [
+      "GET /user/following",
+      {},
+      { renamed: ["users", "listFollowedByAuthenticatedUser"] }
+    ],
+    listFollowedByAuthenticatedUser: ["GET /user/following"],
+    listFollowersForAuthenticatedUser: ["GET /user/followers"],
+    listFollowersForUser: ["GET /users/{username}/followers"],
+    listFollowingForUser: ["GET /users/{username}/following"],
+    listGpgKeysForAuthenticated: [
+      "GET /user/gpg_keys",
+      {},
+      { renamed: ["users", "listGpgKeysForAuthenticatedUser"] }
+    ],
+    listGpgKeysForAuthenticatedUser: ["GET /user/gpg_keys"],
+    listGpgKeysForUser: ["GET /users/{username}/gpg_keys"],
+    listPublicEmailsForAuthenticated: [
+      "GET /user/public_emails",
+      {},
+      { renamed: ["users", "listPublicEmailsForAuthenticatedUser"] }
+    ],
+    listPublicEmailsForAuthenticatedUser: ["GET /user/public_emails"],
+    listPublicKeysForUser: ["GET /users/{username}/keys"],
+    listPublicSshKeysForAuthenticated: [
+      "GET /user/keys",
+      {},
+      { renamed: ["users", "listPublicSshKeysForAuthenticatedUser"] }
+    ],
+    listPublicSshKeysForAuthenticatedUser: ["GET /user/keys"],
+    listSocialAccountsForAuthenticatedUser: ["GET /user/social_accounts"],
+    listSocialAccountsForUser: ["GET /users/{username}/social_accounts"],
+    listSshSigningKeysForAuthenticatedUser: ["GET /user/ssh_signing_keys"],
+    listSshSigningKeysForUser: ["GET /users/{username}/ssh_signing_keys"],
+    setPrimaryEmailVisibilityForAuthenticated: [
+      "PATCH /user/email/visibility",
+      {},
+      { renamed: ["users", "setPrimaryEmailVisibilityForAuthenticatedUser"] }
+    ],
+    setPrimaryEmailVisibilityForAuthenticatedUser: [
+      "PATCH /user/email/visibility"
+    ],
+    unblock: ["DELETE /user/blocks/{username}"],
+    unfollow: ["DELETE /user/following/{username}"],
+    updateAuthenticated: ["PATCH /user"]
+  }
+};
+var endpoints_default = Endpoints;
+
+// pkg/dist-src/endpoints-to-methods.js
+var endpointMethodsMap = /* @__PURE__ */ new Map();
+for (const [scope, endpoints] of Object.entries(endpoints_default)) {
+  for (const [methodName, endpoint] of Object.entries(endpoints)) {
+    const [route, defaults, decorations] = endpoint;
+    const [method, url] = route.split(/ /);
+    const endpointDefaults = Object.assign(
+      {
+        method,
+        url
+      },
+      defaults
+    );
+    if (!endpointMethodsMap.has(scope)) {
+      endpointMethodsMap.set(scope, /* @__PURE__ */ new Map());
+    }
+    endpointMethodsMap.get(scope).set(methodName, {
+      scope,
+      methodName,
+      endpointDefaults,
+      decorations
+    });
+  }
+}
+var handler = {
+  has({ scope }, methodName) {
+    return endpointMethodsMap.get(scope).has(methodName);
+  },
+  getOwnPropertyDescriptor(target, methodName) {
+    return {
+      value: this.get(target, methodName),
+      // ensures method is in the cache
+      configurable: true,
+      writable: true,
+      enumerable: true
+    };
+  },
+  defineProperty(target, methodName, descriptor) {
+    Object.defineProperty(target.cache, methodName, descriptor);
+    return true;
+  },
+  deleteProperty(target, methodName) {
+    delete target.cache[methodName];
+    return true;
+  },
+  ownKeys({ scope }) {
+    return [...endpointMethodsMap.get(scope).keys()];
+  },
+  set(target, methodName, value) {
+    return target.cache[methodName] = value;
+  },
+  get({ octokit, scope, cache }, methodName) {
+    if (cache[methodName]) {
+      return cache[methodName];
+    }
+    const method = endpointMethodsMap.get(scope).get(methodName);
+    if (!method) {
+      return void 0;
+    }
+    const { endpointDefaults, decorations } = method;
+    if (decorations) {
+      cache[methodName] = decorate(
+        octokit,
+        scope,
+        methodName,
+        endpointDefaults,
+        decorations
+      );
+    } else {
+      cache[methodName] = octokit.request.defaults(endpointDefaults);
+    }
+    return cache[methodName];
+  }
+};
+function endpointsToMethods(octokit) {
+  const newMethods = {};
+  for (const scope of endpointMethodsMap.keys()) {
+    newMethods[scope] = new Proxy({ octokit, scope, cache: {} }, handler);
+  }
+  return newMethods;
+}
+function decorate(octokit, scope, methodName, defaults, decorations) {
+  const requestWithDefaults = octokit.request.defaults(defaults);
+  function withDecorations(...args) {
+    let options = requestWithDefaults.endpoint.merge(...args);
+    if (decorations.mapToData) {
+      options = Object.assign({}, options, {
+        data: options[decorations.mapToData],
+        [decorations.mapToData]: void 0
+      });
+      return requestWithDefaults(options);
+    }
+    if (decorations.renamed) {
+      const [newScope, newMethodName] = decorations.renamed;
+      octokit.log.warn(
+        `octokit.${scope}.${methodName}() has been renamed to octokit.${newScope}.${newMethodName}()`
+      );
+    }
+    if (decorations.deprecated) {
+      octokit.log.warn(decorations.deprecated);
+    }
+    if (decorations.renamedParameters) {
+      const options2 = requestWithDefaults.endpoint.merge(...args);
+      for (const [name, alias] of Object.entries(
+        decorations.renamedParameters
+      )) {
+        if (name in options2) {
+          octokit.log.warn(
+            `"${name}" parameter is deprecated for "octokit.${scope}.${methodName}()". Use "${alias}" instead`
+          );
+          if (!(alias in options2)) {
+            options2[alias] = options2[name];
+          }
+          delete options2[name];
+        }
+      }
+      return requestWithDefaults(options2);
+    }
+    return requestWithDefaults(...args);
+  }
+  return Object.assign(withDecorations, requestWithDefaults);
+}
+
+// pkg/dist-src/index.js
+function restEndpointMethods(octokit) {
+  const api = endpointsToMethods(octokit);
+  return {
+    rest: api
+  };
+}
+restEndpointMethods.VERSION = VERSION;
+function legacyRestEndpointMethods(octokit) {
+  const api = endpointsToMethods(octokit);
+  return {
+    ...api,
+    rest: api
+  };
+}
+legacyRestEndpointMethods.VERSION = VERSION;
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
+
+
+/***/ }),
+
+/***/ 537:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// pkg/dist-src/index.js
+var dist_src_exports = {};
+__export(dist_src_exports, {
+  RequestError: () => RequestError
+});
+module.exports = __toCommonJS(dist_src_exports);
+var import_deprecation = __nccwpck_require__(8932);
+var import_once = __toESM(__nccwpck_require__(1223));
+var logOnceCode = (0, import_once.default)((deprecation) => console.warn(deprecation));
+var logOnceHeaders = (0, import_once.default)((deprecation) => console.warn(deprecation));
+var RequestError = class extends Error {
+  constructor(message, statusCode, options) {
+    super(message);
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+    this.name = "HttpError";
+    this.status = statusCode;
+    let headers;
+    if ("headers" in options && typeof options.headers !== "undefined") {
+      headers = options.headers;
+    }
+    if ("response" in options) {
+      this.response = options.response;
+      headers = options.response.headers;
+    }
+    const requestCopy = Object.assign({}, options.request);
+    if (options.request.headers.authorization) {
+      requestCopy.headers = Object.assign({}, options.request.headers, {
+        authorization: options.request.headers.authorization.replace(
+          /(?<! ) .*$/,
+          " [REDACTED]"
+        )
+      });
+    }
+    requestCopy.url = requestCopy.url.replace(/\bclient_secret=\w+/g, "client_secret=[REDACTED]").replace(/\baccess_token=\w+/g, "access_token=[REDACTED]");
+    this.request = requestCopy;
+    Object.defineProperty(this, "code", {
+      get() {
+        logOnceCode(
+          new import_deprecation.Deprecation(
+            "[@octokit/request-error] `error.code` is deprecated, use `error.status`."
+          )
+        );
+        return statusCode;
+      }
+    });
+    Object.defineProperty(this, "headers", {
+      get() {
+        logOnceHeaders(
+          new import_deprecation.Deprecation(
+            "[@octokit/request-error] `error.headers` is deprecated, use `error.response.headers`."
+          )
+        );
+        return headers || {};
+      }
+    });
+  }
+};
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
+
+
+/***/ }),
+
+/***/ 6234:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// pkg/dist-src/index.js
+var dist_src_exports = {};
+__export(dist_src_exports, {
+  request: () => request
+});
+module.exports = __toCommonJS(dist_src_exports);
+var import_endpoint = __nccwpck_require__(9440);
+var import_universal_user_agent = __nccwpck_require__(5030);
+
+// pkg/dist-src/version.js
+var VERSION = "8.4.1";
+
+// pkg/dist-src/is-plain-object.js
+function isPlainObject(value) {
+  if (typeof value !== "object" || value === null)
+    return false;
+  if (Object.prototype.toString.call(value) !== "[object Object]")
+    return false;
+  const proto = Object.getPrototypeOf(value);
+  if (proto === null)
+    return true;
+  const Ctor = Object.prototype.hasOwnProperty.call(proto, "constructor") && proto.constructor;
+  return typeof Ctor === "function" && Ctor instanceof Ctor && Function.prototype.call(Ctor) === Function.prototype.call(value);
+}
+
+// pkg/dist-src/fetch-wrapper.js
+var import_request_error = __nccwpck_require__(537);
+
+// pkg/dist-src/get-buffer-response.js
+function getBufferResponse(response) {
+  return response.arrayBuffer();
+}
+
+// pkg/dist-src/fetch-wrapper.js
+function fetchWrapper(requestOptions) {
+  var _a, _b, _c, _d;
+  const log = requestOptions.request && requestOptions.request.log ? requestOptions.request.log : console;
+  const parseSuccessResponseBody = ((_a = requestOptions.request) == null ? void 0 : _a.parseSuccessResponseBody) !== false;
+  if (isPlainObject(requestOptions.body) || Array.isArray(requestOptions.body)) {
+    requestOptions.body = JSON.stringify(requestOptions.body);
+  }
+  let headers = {};
+  let status;
+  let url;
+  let { fetch } = globalThis;
+  if ((_b = requestOptions.request) == null ? void 0 : _b.fetch) {
+    fetch = requestOptions.request.fetch;
+  }
+  if (!fetch) {
+    throw new Error(
+      "fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). Learn more at https://github.com/octokit/octokit.js/#fetch-missing"
+    );
+  }
+  return fetch(requestOptions.url, {
+    method: requestOptions.method,
+    body: requestOptions.body,
+    redirect: (_c = requestOptions.request) == null ? void 0 : _c.redirect,
+    headers: requestOptions.headers,
+    signal: (_d = requestOptions.request) == null ? void 0 : _d.signal,
+    // duplex must be set if request.body is ReadableStream or Async Iterables.
+    // See https://fetch.spec.whatwg.org/#dom-requestinit-duplex.
+    ...requestOptions.body && { duplex: "half" }
+  }).then(async (response) => {
+    url = response.url;
+    status = response.status;
+    for (const keyAndValue of response.headers) {
+      headers[keyAndValue[0]] = keyAndValue[1];
+    }
+    if ("deprecation" in headers) {
+      const matches = headers.link && headers.link.match(/<([^<>]+)>; rel="deprecation"/);
+      const deprecationLink = matches && matches.pop();
+      log.warn(
+        `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
+      );
+    }
+    if (status === 204 || status === 205) {
+      return;
+    }
+    if (requestOptions.method === "HEAD") {
+      if (status < 400) {
+        return;
+      }
+      throw new import_request_error.RequestError(response.statusText, status, {
+        response: {
+          url,
+          status,
+          headers,
+          data: void 0
+        },
+        request: requestOptions
+      });
+    }
+    if (status === 304) {
+      throw new import_request_error.RequestError("Not modified", status, {
+        response: {
+          url,
+          status,
+          headers,
+          data: await getResponseData(response)
+        },
+        request: requestOptions
+      });
+    }
+    if (status >= 400) {
+      const data = await getResponseData(response);
+      const error = new import_request_error.RequestError(toErrorMessage(data), status, {
+        response: {
+          url,
+          status,
+          headers,
+          data
+        },
+        request: requestOptions
+      });
+      throw error;
+    }
+    return parseSuccessResponseBody ? await getResponseData(response) : response.body;
+  }).then((data) => {
+    return {
+      status,
+      url,
+      headers,
+      data
+    };
+  }).catch((error) => {
+    if (error instanceof import_request_error.RequestError)
+      throw error;
+    else if (error.name === "AbortError")
+      throw error;
+    let message = error.message;
+    if (error.name === "TypeError" && "cause" in error) {
+      if (error.cause instanceof Error) {
+        message = error.cause.message;
+      } else if (typeof error.cause === "string") {
+        message = error.cause;
+      }
+    }
+    throw new import_request_error.RequestError(message, 500, {
+      request: requestOptions
+    });
+  });
+}
+async function getResponseData(response) {
+  const contentType = response.headers.get("content-type");
+  if (/application\/json/.test(contentType)) {
+    return response.json().catch(() => response.text()).catch(() => "");
+  }
+  if (!contentType || /^text\/|charset=utf-8$/.test(contentType)) {
+    return response.text();
+  }
+  return getBufferResponse(response);
+}
+function toErrorMessage(data) {
+  if (typeof data === "string")
+    return data;
+  let suffix;
+  if ("documentation_url" in data) {
+    suffix = ` - ${data.documentation_url}`;
+  } else {
+    suffix = "";
+  }
+  if ("message" in data) {
+    if (Array.isArray(data.errors)) {
+      return `${data.message}: ${data.errors.map(JSON.stringify).join(", ")}${suffix}`;
+    }
+    return `${data.message}${suffix}`;
+  }
+  return `Unknown error: ${JSON.stringify(data)}`;
+}
+
+// pkg/dist-src/with-defaults.js
+function withDefaults(oldEndpoint, newDefaults) {
+  const endpoint2 = oldEndpoint.defaults(newDefaults);
+  const newApi = function(route, parameters) {
+    const endpointOptions = endpoint2.merge(route, parameters);
+    if (!endpointOptions.request || !endpointOptions.request.hook) {
+      return fetchWrapper(endpoint2.parse(endpointOptions));
+    }
+    const request2 = (route2, parameters2) => {
+      return fetchWrapper(
+        endpoint2.parse(endpoint2.merge(route2, parameters2))
+      );
+    };
+    Object.assign(request2, {
+      endpoint: endpoint2,
+      defaults: withDefaults.bind(null, endpoint2)
+    });
+    return endpointOptions.request.hook(request2, endpointOptions);
+  };
+  return Object.assign(newApi, {
+    endpoint: endpoint2,
+    defaults: withDefaults.bind(null, endpoint2)
+  });
+}
+
+// pkg/dist-src/index.js
+var request = withDefaults(import_endpoint.endpoint, {
+  headers: {
+    "user-agent": `octokit-request.js/${VERSION} ${(0, import_universal_user_agent.getUserAgent)()}`
+  }
+});
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
+
+
+/***/ }),
+
+/***/ 5375:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+"use strict";
+
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// pkg/dist-src/index.js
+var index_exports = {};
+__export(index_exports, {
+  Octokit: () => Octokit
+});
+module.exports = __toCommonJS(index_exports);
+var import_core = __nccwpck_require__(6762);
+var import_plugin_request_log = __nccwpck_require__(8883);
+var import_plugin_paginate_rest = __nccwpck_require__(4193);
+var import_plugin_rest_endpoint_methods = __nccwpck_require__(3044);
+
+// pkg/dist-src/version.js
+var VERSION = "20.1.2";
+
+// pkg/dist-src/index.js
+var Octokit = import_core.Octokit.plugin(
+  import_plugin_request_log.requestLog,
+  import_plugin_rest_endpoint_methods.legacyRestEndpointMethods,
+  import_plugin_paginate_rest.paginateRest
+).defaults({
+  userAgent: `octokit-rest.js/${VERSION}`
+});
+// Annotate the CommonJS export names for ESM import in node:
+0 && (0);
+
+
+/***/ }),
+
 /***/ 9417:
 /***/ ((module) => {
 
@@ -4704,6 +7442,187 @@ function range(a, b, str) {
   }
 
   return result;
+}
+
+
+/***/ }),
+
+/***/ 3682:
+/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+
+var register = __nccwpck_require__(4670);
+var addHook = __nccwpck_require__(5549);
+var removeHook = __nccwpck_require__(6819);
+
+// bind with array of arguments: https://stackoverflow.com/a/21792913
+var bind = Function.bind;
+var bindable = bind.bind(bind);
+
+function bindApi(hook, state, name) {
+  var removeHookRef = bindable(removeHook, null).apply(
+    null,
+    name ? [state, name] : [state]
+  );
+  hook.api = { remove: removeHookRef };
+  hook.remove = removeHookRef;
+  ["before", "error", "after", "wrap"].forEach(function (kind) {
+    var args = name ? [state, kind, name] : [state, kind];
+    hook[kind] = hook.api[kind] = bindable(addHook, null).apply(null, args);
+  });
+}
+
+function HookSingular() {
+  var singularHookName = "h";
+  var singularHookState = {
+    registry: {},
+  };
+  var singularHook = register.bind(null, singularHookState, singularHookName);
+  bindApi(singularHook, singularHookState, singularHookName);
+  return singularHook;
+}
+
+function HookCollection() {
+  var state = {
+    registry: {},
+  };
+
+  var hook = register.bind(null, state);
+  bindApi(hook, state);
+
+  return hook;
+}
+
+var collectionHookDeprecationMessageDisplayed = false;
+function Hook() {
+  if (!collectionHookDeprecationMessageDisplayed) {
+    console.warn(
+      '[before-after-hook]: "Hook()" repurposing warning, use "Hook.Collection()". Read more: https://git.io/upgrade-before-after-hook-to-1.4'
+    );
+    collectionHookDeprecationMessageDisplayed = true;
+  }
+  return HookCollection();
+}
+
+Hook.Singular = HookSingular.bind();
+Hook.Collection = HookCollection.bind();
+
+module.exports = Hook;
+// expose constructors as a named property for TypeScript
+module.exports.Hook = Hook;
+module.exports.Singular = Hook.Singular;
+module.exports.Collection = Hook.Collection;
+
+
+/***/ }),
+
+/***/ 5549:
+/***/ ((module) => {
+
+module.exports = addHook;
+
+function addHook(state, kind, name, hook) {
+  var orig = hook;
+  if (!state.registry[name]) {
+    state.registry[name] = [];
+  }
+
+  if (kind === "before") {
+    hook = function (method, options) {
+      return Promise.resolve()
+        .then(orig.bind(null, options))
+        .then(method.bind(null, options));
+    };
+  }
+
+  if (kind === "after") {
+    hook = function (method, options) {
+      var result;
+      return Promise.resolve()
+        .then(method.bind(null, options))
+        .then(function (result_) {
+          result = result_;
+          return orig(result, options);
+        })
+        .then(function () {
+          return result;
+        });
+    };
+  }
+
+  if (kind === "error") {
+    hook = function (method, options) {
+      return Promise.resolve()
+        .then(method.bind(null, options))
+        .catch(function (error) {
+          return orig(error, options);
+        });
+    };
+  }
+
+  state.registry[name].push({
+    hook: hook,
+    orig: orig,
+  });
+}
+
+
+/***/ }),
+
+/***/ 4670:
+/***/ ((module) => {
+
+module.exports = register;
+
+function register(state, name, method, options) {
+  if (typeof method !== "function") {
+    throw new Error("method for before hook must be a function");
+  }
+
+  if (!options) {
+    options = {};
+  }
+
+  if (Array.isArray(name)) {
+    return name.reverse().reduce(function (callback, name) {
+      return register.bind(null, state, name, callback, options);
+    }, method)();
+  }
+
+  return Promise.resolve().then(function () {
+    if (!state.registry[name]) {
+      return method(options);
+    }
+
+    return state.registry[name].reduce(function (method, registered) {
+      return registered.hook.bind(null, method, options);
+    }, method)();
+  });
+}
+
+
+/***/ }),
+
+/***/ 6819:
+/***/ ((module) => {
+
+module.exports = removeHook;
+
+function removeHook(state, name, method) {
+  if (!state.registry[name]) {
+    return;
+  }
+
+  var index = state.registry[name]
+    .map(function (registered) {
+      return registered.orig;
+    })
+    .indexOf(method);
+
+  if (index === -1) {
+    return;
+  }
+
+  state.registry[name].splice(index, 1);
 }
 
 
@@ -5290,6 +8209,34 @@ function resolveCommand(parsed) {
 }
 
 module.exports = resolveCommand;
+
+
+/***/ }),
+
+/***/ 8932:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+class Deprecation extends Error {
+  constructor(message) {
+    super(message); // Maintains proper stack trace (only available on V8)
+
+    /* istanbul ignore next */
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor);
+    }
+
+    this.name = 'Deprecation';
+  }
+
+}
+
+exports.Deprecation = Deprecation;
 
 
 /***/ }),
@@ -10141,115 +13088,6 @@ module.exports["default"] = pathKey;
 
 /***/ }),
 
-/***/ 9014:
-/***/ ((module) => {
-
-(function(n){function e(){var i=n();return i.default||i}if(true)module.exports=e();else { var t; }})(function(){"use strict";var el=Object.create;var xr=Object.defineProperty;var rl=Object.getOwnPropertyDescriptor;var tl=Object.getOwnPropertyNames;var nl=Object.getPrototypeOf,il=Object.prototype.hasOwnProperty;var C=(e,r)=>()=>(r||e((r={exports:{}}).exports,r),r.exports),Pn=(e,r)=>{for(var t in r)xr(e,t,{get:r[t],enumerable:!0})},Ln=(e,r,t,n)=>{if(r&&typeof r=="object"||typeof r=="function")for(let a of tl(r))!il.call(e,a)&&a!==t&&xr(e,a,{get:()=>r[a],enumerable:!(n=rl(r,a))||n.enumerable});return e};var Ue=(e,r,t)=>(t=e!=null?el(nl(e)):{},Ln(r||!e||!e.__esModule?xr(t,"default",{value:e,enumerable:!0}):t,e)),ul=e=>Ln(xr({},"__esModule",{value:!0}),e);var wr=C((Pm,In)=>{"use strict";In.exports=sl;function sl(e){return String(e).replace(/\s+/g," ")}});var Pi=C((ov,Oi)=>{"use strict";Oi.exports=mf;var lr=9,Ur=10,Ye=32,Df=33,pf=58,Ge=91,df=92,xt=93,fr=94,zr=96,Mr=4,hf=1024;function mf(e){var r=this.Parser,t=this.Compiler;Ff(r)&&vf(r,e),gf(t)&&Ef(t)}function Ff(e){return!!(e&&e.prototype&&e.prototype.blockTokenizers)}function gf(e){return!!(e&&e.prototype&&e.prototype.visitors)}function vf(e,r){for(var t=r||{},n=e.prototype,a=n.blockTokenizers,u=n.inlineTokenizers,i=n.blockMethods,o=n.inlineMethods,s=a.definition,l=u.reference,c=[],f=-1,D=i.length,h;++f<D;)h=i[f],!(h==="newline"||h==="indentedCode"||h==="paragraph"||h==="footnoteDefinition")&&c.push([h]);c.push(["footnoteDefinition"]),t.inlineNotes&&(wt(o,"reference","inlineNote"),u.inlineNote=m),wt(i,"definition","footnoteDefinition"),wt(o,"reference","footnoteCall"),a.definition=y,a.footnoteDefinition=p,u.footnoteCall=d,u.reference=F,n.interruptFootnoteDefinition=c,F.locator=l.locator,d.locator=E,m.locator=B;function p(b,g,A){for(var x=this,v=x.interruptFootnoteDefinition,w=x.offset,k=g.length+1,q=0,T=[],R,O,S,_,P,ke,j,I,Z,Q,me,Fe,z;q<k&&(_=g.charCodeAt(q),!(_!==lr&&_!==Ye));)q++;if(g.charCodeAt(q++)===Ge&&g.charCodeAt(q++)===fr){for(O=q;q<k;){if(_=g.charCodeAt(q),_!==_||_===Ur||_===lr||_===Ye)return;if(_===xt){S=q,q++;break}q++}if(!(S===void 0||O===S||g.charCodeAt(q++)!==pf)){if(A)return!0;for(R=g.slice(O,S),P=b.now(),Z=0,Q=0,me=q,Fe=[];q<k;){if(_=g.charCodeAt(q),_!==_||_===Ur)z={start:Z,contentStart:me||q,contentEnd:q,end:q},Fe.push(z),_===Ur&&(Z=q+1,Q=0,me=void 0,z.end=Z);else if(Q!==void 0)if(_===Ye||_===lr)Q+=_===Ye?1:Mr-Q%Mr,Q>Mr&&(Q=void 0,me=q);else{if(Q<Mr&&z&&(z.contentStart===z.contentEnd||Cf(v,a,x,[b,g.slice(q,hf),!0])))break;Q=void 0,me=q}q++}for(q=-1,k=Fe.length;k>0&&(z=Fe[k-1],z.contentStart===z.contentEnd);)k--;for(ke=b(g.slice(0,z.contentEnd));++q<k;)z=Fe[q],w[P.line+q]=(w[P.line+q]||0)+(z.contentStart-z.start),T.push(g.slice(z.contentStart,z.end));return j=x.enterBlock(),I=x.tokenizeBlock(T.join(""),P),j(),ke({type:"footnoteDefinition",identifier:R.toLowerCase(),label:R,children:I})}}}function d(b,g,A){var x=g.length+1,v=0,w,k,q,T;if(g.charCodeAt(v++)===Ge&&g.charCodeAt(v++)===fr){for(k=v;v<x;){if(T=g.charCodeAt(v),T!==T||T===Ur||T===lr||T===Ye)return;if(T===xt){q=v,v++;break}v++}if(!(q===void 0||k===q))return A?!0:(w=g.slice(k,q),b(g.slice(0,v))({type:"footnoteReference",identifier:w.toLowerCase(),label:w}))}}function m(b,g,A){var x=this,v=g.length+1,w=0,k=0,q,T,R,O,S,_,P;if(g.charCodeAt(w++)===fr&&g.charCodeAt(w++)===Ge){for(R=w;w<v;){if(T=g.charCodeAt(w),T!==T)return;if(_===void 0)if(T===df)w+=2;else if(T===Ge)k++,w++;else if(T===xt)if(k===0){O=w,w++;break}else k--,w++;else if(T===zr){for(S=w,_=1;g.charCodeAt(S+_)===zr;)_++;w+=_}else w++;else if(T===zr){for(S=w,P=1;g.charCodeAt(S+P)===zr;)P++;w+=P,_===P&&(_=void 0),P=void 0}else w++}if(O!==void 0)return A?!0:(q=b.now(),q.column+=2,q.offset+=2,b(g.slice(0,w))({type:"footnote",children:x.tokenizeInline(g.slice(R,O),q)}))}}function F(b,g,A){var x=0;if(g.charCodeAt(x)===Df&&x++,g.charCodeAt(x)===Ge&&g.charCodeAt(x+1)!==fr)return l.call(this,b,g,A)}function y(b,g,A){for(var x=0,v=g.charCodeAt(x);v===Ye||v===lr;)v=g.charCodeAt(++x);if(v===Ge&&g.charCodeAt(x+1)!==fr)return s.call(this,b,g,A)}function E(b,g){return b.indexOf("[",g)}function B(b,g){return b.indexOf("^[",g)}}function Ef(e){var r=e.prototype.visitors,t="    ";r.footnote=n,r.footnoteReference=a,r.footnoteDefinition=u;function n(i){return"^["+this.all(i).join("")+"]"}function a(i){return"[^"+(i.label||i.identifier)+"]"}function u(i){for(var o=this.all(i).join(`
-
-`).split(`
-`),s=0,l=o.length,c;++s<l;)c=o[s],c!==""&&(o[s]=t+c);return"[^"+(i.label||i.identifier)+"]: "+o.join(`
-`)}}function wt(e,r,t){e.splice(e.indexOf(r),0,t)}function Cf(e,r,t,n){for(var a=e.length,u=-1;++u<a;)if(r[e[u][0]].apply(t,n))return!0;return!1}});var Bt=C(kt=>{kt.isRemarkParser=bf;kt.isRemarkCompiler=yf;function bf(e){return!!(e&&e.prototype&&e.prototype.blockTokenizers)}function yf(e){return!!(e&&e.prototype&&e.prototype.visitors)}});var Mi=C((cv,zi)=>{var Li=Bt();zi.exports=kf;var Ii=9,Ni=32,Yr=36,Af=48,xf=57,Ri=92,wf=["math","math-inline"],Ui="math-display";function kf(e){let r=this.Parser,t=this.Compiler;Li.isRemarkParser(r)&&Bf(r,e),Li.isRemarkCompiler(t)&&qf(t,e)}function Bf(e,r){let t=e.prototype,n=t.inlineMethods;u.locator=a,t.inlineTokenizers.math=u,n.splice(n.indexOf("text"),0,"math");function a(i,o){return i.indexOf("$",o)}function u(i,o,s){let l=o.length,c=!1,f=!1,D=0,h,p,d,m,F,y,E;if(o.charCodeAt(D)===Ri&&(f=!0,D++),o.charCodeAt(D)===Yr){if(D++,f)return s?!0:i(o.slice(0,D))({type:"text",value:"$"});if(o.charCodeAt(D)===Yr&&(c=!0,D++),d=o.charCodeAt(D),!(d===Ni||d===Ii)){for(m=D;D<l;){if(p=d,d=o.charCodeAt(D+1),p===Yr){if(h=o.charCodeAt(D-1),h!==Ni&&h!==Ii&&(d!==d||d<Af||d>xf)&&(!c||d===Yr)){F=D-1,D++,c&&D++,y=D;break}}else p===Ri&&(D++,d=o.charCodeAt(D+1));D++}if(y!==void 0)return s?!0:(E=o.slice(m,F+1),i(o.slice(0,y))({type:"inlineMath",value:E,data:{hName:"span",hProperties:{className:wf.concat(c&&r.inlineMathDouble?[Ui]:[])},hChildren:[{type:"text",value:E}]}}))}}}}function qf(e){let r=e.prototype;r.visitors.inlineMath=t;function t(n){let a="$";return(n.data&&n.data.hProperties&&n.data.hProperties.className||[]).includes(Ui)&&(a="$$"),a+n.value+a}}});var $i=C((lv,ji)=>{var Yi=Bt();ji.exports=Of;var Gi=10,Dr=32,qt=36,Vi=`
-`,Tf="$",_f=2,Sf=["math","math-display"];function Of(){let e=this.Parser,r=this.Compiler;Yi.isRemarkParser(e)&&Pf(e),Yi.isRemarkCompiler(r)&&Lf(r)}function Pf(e){let r=e.prototype,t=r.blockMethods,n=r.interruptParagraph,a=r.interruptList,u=r.interruptBlockquote;r.blockTokenizers.math=i,t.splice(t.indexOf("fencedCode")+1,0,"math"),n.splice(n.indexOf("fencedCode")+1,0,["math"]),a.splice(a.indexOf("fencedCode")+1,0,["math"]),u.splice(u.indexOf("fencedCode")+1,0,["math"]);function i(o,s,l){var c=s.length,f=0;let D,h,p,d,m,F,y,E,B,b,g;for(;f<c&&s.charCodeAt(f)===Dr;)f++;for(m=f;f<c&&s.charCodeAt(f)===qt;)f++;if(F=f-m,!(F<_f)){for(;f<c&&s.charCodeAt(f)===Dr;)f++;for(y=f;f<c;){if(D=s.charCodeAt(f),D===qt)return;if(D===Gi)break;f++}if(s.charCodeAt(f)===Gi){if(l)return!0;for(h=[],y!==f&&h.push(s.slice(y,f)),f++,p=s.indexOf(Vi,f+1),p=p===-1?c:p;f<c;){for(E=!1,b=f,g=p,d=p,B=0;d>b&&s.charCodeAt(d-1)===Dr;)d--;for(;d>b&&s.charCodeAt(d-1)===qt;)B++,d--;for(F<=B&&s.indexOf(Tf,b)===d&&(E=!0,g=d);b<=g&&b-f<m&&s.charCodeAt(b)===Dr;)b++;if(E)for(;g>b&&s.charCodeAt(g-1)===Dr;)g--;if((!E||b!==g)&&h.push(s.slice(b,g)),E)break;f=p+1,p=s.indexOf(Vi,f+1),p=p===-1?c:p}return h=h.join(`
-`),o(s.slice(0,p))({type:"math",value:h,data:{hName:"div",hProperties:{className:Sf.concat()},hChildren:[{type:"text",value:h}]}})}}}}function Lf(e){let r=e.prototype;r.visitors.math=t;function t(n){return`$$
-`+n.value+`
-$$`}}});var Wi=C((fv,Hi)=>{var If=Mi(),Nf=$i();Hi.exports=Rf;function Rf(e){var r=e||{};Nf.call(this,r),If.call(this,r)}});var Ie=C((Dv,Ki)=>{Ki.exports=zf;var Uf=Object.prototype.hasOwnProperty;function zf(){for(var e={},r=0;r<arguments.length;r++){var t=arguments[r];for(var n in t)Uf.call(t,n)&&(e[n]=t[n])}return e}});var Ji=C((pv,Tt)=>{typeof Object.create=="function"?Tt.exports=function(r,t){t&&(r.super_=t,r.prototype=Object.create(t.prototype,{constructor:{value:r,enumerable:!1,writable:!0,configurable:!0}}))}:Tt.exports=function(r,t){if(t){r.super_=t;var n=function(){};n.prototype=t.prototype,r.prototype=new n,r.prototype.constructor=r}}});var Zi=C((dv,Qi)=>{"use strict";var Mf=Ie(),Xi=Ji();Qi.exports=Yf;function Yf(e){var r,t,n;Xi(u,e),Xi(a,u),r=u.prototype;for(t in r)n=r[t],n&&typeof n=="object"&&(r[t]="concat"in n?n.concat():Mf(n));return u;function a(i){return e.apply(this,i)}function u(){return this instanceof u?e.apply(this,arguments):new a(arguments)}}});var ru=C((hv,eu)=>{"use strict";eu.exports=Gf;function Gf(e,r,t){return n;function n(){var a=t||this,u=a[e];return a[e]=!r,i;function i(){a[e]=u}}}});var nu=C((mv,tu)=>{"use strict";tu.exports=Vf;function Vf(e){for(var r=String(e),t=[],n=/\r?\n|\r/g;n.exec(r);)t.push(n.lastIndex);return t.push(r.length+1),{toPoint:a,toPosition:a,toOffset:u};function a(i){var o=-1;if(i>-1&&i<t[t.length-1]){for(;++o<t.length;)if(t[o]>i)return{line:o+1,column:i-(t[o-1]||0)+1,offset:i}}return{}}function u(i){var o=i&&i.line,s=i&&i.column,l;return!isNaN(o)&&!isNaN(s)&&o-1 in t&&(l=(t[o-2]||0)+s-1||0),l>-1&&l<t[t.length-1]?l:-1}}});var uu=C((Fv,iu)=>{"use strict";iu.exports=jf;var _t="\\";function jf(e,r){return t;function t(n){for(var a=0,u=n.indexOf(_t),i=e[r],o=[],s;u!==-1;)o.push(n.slice(a,u)),a=u+1,s=n.charAt(a),(!s||i.indexOf(s)===-1)&&o.push(_t),u=n.indexOf(_t,a+1);return o.push(n.slice(a)),o.join("")}}});var au=C((gv,$f)=>{$f.exports={AElig:"\xC6",AMP:"&",Aacute:"\xC1",Acirc:"\xC2",Agrave:"\xC0",Aring:"\xC5",Atilde:"\xC3",Auml:"\xC4",COPY:"\xA9",Ccedil:"\xC7",ETH:"\xD0",Eacute:"\xC9",Ecirc:"\xCA",Egrave:"\xC8",Euml:"\xCB",GT:">",Iacute:"\xCD",Icirc:"\xCE",Igrave:"\xCC",Iuml:"\xCF",LT:"<",Ntilde:"\xD1",Oacute:"\xD3",Ocirc:"\xD4",Ograve:"\xD2",Oslash:"\xD8",Otilde:"\xD5",Ouml:"\xD6",QUOT:'"',REG:"\xAE",THORN:"\xDE",Uacute:"\xDA",Ucirc:"\xDB",Ugrave:"\xD9",Uuml:"\xDC",Yacute:"\xDD",aacute:"\xE1",acirc:"\xE2",acute:"\xB4",aelig:"\xE6",agrave:"\xE0",amp:"&",aring:"\xE5",atilde:"\xE3",auml:"\xE4",brvbar:"\xA6",ccedil:"\xE7",cedil:"\xB8",cent:"\xA2",copy:"\xA9",curren:"\xA4",deg:"\xB0",divide:"\xF7",eacute:"\xE9",ecirc:"\xEA",egrave:"\xE8",eth:"\xF0",euml:"\xEB",frac12:"\xBD",frac14:"\xBC",frac34:"\xBE",gt:">",iacute:"\xED",icirc:"\xEE",iexcl:"\xA1",igrave:"\xEC",iquest:"\xBF",iuml:"\xEF",laquo:"\xAB",lt:"<",macr:"\xAF",micro:"\xB5",middot:"\xB7",nbsp:"\xA0",not:"\xAC",ntilde:"\xF1",oacute:"\xF3",ocirc:"\xF4",ograve:"\xF2",ordf:"\xAA",ordm:"\xBA",oslash:"\xF8",otilde:"\xF5",ouml:"\xF6",para:"\xB6",plusmn:"\xB1",pound:"\xA3",quot:'"',raquo:"\xBB",reg:"\xAE",sect:"\xA7",shy:"\xAD",sup1:"\xB9",sup2:"\xB2",sup3:"\xB3",szlig:"\xDF",thorn:"\xFE",times:"\xD7",uacute:"\xFA",ucirc:"\xFB",ugrave:"\xF9",uml:"\xA8",uuml:"\xFC",yacute:"\xFD",yen:"\xA5",yuml:"\xFF"}});var ou=C((vv,Hf)=>{Hf.exports={"0":"\uFFFD","128":"\u20AC","130":"\u201A","131":"\u0192","132":"\u201E","133":"\u2026","134":"\u2020","135":"\u2021","136":"\u02C6","137":"\u2030","138":"\u0160","139":"\u2039","140":"\u0152","142":"\u017D","145":"\u2018","146":"\u2019","147":"\u201C","148":"\u201D","149":"\u2022","150":"\u2013","151":"\u2014","152":"\u02DC","153":"\u2122","154":"\u0161","155":"\u203A","156":"\u0153","158":"\u017E","159":"\u0178"}});var Ne=C((Ev,su)=>{"use strict";su.exports=Wf;function Wf(e){var r=typeof e=="string"?e.charCodeAt(0):e;return r>=48&&r<=57}});var lu=C((Cv,cu)=>{"use strict";cu.exports=Kf;function Kf(e){var r=typeof e=="string"?e.charCodeAt(0):e;return r>=97&&r<=102||r>=65&&r<=70||r>=48&&r<=57}});var Ve=C((bv,fu)=>{"use strict";fu.exports=Jf;function Jf(e){var r=typeof e=="string"?e.charCodeAt(0):e;return r>=97&&r<=122||r>=65&&r<=90}});var pu=C((yv,Du)=>{"use strict";var Xf=Ve(),Qf=Ne();Du.exports=Zf;function Zf(e){return Xf(e)||Qf(e)}});var du=C((Av,eD)=>{eD.exports={AEli:"\xC6",AElig:"\xC6",AM:"&",AMP:"&",Aacut:"\xC1",Aacute:"\xC1",Abreve:"\u0102",Acir:"\xC2",Acirc:"\xC2",Acy:"\u0410",Afr:"\u{1D504}",Agrav:"\xC0",Agrave:"\xC0",Alpha:"\u0391",Amacr:"\u0100",And:"\u2A53",Aogon:"\u0104",Aopf:"\u{1D538}",ApplyFunction:"\u2061",Arin:"\xC5",Aring:"\xC5",Ascr:"\u{1D49C}",Assign:"\u2254",Atild:"\xC3",Atilde:"\xC3",Aum:"\xC4",Auml:"\xC4",Backslash:"\u2216",Barv:"\u2AE7",Barwed:"\u2306",Bcy:"\u0411",Because:"\u2235",Bernoullis:"\u212C",Beta:"\u0392",Bfr:"\u{1D505}",Bopf:"\u{1D539}",Breve:"\u02D8",Bscr:"\u212C",Bumpeq:"\u224E",CHcy:"\u0427",COP:"\xA9",COPY:"\xA9",Cacute:"\u0106",Cap:"\u22D2",CapitalDifferentialD:"\u2145",Cayleys:"\u212D",Ccaron:"\u010C",Ccedi:"\xC7",Ccedil:"\xC7",Ccirc:"\u0108",Cconint:"\u2230",Cdot:"\u010A",Cedilla:"\xB8",CenterDot:"\xB7",Cfr:"\u212D",Chi:"\u03A7",CircleDot:"\u2299",CircleMinus:"\u2296",CirclePlus:"\u2295",CircleTimes:"\u2297",ClockwiseContourIntegral:"\u2232",CloseCurlyDoubleQuote:"\u201D",CloseCurlyQuote:"\u2019",Colon:"\u2237",Colone:"\u2A74",Congruent:"\u2261",Conint:"\u222F",ContourIntegral:"\u222E",Copf:"\u2102",Coproduct:"\u2210",CounterClockwiseContourIntegral:"\u2233",Cross:"\u2A2F",Cscr:"\u{1D49E}",Cup:"\u22D3",CupCap:"\u224D",DD:"\u2145",DDotrahd:"\u2911",DJcy:"\u0402",DScy:"\u0405",DZcy:"\u040F",Dagger:"\u2021",Darr:"\u21A1",Dashv:"\u2AE4",Dcaron:"\u010E",Dcy:"\u0414",Del:"\u2207",Delta:"\u0394",Dfr:"\u{1D507}",DiacriticalAcute:"\xB4",DiacriticalDot:"\u02D9",DiacriticalDoubleAcute:"\u02DD",DiacriticalGrave:"`",DiacriticalTilde:"\u02DC",Diamond:"\u22C4",DifferentialD:"\u2146",Dopf:"\u{1D53B}",Dot:"\xA8",DotDot:"\u20DC",DotEqual:"\u2250",DoubleContourIntegral:"\u222F",DoubleDot:"\xA8",DoubleDownArrow:"\u21D3",DoubleLeftArrow:"\u21D0",DoubleLeftRightArrow:"\u21D4",DoubleLeftTee:"\u2AE4",DoubleLongLeftArrow:"\u27F8",DoubleLongLeftRightArrow:"\u27FA",DoubleLongRightArrow:"\u27F9",DoubleRightArrow:"\u21D2",DoubleRightTee:"\u22A8",DoubleUpArrow:"\u21D1",DoubleUpDownArrow:"\u21D5",DoubleVerticalBar:"\u2225",DownArrow:"\u2193",DownArrowBar:"\u2913",DownArrowUpArrow:"\u21F5",DownBreve:"\u0311",DownLeftRightVector:"\u2950",DownLeftTeeVector:"\u295E",DownLeftVector:"\u21BD",DownLeftVectorBar:"\u2956",DownRightTeeVector:"\u295F",DownRightVector:"\u21C1",DownRightVectorBar:"\u2957",DownTee:"\u22A4",DownTeeArrow:"\u21A7",Downarrow:"\u21D3",Dscr:"\u{1D49F}",Dstrok:"\u0110",ENG:"\u014A",ET:"\xD0",ETH:"\xD0",Eacut:"\xC9",Eacute:"\xC9",Ecaron:"\u011A",Ecir:"\xCA",Ecirc:"\xCA",Ecy:"\u042D",Edot:"\u0116",Efr:"\u{1D508}",Egrav:"\xC8",Egrave:"\xC8",Element:"\u2208",Emacr:"\u0112",EmptySmallSquare:"\u25FB",EmptyVerySmallSquare:"\u25AB",Eogon:"\u0118",Eopf:"\u{1D53C}",Epsilon:"\u0395",Equal:"\u2A75",EqualTilde:"\u2242",Equilibrium:"\u21CC",Escr:"\u2130",Esim:"\u2A73",Eta:"\u0397",Eum:"\xCB",Euml:"\xCB",Exists:"\u2203",ExponentialE:"\u2147",Fcy:"\u0424",Ffr:"\u{1D509}",FilledSmallSquare:"\u25FC",FilledVerySmallSquare:"\u25AA",Fopf:"\u{1D53D}",ForAll:"\u2200",Fouriertrf:"\u2131",Fscr:"\u2131",GJcy:"\u0403",G:">",GT:">",Gamma:"\u0393",Gammad:"\u03DC",Gbreve:"\u011E",Gcedil:"\u0122",Gcirc:"\u011C",Gcy:"\u0413",Gdot:"\u0120",Gfr:"\u{1D50A}",Gg:"\u22D9",Gopf:"\u{1D53E}",GreaterEqual:"\u2265",GreaterEqualLess:"\u22DB",GreaterFullEqual:"\u2267",GreaterGreater:"\u2AA2",GreaterLess:"\u2277",GreaterSlantEqual:"\u2A7E",GreaterTilde:"\u2273",Gscr:"\u{1D4A2}",Gt:"\u226B",HARDcy:"\u042A",Hacek:"\u02C7",Hat:"^",Hcirc:"\u0124",Hfr:"\u210C",HilbertSpace:"\u210B",Hopf:"\u210D",HorizontalLine:"\u2500",Hscr:"\u210B",Hstrok:"\u0126",HumpDownHump:"\u224E",HumpEqual:"\u224F",IEcy:"\u0415",IJlig:"\u0132",IOcy:"\u0401",Iacut:"\xCD",Iacute:"\xCD",Icir:"\xCE",Icirc:"\xCE",Icy:"\u0418",Idot:"\u0130",Ifr:"\u2111",Igrav:"\xCC",Igrave:"\xCC",Im:"\u2111",Imacr:"\u012A",ImaginaryI:"\u2148",Implies:"\u21D2",Int:"\u222C",Integral:"\u222B",Intersection:"\u22C2",InvisibleComma:"\u2063",InvisibleTimes:"\u2062",Iogon:"\u012E",Iopf:"\u{1D540}",Iota:"\u0399",Iscr:"\u2110",Itilde:"\u0128",Iukcy:"\u0406",Ium:"\xCF",Iuml:"\xCF",Jcirc:"\u0134",Jcy:"\u0419",Jfr:"\u{1D50D}",Jopf:"\u{1D541}",Jscr:"\u{1D4A5}",Jsercy:"\u0408",Jukcy:"\u0404",KHcy:"\u0425",KJcy:"\u040C",Kappa:"\u039A",Kcedil:"\u0136",Kcy:"\u041A",Kfr:"\u{1D50E}",Kopf:"\u{1D542}",Kscr:"\u{1D4A6}",LJcy:"\u0409",L:"<",LT:"<",Lacute:"\u0139",Lambda:"\u039B",Lang:"\u27EA",Laplacetrf:"\u2112",Larr:"\u219E",Lcaron:"\u013D",Lcedil:"\u013B",Lcy:"\u041B",LeftAngleBracket:"\u27E8",LeftArrow:"\u2190",LeftArrowBar:"\u21E4",LeftArrowRightArrow:"\u21C6",LeftCeiling:"\u2308",LeftDoubleBracket:"\u27E6",LeftDownTeeVector:"\u2961",LeftDownVector:"\u21C3",LeftDownVectorBar:"\u2959",LeftFloor:"\u230A",LeftRightArrow:"\u2194",LeftRightVector:"\u294E",LeftTee:"\u22A3",LeftTeeArrow:"\u21A4",LeftTeeVector:"\u295A",LeftTriangle:"\u22B2",LeftTriangleBar:"\u29CF",LeftTriangleEqual:"\u22B4",LeftUpDownVector:"\u2951",LeftUpTeeVector:"\u2960",LeftUpVector:"\u21BF",LeftUpVectorBar:"\u2958",LeftVector:"\u21BC",LeftVectorBar:"\u2952",Leftarrow:"\u21D0",Leftrightarrow:"\u21D4",LessEqualGreater:"\u22DA",LessFullEqual:"\u2266",LessGreater:"\u2276",LessLess:"\u2AA1",LessSlantEqual:"\u2A7D",LessTilde:"\u2272",Lfr:"\u{1D50F}",Ll:"\u22D8",Lleftarrow:"\u21DA",Lmidot:"\u013F",LongLeftArrow:"\u27F5",LongLeftRightArrow:"\u27F7",LongRightArrow:"\u27F6",Longleftarrow:"\u27F8",Longleftrightarrow:"\u27FA",Longrightarrow:"\u27F9",Lopf:"\u{1D543}",LowerLeftArrow:"\u2199",LowerRightArrow:"\u2198",Lscr:"\u2112",Lsh:"\u21B0",Lstrok:"\u0141",Lt:"\u226A",Map:"\u2905",Mcy:"\u041C",MediumSpace:"\u205F",Mellintrf:"\u2133",Mfr:"\u{1D510}",MinusPlus:"\u2213",Mopf:"\u{1D544}",Mscr:"\u2133",Mu:"\u039C",NJcy:"\u040A",Nacute:"\u0143",Ncaron:"\u0147",Ncedil:"\u0145",Ncy:"\u041D",NegativeMediumSpace:"\u200B",NegativeThickSpace:"\u200B",NegativeThinSpace:"\u200B",NegativeVeryThinSpace:"\u200B",NestedGreaterGreater:"\u226B",NestedLessLess:"\u226A",NewLine:`
-`,Nfr:"\u{1D511}",NoBreak:"\u2060",NonBreakingSpace:"\xA0",Nopf:"\u2115",Not:"\u2AEC",NotCongruent:"\u2262",NotCupCap:"\u226D",NotDoubleVerticalBar:"\u2226",NotElement:"\u2209",NotEqual:"\u2260",NotEqualTilde:"\u2242\u0338",NotExists:"\u2204",NotGreater:"\u226F",NotGreaterEqual:"\u2271",NotGreaterFullEqual:"\u2267\u0338",NotGreaterGreater:"\u226B\u0338",NotGreaterLess:"\u2279",NotGreaterSlantEqual:"\u2A7E\u0338",NotGreaterTilde:"\u2275",NotHumpDownHump:"\u224E\u0338",NotHumpEqual:"\u224F\u0338",NotLeftTriangle:"\u22EA",NotLeftTriangleBar:"\u29CF\u0338",NotLeftTriangleEqual:"\u22EC",NotLess:"\u226E",NotLessEqual:"\u2270",NotLessGreater:"\u2278",NotLessLess:"\u226A\u0338",NotLessSlantEqual:"\u2A7D\u0338",NotLessTilde:"\u2274",NotNestedGreaterGreater:"\u2AA2\u0338",NotNestedLessLess:"\u2AA1\u0338",NotPrecedes:"\u2280",NotPrecedesEqual:"\u2AAF\u0338",NotPrecedesSlantEqual:"\u22E0",NotReverseElement:"\u220C",NotRightTriangle:"\u22EB",NotRightTriangleBar:"\u29D0\u0338",NotRightTriangleEqual:"\u22ED",NotSquareSubset:"\u228F\u0338",NotSquareSubsetEqual:"\u22E2",NotSquareSuperset:"\u2290\u0338",NotSquareSupersetEqual:"\u22E3",NotSubset:"\u2282\u20D2",NotSubsetEqual:"\u2288",NotSucceeds:"\u2281",NotSucceedsEqual:"\u2AB0\u0338",NotSucceedsSlantEqual:"\u22E1",NotSucceedsTilde:"\u227F\u0338",NotSuperset:"\u2283\u20D2",NotSupersetEqual:"\u2289",NotTilde:"\u2241",NotTildeEqual:"\u2244",NotTildeFullEqual:"\u2247",NotTildeTilde:"\u2249",NotVerticalBar:"\u2224",Nscr:"\u{1D4A9}",Ntild:"\xD1",Ntilde:"\xD1",Nu:"\u039D",OElig:"\u0152",Oacut:"\xD3",Oacute:"\xD3",Ocir:"\xD4",Ocirc:"\xD4",Ocy:"\u041E",Odblac:"\u0150",Ofr:"\u{1D512}",Ograv:"\xD2",Ograve:"\xD2",Omacr:"\u014C",Omega:"\u03A9",Omicron:"\u039F",Oopf:"\u{1D546}",OpenCurlyDoubleQuote:"\u201C",OpenCurlyQuote:"\u2018",Or:"\u2A54",Oscr:"\u{1D4AA}",Oslas:"\xD8",Oslash:"\xD8",Otild:"\xD5",Otilde:"\xD5",Otimes:"\u2A37",Oum:"\xD6",Ouml:"\xD6",OverBar:"\u203E",OverBrace:"\u23DE",OverBracket:"\u23B4",OverParenthesis:"\u23DC",PartialD:"\u2202",Pcy:"\u041F",Pfr:"\u{1D513}",Phi:"\u03A6",Pi:"\u03A0",PlusMinus:"\xB1",Poincareplane:"\u210C",Popf:"\u2119",Pr:"\u2ABB",Precedes:"\u227A",PrecedesEqual:"\u2AAF",PrecedesSlantEqual:"\u227C",PrecedesTilde:"\u227E",Prime:"\u2033",Product:"\u220F",Proportion:"\u2237",Proportional:"\u221D",Pscr:"\u{1D4AB}",Psi:"\u03A8",QUO:'"',QUOT:'"',Qfr:"\u{1D514}",Qopf:"\u211A",Qscr:"\u{1D4AC}",RBarr:"\u2910",RE:"\xAE",REG:"\xAE",Racute:"\u0154",Rang:"\u27EB",Rarr:"\u21A0",Rarrtl:"\u2916",Rcaron:"\u0158",Rcedil:"\u0156",Rcy:"\u0420",Re:"\u211C",ReverseElement:"\u220B",ReverseEquilibrium:"\u21CB",ReverseUpEquilibrium:"\u296F",Rfr:"\u211C",Rho:"\u03A1",RightAngleBracket:"\u27E9",RightArrow:"\u2192",RightArrowBar:"\u21E5",RightArrowLeftArrow:"\u21C4",RightCeiling:"\u2309",RightDoubleBracket:"\u27E7",RightDownTeeVector:"\u295D",RightDownVector:"\u21C2",RightDownVectorBar:"\u2955",RightFloor:"\u230B",RightTee:"\u22A2",RightTeeArrow:"\u21A6",RightTeeVector:"\u295B",RightTriangle:"\u22B3",RightTriangleBar:"\u29D0",RightTriangleEqual:"\u22B5",RightUpDownVector:"\u294F",RightUpTeeVector:"\u295C",RightUpVector:"\u21BE",RightUpVectorBar:"\u2954",RightVector:"\u21C0",RightVectorBar:"\u2953",Rightarrow:"\u21D2",Ropf:"\u211D",RoundImplies:"\u2970",Rrightarrow:"\u21DB",Rscr:"\u211B",Rsh:"\u21B1",RuleDelayed:"\u29F4",SHCHcy:"\u0429",SHcy:"\u0428",SOFTcy:"\u042C",Sacute:"\u015A",Sc:"\u2ABC",Scaron:"\u0160",Scedil:"\u015E",Scirc:"\u015C",Scy:"\u0421",Sfr:"\u{1D516}",ShortDownArrow:"\u2193",ShortLeftArrow:"\u2190",ShortRightArrow:"\u2192",ShortUpArrow:"\u2191",Sigma:"\u03A3",SmallCircle:"\u2218",Sopf:"\u{1D54A}",Sqrt:"\u221A",Square:"\u25A1",SquareIntersection:"\u2293",SquareSubset:"\u228F",SquareSubsetEqual:"\u2291",SquareSuperset:"\u2290",SquareSupersetEqual:"\u2292",SquareUnion:"\u2294",Sscr:"\u{1D4AE}",Star:"\u22C6",Sub:"\u22D0",Subset:"\u22D0",SubsetEqual:"\u2286",Succeeds:"\u227B",SucceedsEqual:"\u2AB0",SucceedsSlantEqual:"\u227D",SucceedsTilde:"\u227F",SuchThat:"\u220B",Sum:"\u2211",Sup:"\u22D1",Superset:"\u2283",SupersetEqual:"\u2287",Supset:"\u22D1",THOR:"\xDE",THORN:"\xDE",TRADE:"\u2122",TSHcy:"\u040B",TScy:"\u0426",Tab:"	",Tau:"\u03A4",Tcaron:"\u0164",Tcedil:"\u0162",Tcy:"\u0422",Tfr:"\u{1D517}",Therefore:"\u2234",Theta:"\u0398",ThickSpace:"\u205F\u200A",ThinSpace:"\u2009",Tilde:"\u223C",TildeEqual:"\u2243",TildeFullEqual:"\u2245",TildeTilde:"\u2248",Topf:"\u{1D54B}",TripleDot:"\u20DB",Tscr:"\u{1D4AF}",Tstrok:"\u0166",Uacut:"\xDA",Uacute:"\xDA",Uarr:"\u219F",Uarrocir:"\u2949",Ubrcy:"\u040E",Ubreve:"\u016C",Ucir:"\xDB",Ucirc:"\xDB",Ucy:"\u0423",Udblac:"\u0170",Ufr:"\u{1D518}",Ugrav:"\xD9",Ugrave:"\xD9",Umacr:"\u016A",UnderBar:"_",UnderBrace:"\u23DF",UnderBracket:"\u23B5",UnderParenthesis:"\u23DD",Union:"\u22C3",UnionPlus:"\u228E",Uogon:"\u0172",Uopf:"\u{1D54C}",UpArrow:"\u2191",UpArrowBar:"\u2912",UpArrowDownArrow:"\u21C5",UpDownArrow:"\u2195",UpEquilibrium:"\u296E",UpTee:"\u22A5",UpTeeArrow:"\u21A5",Uparrow:"\u21D1",Updownarrow:"\u21D5",UpperLeftArrow:"\u2196",UpperRightArrow:"\u2197",Upsi:"\u03D2",Upsilon:"\u03A5",Uring:"\u016E",Uscr:"\u{1D4B0}",Utilde:"\u0168",Uum:"\xDC",Uuml:"\xDC",VDash:"\u22AB",Vbar:"\u2AEB",Vcy:"\u0412",Vdash:"\u22A9",Vdashl:"\u2AE6",Vee:"\u22C1",Verbar:"\u2016",Vert:"\u2016",VerticalBar:"\u2223",VerticalLine:"|",VerticalSeparator:"\u2758",VerticalTilde:"\u2240",VeryThinSpace:"\u200A",Vfr:"\u{1D519}",Vopf:"\u{1D54D}",Vscr:"\u{1D4B1}",Vvdash:"\u22AA",Wcirc:"\u0174",Wedge:"\u22C0",Wfr:"\u{1D51A}",Wopf:"\u{1D54E}",Wscr:"\u{1D4B2}",Xfr:"\u{1D51B}",Xi:"\u039E",Xopf:"\u{1D54F}",Xscr:"\u{1D4B3}",YAcy:"\u042F",YIcy:"\u0407",YUcy:"\u042E",Yacut:"\xDD",Yacute:"\xDD",Ycirc:"\u0176",Ycy:"\u042B",Yfr:"\u{1D51C}",Yopf:"\u{1D550}",Yscr:"\u{1D4B4}",Yuml:"\u0178",ZHcy:"\u0416",Zacute:"\u0179",Zcaron:"\u017D",Zcy:"\u0417",Zdot:"\u017B",ZeroWidthSpace:"\u200B",Zeta:"\u0396",Zfr:"\u2128",Zopf:"\u2124",Zscr:"\u{1D4B5}",aacut:"\xE1",aacute:"\xE1",abreve:"\u0103",ac:"\u223E",acE:"\u223E\u0333",acd:"\u223F",acir:"\xE2",acirc:"\xE2",acut:"\xB4",acute:"\xB4",acy:"\u0430",aeli:"\xE6",aelig:"\xE6",af:"\u2061",afr:"\u{1D51E}",agrav:"\xE0",agrave:"\xE0",alefsym:"\u2135",aleph:"\u2135",alpha:"\u03B1",amacr:"\u0101",amalg:"\u2A3F",am:"&",amp:"&",and:"\u2227",andand:"\u2A55",andd:"\u2A5C",andslope:"\u2A58",andv:"\u2A5A",ang:"\u2220",ange:"\u29A4",angle:"\u2220",angmsd:"\u2221",angmsdaa:"\u29A8",angmsdab:"\u29A9",angmsdac:"\u29AA",angmsdad:"\u29AB",angmsdae:"\u29AC",angmsdaf:"\u29AD",angmsdag:"\u29AE",angmsdah:"\u29AF",angrt:"\u221F",angrtvb:"\u22BE",angrtvbd:"\u299D",angsph:"\u2222",angst:"\xC5",angzarr:"\u237C",aogon:"\u0105",aopf:"\u{1D552}",ap:"\u2248",apE:"\u2A70",apacir:"\u2A6F",ape:"\u224A",apid:"\u224B",apos:"'",approx:"\u2248",approxeq:"\u224A",arin:"\xE5",aring:"\xE5",ascr:"\u{1D4B6}",ast:"*",asymp:"\u2248",asympeq:"\u224D",atild:"\xE3",atilde:"\xE3",aum:"\xE4",auml:"\xE4",awconint:"\u2233",awint:"\u2A11",bNot:"\u2AED",backcong:"\u224C",backepsilon:"\u03F6",backprime:"\u2035",backsim:"\u223D",backsimeq:"\u22CD",barvee:"\u22BD",barwed:"\u2305",barwedge:"\u2305",bbrk:"\u23B5",bbrktbrk:"\u23B6",bcong:"\u224C",bcy:"\u0431",bdquo:"\u201E",becaus:"\u2235",because:"\u2235",bemptyv:"\u29B0",bepsi:"\u03F6",bernou:"\u212C",beta:"\u03B2",beth:"\u2136",between:"\u226C",bfr:"\u{1D51F}",bigcap:"\u22C2",bigcirc:"\u25EF",bigcup:"\u22C3",bigodot:"\u2A00",bigoplus:"\u2A01",bigotimes:"\u2A02",bigsqcup:"\u2A06",bigstar:"\u2605",bigtriangledown:"\u25BD",bigtriangleup:"\u25B3",biguplus:"\u2A04",bigvee:"\u22C1",bigwedge:"\u22C0",bkarow:"\u290D",blacklozenge:"\u29EB",blacksquare:"\u25AA",blacktriangle:"\u25B4",blacktriangledown:"\u25BE",blacktriangleleft:"\u25C2",blacktriangleright:"\u25B8",blank:"\u2423",blk12:"\u2592",blk14:"\u2591",blk34:"\u2593",block:"\u2588",bne:"=\u20E5",bnequiv:"\u2261\u20E5",bnot:"\u2310",bopf:"\u{1D553}",bot:"\u22A5",bottom:"\u22A5",bowtie:"\u22C8",boxDL:"\u2557",boxDR:"\u2554",boxDl:"\u2556",boxDr:"\u2553",boxH:"\u2550",boxHD:"\u2566",boxHU:"\u2569",boxHd:"\u2564",boxHu:"\u2567",boxUL:"\u255D",boxUR:"\u255A",boxUl:"\u255C",boxUr:"\u2559",boxV:"\u2551",boxVH:"\u256C",boxVL:"\u2563",boxVR:"\u2560",boxVh:"\u256B",boxVl:"\u2562",boxVr:"\u255F",boxbox:"\u29C9",boxdL:"\u2555",boxdR:"\u2552",boxdl:"\u2510",boxdr:"\u250C",boxh:"\u2500",boxhD:"\u2565",boxhU:"\u2568",boxhd:"\u252C",boxhu:"\u2534",boxminus:"\u229F",boxplus:"\u229E",boxtimes:"\u22A0",boxuL:"\u255B",boxuR:"\u2558",boxul:"\u2518",boxur:"\u2514",boxv:"\u2502",boxvH:"\u256A",boxvL:"\u2561",boxvR:"\u255E",boxvh:"\u253C",boxvl:"\u2524",boxvr:"\u251C",bprime:"\u2035",breve:"\u02D8",brvba:"\xA6",brvbar:"\xA6",bscr:"\u{1D4B7}",bsemi:"\u204F",bsim:"\u223D",bsime:"\u22CD",bsol:"\\",bsolb:"\u29C5",bsolhsub:"\u27C8",bull:"\u2022",bullet:"\u2022",bump:"\u224E",bumpE:"\u2AAE",bumpe:"\u224F",bumpeq:"\u224F",cacute:"\u0107",cap:"\u2229",capand:"\u2A44",capbrcup:"\u2A49",capcap:"\u2A4B",capcup:"\u2A47",capdot:"\u2A40",caps:"\u2229\uFE00",caret:"\u2041",caron:"\u02C7",ccaps:"\u2A4D",ccaron:"\u010D",ccedi:"\xE7",ccedil:"\xE7",ccirc:"\u0109",ccups:"\u2A4C",ccupssm:"\u2A50",cdot:"\u010B",cedi:"\xB8",cedil:"\xB8",cemptyv:"\u29B2",cen:"\xA2",cent:"\xA2",centerdot:"\xB7",cfr:"\u{1D520}",chcy:"\u0447",check:"\u2713",checkmark:"\u2713",chi:"\u03C7",cir:"\u25CB",cirE:"\u29C3",circ:"\u02C6",circeq:"\u2257",circlearrowleft:"\u21BA",circlearrowright:"\u21BB",circledR:"\xAE",circledS:"\u24C8",circledast:"\u229B",circledcirc:"\u229A",circleddash:"\u229D",cire:"\u2257",cirfnint:"\u2A10",cirmid:"\u2AEF",cirscir:"\u29C2",clubs:"\u2663",clubsuit:"\u2663",colon:":",colone:"\u2254",coloneq:"\u2254",comma:",",commat:"@",comp:"\u2201",compfn:"\u2218",complement:"\u2201",complexes:"\u2102",cong:"\u2245",congdot:"\u2A6D",conint:"\u222E",copf:"\u{1D554}",coprod:"\u2210",cop:"\xA9",copy:"\xA9",copysr:"\u2117",crarr:"\u21B5",cross:"\u2717",cscr:"\u{1D4B8}",csub:"\u2ACF",csube:"\u2AD1",csup:"\u2AD0",csupe:"\u2AD2",ctdot:"\u22EF",cudarrl:"\u2938",cudarrr:"\u2935",cuepr:"\u22DE",cuesc:"\u22DF",cularr:"\u21B6",cularrp:"\u293D",cup:"\u222A",cupbrcap:"\u2A48",cupcap:"\u2A46",cupcup:"\u2A4A",cupdot:"\u228D",cupor:"\u2A45",cups:"\u222A\uFE00",curarr:"\u21B7",curarrm:"\u293C",curlyeqprec:"\u22DE",curlyeqsucc:"\u22DF",curlyvee:"\u22CE",curlywedge:"\u22CF",curre:"\xA4",curren:"\xA4",curvearrowleft:"\u21B6",curvearrowright:"\u21B7",cuvee:"\u22CE",cuwed:"\u22CF",cwconint:"\u2232",cwint:"\u2231",cylcty:"\u232D",dArr:"\u21D3",dHar:"\u2965",dagger:"\u2020",daleth:"\u2138",darr:"\u2193",dash:"\u2010",dashv:"\u22A3",dbkarow:"\u290F",dblac:"\u02DD",dcaron:"\u010F",dcy:"\u0434",dd:"\u2146",ddagger:"\u2021",ddarr:"\u21CA",ddotseq:"\u2A77",de:"\xB0",deg:"\xB0",delta:"\u03B4",demptyv:"\u29B1",dfisht:"\u297F",dfr:"\u{1D521}",dharl:"\u21C3",dharr:"\u21C2",diam:"\u22C4",diamond:"\u22C4",diamondsuit:"\u2666",diams:"\u2666",die:"\xA8",digamma:"\u03DD",disin:"\u22F2",div:"\xF7",divid:"\xF7",divide:"\xF7",divideontimes:"\u22C7",divonx:"\u22C7",djcy:"\u0452",dlcorn:"\u231E",dlcrop:"\u230D",dollar:"$",dopf:"\u{1D555}",dot:"\u02D9",doteq:"\u2250",doteqdot:"\u2251",dotminus:"\u2238",dotplus:"\u2214",dotsquare:"\u22A1",doublebarwedge:"\u2306",downarrow:"\u2193",downdownarrows:"\u21CA",downharpoonleft:"\u21C3",downharpoonright:"\u21C2",drbkarow:"\u2910",drcorn:"\u231F",drcrop:"\u230C",dscr:"\u{1D4B9}",dscy:"\u0455",dsol:"\u29F6",dstrok:"\u0111",dtdot:"\u22F1",dtri:"\u25BF",dtrif:"\u25BE",duarr:"\u21F5",duhar:"\u296F",dwangle:"\u29A6",dzcy:"\u045F",dzigrarr:"\u27FF",eDDot:"\u2A77",eDot:"\u2251",eacut:"\xE9",eacute:"\xE9",easter:"\u2A6E",ecaron:"\u011B",ecir:"\xEA",ecirc:"\xEA",ecolon:"\u2255",ecy:"\u044D",edot:"\u0117",ee:"\u2147",efDot:"\u2252",efr:"\u{1D522}",eg:"\u2A9A",egrav:"\xE8",egrave:"\xE8",egs:"\u2A96",egsdot:"\u2A98",el:"\u2A99",elinters:"\u23E7",ell:"\u2113",els:"\u2A95",elsdot:"\u2A97",emacr:"\u0113",empty:"\u2205",emptyset:"\u2205",emptyv:"\u2205",emsp13:"\u2004",emsp14:"\u2005",emsp:"\u2003",eng:"\u014B",ensp:"\u2002",eogon:"\u0119",eopf:"\u{1D556}",epar:"\u22D5",eparsl:"\u29E3",eplus:"\u2A71",epsi:"\u03B5",epsilon:"\u03B5",epsiv:"\u03F5",eqcirc:"\u2256",eqcolon:"\u2255",eqsim:"\u2242",eqslantgtr:"\u2A96",eqslantless:"\u2A95",equals:"=",equest:"\u225F",equiv:"\u2261",equivDD:"\u2A78",eqvparsl:"\u29E5",erDot:"\u2253",erarr:"\u2971",escr:"\u212F",esdot:"\u2250",esim:"\u2242",eta:"\u03B7",et:"\xF0",eth:"\xF0",eum:"\xEB",euml:"\xEB",euro:"\u20AC",excl:"!",exist:"\u2203",expectation:"\u2130",exponentiale:"\u2147",fallingdotseq:"\u2252",fcy:"\u0444",female:"\u2640",ffilig:"\uFB03",fflig:"\uFB00",ffllig:"\uFB04",ffr:"\u{1D523}",filig:"\uFB01",fjlig:"fj",flat:"\u266D",fllig:"\uFB02",fltns:"\u25B1",fnof:"\u0192",fopf:"\u{1D557}",forall:"\u2200",fork:"\u22D4",forkv:"\u2AD9",fpartint:"\u2A0D",frac1:"\xBC",frac12:"\xBD",frac13:"\u2153",frac14:"\xBC",frac15:"\u2155",frac16:"\u2159",frac18:"\u215B",frac23:"\u2154",frac25:"\u2156",frac3:"\xBE",frac34:"\xBE",frac35:"\u2157",frac38:"\u215C",frac45:"\u2158",frac56:"\u215A",frac58:"\u215D",frac78:"\u215E",frasl:"\u2044",frown:"\u2322",fscr:"\u{1D4BB}",gE:"\u2267",gEl:"\u2A8C",gacute:"\u01F5",gamma:"\u03B3",gammad:"\u03DD",gap:"\u2A86",gbreve:"\u011F",gcirc:"\u011D",gcy:"\u0433",gdot:"\u0121",ge:"\u2265",gel:"\u22DB",geq:"\u2265",geqq:"\u2267",geqslant:"\u2A7E",ges:"\u2A7E",gescc:"\u2AA9",gesdot:"\u2A80",gesdoto:"\u2A82",gesdotol:"\u2A84",gesl:"\u22DB\uFE00",gesles:"\u2A94",gfr:"\u{1D524}",gg:"\u226B",ggg:"\u22D9",gimel:"\u2137",gjcy:"\u0453",gl:"\u2277",glE:"\u2A92",gla:"\u2AA5",glj:"\u2AA4",gnE:"\u2269",gnap:"\u2A8A",gnapprox:"\u2A8A",gne:"\u2A88",gneq:"\u2A88",gneqq:"\u2269",gnsim:"\u22E7",gopf:"\u{1D558}",grave:"`",gscr:"\u210A",gsim:"\u2273",gsime:"\u2A8E",gsiml:"\u2A90",g:">",gt:">",gtcc:"\u2AA7",gtcir:"\u2A7A",gtdot:"\u22D7",gtlPar:"\u2995",gtquest:"\u2A7C",gtrapprox:"\u2A86",gtrarr:"\u2978",gtrdot:"\u22D7",gtreqless:"\u22DB",gtreqqless:"\u2A8C",gtrless:"\u2277",gtrsim:"\u2273",gvertneqq:"\u2269\uFE00",gvnE:"\u2269\uFE00",hArr:"\u21D4",hairsp:"\u200A",half:"\xBD",hamilt:"\u210B",hardcy:"\u044A",harr:"\u2194",harrcir:"\u2948",harrw:"\u21AD",hbar:"\u210F",hcirc:"\u0125",hearts:"\u2665",heartsuit:"\u2665",hellip:"\u2026",hercon:"\u22B9",hfr:"\u{1D525}",hksearow:"\u2925",hkswarow:"\u2926",hoarr:"\u21FF",homtht:"\u223B",hookleftarrow:"\u21A9",hookrightarrow:"\u21AA",hopf:"\u{1D559}",horbar:"\u2015",hscr:"\u{1D4BD}",hslash:"\u210F",hstrok:"\u0127",hybull:"\u2043",hyphen:"\u2010",iacut:"\xED",iacute:"\xED",ic:"\u2063",icir:"\xEE",icirc:"\xEE",icy:"\u0438",iecy:"\u0435",iexc:"\xA1",iexcl:"\xA1",iff:"\u21D4",ifr:"\u{1D526}",igrav:"\xEC",igrave:"\xEC",ii:"\u2148",iiiint:"\u2A0C",iiint:"\u222D",iinfin:"\u29DC",iiota:"\u2129",ijlig:"\u0133",imacr:"\u012B",image:"\u2111",imagline:"\u2110",imagpart:"\u2111",imath:"\u0131",imof:"\u22B7",imped:"\u01B5",in:"\u2208",incare:"\u2105",infin:"\u221E",infintie:"\u29DD",inodot:"\u0131",int:"\u222B",intcal:"\u22BA",integers:"\u2124",intercal:"\u22BA",intlarhk:"\u2A17",intprod:"\u2A3C",iocy:"\u0451",iogon:"\u012F",iopf:"\u{1D55A}",iota:"\u03B9",iprod:"\u2A3C",iques:"\xBF",iquest:"\xBF",iscr:"\u{1D4BE}",isin:"\u2208",isinE:"\u22F9",isindot:"\u22F5",isins:"\u22F4",isinsv:"\u22F3",isinv:"\u2208",it:"\u2062",itilde:"\u0129",iukcy:"\u0456",ium:"\xEF",iuml:"\xEF",jcirc:"\u0135",jcy:"\u0439",jfr:"\u{1D527}",jmath:"\u0237",jopf:"\u{1D55B}",jscr:"\u{1D4BF}",jsercy:"\u0458",jukcy:"\u0454",kappa:"\u03BA",kappav:"\u03F0",kcedil:"\u0137",kcy:"\u043A",kfr:"\u{1D528}",kgreen:"\u0138",khcy:"\u0445",kjcy:"\u045C",kopf:"\u{1D55C}",kscr:"\u{1D4C0}",lAarr:"\u21DA",lArr:"\u21D0",lAtail:"\u291B",lBarr:"\u290E",lE:"\u2266",lEg:"\u2A8B",lHar:"\u2962",lacute:"\u013A",laemptyv:"\u29B4",lagran:"\u2112",lambda:"\u03BB",lang:"\u27E8",langd:"\u2991",langle:"\u27E8",lap:"\u2A85",laqu:"\xAB",laquo:"\xAB",larr:"\u2190",larrb:"\u21E4",larrbfs:"\u291F",larrfs:"\u291D",larrhk:"\u21A9",larrlp:"\u21AB",larrpl:"\u2939",larrsim:"\u2973",larrtl:"\u21A2",lat:"\u2AAB",latail:"\u2919",late:"\u2AAD",lates:"\u2AAD\uFE00",lbarr:"\u290C",lbbrk:"\u2772",lbrace:"{",lbrack:"[",lbrke:"\u298B",lbrksld:"\u298F",lbrkslu:"\u298D",lcaron:"\u013E",lcedil:"\u013C",lceil:"\u2308",lcub:"{",lcy:"\u043B",ldca:"\u2936",ldquo:"\u201C",ldquor:"\u201E",ldrdhar:"\u2967",ldrushar:"\u294B",ldsh:"\u21B2",le:"\u2264",leftarrow:"\u2190",leftarrowtail:"\u21A2",leftharpoondown:"\u21BD",leftharpoonup:"\u21BC",leftleftarrows:"\u21C7",leftrightarrow:"\u2194",leftrightarrows:"\u21C6",leftrightharpoons:"\u21CB",leftrightsquigarrow:"\u21AD",leftthreetimes:"\u22CB",leg:"\u22DA",leq:"\u2264",leqq:"\u2266",leqslant:"\u2A7D",les:"\u2A7D",lescc:"\u2AA8",lesdot:"\u2A7F",lesdoto:"\u2A81",lesdotor:"\u2A83",lesg:"\u22DA\uFE00",lesges:"\u2A93",lessapprox:"\u2A85",lessdot:"\u22D6",lesseqgtr:"\u22DA",lesseqqgtr:"\u2A8B",lessgtr:"\u2276",lesssim:"\u2272",lfisht:"\u297C",lfloor:"\u230A",lfr:"\u{1D529}",lg:"\u2276",lgE:"\u2A91",lhard:"\u21BD",lharu:"\u21BC",lharul:"\u296A",lhblk:"\u2584",ljcy:"\u0459",ll:"\u226A",llarr:"\u21C7",llcorner:"\u231E",llhard:"\u296B",lltri:"\u25FA",lmidot:"\u0140",lmoust:"\u23B0",lmoustache:"\u23B0",lnE:"\u2268",lnap:"\u2A89",lnapprox:"\u2A89",lne:"\u2A87",lneq:"\u2A87",lneqq:"\u2268",lnsim:"\u22E6",loang:"\u27EC",loarr:"\u21FD",lobrk:"\u27E6",longleftarrow:"\u27F5",longleftrightarrow:"\u27F7",longmapsto:"\u27FC",longrightarrow:"\u27F6",looparrowleft:"\u21AB",looparrowright:"\u21AC",lopar:"\u2985",lopf:"\u{1D55D}",loplus:"\u2A2D",lotimes:"\u2A34",lowast:"\u2217",lowbar:"_",loz:"\u25CA",lozenge:"\u25CA",lozf:"\u29EB",lpar:"(",lparlt:"\u2993",lrarr:"\u21C6",lrcorner:"\u231F",lrhar:"\u21CB",lrhard:"\u296D",lrm:"\u200E",lrtri:"\u22BF",lsaquo:"\u2039",lscr:"\u{1D4C1}",lsh:"\u21B0",lsim:"\u2272",lsime:"\u2A8D",lsimg:"\u2A8F",lsqb:"[",lsquo:"\u2018",lsquor:"\u201A",lstrok:"\u0142",l:"<",lt:"<",ltcc:"\u2AA6",ltcir:"\u2A79",ltdot:"\u22D6",lthree:"\u22CB",ltimes:"\u22C9",ltlarr:"\u2976",ltquest:"\u2A7B",ltrPar:"\u2996",ltri:"\u25C3",ltrie:"\u22B4",ltrif:"\u25C2",lurdshar:"\u294A",luruhar:"\u2966",lvertneqq:"\u2268\uFE00",lvnE:"\u2268\uFE00",mDDot:"\u223A",mac:"\xAF",macr:"\xAF",male:"\u2642",malt:"\u2720",maltese:"\u2720",map:"\u21A6",mapsto:"\u21A6",mapstodown:"\u21A7",mapstoleft:"\u21A4",mapstoup:"\u21A5",marker:"\u25AE",mcomma:"\u2A29",mcy:"\u043C",mdash:"\u2014",measuredangle:"\u2221",mfr:"\u{1D52A}",mho:"\u2127",micr:"\xB5",micro:"\xB5",mid:"\u2223",midast:"*",midcir:"\u2AF0",middo:"\xB7",middot:"\xB7",minus:"\u2212",minusb:"\u229F",minusd:"\u2238",minusdu:"\u2A2A",mlcp:"\u2ADB",mldr:"\u2026",mnplus:"\u2213",models:"\u22A7",mopf:"\u{1D55E}",mp:"\u2213",mscr:"\u{1D4C2}",mstpos:"\u223E",mu:"\u03BC",multimap:"\u22B8",mumap:"\u22B8",nGg:"\u22D9\u0338",nGt:"\u226B\u20D2",nGtv:"\u226B\u0338",nLeftarrow:"\u21CD",nLeftrightarrow:"\u21CE",nLl:"\u22D8\u0338",nLt:"\u226A\u20D2",nLtv:"\u226A\u0338",nRightarrow:"\u21CF",nVDash:"\u22AF",nVdash:"\u22AE",nabla:"\u2207",nacute:"\u0144",nang:"\u2220\u20D2",nap:"\u2249",napE:"\u2A70\u0338",napid:"\u224B\u0338",napos:"\u0149",napprox:"\u2249",natur:"\u266E",natural:"\u266E",naturals:"\u2115",nbs:"\xA0",nbsp:"\xA0",nbump:"\u224E\u0338",nbumpe:"\u224F\u0338",ncap:"\u2A43",ncaron:"\u0148",ncedil:"\u0146",ncong:"\u2247",ncongdot:"\u2A6D\u0338",ncup:"\u2A42",ncy:"\u043D",ndash:"\u2013",ne:"\u2260",neArr:"\u21D7",nearhk:"\u2924",nearr:"\u2197",nearrow:"\u2197",nedot:"\u2250\u0338",nequiv:"\u2262",nesear:"\u2928",nesim:"\u2242\u0338",nexist:"\u2204",nexists:"\u2204",nfr:"\u{1D52B}",ngE:"\u2267\u0338",nge:"\u2271",ngeq:"\u2271",ngeqq:"\u2267\u0338",ngeqslant:"\u2A7E\u0338",nges:"\u2A7E\u0338",ngsim:"\u2275",ngt:"\u226F",ngtr:"\u226F",nhArr:"\u21CE",nharr:"\u21AE",nhpar:"\u2AF2",ni:"\u220B",nis:"\u22FC",nisd:"\u22FA",niv:"\u220B",njcy:"\u045A",nlArr:"\u21CD",nlE:"\u2266\u0338",nlarr:"\u219A",nldr:"\u2025",nle:"\u2270",nleftarrow:"\u219A",nleftrightarrow:"\u21AE",nleq:"\u2270",nleqq:"\u2266\u0338",nleqslant:"\u2A7D\u0338",nles:"\u2A7D\u0338",nless:"\u226E",nlsim:"\u2274",nlt:"\u226E",nltri:"\u22EA",nltrie:"\u22EC",nmid:"\u2224",nopf:"\u{1D55F}",no:"\xAC",not:"\xAC",notin:"\u2209",notinE:"\u22F9\u0338",notindot:"\u22F5\u0338",notinva:"\u2209",notinvb:"\u22F7",notinvc:"\u22F6",notni:"\u220C",notniva:"\u220C",notnivb:"\u22FE",notnivc:"\u22FD",npar:"\u2226",nparallel:"\u2226",nparsl:"\u2AFD\u20E5",npart:"\u2202\u0338",npolint:"\u2A14",npr:"\u2280",nprcue:"\u22E0",npre:"\u2AAF\u0338",nprec:"\u2280",npreceq:"\u2AAF\u0338",nrArr:"\u21CF",nrarr:"\u219B",nrarrc:"\u2933\u0338",nrarrw:"\u219D\u0338",nrightarrow:"\u219B",nrtri:"\u22EB",nrtrie:"\u22ED",nsc:"\u2281",nsccue:"\u22E1",nsce:"\u2AB0\u0338",nscr:"\u{1D4C3}",nshortmid:"\u2224",nshortparallel:"\u2226",nsim:"\u2241",nsime:"\u2244",nsimeq:"\u2244",nsmid:"\u2224",nspar:"\u2226",nsqsube:"\u22E2",nsqsupe:"\u22E3",nsub:"\u2284",nsubE:"\u2AC5\u0338",nsube:"\u2288",nsubset:"\u2282\u20D2",nsubseteq:"\u2288",nsubseteqq:"\u2AC5\u0338",nsucc:"\u2281",nsucceq:"\u2AB0\u0338",nsup:"\u2285",nsupE:"\u2AC6\u0338",nsupe:"\u2289",nsupset:"\u2283\u20D2",nsupseteq:"\u2289",nsupseteqq:"\u2AC6\u0338",ntgl:"\u2279",ntild:"\xF1",ntilde:"\xF1",ntlg:"\u2278",ntriangleleft:"\u22EA",ntrianglelefteq:"\u22EC",ntriangleright:"\u22EB",ntrianglerighteq:"\u22ED",nu:"\u03BD",num:"#",numero:"\u2116",numsp:"\u2007",nvDash:"\u22AD",nvHarr:"\u2904",nvap:"\u224D\u20D2",nvdash:"\u22AC",nvge:"\u2265\u20D2",nvgt:">\u20D2",nvinfin:"\u29DE",nvlArr:"\u2902",nvle:"\u2264\u20D2",nvlt:"<\u20D2",nvltrie:"\u22B4\u20D2",nvrArr:"\u2903",nvrtrie:"\u22B5\u20D2",nvsim:"\u223C\u20D2",nwArr:"\u21D6",nwarhk:"\u2923",nwarr:"\u2196",nwarrow:"\u2196",nwnear:"\u2927",oS:"\u24C8",oacut:"\xF3",oacute:"\xF3",oast:"\u229B",ocir:"\xF4",ocirc:"\xF4",ocy:"\u043E",odash:"\u229D",odblac:"\u0151",odiv:"\u2A38",odot:"\u2299",odsold:"\u29BC",oelig:"\u0153",ofcir:"\u29BF",ofr:"\u{1D52C}",ogon:"\u02DB",ograv:"\xF2",ograve:"\xF2",ogt:"\u29C1",ohbar:"\u29B5",ohm:"\u03A9",oint:"\u222E",olarr:"\u21BA",olcir:"\u29BE",olcross:"\u29BB",oline:"\u203E",olt:"\u29C0",omacr:"\u014D",omega:"\u03C9",omicron:"\u03BF",omid:"\u29B6",ominus:"\u2296",oopf:"\u{1D560}",opar:"\u29B7",operp:"\u29B9",oplus:"\u2295",or:"\u2228",orarr:"\u21BB",ord:"\xBA",order:"\u2134",orderof:"\u2134",ordf:"\xAA",ordm:"\xBA",origof:"\u22B6",oror:"\u2A56",orslope:"\u2A57",orv:"\u2A5B",oscr:"\u2134",oslas:"\xF8",oslash:"\xF8",osol:"\u2298",otild:"\xF5",otilde:"\xF5",otimes:"\u2297",otimesas:"\u2A36",oum:"\xF6",ouml:"\xF6",ovbar:"\u233D",par:"\xB6",para:"\xB6",parallel:"\u2225",parsim:"\u2AF3",parsl:"\u2AFD",part:"\u2202",pcy:"\u043F",percnt:"%",period:".",permil:"\u2030",perp:"\u22A5",pertenk:"\u2031",pfr:"\u{1D52D}",phi:"\u03C6",phiv:"\u03D5",phmmat:"\u2133",phone:"\u260E",pi:"\u03C0",pitchfork:"\u22D4",piv:"\u03D6",planck:"\u210F",planckh:"\u210E",plankv:"\u210F",plus:"+",plusacir:"\u2A23",plusb:"\u229E",pluscir:"\u2A22",plusdo:"\u2214",plusdu:"\u2A25",pluse:"\u2A72",plusm:"\xB1",plusmn:"\xB1",plussim:"\u2A26",plustwo:"\u2A27",pm:"\xB1",pointint:"\u2A15",popf:"\u{1D561}",poun:"\xA3",pound:"\xA3",pr:"\u227A",prE:"\u2AB3",prap:"\u2AB7",prcue:"\u227C",pre:"\u2AAF",prec:"\u227A",precapprox:"\u2AB7",preccurlyeq:"\u227C",preceq:"\u2AAF",precnapprox:"\u2AB9",precneqq:"\u2AB5",precnsim:"\u22E8",precsim:"\u227E",prime:"\u2032",primes:"\u2119",prnE:"\u2AB5",prnap:"\u2AB9",prnsim:"\u22E8",prod:"\u220F",profalar:"\u232E",profline:"\u2312",profsurf:"\u2313",prop:"\u221D",propto:"\u221D",prsim:"\u227E",prurel:"\u22B0",pscr:"\u{1D4C5}",psi:"\u03C8",puncsp:"\u2008",qfr:"\u{1D52E}",qint:"\u2A0C",qopf:"\u{1D562}",qprime:"\u2057",qscr:"\u{1D4C6}",quaternions:"\u210D",quatint:"\u2A16",quest:"?",questeq:"\u225F",quo:'"',quot:'"',rAarr:"\u21DB",rArr:"\u21D2",rAtail:"\u291C",rBarr:"\u290F",rHar:"\u2964",race:"\u223D\u0331",racute:"\u0155",radic:"\u221A",raemptyv:"\u29B3",rang:"\u27E9",rangd:"\u2992",range:"\u29A5",rangle:"\u27E9",raqu:"\xBB",raquo:"\xBB",rarr:"\u2192",rarrap:"\u2975",rarrb:"\u21E5",rarrbfs:"\u2920",rarrc:"\u2933",rarrfs:"\u291E",rarrhk:"\u21AA",rarrlp:"\u21AC",rarrpl:"\u2945",rarrsim:"\u2974",rarrtl:"\u21A3",rarrw:"\u219D",ratail:"\u291A",ratio:"\u2236",rationals:"\u211A",rbarr:"\u290D",rbbrk:"\u2773",rbrace:"}",rbrack:"]",rbrke:"\u298C",rbrksld:"\u298E",rbrkslu:"\u2990",rcaron:"\u0159",rcedil:"\u0157",rceil:"\u2309",rcub:"}",rcy:"\u0440",rdca:"\u2937",rdldhar:"\u2969",rdquo:"\u201D",rdquor:"\u201D",rdsh:"\u21B3",real:"\u211C",realine:"\u211B",realpart:"\u211C",reals:"\u211D",rect:"\u25AD",re:"\xAE",reg:"\xAE",rfisht:"\u297D",rfloor:"\u230B",rfr:"\u{1D52F}",rhard:"\u21C1",rharu:"\u21C0",rharul:"\u296C",rho:"\u03C1",rhov:"\u03F1",rightarrow:"\u2192",rightarrowtail:"\u21A3",rightharpoondown:"\u21C1",rightharpoonup:"\u21C0",rightleftarrows:"\u21C4",rightleftharpoons:"\u21CC",rightrightarrows:"\u21C9",rightsquigarrow:"\u219D",rightthreetimes:"\u22CC",ring:"\u02DA",risingdotseq:"\u2253",rlarr:"\u21C4",rlhar:"\u21CC",rlm:"\u200F",rmoust:"\u23B1",rmoustache:"\u23B1",rnmid:"\u2AEE",roang:"\u27ED",roarr:"\u21FE",robrk:"\u27E7",ropar:"\u2986",ropf:"\u{1D563}",roplus:"\u2A2E",rotimes:"\u2A35",rpar:")",rpargt:"\u2994",rppolint:"\u2A12",rrarr:"\u21C9",rsaquo:"\u203A",rscr:"\u{1D4C7}",rsh:"\u21B1",rsqb:"]",rsquo:"\u2019",rsquor:"\u2019",rthree:"\u22CC",rtimes:"\u22CA",rtri:"\u25B9",rtrie:"\u22B5",rtrif:"\u25B8",rtriltri:"\u29CE",ruluhar:"\u2968",rx:"\u211E",sacute:"\u015B",sbquo:"\u201A",sc:"\u227B",scE:"\u2AB4",scap:"\u2AB8",scaron:"\u0161",sccue:"\u227D",sce:"\u2AB0",scedil:"\u015F",scirc:"\u015D",scnE:"\u2AB6",scnap:"\u2ABA",scnsim:"\u22E9",scpolint:"\u2A13",scsim:"\u227F",scy:"\u0441",sdot:"\u22C5",sdotb:"\u22A1",sdote:"\u2A66",seArr:"\u21D8",searhk:"\u2925",searr:"\u2198",searrow:"\u2198",sec:"\xA7",sect:"\xA7",semi:";",seswar:"\u2929",setminus:"\u2216",setmn:"\u2216",sext:"\u2736",sfr:"\u{1D530}",sfrown:"\u2322",sharp:"\u266F",shchcy:"\u0449",shcy:"\u0448",shortmid:"\u2223",shortparallel:"\u2225",sh:"\xAD",shy:"\xAD",sigma:"\u03C3",sigmaf:"\u03C2",sigmav:"\u03C2",sim:"\u223C",simdot:"\u2A6A",sime:"\u2243",simeq:"\u2243",simg:"\u2A9E",simgE:"\u2AA0",siml:"\u2A9D",simlE:"\u2A9F",simne:"\u2246",simplus:"\u2A24",simrarr:"\u2972",slarr:"\u2190",smallsetminus:"\u2216",smashp:"\u2A33",smeparsl:"\u29E4",smid:"\u2223",smile:"\u2323",smt:"\u2AAA",smte:"\u2AAC",smtes:"\u2AAC\uFE00",softcy:"\u044C",sol:"/",solb:"\u29C4",solbar:"\u233F",sopf:"\u{1D564}",spades:"\u2660",spadesuit:"\u2660",spar:"\u2225",sqcap:"\u2293",sqcaps:"\u2293\uFE00",sqcup:"\u2294",sqcups:"\u2294\uFE00",sqsub:"\u228F",sqsube:"\u2291",sqsubset:"\u228F",sqsubseteq:"\u2291",sqsup:"\u2290",sqsupe:"\u2292",sqsupset:"\u2290",sqsupseteq:"\u2292",squ:"\u25A1",square:"\u25A1",squarf:"\u25AA",squf:"\u25AA",srarr:"\u2192",sscr:"\u{1D4C8}",ssetmn:"\u2216",ssmile:"\u2323",sstarf:"\u22C6",star:"\u2606",starf:"\u2605",straightepsilon:"\u03F5",straightphi:"\u03D5",strns:"\xAF",sub:"\u2282",subE:"\u2AC5",subdot:"\u2ABD",sube:"\u2286",subedot:"\u2AC3",submult:"\u2AC1",subnE:"\u2ACB",subne:"\u228A",subplus:"\u2ABF",subrarr:"\u2979",subset:"\u2282",subseteq:"\u2286",subseteqq:"\u2AC5",subsetneq:"\u228A",subsetneqq:"\u2ACB",subsim:"\u2AC7",subsub:"\u2AD5",subsup:"\u2AD3",succ:"\u227B",succapprox:"\u2AB8",succcurlyeq:"\u227D",succeq:"\u2AB0",succnapprox:"\u2ABA",succneqq:"\u2AB6",succnsim:"\u22E9",succsim:"\u227F",sum:"\u2211",sung:"\u266A",sup:"\u2283",sup1:"\xB9",sup2:"\xB2",sup3:"\xB3",supE:"\u2AC6",supdot:"\u2ABE",supdsub:"\u2AD8",supe:"\u2287",supedot:"\u2AC4",suphsol:"\u27C9",suphsub:"\u2AD7",suplarr:"\u297B",supmult:"\u2AC2",supnE:"\u2ACC",supne:"\u228B",supplus:"\u2AC0",supset:"\u2283",supseteq:"\u2287",supseteqq:"\u2AC6",supsetneq:"\u228B",supsetneqq:"\u2ACC",supsim:"\u2AC8",supsub:"\u2AD4",supsup:"\u2AD6",swArr:"\u21D9",swarhk:"\u2926",swarr:"\u2199",swarrow:"\u2199",swnwar:"\u292A",szli:"\xDF",szlig:"\xDF",target:"\u2316",tau:"\u03C4",tbrk:"\u23B4",tcaron:"\u0165",tcedil:"\u0163",tcy:"\u0442",tdot:"\u20DB",telrec:"\u2315",tfr:"\u{1D531}",there4:"\u2234",therefore:"\u2234",theta:"\u03B8",thetasym:"\u03D1",thetav:"\u03D1",thickapprox:"\u2248",thicksim:"\u223C",thinsp:"\u2009",thkap:"\u2248",thksim:"\u223C",thor:"\xFE",thorn:"\xFE",tilde:"\u02DC",time:"\xD7",times:"\xD7",timesb:"\u22A0",timesbar:"\u2A31",timesd:"\u2A30",tint:"\u222D",toea:"\u2928",top:"\u22A4",topbot:"\u2336",topcir:"\u2AF1",topf:"\u{1D565}",topfork:"\u2ADA",tosa:"\u2929",tprime:"\u2034",trade:"\u2122",triangle:"\u25B5",triangledown:"\u25BF",triangleleft:"\u25C3",trianglelefteq:"\u22B4",triangleq:"\u225C",triangleright:"\u25B9",trianglerighteq:"\u22B5",tridot:"\u25EC",trie:"\u225C",triminus:"\u2A3A",triplus:"\u2A39",trisb:"\u29CD",tritime:"\u2A3B",trpezium:"\u23E2",tscr:"\u{1D4C9}",tscy:"\u0446",tshcy:"\u045B",tstrok:"\u0167",twixt:"\u226C",twoheadleftarrow:"\u219E",twoheadrightarrow:"\u21A0",uArr:"\u21D1",uHar:"\u2963",uacut:"\xFA",uacute:"\xFA",uarr:"\u2191",ubrcy:"\u045E",ubreve:"\u016D",ucir:"\xFB",ucirc:"\xFB",ucy:"\u0443",udarr:"\u21C5",udblac:"\u0171",udhar:"\u296E",ufisht:"\u297E",ufr:"\u{1D532}",ugrav:"\xF9",ugrave:"\xF9",uharl:"\u21BF",uharr:"\u21BE",uhblk:"\u2580",ulcorn:"\u231C",ulcorner:"\u231C",ulcrop:"\u230F",ultri:"\u25F8",umacr:"\u016B",um:"\xA8",uml:"\xA8",uogon:"\u0173",uopf:"\u{1D566}",uparrow:"\u2191",updownarrow:"\u2195",upharpoonleft:"\u21BF",upharpoonright:"\u21BE",uplus:"\u228E",upsi:"\u03C5",upsih:"\u03D2",upsilon:"\u03C5",upuparrows:"\u21C8",urcorn:"\u231D",urcorner:"\u231D",urcrop:"\u230E",uring:"\u016F",urtri:"\u25F9",uscr:"\u{1D4CA}",utdot:"\u22F0",utilde:"\u0169",utri:"\u25B5",utrif:"\u25B4",uuarr:"\u21C8",uum:"\xFC",uuml:"\xFC",uwangle:"\u29A7",vArr:"\u21D5",vBar:"\u2AE8",vBarv:"\u2AE9",vDash:"\u22A8",vangrt:"\u299C",varepsilon:"\u03F5",varkappa:"\u03F0",varnothing:"\u2205",varphi:"\u03D5",varpi:"\u03D6",varpropto:"\u221D",varr:"\u2195",varrho:"\u03F1",varsigma:"\u03C2",varsubsetneq:"\u228A\uFE00",varsubsetneqq:"\u2ACB\uFE00",varsupsetneq:"\u228B\uFE00",varsupsetneqq:"\u2ACC\uFE00",vartheta:"\u03D1",vartriangleleft:"\u22B2",vartriangleright:"\u22B3",vcy:"\u0432",vdash:"\u22A2",vee:"\u2228",veebar:"\u22BB",veeeq:"\u225A",vellip:"\u22EE",verbar:"|",vert:"|",vfr:"\u{1D533}",vltri:"\u22B2",vnsub:"\u2282\u20D2",vnsup:"\u2283\u20D2",vopf:"\u{1D567}",vprop:"\u221D",vrtri:"\u22B3",vscr:"\u{1D4CB}",vsubnE:"\u2ACB\uFE00",vsubne:"\u228A\uFE00",vsupnE:"\u2ACC\uFE00",vsupne:"\u228B\uFE00",vzigzag:"\u299A",wcirc:"\u0175",wedbar:"\u2A5F",wedge:"\u2227",wedgeq:"\u2259",weierp:"\u2118",wfr:"\u{1D534}",wopf:"\u{1D568}",wp:"\u2118",wr:"\u2240",wreath:"\u2240",wscr:"\u{1D4CC}",xcap:"\u22C2",xcirc:"\u25EF",xcup:"\u22C3",xdtri:"\u25BD",xfr:"\u{1D535}",xhArr:"\u27FA",xharr:"\u27F7",xi:"\u03BE",xlArr:"\u27F8",xlarr:"\u27F5",xmap:"\u27FC",xnis:"\u22FB",xodot:"\u2A00",xopf:"\u{1D569}",xoplus:"\u2A01",xotime:"\u2A02",xrArr:"\u27F9",xrarr:"\u27F6",xscr:"\u{1D4CD}",xsqcup:"\u2A06",xuplus:"\u2A04",xutri:"\u25B3",xvee:"\u22C1",xwedge:"\u22C0",yacut:"\xFD",yacute:"\xFD",yacy:"\u044F",ycirc:"\u0177",ycy:"\u044B",ye:"\xA5",yen:"\xA5",yfr:"\u{1D536}",yicy:"\u0457",yopf:"\u{1D56A}",yscr:"\u{1D4CE}",yucy:"\u044E",yum:"\xFF",yuml:"\xFF",zacute:"\u017A",zcaron:"\u017E",zcy:"\u0437",zdot:"\u017C",zeetrf:"\u2128",zeta:"\u03B6",zfr:"\u{1D537}",zhcy:"\u0436",zigrarr:"\u21DD",zopf:"\u{1D56B}",zscr:"\u{1D4CF}",zwj:"\u200D",zwnj:"\u200C"}});var Fu=C((xv,mu)=>{"use strict";var hu=du();mu.exports=tD;var rD={}.hasOwnProperty;function tD(e){return rD.call(hu,e)?hu[e]:!1}});var pr=C((wv,Tu)=>{"use strict";var gu=au(),vu=ou(),nD=Ne(),iD=lu(),yu=pu(),uD=Fu();Tu.exports=gD;var aD={}.hasOwnProperty,je=String.fromCharCode,oD=Function.prototype,Eu={warning:null,reference:null,text:null,warningContext:null,referenceContext:null,textContext:null,position:{},additional:null,attribute:!1,nonTerminated:!0},sD=9,Cu=10,cD=12,lD=32,bu=38,fD=59,DD=60,pD=61,dD=35,hD=88,mD=120,FD=65533,$e="named",Ot="hexadecimal",Pt="decimal",Lt={};Lt[Ot]=16;Lt[Pt]=10;var Gr={};Gr[$e]=yu;Gr[Pt]=nD;Gr[Ot]=iD;var Au=1,xu=2,wu=3,ku=4,Bu=5,St=6,qu=7,Ae={};Ae[Au]="Named character references must be terminated by a semicolon";Ae[xu]="Numeric character references must be terminated by a semicolon";Ae[wu]="Named character references cannot be empty";Ae[ku]="Numeric character references cannot be empty";Ae[Bu]="Named character references must be known";Ae[St]="Numeric character references cannot be disallowed";Ae[qu]="Numeric character references cannot be outside the permissible Unicode range";function gD(e,r){var t={},n,a;r||(r={});for(a in Eu)n=r[a],t[a]=n??Eu[a];return(t.position.indent||t.position.start)&&(t.indent=t.position.indent||[],t.position=t.position.start),vD(e,t)}function vD(e,r){var t=r.additional,n=r.nonTerminated,a=r.text,u=r.reference,i=r.warning,o=r.textContext,s=r.referenceContext,l=r.warningContext,c=r.position,f=r.indent||[],D=e.length,h=0,p=-1,d=c.column||1,m=c.line||1,F="",y=[],E,B,b,g,A,x,v,w,k,q,T,R,O,S,_,P,ke,j,I;for(typeof t=="string"&&(t=t.charCodeAt(0)),P=Z(),w=i?Q:oD,h--,D++;++h<D;)if(A===Cu&&(d=f[p]||1),A=e.charCodeAt(h),A===bu){if(v=e.charCodeAt(h+1),v===sD||v===Cu||v===cD||v===lD||v===bu||v===DD||v!==v||t&&v===t){F+=je(A),d++;continue}for(O=h+1,R=O,I=O,v===dD?(I=++R,v=e.charCodeAt(I),v===hD||v===mD?(S=Ot,I=++R):S=Pt):S=$e,E="",T="",g="",_=Gr[S],I--;++I<D&&(v=e.charCodeAt(I),!!_(v));)g+=je(v),S===$e&&aD.call(gu,g)&&(E=g,T=gu[g]);b=e.charCodeAt(I)===fD,b&&(I++,B=S===$e?uD(g):!1,B&&(E=g,T=B)),j=1+I-O,!b&&!n||(g?S===$e?(b&&!T?w(Bu,1):(E!==g&&(I=R+E.length,j=1+I-R,b=!1),b||(k=E?Au:wu,r.attribute?(v=e.charCodeAt(I),v===pD?(w(k,j),T=null):yu(v)?T=null:w(k,j)):w(k,j))),x=T):(b||w(xu,j),x=parseInt(g,Lt[S]),ED(x)?(w(qu,j),x=je(FD)):x in vu?(w(St,j),x=vu[x]):(q="",CD(x)&&w(St,j),x>65535&&(x-=65536,q+=je(x>>>10|55296),x=56320|x&1023),x=q+je(x))):S!==$e&&w(ku,j)),x?(me(),P=Z(),h=I-1,d+=I-O+1,y.push(x),ke=Z(),ke.offset++,u&&u.call(s,x,{start:P,end:ke},e.slice(O-1,I)),P=ke):(g=e.slice(O-1,I),F+=g,d+=g.length,h=I-1)}else A===10&&(m++,p++,d=0),A===A?(F+=je(A),d++):me();return y.join("");function Z(){return{line:m,column:d,offset:h+(c.offset||0)}}function Q(Fe,z){var ft=Z();ft.column+=z,ft.offset+=z,i.call(l,Ae[Fe],ft,Fe)}function me(){F&&(y.push(F),a&&a.call(o,F,{start:P,end:Z()}),F="")}}function ED(e){return e>=55296&&e<=57343||e>1114111}function CD(e){return e>=1&&e<=8||e===11||e>=13&&e<=31||e>=127&&e<=159||e>=64976&&e<=65007||(e&65535)===65535||(e&65535)===65534}});var Ou=C((kv,Su)=>{"use strict";var bD=Ie(),_u=pr();Su.exports=yD;function yD(e){return t.raw=n,t;function r(u){for(var i=e.offset,o=u.line,s=[];++o&&o in i;)s.push((i[o]||0)+1);return{start:u,indent:s}}function t(u,i,o){_u(u,{position:r(i),warning:a,text:o,reference:o,textContext:e,referenceContext:e})}function n(u,i,o){return _u(u,bD(o,{position:r(i),warning:a}))}function a(u,i,o){o!==3&&e.file.message(u,i)}}});var Iu=C((Bv,Lu)=>{"use strict";Lu.exports=AD;function AD(e){return r;function r(t,n){var a=this,u=a.offset,i=[],o=a[e+"Methods"],s=a[e+"Tokenizers"],l=n.line,c=n.column,f,D,h,p,d,m;if(!t)return i;for(x.now=E,x.file=a.file,F("");t;){for(f=-1,D=o.length,d=!1;++f<D&&(p=o[f],h=s[p],!(h&&(!h.onlyAtStart||a.atStart)&&(!h.notInList||!a.inList)&&(!h.notInBlock||!a.inBlock)&&(!h.notInLink||!a.inLink)&&(m=t.length,h.apply(a,[x,t]),d=m!==t.length,d))););d||a.file.fail(new Error("Infinite loop"),x.now())}return a.eof=E(),i;function F(v){for(var w=-1,k=v.indexOf(`
-`);k!==-1;)l++,w=k,k=v.indexOf(`
-`,k+1);w===-1?c+=v.length:c=v.length-w,l in u&&(w!==-1?c+=u[l]:c<=u[l]&&(c=u[l]+1))}function y(){var v=[],w=l+1;return function(){for(var k=l+1;w<k;)v.push((u[w]||0)+1),w++;return v}}function E(){var v={line:l,column:c};return v.offset=a.toOffset(v),v}function B(v){this.start=v,this.end=E()}function b(v){t.slice(0,v.length)!==v&&a.file.fail(new Error("Incorrectly eaten value: please report this warning on https://git.io/vg5Ft"),E())}function g(){var v=E();return w;function w(k,q){var T=k.position,R=T?T.start:v,O=[],S=T&&T.end.line,_=v.line;if(k.position=new B(R),T&&q&&T.indent){if(O=T.indent,S<_){for(;++S<_;)O.push((u[S]||0)+1);O.push(v.column)}q=O.concat(q)}return k.position.indent=q||[],k}}function A(v,w){var k=w?w.children:i,q=k[k.length-1],T;return q&&v.type===q.type&&(v.type==="text"||v.type==="blockquote")&&Pu(q)&&Pu(v)&&(T=v.type==="text"?xD:wD,v=T.call(a,q,v)),v!==q&&k.push(v),a.atStart&&i.length!==0&&a.exitStart(),v}function x(v){var w=y(),k=g(),q=E();return b(v),T.reset=R,R.test=O,T.test=O,t=t.slice(v.length),F(v),w=w(),T;function T(S,_){return k(A(k(S),_),w)}function R(){var S=T.apply(null,arguments);return l=q.line,c=q.column,t=v+t,S}function O(){var S=k({});return l=q.line,c=q.column,t=v+t,S.position}}}}function Pu(e){var r,t;return e.type!=="text"||!e.position?!0:(r=e.position.start,t=e.position.end,r.line!==t.line||t.column-r.column===e.value.length)}function xD(e,r){return e.value+=r.value,e}function wD(e,r){return this.options.commonmark||this.options.gfm?r:(e.children=e.children.concat(r.children),e)}});var Uu=C((qv,Ru)=>{"use strict";Ru.exports=Vr;var It=["\\","`","*","{","}","[","]","(",")","#","+","-",".","!","_",">"],Nt=It.concat(["~","|"]),Nu=Nt.concat([`
-`,'"',"$","%","&","'",",","/",":",";","<","=","?","@","^"]);Vr.default=It;Vr.gfm=Nt;Vr.commonmark=Nu;function Vr(e){var r=e||{};return r.commonmark?Nu:r.gfm?Nt:It}});var Mu=C((Tv,zu)=>{"use strict";zu.exports=["address","article","aside","base","basefont","blockquote","body","caption","center","col","colgroup","dd","details","dialog","dir","div","dl","dt","fieldset","figcaption","figure","footer","form","frame","frameset","h1","h2","h3","h4","h5","h6","head","header","hgroup","hr","html","iframe","legend","li","link","main","menu","menuitem","meta","nav","noframes","ol","optgroup","option","p","param","pre","section","source","title","summary","table","tbody","td","tfoot","th","thead","title","tr","track","ul"]});var Rt=C((_v,Yu)=>{"use strict";Yu.exports={position:!0,gfm:!0,commonmark:!1,pedantic:!1,blocks:Mu()}});var Vu=C((Sv,Gu)=>{"use strict";var kD=Ie(),BD=Uu(),qD=Rt();Gu.exports=TD;function TD(e){var r=this,t=r.options,n,a;if(e==null)e={};else if(typeof e=="object")e=kD(e);else throw new Error("Invalid value `"+e+"` for setting `options`");for(n in qD){if(a=e[n],a==null&&(a=t[n]),n!=="blocks"&&typeof a!="boolean"||n==="blocks"&&typeof a!="object")throw new Error("Invalid value `"+a+"` for setting `options."+n+"`");e[n]=a}return r.options=e,r.escape=BD(e),r}});var Hu=C((Ov,$u)=>{"use strict";$u.exports=ju;function ju(e){if(e==null)return PD;if(typeof e=="string")return OD(e);if(typeof e=="object")return"length"in e?SD(e):_D(e);if(typeof e=="function")return e;throw new Error("Expected function, string, or object as test")}function _D(e){return r;function r(t){var n;for(n in e)if(t[n]!==e[n])return!1;return!0}}function SD(e){for(var r=[],t=-1;++t<e.length;)r[t]=ju(e[t]);return n;function n(){for(var a=-1;++a<r.length;)if(r[a].apply(this,arguments))return!0;return!1}}function OD(e){return r;function r(t){return!!(t&&t.type===e)}}function PD(){return!0}});var Ku=C((Pv,Wu)=>{Wu.exports=LD;function LD(e){return e}});var Zu=C((Lv,Qu)=>{"use strict";Qu.exports=jr;var ID=Hu(),ND=Ku(),Ju=!0,Xu="skip",Ut=!1;jr.CONTINUE=Ju;jr.SKIP=Xu;jr.EXIT=Ut;function jr(e,r,t,n){var a,u;typeof r=="function"&&typeof t!="function"&&(n=t,t=r,r=null),u=ID(r),a=n?-1:1,i(e,null,[])();function i(o,s,l){var c=typeof o=="object"&&o!==null?o:{},f;return typeof c.type=="string"&&(f=typeof c.tagName=="string"?c.tagName:typeof c.name=="string"?c.name:void 0,D.displayName="node ("+ND(c.type+(f?"<"+f+">":""))+")"),D;function D(){var h=l.concat(o),p=[],d,m;if((!r||u(o,s,l[l.length-1]||null))&&(p=RD(t(o,l)),p[0]===Ut))return p;if(o.children&&p[0]!==Xu)for(m=(n?o.children.length:-1)+a;m>-1&&m<o.children.length;){if(d=i(o.children[m],m,h)(),d[0]===Ut)return d;m=typeof d[1]=="number"?d[1]:m+a}return p}}}function RD(e){return e!==null&&typeof e=="object"&&"length"in e?e:typeof e=="number"?[Ju,e]:[e]}});var ra=C((Iv,ea)=>{"use strict";ea.exports=Hr;var $r=Zu(),UD=$r.CONTINUE,zD=$r.SKIP,MD=$r.EXIT;Hr.CONTINUE=UD;Hr.SKIP=zD;Hr.EXIT=MD;function Hr(e,r,t,n){typeof r=="function"&&typeof t!="function"&&(n=t,t=r,r=null),$r(e,r,a,n);function a(u,i){var o=i[i.length-1],s=o?o.children.indexOf(u):null;return t(u,s,o)}}});var na=C((Nv,ta)=>{"use strict";var YD=ra();ta.exports=GD;function GD(e,r){return YD(e,r?VD:jD),e}function VD(e){delete e.position}function jD(e){e.position=void 0}});var aa=C((Rv,ua)=>{"use strict";var ia=Ie(),$D=na();ua.exports=KD;var HD=`
-`,WD=/\r\n|\r/g;function KD(){var e=this,r=String(e.file),t={line:1,column:1,offset:0},n=ia(t),a;return r=r.replace(WD,HD),r.charCodeAt(0)===65279&&(r=r.slice(1),n.column++,n.offset++),a={type:"root",children:e.tokenizeBlock(r,n),position:{start:t,end:e.eof||ia(t)}},e.options.position||$D(a,!0),a}});var sa=C((Uv,oa)=>{"use strict";var JD=/^[ \t]*(\n|$)/;oa.exports=XD;function XD(e,r,t){for(var n,a="",u=0,i=r.length;u<i&&(n=JD.exec(r.slice(u)),n!=null);)u+=n[0].length,a+=n[0];if(a!==""){if(t)return!0;e(a)}}});var Wr=C((zv,ca)=>{"use strict";var pe="",zt;ca.exports=QD;function QD(e,r){if(typeof e!="string")throw new TypeError("expected a string");if(r===1)return e;if(r===2)return e+e;var t=e.length*r;if(zt!==e||typeof zt>"u")zt=e,pe="";else if(pe.length>=t)return pe.substr(0,t);for(;t>pe.length&&r>1;)r&1&&(pe+=e),r>>=1,e+=e;return pe+=e,pe=pe.substr(0,t),pe}});var Mt=C((Mv,la)=>{"use strict";la.exports=ZD;function ZD(e){return String(e).replace(/\n+$/,"")}});var pa=C((Yv,Da)=>{"use strict";var ep=Wr(),rp=Mt();Da.exports=ip;var Yt=`
-`,fa="	",Gt=" ",tp=4,np=ep(Gt,tp);function ip(e,r,t){for(var n=-1,a=r.length,u="",i="",o="",s="",l,c,f;++n<a;)if(l=r.charAt(n),f)if(f=!1,u+=o,i+=s,o="",s="",l===Yt)o=l,s=l;else for(u+=l,i+=l;++n<a;){if(l=r.charAt(n),!l||l===Yt){s=l,o=l;break}u+=l,i+=l}else if(l===Gt&&r.charAt(n+1)===l&&r.charAt(n+2)===l&&r.charAt(n+3)===l)o+=np,n+=3,f=!0;else if(l===fa)o+=l,f=!0;else{for(c="";l===fa||l===Gt;)c+=l,l=r.charAt(++n);if(l!==Yt)break;o+=c+l,s+=l}if(i)return t?!0:e(u)({type:"code",lang:null,meta:null,value:rp(i)})}});var ma=C((Gv,ha)=>{"use strict";ha.exports=sp;var Kr=`
-`,dr="	",He=" ",up="~",da="`",ap=3,op=4;function sp(e,r,t){var n=this,a=n.options.gfm,u=r.length+1,i=0,o="",s,l,c,f,D,h,p,d,m,F,y,E,B;if(a){for(;i<u&&(c=r.charAt(i),!(c!==He&&c!==dr));)o+=c,i++;if(E=i,c=r.charAt(i),!(c!==up&&c!==da)){for(i++,l=c,s=1,o+=c;i<u&&(c=r.charAt(i),c===l);)o+=c,s++,i++;if(!(s<ap)){for(;i<u&&(c=r.charAt(i),!(c!==He&&c!==dr));)o+=c,i++;for(f="",p="";i<u&&(c=r.charAt(i),!(c===Kr||l===da&&c===l));)c===He||c===dr?p+=c:(f+=p+c,p=""),i++;if(c=r.charAt(i),!(c&&c!==Kr)){if(t)return!0;B=e.now(),B.column+=o.length,B.offset+=o.length,o+=f,f=n.decode.raw(n.unescape(f),B),p&&(o+=p),p="",F="",y="",d="",m="";for(var b=!0;i<u;){if(c=r.charAt(i),d+=F,m+=y,F="",y="",c!==Kr){d+=c,y+=c,i++;continue}for(b?(o+=c,b=!1):(F+=c,y+=c),p="",i++;i<u&&(c=r.charAt(i),c===He);)p+=c,i++;if(F+=p,y+=p.slice(E),!(p.length>=op)){for(p="";i<u&&(c=r.charAt(i),c===l);)p+=c,i++;if(F+=p,y+=p,!(p.length<s)){for(p="";i<u&&(c=r.charAt(i),!(c!==He&&c!==dr));)F+=c,y+=c,i++;if(!c||c===Kr)break}}}for(o+=d+F,i=-1,u=f.length;++i<u;)if(c=f.charAt(i),c===He||c===dr)D||(D=f.slice(0,i));else if(D){h=f.slice(i);break}return e(o)({type:"code",lang:D||f||null,meta:h||null,value:m})}}}}}});var Re=C((We,Fa)=>{We=Fa.exports=cp;function cp(e){return e.trim?e.trim():We.right(We.left(e))}We.left=function(e){return e.trimLeft?e.trimLeft():e.replace(/^\s\s*/,"")};We.right=function(e){if(e.trimRight)return e.trimRight();for(var r=/\s/,t=e.length;r.test(e.charAt(--t)););return e.slice(0,t+1)}});var Jr=C((Vv,ga)=>{"use strict";ga.exports=lp;function lp(e,r,t,n){for(var a=e.length,u=-1,i,o;++u<a;)if(i=e[u],o=i[1]||{},!(o.pedantic!==void 0&&o.pedantic!==t.options.pedantic)&&!(o.commonmark!==void 0&&o.commonmark!==t.options.commonmark)&&r[i[0]].apply(t,n))return!0;return!1}});var ba=C((jv,Ca)=>{"use strict";var fp=Re(),Dp=Jr();Ca.exports=pp;var Vt=`
-`,va="	",jt=" ",Ea=">";function pp(e,r,t){for(var n=this,a=n.offset,u=n.blockTokenizers,i=n.interruptBlockquote,o=e.now(),s=o.line,l=r.length,c=[],f=[],D=[],h,p=0,d,m,F,y,E,B,b,g;p<l&&(d=r.charAt(p),!(d!==jt&&d!==va));)p++;if(r.charAt(p)===Ea){if(t)return!0;for(p=0;p<l;){for(F=r.indexOf(Vt,p),B=p,b=!1,F===-1&&(F=l);p<l&&(d=r.charAt(p),!(d!==jt&&d!==va));)p++;if(r.charAt(p)===Ea?(p++,b=!0,r.charAt(p)===jt&&p++):p=B,y=r.slice(p,F),!b&&!fp(y)){p=B;break}if(!b&&(m=r.slice(p),Dp(i,u,n,[e,m,!0])))break;E=B===p?y:r.slice(B,F),D.push(p-B),c.push(E),f.push(y),p=F+1}for(p=-1,l=D.length,h=e(c.join(Vt));++p<l;)a[s]=(a[s]||0)+D[p],s++;return g=n.enterBlock(),f=n.tokenizeBlock(f.join(Vt),o),g(),h({type:"blockquote",children:f})}}});var xa=C(($v,Aa)=>{"use strict";Aa.exports=hp;var ya=`
-`,hr="	",mr=" ",Fr="#",dp=6;function hp(e,r,t){for(var n=this,a=n.options.pedantic,u=r.length+1,i=-1,o=e.now(),s="",l="",c,f,D;++i<u;){if(c=r.charAt(i),c!==mr&&c!==hr){i--;break}s+=c}for(D=0;++i<=u;){if(c=r.charAt(i),c!==Fr){i--;break}s+=c,D++}if(!(D>dp)&&!(!D||!a&&r.charAt(i+1)===Fr)){for(u=r.length+1,f="";++i<u;){if(c=r.charAt(i),c!==mr&&c!==hr){i--;break}f+=c}if(!(!a&&f.length===0&&c&&c!==ya)){if(t)return!0;for(s+=f,f="",l="";++i<u&&(c=r.charAt(i),!(!c||c===ya));){if(c!==mr&&c!==hr&&c!==Fr){l+=f+c,f="";continue}for(;c===mr||c===hr;)f+=c,c=r.charAt(++i);if(!a&&l&&!f&&c===Fr){l+=c;continue}for(;c===Fr;)f+=c,c=r.charAt(++i);for(;c===mr||c===hr;)f+=c,c=r.charAt(++i);i--}return o.column+=s.length,o.offset+=s.length,s+=l+f,e(s)({type:"heading",depth:D,children:n.tokenizeInline(l,o)})}}}});var Ba=C((Hv,ka)=>{"use strict";ka.exports=bp;var mp="	",Fp=`
-`,wa=" ",gp="*",vp="-",Ep="_",Cp=3;function bp(e,r,t){for(var n=-1,a=r.length+1,u="",i,o,s,l;++n<a&&(i=r.charAt(n),!(i!==mp&&i!==wa));)u+=i;if(!(i!==gp&&i!==vp&&i!==Ep))for(o=i,u+=i,s=1,l="";++n<a;)if(i=r.charAt(n),i===o)s++,u+=l+o,l="";else if(i===wa)l+=i;else return s>=Cp&&(!i||i===Fp)?(u+=l,t?!0:e(u)({type:"thematicBreak"})):void 0}});var $t=C((Wv,Ta)=>{"use strict";Ta.exports=wp;var qa="	",yp=" ",Ap=1,xp=4;function wp(e){for(var r=0,t=0,n=e.charAt(r),a={},u,i=0;n===qa||n===yp;){for(u=n===qa?xp:Ap,t+=u,u>1&&(t=Math.floor(t/u)*u);i<t;)a[++i]=r;n=e.charAt(++r)}return{indent:t,stops:a}}});var Oa=C((Kv,Sa)=>{"use strict";var kp=Re(),Bp=Wr(),qp=$t();Sa.exports=Sp;var _a=`
-`,Tp=" ",_p="!";function Sp(e,r){var t=e.split(_a),n=t.length+1,a=1/0,u=[],i,o,s;for(t.unshift(Bp(Tp,r)+_p);n--;)if(o=qp(t[n]),u[n]=o.stops,kp(t[n]).length!==0)if(o.indent)o.indent>0&&o.indent<a&&(a=o.indent);else{a=1/0;break}if(a!==1/0)for(n=t.length;n--;){for(s=u[n],i=a;i&&!(i in s);)i--;t[n]=t[n].slice(s[i]+1)}return t.shift(),t.join(_a)}});var Ua=C((Jv,Ra)=>{"use strict";var Op=Re(),Pp=Wr(),Pa=Ne(),Lp=$t(),Ip=Oa(),Np=Jr();Ra.exports=jp;var Ht="*",Rp="_",La="+",Wt="-",Ia=".",de=" ",ie=`
-`,Xr="	",Na=")",Up="x",xe=4,zp=/\n\n(?!\s*$)/,Mp=/^\[([ X\tx])][ \t]/,Yp=/^([ \t]*)([*+-]|\d+[.)])( {1,4}(?! )| |\t|$|(?=\n))([^\n]*)/,Gp=/^([ \t]*)([*+-]|\d+[.)])([ \t]+)/,Vp=/^( {1,4}|\t)?/gm;function jp(e,r,t){for(var n=this,a=n.options.commonmark,u=n.options.pedantic,i=n.blockTokenizers,o=n.interruptList,s=0,l=r.length,c=null,f,D,h,p,d,m,F,y,E,B,b,g,A,x,v,w,k,q,T,R=!1,O,S,_,P;s<l&&(p=r.charAt(s),!(p!==Xr&&p!==de));)s++;if(p=r.charAt(s),p===Ht||p===La||p===Wt)d=p,h=!1;else{for(h=!0,D="";s<l&&(p=r.charAt(s),!!Pa(p));)D+=p,s++;if(p=r.charAt(s),!D||!(p===Ia||a&&p===Na)||t&&D!=="1")return;c=parseInt(D,10),d=p}if(p=r.charAt(++s),!(p!==de&&p!==Xr&&(u||p!==ie&&p!==""))){if(t)return!0;for(s=0,x=[],v=[],w=[];s<l;){for(m=r.indexOf(ie,s),F=s,y=!1,P=!1,m===-1&&(m=l),f=0;s<l;){if(p=r.charAt(s),p===Xr)f+=xe-f%xe;else if(p===de)f++;else break;s++}if(k&&f>=k.indent&&(P=!0),p=r.charAt(s),E=null,!P){if(p===Ht||p===La||p===Wt)E=p,s++,f++;else{for(D="";s<l&&(p=r.charAt(s),!!Pa(p));)D+=p,s++;p=r.charAt(s),s++,D&&(p===Ia||a&&p===Na)&&(E=p,f+=D.length+1)}if(E)if(p=r.charAt(s),p===Xr)f+=xe-f%xe,s++;else if(p===de){for(_=s+xe;s<_&&r.charAt(s)===de;)s++,f++;s===_&&r.charAt(s)===de&&(s-=xe-1,f-=xe-1)}else p!==ie&&p!==""&&(E=null)}if(E){if(!u&&d!==E)break;y=!0}else!a&&!P&&r.charAt(F)===de?P=!0:a&&k&&(P=f>=k.indent||f>xe),y=!1,s=F;if(b=r.slice(F,m),B=F===s?b:r.slice(s,m),(E===Ht||E===Rp||E===Wt)&&i.thematicBreak.call(n,e,b,!0))break;if(g=A,A=!y&&!Op(B).length,P&&k)k.value=k.value.concat(w,b),v=v.concat(w,b),w=[];else if(y)w.length!==0&&(R=!0,k.value.push(""),k.trail=w.concat()),k={value:[b],indent:f,trail:[]},x.push(k),v=v.concat(w,b),w=[];else if(A){if(g&&!a)break;w.push(b)}else{if(g||Np(o,i,n,[e,b,!0]))break;k.value=k.value.concat(w,b),v=v.concat(w,b),w=[]}s=m+1}for(O=e(v.join(ie)).reset({type:"list",ordered:h,start:c,spread:R,children:[]}),q=n.enterList(),T=n.enterBlock(),s=-1,l=x.length;++s<l;)k=x[s].value.join(ie),S=e.now(),e(k)($p(n,k,S),O),k=x[s].trail.join(ie),s!==l-1&&(k+=ie),e(k);return q(),T(),O}}function $p(e,r,t){var n=e.offset,a=e.options.pedantic?Hp:Wp,u=null,i,o;return r=a.apply(null,arguments),e.options.gfm&&(i=r.match(Mp),i&&(o=i[0].length,u=i[1].toLowerCase()===Up,n[t.line]+=o,r=r.slice(o))),{type:"listItem",spread:zp.test(r),checked:u,children:e.tokenizeBlock(r,t)}}function Hp(e,r,t){var n=e.offset,a=t.line;return r=r.replace(Gp,u),a=t.line,r.replace(Vp,u);function u(i){return n[a]=(n[a]||0)+i.length,a++,""}}function Wp(e,r,t){var n=e.offset,a=t.line,u,i,o,s,l,c,f;for(r=r.replace(Yp,D),s=r.split(ie),l=Ip(r,Lp(u).indent).split(ie),l[0]=o,n[a]=(n[a]||0)+i.length,a++,c=0,f=s.length;++c<f;)n[a]=(n[a]||0)+s[c].length-l[c].length,a++;return l.join(ie);function D(h,p,d,m,F){return i=p+d+m,o=F,Number(d)<10&&i.length%2===1&&(d=de+d),u=p+Pp(de,d.length)+m,u+o}}});var Ga=C((Xv,Ya)=>{"use strict";Ya.exports=ed;var Kt=`
-`,Kp="	",za=" ",Ma="=",Jp="-",Xp=3,Qp=1,Zp=2;function ed(e,r,t){for(var n=this,a=e.now(),u=r.length,i=-1,o="",s,l,c,f,D;++i<u;){if(c=r.charAt(i),c!==za||i>=Xp){i--;break}o+=c}for(s="",l="";++i<u;){if(c=r.charAt(i),c===Kt){i--;break}c===za||c===Kp?l+=c:(s+=l+c,l="")}if(a.column+=o.length,a.offset+=o.length,o+=s+l,c=r.charAt(++i),f=r.charAt(++i),!(c!==Kt||f!==Ma&&f!==Jp)){for(o+=c,l=f,D=f===Ma?Qp:Zp;++i<u;){if(c=r.charAt(i),c!==f){if(c!==Kt)return;i--;break}l+=c}return t?!0:e(o+l)({type:"heading",depth:D,children:n.tokenizeInline(s,a)})}}});var Xt=C(Jt=>{"use strict";var rd="[a-zA-Z_:][a-zA-Z0-9:._-]*",td="[^\"'=<>`\\u0000-\\u0020]+",nd="'[^']*'",id='"[^"]*"',ud="(?:"+td+"|"+nd+"|"+id+")",ad="(?:\\s+"+rd+"(?:\\s*=\\s*"+ud+")?)",Va="<[A-Za-z][A-Za-z0-9\\-]*"+ad+"*\\s*\\/?>",ja="<\\/[A-Za-z][A-Za-z0-9\\-]*\\s*>",od="<!---->|<!--(?:-?[^>-])(?:-?[^-])*-->",sd="<[?].*?[?]>",cd="<![A-Za-z]+\\s+[^>]*>",ld="<!\\[CDATA\\[[\\s\\S]*?\\]\\]>";Jt.openCloseTag=new RegExp("^(?:"+Va+"|"+ja+")");Jt.tag=new RegExp("^(?:"+Va+"|"+ja+"|"+od+"|"+sd+"|"+cd+"|"+ld+")")});var Ka=C((Zv,Wa)=>{"use strict";var fd=Xt().openCloseTag;Wa.exports=wd;var Dd="	",pd=" ",$a=`
-`,dd="<",hd=/^<(script|pre|style)(?=(\s|>|$))/i,md=/<\/(script|pre|style)>/i,Fd=/^<!--/,gd=/-->/,vd=/^<\?/,Ed=/\?>/,Cd=/^<![A-Za-z]/,bd=/>/,yd=/^<!\[CDATA\[/,Ad=/]]>/,Ha=/^$/,xd=new RegExp(fd.source+"\\s*$");function wd(e,r,t){for(var n=this,a=n.options.blocks.join("|"),u=new RegExp("^</?("+a+")(?=(\\s|/?>|$))","i"),i=r.length,o=0,s,l,c,f,D,h,p,d=[[hd,md,!0],[Fd,gd,!0],[vd,Ed,!0],[Cd,bd,!0],[yd,Ad,!0],[u,Ha,!0],[xd,Ha,!1]];o<i&&(f=r.charAt(o),!(f!==Dd&&f!==pd));)o++;if(r.charAt(o)===dd){for(s=r.indexOf($a,o+1),s=s===-1?i:s,l=r.slice(o,s),c=-1,D=d.length;++c<D;)if(d[c][0].test(l)){h=d[c];break}if(h){if(t)return h[2];if(o=s,!h[1].test(l))for(;o<i;){if(s=r.indexOf($a,o+1),s=s===-1?i:s,l=r.slice(o+1,s),h[1].test(l)){l&&(o=s);break}o=s}return p=r.slice(0,o),e(p)({type:"html",value:p})}}}});var ue=C((eE,Ja)=>{"use strict";Ja.exports=qd;var kd=String.fromCharCode,Bd=/\s/;function qd(e){return Bd.test(typeof e=="number"?kd(e):e.charAt(0))}});var Qt=C((rE,Xa)=>{"use strict";var Td=wr();Xa.exports=_d;function _d(e){return Td(e).toLowerCase()}});var io=C((tE,no)=>{"use strict";var Sd=ue(),Od=Qt();no.exports=Nd;var Qa='"',Za="'",Pd="\\",Ke=`
-`,Qr="	",Zr=" ",en="[",gr="]",Ld="(",Id=")",eo=":",ro="<",to=">";function Nd(e,r,t){for(var n=this,a=n.options.commonmark,u=0,i=r.length,o="",s,l,c,f,D,h,p,d;u<i&&(f=r.charAt(u),!(f!==Zr&&f!==Qr));)o+=f,u++;if(f=r.charAt(u),f===en){for(u++,o+=f,c="";u<i&&(f=r.charAt(u),f!==gr);)f===Pd&&(c+=f,u++,f=r.charAt(u)),c+=f,u++;if(!(!c||r.charAt(u)!==gr||r.charAt(u+1)!==eo)){for(h=c,o+=c+gr+eo,u=o.length,c="";u<i&&(f=r.charAt(u),!(f!==Qr&&f!==Zr&&f!==Ke));)o+=f,u++;if(f=r.charAt(u),c="",s=o,f===ro){for(u++;u<i&&(f=r.charAt(u),!!Zt(f));)c+=f,u++;if(f=r.charAt(u),f===Zt.delimiter)o+=ro+c+f,u++;else{if(a)return;u-=c.length+1,c=""}}if(!c){for(;u<i&&(f=r.charAt(u),!!Rd(f));)c+=f,u++;o+=c}if(c){for(p=c,c="";u<i&&(f=r.charAt(u),!(f!==Qr&&f!==Zr&&f!==Ke));)c+=f,u++;if(f=r.charAt(u),D=null,f===Qa?D=Qa:f===Za?D=Za:f===Ld&&(D=Id),!D)c="",u=o.length;else if(c){for(o+=c+f,u=o.length,c="";u<i&&(f=r.charAt(u),f!==D);){if(f===Ke){if(u++,f=r.charAt(u),f===Ke||f===D)return;c+=Ke}c+=f,u++}if(f=r.charAt(u),f!==D)return;l=o,o+=c+f,u++,d=c,c=""}else return;for(;u<i&&(f=r.charAt(u),!(f!==Qr&&f!==Zr));)o+=f,u++;if(f=r.charAt(u),!f||f===Ke)return t?!0:(s=e(s).test().end,p=n.decode.raw(n.unescape(p),s,{nonTerminated:!1}),d&&(l=e(l).test().end,d=n.decode.raw(n.unescape(d),l)),e(o)({type:"definition",identifier:Od(h),label:h,title:d||null,url:p}))}}}}function Zt(e){return e!==to&&e!==en&&e!==gr}Zt.delimiter=to;function Rd(e){return e!==en&&e!==gr&&!Sd(e)}});var oo=C((nE,ao)=>{"use strict";var Ud=ue();ao.exports=Kd;var zd="	",et=`
-`,Md=" ",Yd="-",Gd=":",Vd="\\",rn="|",jd=1,$d=2,uo="left",Hd="center",Wd="right";function Kd(e,r,t){var n=this,a,u,i,o,s,l,c,f,D,h,p,d,m,F,y,E,B,b,g,A,x,v;if(n.options.gfm){for(a=0,E=0,l=r.length+1,c=[];a<l;){if(A=r.indexOf(et,a),x=r.indexOf(rn,a+1),A===-1&&(A=r.length),x===-1||x>A){if(E<$d)return;break}c.push(r.slice(a,A)),E++,a=A+1}for(o=c.join(et),u=c.splice(1,1)[0]||[],a=0,l=u.length,E--,i=!1,p=[];a<l;){if(D=u.charAt(a),D===rn){if(h=null,i===!1){if(v===!1)return}else p.push(i),i=!1;v=!1}else if(D===Yd)h=!0,i=i||null;else if(D===Gd)i===uo?i=Hd:h&&i===null?i=Wd:i=uo;else if(!Ud(D))return;a++}if(i!==!1&&p.push(i),!(p.length<jd)){if(t)return!0;for(y=-1,b=[],g=e(o).reset({type:"table",align:p,children:b});++y<E;){for(B=c[y],s={type:"tableRow",children:[]},y&&e(et),e(B).reset(s,g),l=B.length+1,a=0,f="",d="",m=!0;a<l;){if(D=B.charAt(a),D===zd||D===Md){d?f+=D:e(D),a++;continue}D===""||D===rn?m?e(D):((d||D)&&!m&&(o=d,f.length>1&&(D?(o+=f.slice(0,-1),f=f.charAt(f.length-1)):(o+=f,f="")),F=e.now(),e(o)({type:"tableCell",children:n.tokenizeInline(d,F)},s)),e(f+D),f="",d=""):(f&&(d+=f,f=""),d+=D,D===Vd&&a!==l-2&&(d+=B.charAt(a+1),a++)),m=!1,a++}y||e(et+u)}return g}}}});var lo=C((iE,co)=>{"use strict";var Jd=Re(),Xd=Mt(),Qd=Jr();co.exports=rh;var Zd="	",vr=`
-`,eh=" ",so=4;function rh(e,r,t){for(var n=this,a=n.options,u=a.commonmark,i=n.blockTokenizers,o=n.interruptParagraph,s=r.indexOf(vr),l=r.length,c,f,D,h,p;s<l;){if(s===-1){s=l;break}if(r.charAt(s+1)===vr)break;if(u){for(h=0,c=s+1;c<l;){if(D=r.charAt(c),D===Zd){h=so;break}else if(D===eh)h++;else break;c++}if(h>=so&&D!==vr){s=r.indexOf(vr,s+1);continue}}if(f=r.slice(s+1),Qd(o,i,n,[e,f,!0]))break;if(c=s,s=r.indexOf(vr,s+1),s!==-1&&Jd(r.slice(c,s))===""){s=c;break}}return f=r.slice(0,s),t?!0:(p=e.now(),f=Xd(f),e(f)({type:"paragraph",children:n.tokenizeInline(f,p)}))}});var Do=C((uE,fo)=>{"use strict";fo.exports=th;function th(e,r){return e.indexOf("\\",r)}});var Fo=C((aE,mo)=>{"use strict";var nh=Do();mo.exports=ho;ho.locator=nh;var ih=`
-`,po="\\";function ho(e,r,t){var n=this,a,u;if(r.charAt(0)===po&&(a=r.charAt(1),n.escape.indexOf(a)!==-1))return t?!0:(a===ih?u={type:"break"}:u={type:"text",value:a},e(po+a)(u))}});var tn=C((oE,go)=>{"use strict";go.exports=uh;function uh(e,r){return e.indexOf("<",r)}});var yo=C((sE,bo)=>{"use strict";var vo=ue(),ah=pr(),oh=tn();bo.exports=on;on.locator=oh;on.notInLink=!0;var Eo="<",nn=">",Co="@",un="/",an="mailto:",rt=an.length;function on(e,r,t){var n=this,a="",u=r.length,i=0,o="",s=!1,l="",c,f,D,h,p;if(r.charAt(0)===Eo){for(i++,a=Eo;i<u&&(c=r.charAt(i),!(vo(c)||c===nn||c===Co||c===":"&&r.charAt(i+1)===un));)o+=c,i++;if(o){if(l+=o,o="",c=r.charAt(i),l+=c,i++,c===Co)s=!0;else{if(c!==":"||r.charAt(i+1)!==un)return;l+=un,i++}for(;i<u&&(c=r.charAt(i),!(vo(c)||c===nn));)o+=c,i++;if(c=r.charAt(i),!(!o||c!==nn))return t?!0:(l+=o,D=l,a+=l+c,f=e.now(),f.column++,f.offset++,s&&(l.slice(0,rt).toLowerCase()===an?(D=D.slice(rt),f.column+=rt,f.offset+=rt):l=an+l),h=n.inlineTokenizers,n.inlineTokenizers={text:h.text},p=n.enterLink(),D=n.tokenizeInline(D,f),n.inlineTokenizers=h,p(),e(a)({type:"link",title:null,url:ah(l,{nonTerminated:!1}),children:D}))}}}});var xo=C((cE,Ao)=>{"use strict";Ao.exports=sh;function sh(e,r){var t=String(e),n=0,a;if(typeof r!="string")throw new Error("Expected character");for(a=t.indexOf(r);a!==-1;)n++,a=t.indexOf(r,a+r.length);return n}});var Bo=C((lE,ko)=>{"use strict";ko.exports=ch;var wo=["www.","http://","https://"];function ch(e,r){var t=-1,n,a,u;if(!this.options.gfm)return t;for(a=wo.length,n=-1;++n<a;)u=e.indexOf(wo[n],r),u!==-1&&(t===-1||u<t)&&(t=u);return t}});var Oo=C((fE,So)=>{"use strict";var qo=xo(),lh=pr(),fh=Ne(),sn=Ve(),Dh=ue(),ph=Bo();So.exports=ln;ln.locator=ph;ln.notInLink=!0;var dh=33,hh=38,mh=41,Fh=42,gh=44,vh=45,cn=46,Eh=58,Ch=59,bh=63,yh=60,To=95,Ah=126,xh="(",_o=")";function ln(e,r,t){var n=this,a=n.options.gfm,u=n.inlineTokenizers,i=r.length,o=-1,s=!1,l,c,f,D,h,p,d,m,F,y,E,B,b,g;if(a){if(r.slice(0,4)==="www.")s=!0,D=4;else if(r.slice(0,7).toLowerCase()==="http://")D=7;else if(r.slice(0,8).toLowerCase()==="https://")D=8;else return;for(o=D-1,f=D,l=[];D<i;){if(d=r.charCodeAt(D),d===cn){if(o===D-1)break;l.push(D),o=D,D++;continue}if(fh(d)||sn(d)||d===vh||d===To){D++;continue}break}if(d===cn&&(l.pop(),D--),l[0]!==void 0&&(c=l.length<2?f:l[l.length-2]+1,r.slice(c,D).indexOf("_")===-1)){if(t)return!0;for(m=D,h=D;D<i&&(d=r.charCodeAt(D),!(Dh(d)||d===yh));)D++,d===dh||d===Fh||d===gh||d===cn||d===Eh||d===bh||d===To||d===Ah||(m=D);if(D=m,r.charCodeAt(D-1)===mh)for(p=r.slice(h,D),F=qo(p,xh),y=qo(p,_o);y>F;)D=h+p.lastIndexOf(_o),p=r.slice(h,D),y--;if(r.charCodeAt(D-1)===Ch&&(D--,sn(r.charCodeAt(D-1)))){for(m=D-2;sn(r.charCodeAt(m));)m--;r.charCodeAt(m)===hh&&(D=m)}return E=r.slice(0,D),b=lh(E,{nonTerminated:!1}),s&&(b="http://"+b),g=n.enterLink(),n.inlineTokenizers={text:u.text},B=n.tokenizeInline(E,e.now()),n.inlineTokenizers=u,g(),e(E)({type:"link",title:null,url:b,children:B})}}}});var No=C((DE,Io)=>{"use strict";var wh=Ne(),kh=Ve(),Bh=43,qh=45,Th=46,_h=95;Io.exports=Lo;function Lo(e,r){var t=this,n,a;if(!this.options.gfm||(n=e.indexOf("@",r),n===-1))return-1;if(a=n,a===r||!Po(e.charCodeAt(a-1)))return Lo.call(t,e,n+1);for(;a>r&&Po(e.charCodeAt(a-1));)a--;return a}function Po(e){return wh(e)||kh(e)||e===Bh||e===qh||e===Th||e===_h}});var Mo=C((pE,zo)=>{"use strict";var Sh=pr(),Ro=Ne(),Uo=Ve(),Oh=No();zo.exports=pn;pn.locator=Oh;pn.notInLink=!0;var Ph=43,fn=45,tt=46,Lh=64,Dn=95;function pn(e,r,t){var n=this,a=n.options.gfm,u=n.inlineTokenizers,i=0,o=r.length,s=-1,l,c,f,D;if(a){for(l=r.charCodeAt(i);Ro(l)||Uo(l)||l===Ph||l===fn||l===tt||l===Dn;)l=r.charCodeAt(++i);if(i!==0&&l===Lh){for(i++;i<o;){if(l=r.charCodeAt(i),Ro(l)||Uo(l)||l===fn||l===tt||l===Dn){i++,s===-1&&l===tt&&(s=i);continue}break}if(!(s===-1||s===i||l===fn||l===Dn))return l===tt&&i--,c=r.slice(0,i),t?!0:(D=n.enterLink(),n.inlineTokenizers={text:u.text},f=n.tokenizeInline(c,e.now()),n.inlineTokenizers=u,D(),e(c)({type:"link",title:null,url:"mailto:"+Sh(c,{nonTerminated:!1}),children:f}))}}}});var Vo=C((dE,Go)=>{"use strict";var Ih=Ve(),Nh=tn(),Rh=Xt().tag;Go.exports=Yo;Yo.locator=Nh;var Uh="<",zh="?",Mh="!",Yh="/",Gh=/^<a /i,Vh=/^<\/a>/i;function Yo(e,r,t){var n=this,a=r.length,u,i;if(!(r.charAt(0)!==Uh||a<3)&&(u=r.charAt(1),!(!Ih(u)&&u!==zh&&u!==Mh&&u!==Yh)&&(i=r.match(Rh),!!i)))return t?!0:(i=i[0],!n.inLink&&Gh.test(i)?n.inLink=!0:n.inLink&&Vh.test(i)&&(n.inLink=!1),e(i)({type:"html",value:i}))}});var dn=C((hE,jo)=>{"use strict";jo.exports=jh;function jh(e,r){var t=e.indexOf("[",r),n=e.indexOf("![",r);return n===-1||t<n?t:n}});var Qo=C((mE,Xo)=>{"use strict";var Er=ue(),$h=dn();Xo.exports=Jo;Jo.locator=$h;var Hh=`
-`,Wh="!",$o='"',Ho="'",Je="(",Cr=")",hn="<",mn=">",Wo="[",br="\\",Kh="]",Ko="`";function Jo(e,r,t){var n=this,a="",u=0,i=r.charAt(0),o=n.options.pedantic,s=n.options.commonmark,l=n.options.gfm,c,f,D,h,p,d,m,F,y,E,B,b,g,A,x,v,w,k;if(i===Wh&&(F=!0,a=i,i=r.charAt(++u)),i===Wo&&!(!F&&n.inLink)){for(a+=i,A="",u++,B=r.length,v=e.now(),g=0,v.column+=u,v.offset+=u;u<B;){if(i=r.charAt(u),d=i,i===Ko){for(f=1;r.charAt(u+1)===Ko;)d+=i,u++,f++;D?f>=D&&(D=0):D=f}else if(i===br)u++,d+=r.charAt(u);else if((!D||l)&&i===Wo)g++;else if((!D||l)&&i===Kh)if(g)g--;else{if(r.charAt(u+1)!==Je)return;d+=Je,c=!0,u++;break}A+=d,d="",u++}if(c){for(y=A,a+=A+d,u++;u<B&&(i=r.charAt(u),!!Er(i));)a+=i,u++;if(i=r.charAt(u),A="",h=a,i===hn){for(u++,h+=hn;u<B&&(i=r.charAt(u),i!==mn);){if(s&&i===Hh)return;A+=i,u++}if(r.charAt(u)!==mn)return;a+=hn+A+mn,x=A,u++}else{for(i=null,d="";u<B&&(i=r.charAt(u),!(d&&(i===$o||i===Ho||s&&i===Je)));){if(Er(i)){if(!o)break;d+=i}else{if(i===Je)g++;else if(i===Cr){if(g===0)break;g--}A+=d,d="",i===br&&(A+=br,i=r.charAt(++u)),A+=i}u++}a+=A,x=A,u=a.length}for(A="";u<B&&(i=r.charAt(u),!!Er(i));)A+=i,u++;if(i=r.charAt(u),a+=A,A&&(i===$o||i===Ho||s&&i===Je))if(u++,a+=i,A="",E=i===Je?Cr:i,p=a,s){for(;u<B&&(i=r.charAt(u),i!==E);)i===br&&(A+=br,i=r.charAt(++u)),u++,A+=i;if(i=r.charAt(u),i!==E)return;for(b=A,a+=A+i,u++;u<B&&(i=r.charAt(u),!!Er(i));)a+=i,u++}else for(d="";u<B;){if(i=r.charAt(u),i===E)m&&(A+=E+d,d=""),m=!0;else if(!m)A+=i;else if(i===Cr){a+=A+E+d,b=A;break}else Er(i)?d+=i:(A+=E+d+i,d="",m=!1);u++}if(r.charAt(u)===Cr)return t?!0:(a+=Cr,x=n.decode.raw(n.unescape(x),e(h).test().end,{nonTerminated:!1}),b&&(p=e(p).test().end,b=n.decode.raw(n.unescape(b),p)),k={type:F?"image":"link",title:b||null,url:x},F?k.alt=n.decode.raw(n.unescape(y),v)||null:(w=n.enterLink(),k.children=n.tokenizeInline(y,v),w()),e(a)(k))}}}});var rs=C((FE,es)=>{"use strict";var Jh=ue(),Xh=dn(),Qh=Qt();es.exports=Zo;Zo.locator=Xh;var Fn="link",Zh="image",e0="shortcut",r0="collapsed",gn="full",t0="!",nt="[",it="\\",ut="]";function Zo(e,r,t){var n=this,a=n.options.commonmark,u=r.charAt(0),i=0,o=r.length,s="",l="",c=Fn,f=e0,D,h,p,d,m,F,y,E;if(u===t0&&(c=Zh,l=u,u=r.charAt(++i)),u===nt){for(i++,l+=u,F="",E=0;i<o;){if(u=r.charAt(i),u===nt)y=!0,E++;else if(u===ut){if(!E)break;E--}u===it&&(F+=it,u=r.charAt(++i)),F+=u,i++}if(s=F,D=F,u=r.charAt(i),u===ut){if(i++,s+=u,F="",!a)for(;i<o&&(u=r.charAt(i),!!Jh(u));)F+=u,i++;if(u=r.charAt(i),u===nt){for(h="",F+=u,i++;i<o&&(u=r.charAt(i),!(u===nt||u===ut));)u===it&&(h+=it,u=r.charAt(++i)),h+=u,i++;u=r.charAt(i),u===ut?(f=h?gn:r0,F+=h+u,i++):h="",s+=F,F=""}else{if(!D)return;h=D}if(!(f!==gn&&y))return s=l+s,c===Fn&&n.inLink?null:t?!0:(p=e.now(),p.column+=l.length,p.offset+=l.length,h=f===gn?h:D,d={type:c+"Reference",identifier:Qh(h),label:h,referenceType:f},c===Fn?(m=n.enterLink(),d.children=n.tokenizeInline(D,p),m()):d.alt=n.decode.raw(n.unescape(D),p)||null,e(s)(d))}}}});var ns=C((gE,ts)=>{"use strict";ts.exports=n0;function n0(e,r){var t=e.indexOf("**",r),n=e.indexOf("__",r);return n===-1?t:t===-1||n<t?n:t}});var os=C((vE,as)=>{"use strict";var i0=Re(),is=ue(),u0=ns();as.exports=us;us.locator=u0;var a0="\\",o0="*",s0="_";function us(e,r,t){var n=this,a=0,u=r.charAt(a),i,o,s,l,c,f,D;if(!(u!==o0&&u!==s0||r.charAt(++a)!==u)&&(o=n.options.pedantic,s=u,c=s+s,f=r.length,a++,l="",u="",!(o&&is(r.charAt(a)))))for(;a<f;){if(D=u,u=r.charAt(a),u===s&&r.charAt(a+1)===s&&(!o||!is(D))&&(u=r.charAt(a+2),u!==s))return i0(l)?t?!0:(i=e.now(),i.column+=2,i.offset+=2,e(c+l+c)({type:"strong",children:n.tokenizeInline(l,i)})):void 0;!o&&u===a0&&(l+=u,u=r.charAt(++a)),l+=u,a++}}});var cs=C((EE,ss)=>{"use strict";ss.exports=f0;var c0=String.fromCharCode,l0=/\w/;function f0(e){return l0.test(typeof e=="number"?c0(e):e.charAt(0))}});var fs=C((CE,ls)=>{"use strict";ls.exports=D0;function D0(e,r){var t=e.indexOf("*",r),n=e.indexOf("_",r);return n===-1?t:t===-1||n<t?n:t}});var ms=C((bE,hs)=>{"use strict";var p0=Re(),d0=cs(),Ds=ue(),h0=fs();hs.exports=ds;ds.locator=h0;var m0="*",ps="_",F0="\\";function ds(e,r,t){var n=this,a=0,u=r.charAt(a),i,o,s,l,c,f,D;if(!(u!==m0&&u!==ps)&&(o=n.options.pedantic,c=u,s=u,f=r.length,a++,l="",u="",!(o&&Ds(r.charAt(a)))))for(;a<f;){if(D=u,u=r.charAt(a),u===s&&(!o||!Ds(D))){if(u=r.charAt(++a),u!==s){if(!p0(l)||D===s)return;if(!o&&s===ps&&d0(u)){l+=s;continue}return t?!0:(i=e.now(),i.column++,i.offset++,e(c+l+s)({type:"emphasis",children:n.tokenizeInline(l,i)}))}l+=s}!o&&u===F0&&(l+=u,u=r.charAt(++a)),l+=u,a++}}});var gs=C((yE,Fs)=>{"use strict";Fs.exports=g0;function g0(e,r){return e.indexOf("~~",r)}});var ys=C((AE,bs)=>{"use strict";var vs=ue(),v0=gs();bs.exports=Cs;Cs.locator=v0;var at="~",Es="~~";function Cs(e,r,t){var n=this,a="",u="",i="",o="",s,l,c;if(!(!n.options.gfm||r.charAt(0)!==at||r.charAt(1)!==at||vs(r.charAt(2))))for(s=1,l=r.length,c=e.now(),c.column+=2,c.offset+=2;++s<l;){if(a=r.charAt(s),a===at&&u===at&&(!i||!vs(i)))return t?!0:e(Es+o+Es)({type:"delete",children:n.tokenizeInline(o,c)});o+=u,i=u,u=a}}});var xs=C((xE,As)=>{"use strict";As.exports=E0;function E0(e,r){return e.indexOf("`",r)}});var Bs=C((wE,ks)=>{"use strict";var C0=xs();ks.exports=ws;ws.locator=C0;var vn=10,En=32,Cn=96;function ws(e,r,t){for(var n=r.length,a=0,u,i,o,s,l,c;a<n&&r.charCodeAt(a)===Cn;)a++;if(!(a===0||a===n)){for(u=a,l=r.charCodeAt(a);a<n;){if(s=l,l=r.charCodeAt(a+1),s===Cn){if(i===void 0&&(i=a),o=a+1,l!==Cn&&o-i===u){c=!0;break}}else i!==void 0&&(i=void 0,o=void 0);a++}if(c){if(t)return!0;if(a=u,n=i,s=r.charCodeAt(a),l=r.charCodeAt(n-1),c=!1,n-a>2&&(s===En||s===vn)&&(l===En||l===vn)){for(a++,n--;a<n;){if(s=r.charCodeAt(a),s!==En&&s!==vn){c=!0;break}a++}c===!0&&(u++,i--)}return e(r.slice(0,o))({type:"inlineCode",value:r.slice(u,i)})}}}});var Ts=C((kE,qs)=>{"use strict";qs.exports=b0;function b0(e,r){for(var t=e.indexOf(`
-`,r);t>r&&e.charAt(t-1)===" ";)t--;return t}});var Os=C((BE,Ss)=>{"use strict";var y0=Ts();Ss.exports=_s;_s.locator=y0;var A0=" ",x0=`
-`,w0=2;function _s(e,r,t){for(var n=r.length,a=-1,u="",i;++a<n;){if(i=r.charAt(a),i===x0)return a<w0?void 0:t?!0:(u+=i,e(u)({type:"break"}));if(i!==A0)return;u+=i}}});var Ls=C((qE,Ps)=>{"use strict";Ps.exports=k0;function k0(e,r,t){var n=this,a,u,i,o,s,l,c,f,D,h;if(t)return!0;for(a=n.inlineMethods,o=a.length,u=n.inlineTokenizers,i=-1,D=r.length;++i<o;)f=a[i],!(f==="text"||!u[f])&&(c=u[f].locator,c||e.file.fail("Missing locator: `"+f+"`"),l=c.call(n,r,1),l!==-1&&l<D&&(D=l));s=r.slice(0,D),h=e.now(),n.decode(s,h,p);function p(d,m,F){e(F||d)({type:"text",value:d})}}});var Us=C((TE,Rs)=>{"use strict";var B0=Ie(),ot=ru(),q0=nu(),T0=uu(),_0=Ou(),bn=Iu();Rs.exports=Is;function Is(e,r){this.file=r,this.offset={},this.options=B0(this.options),this.setOptions({}),this.inList=!1,this.inBlock=!1,this.inLink=!1,this.atStart=!0,this.toOffset=q0(r).toOffset,this.unescape=T0(this,"escape"),this.decode=_0(this)}var U=Is.prototype;U.setOptions=Vu();U.parse=aa();U.options=Rt();U.exitStart=ot("atStart",!0);U.enterList=ot("inList",!1);U.enterLink=ot("inLink",!1);U.enterBlock=ot("inBlock",!1);U.interruptParagraph=[["thematicBreak"],["list"],["atxHeading"],["fencedCode"],["blockquote"],["html"],["setextHeading",{commonmark:!1}],["definition",{commonmark:!1}]];U.interruptList=[["atxHeading",{pedantic:!1}],["fencedCode",{pedantic:!1}],["thematicBreak",{pedantic:!1}],["definition",{commonmark:!1}]];U.interruptBlockquote=[["indentedCode",{commonmark:!0}],["fencedCode",{commonmark:!0}],["atxHeading",{commonmark:!0}],["setextHeading",{commonmark:!0}],["thematicBreak",{commonmark:!0}],["html",{commonmark:!0}],["list",{commonmark:!0}],["definition",{commonmark:!1}]];U.blockTokenizers={blankLine:sa(),indentedCode:pa(),fencedCode:ma(),blockquote:ba(),atxHeading:xa(),thematicBreak:Ba(),list:Ua(),setextHeading:Ga(),html:Ka(),definition:io(),table:oo(),paragraph:lo()};U.inlineTokenizers={escape:Fo(),autoLink:yo(),url:Oo(),email:Mo(),html:Vo(),link:Qo(),reference:rs(),strong:os(),emphasis:ms(),deletion:ys(),code:Bs(),break:Os(),text:Ls()};U.blockMethods=Ns(U.blockTokenizers);U.inlineMethods=Ns(U.inlineTokenizers);U.tokenizeBlock=bn("block");U.tokenizeInline=bn("inline");U.tokenizeFactory=bn;function Ns(e){var r=[],t;for(t in e)r.push(t);return r}});var Gs=C((_E,Ys)=>{"use strict";var S0=Zi(),O0=Ie(),zs=Us();Ys.exports=Ms;Ms.Parser=zs;function Ms(e){var r=this.data("settings"),t=S0(zs);t.prototype.options=O0(t.prototype.options,r,e),this.Parser=t}});var js=C((SE,Vs)=>{"use strict";Vs.exports=P0;function P0(e){if(e)throw e}});var yn=C((OE,$s)=>{$s.exports=function(r){return r!=null&&r.constructor!=null&&typeof r.constructor.isBuffer=="function"&&r.constructor.isBuffer(r)}});var rc=C((PE,ec)=>{"use strict";var st=Object.prototype.hasOwnProperty,Zs=Object.prototype.toString,Hs=Object.defineProperty,Ws=Object.getOwnPropertyDescriptor,Ks=function(r){return typeof Array.isArray=="function"?Array.isArray(r):Zs.call(r)==="[object Array]"},Js=function(r){if(!r||Zs.call(r)!=="[object Object]")return!1;var t=st.call(r,"constructor"),n=r.constructor&&r.constructor.prototype&&st.call(r.constructor.prototype,"isPrototypeOf");if(r.constructor&&!t&&!n)return!1;var a;for(a in r);return typeof a>"u"||st.call(r,a)},Xs=function(r,t){Hs&&t.name==="__proto__"?Hs(r,t.name,{enumerable:!0,configurable:!0,value:t.newValue,writable:!0}):r[t.name]=t.newValue},Qs=function(r,t){if(t==="__proto__")if(st.call(r,t)){if(Ws)return Ws(r,t).value}else return;return r[t]};ec.exports=function e(){var r,t,n,a,u,i,o=arguments[0],s=1,l=arguments.length,c=!1;for(typeof o=="boolean"&&(c=o,o=arguments[1]||{},s=2),(o==null||typeof o!="object"&&typeof o!="function")&&(o={});s<l;++s)if(r=arguments[s],r!=null)for(t in r)n=Qs(o,t),a=Qs(r,t),o!==a&&(c&&a&&(Js(a)||(u=Ks(a)))?(u?(u=!1,i=n&&Ks(n)?n:[]):i=n&&Js(n)?n:{},Xs(o,{name:t,newValue:e(c,i,a)})):typeof a<"u"&&Xs(o,{name:t,newValue:a}));return o}});var nc=C((LE,tc)=>{"use strict";tc.exports=e=>{if(Object.prototype.toString.call(e)!=="[object Object]")return!1;let r=Object.getPrototypeOf(e);return r===null||r===Object.prototype}});var uc=C((IE,ic)=>{"use strict";var L0=[].slice;ic.exports=I0;function I0(e,r){var t;return n;function n(){var i=L0.call(arguments,0),o=e.length>i.length,s;o&&i.push(a);try{s=e.apply(null,i)}catch(l){if(o&&t)throw l;return a(l)}o||(s&&typeof s.then=="function"?s.then(u,a):s instanceof Error?a(s):u(s))}function a(){t||(t=!0,r.apply(null,arguments))}function u(i){a(null,i)}}});var lc=C((NE,cc)=>{"use strict";var oc=uc();cc.exports=sc;sc.wrap=oc;var ac=[].slice;function sc(){var e=[],r={};return r.run=t,r.use=n,r;function t(){var a=-1,u=ac.call(arguments,0,-1),i=arguments[arguments.length-1];if(typeof i!="function")throw new Error("Expected function as last argument, not "+i);o.apply(null,[null].concat(u));function o(s){var l=e[++a],c=ac.call(arguments,0),f=c.slice(1),D=u.length,h=-1;if(s){i(s);return}for(;++h<D;)(f[h]===null||f[h]===void 0)&&(f[h]=u[h]);u=f,l?oc(l,o).apply(null,u):i.apply(null,[null].concat(u))}}function n(a){if(typeof a!="function")throw new Error("Expected `fn` to be a function, not "+a);return e.push(a),r}}});var dc=C((RE,pc)=>{"use strict";var Xe={}.hasOwnProperty;pc.exports=N0;function N0(e){return!e||typeof e!="object"?"":Xe.call(e,"position")||Xe.call(e,"type")?fc(e.position):Xe.call(e,"start")||Xe.call(e,"end")?fc(e):Xe.call(e,"line")||Xe.call(e,"column")?An(e):""}function An(e){return(!e||typeof e!="object")&&(e={}),Dc(e.line)+":"+Dc(e.column)}function fc(e){return(!e||typeof e!="object")&&(e={}),An(e.start)+"-"+An(e.end)}function Dc(e){return e&&typeof e=="number"?e:1}});var Fc=C((UE,mc)=>{"use strict";var R0=dc();mc.exports=xn;function hc(){}hc.prototype=Error.prototype;xn.prototype=new hc;var we=xn.prototype;we.file="";we.name="";we.reason="";we.message="";we.stack="";we.fatal=null;we.column=null;we.line=null;function xn(e,r,t){var n,a,u;typeof r=="string"&&(t=r,r=null),n=U0(t),a=R0(r)||"1:1",u={start:{line:null,column:null},end:{line:null,column:null}},r&&r.position&&(r=r.position),r&&(r.start?(u=r,r=r.start):u.start=r),e.stack&&(this.stack=e.stack,e=e.message),this.message=e,this.name=a,this.reason=e,this.line=r?r.line:null,this.column=r?r.column:null,this.location=u,this.source=n[0],this.ruleId=n[1]}function U0(e){var r=[null,null],t;return typeof e=="string"&&(t=e.indexOf(":"),t===-1?r[1]=e:(r[0]=e.slice(0,t),r[1]=e.slice(t+1))),r}});var gc=C(Qe=>{"use strict";Qe.basename=z0;Qe.dirname=M0;Qe.extname=Y0;Qe.join=G0;Qe.sep="/";function z0(e,r){var t=0,n=-1,a,u,i,o;if(r!==void 0&&typeof r!="string")throw new TypeError('"ext" argument must be a string');if(yr(e),a=e.length,r===void 0||!r.length||r.length>e.length){for(;a--;)if(e.charCodeAt(a)===47){if(i){t=a+1;break}}else n<0&&(i=!0,n=a+1);return n<0?"":e.slice(t,n)}if(r===e)return"";for(u=-1,o=r.length-1;a--;)if(e.charCodeAt(a)===47){if(i){t=a+1;break}}else u<0&&(i=!0,u=a+1),o>-1&&(e.charCodeAt(a)===r.charCodeAt(o--)?o<0&&(n=a):(o=-1,n=u));return t===n?n=u:n<0&&(n=e.length),e.slice(t,n)}function M0(e){var r,t,n;if(yr(e),!e.length)return".";for(r=-1,n=e.length;--n;)if(e.charCodeAt(n)===47){if(t){r=n;break}}else t||(t=!0);return r<0?e.charCodeAt(0)===47?"/":".":r===1&&e.charCodeAt(0)===47?"//":e.slice(0,r)}function Y0(e){var r=-1,t=0,n=-1,a=0,u,i,o;for(yr(e),o=e.length;o--;){if(i=e.charCodeAt(o),i===47){if(u){t=o+1;break}continue}n<0&&(u=!0,n=o+1),i===46?r<0?r=o:a!==1&&(a=1):r>-1&&(a=-1)}return r<0||n<0||a===0||a===1&&r===n-1&&r===t+1?"":e.slice(r,n)}function G0(){for(var e=-1,r;++e<arguments.length;)yr(arguments[e]),arguments[e]&&(r=r===void 0?arguments[e]:r+"/"+arguments[e]);return r===void 0?".":V0(r)}function V0(e){var r,t;return yr(e),r=e.charCodeAt(0)===47,t=j0(e,!r),!t.length&&!r&&(t="."),t.length&&e.charCodeAt(e.length-1)===47&&(t+="/"),r?"/"+t:t}function j0(e,r){for(var t="",n=0,a=-1,u=0,i=-1,o,s;++i<=e.length;){if(i<e.length)o=e.charCodeAt(i);else{if(o===47)break;o=47}if(o===47){if(!(a===i-1||u===1))if(a!==i-1&&u===2){if(t.length<2||n!==2||t.charCodeAt(t.length-1)!==46||t.charCodeAt(t.length-2)!==46){if(t.length>2){if(s=t.lastIndexOf("/"),s!==t.length-1){s<0?(t="",n=0):(t=t.slice(0,s),n=t.length-1-t.lastIndexOf("/")),a=i,u=0;continue}}else if(t.length){t="",n=0,a=i,u=0;continue}}r&&(t=t.length?t+"/..":"..",n=2)}else t.length?t+="/"+e.slice(a+1,i):t=e.slice(a+1,i),n=i-a-1;a=i,u=0}else o===46&&u>-1?u++:u=-1}return t}function yr(e){if(typeof e!="string")throw new TypeError("Path must be a string. Received "+JSON.stringify(e))}});var Ec=C(vc=>{"use strict";vc.cwd=$0;function $0(){return"/"}});var yc=C((YE,bc)=>{"use strict";var ae=gc(),H0=Ec(),W0=yn();bc.exports=he;var K0={}.hasOwnProperty,wn=["history","path","basename","stem","extname","dirname"];he.prototype.toString=am;Object.defineProperty(he.prototype,"path",{get:J0,set:X0});Object.defineProperty(he.prototype,"dirname",{get:Q0,set:Z0});Object.defineProperty(he.prototype,"basename",{get:em,set:rm});Object.defineProperty(he.prototype,"extname",{get:tm,set:nm});Object.defineProperty(he.prototype,"stem",{get:im,set:um});function he(e){var r,t;if(!e)e={};else if(typeof e=="string"||W0(e))e={contents:e};else if("message"in e&&"messages"in e)return e;if(!(this instanceof he))return new he(e);for(this.data={},this.messages=[],this.history=[],this.cwd=H0.cwd(),t=-1;++t<wn.length;)r=wn[t],K0.call(e,r)&&(this[r]=e[r]);for(r in e)wn.indexOf(r)<0&&(this[r]=e[r])}function J0(){return this.history[this.history.length-1]}function X0(e){Bn(e,"path"),this.path!==e&&this.history.push(e)}function Q0(){return typeof this.path=="string"?ae.dirname(this.path):void 0}function Z0(e){Cc(this.path,"dirname"),this.path=ae.join(e||"",this.basename)}function em(){return typeof this.path=="string"?ae.basename(this.path):void 0}function rm(e){Bn(e,"basename"),kn(e,"basename"),this.path=ae.join(this.dirname||"",e)}function tm(){return typeof this.path=="string"?ae.extname(this.path):void 0}function nm(e){if(kn(e,"extname"),Cc(this.path,"extname"),e){if(e.charCodeAt(0)!==46)throw new Error("`extname` must start with `.`");if(e.indexOf(".",1)>-1)throw new Error("`extname` cannot contain multiple dots")}this.path=ae.join(this.dirname,this.stem+(e||""))}function im(){return typeof this.path=="string"?ae.basename(this.path,this.extname):void 0}function um(e){Bn(e,"stem"),kn(e,"stem"),this.path=ae.join(this.dirname||"",e+(this.extname||""))}function am(e){return(this.contents||"").toString(e)}function kn(e,r){if(e&&e.indexOf(ae.sep)>-1)throw new Error("`"+r+"` cannot be a path: did not expect `"+ae.sep+"`")}function Bn(e,r){if(!e)throw new Error("`"+r+"` cannot be empty")}function Cc(e,r){if(!e)throw new Error("Setting `"+r+"` requires `path` to be set too")}});var xc=C((GE,Ac)=>{"use strict";var om=Fc(),ct=yc();Ac.exports=ct;ct.prototype.message=sm;ct.prototype.info=lm;ct.prototype.fail=cm;function sm(e,r,t){var n=new om(e,r,t);return this.path&&(n.name=this.path+":"+n.name,n.file=this.path),n.fatal=!1,this.messages.push(n),n}function cm(){var e=this.message.apply(this,arguments);throw e.fatal=!0,e}function lm(){var e=this.message.apply(this,arguments);return e.fatal=null,e}});var kc=C((VE,wc)=>{"use strict";wc.exports=xc()});var Ic=C((jE,Lc)=>{"use strict";var Bc=js(),fm=yn(),lt=rc(),qc=nc(),Oc=lc(),Ar=kc();Lc.exports=Pc().freeze();var Dm=[].slice,pm={}.hasOwnProperty,dm=Oc().use(hm).use(mm).use(Fm);function hm(e,r){r.tree=e.parse(r.file)}function mm(e,r,t){e.run(r.tree,r.file,n);function n(a,u,i){a?t(a):(r.tree=u,r.file=i,t())}}function Fm(e,r){var t=e.stringify(r.tree,r.file);t==null||(typeof t=="string"||fm(t)?("value"in r.file&&(r.file.value=t),r.file.contents=t):r.file.result=t)}function Pc(){var e=[],r=Oc(),t={},n=-1,a;return u.data=o,u.freeze=i,u.attachers=e,u.use=s,u.parse=c,u.stringify=h,u.run=f,u.runSync=D,u.process=p,u.processSync=d,u;function u(){for(var m=Pc(),F=-1;++F<e.length;)m.use.apply(null,e[F]);return m.data(lt(!0,{},t)),m}function i(){var m,F;if(a)return u;for(;++n<e.length;)m=e[n],m[1]!==!1&&(m[1]===!0&&(m[1]=void 0),F=m[0].apply(u,m.slice(1)),typeof F=="function"&&r.use(F));return a=!0,n=1/0,u}function o(m,F){return typeof m=="string"?arguments.length===2?(_n("data",a),t[m]=F,u):pm.call(t,m)&&t[m]||null:m?(_n("data",a),t=m,u):t}function s(m){var F;if(_n("use",a),m!=null)if(typeof m=="function")b.apply(null,arguments);else if(typeof m=="object")"length"in m?B(m):y(m);else throw new Error("Expected usable value, not `"+m+"`");return F&&(t.settings=lt(t.settings||{},F)),u;function y(g){B(g.plugins),g.settings&&(F=lt(F||{},g.settings))}function E(g){if(typeof g=="function")b(g);else if(typeof g=="object")"length"in g?b.apply(null,g):y(g);else throw new Error("Expected usable value, not `"+g+"`")}function B(g){var A=-1;if(g!=null)if(typeof g=="object"&&"length"in g)for(;++A<g.length;)E(g[A]);else throw new Error("Expected a list of plugins, not `"+g+"`")}function b(g,A){var x=l(g);x?(qc(x[1])&&qc(A)&&(A=lt(!0,x[1],A)),x[1]=A):e.push(Dm.call(arguments))}}function l(m){for(var F=-1;++F<e.length;)if(e[F][0]===m)return e[F]}function c(m){var F=Ar(m),y;return i(),y=u.Parser,qn("parse",y),Tc(y,"parse")?new y(String(F),F).parse():y(String(F),F)}function f(m,F,y){if(_c(m),i(),!y&&typeof F=="function"&&(y=F,F=null),!y)return new Promise(E);E(null,y);function E(B,b){r.run(m,Ar(F),g);function g(A,x,v){x=x||m,A?b(A):B?B(x):y(null,x,v)}}}function D(m,F){var y,E;return f(m,F,B),Sc("runSync","run",E),y;function B(b,g){E=!0,y=g,Bc(b)}}function h(m,F){var y=Ar(F),E;return i(),E=u.Compiler,Tn("stringify",E),_c(m),Tc(E,"compile")?new E(m,y).compile():E(m,y)}function p(m,F){if(i(),qn("process",u.Parser),Tn("process",u.Compiler),!F)return new Promise(y);y(null,F);function y(E,B){var b=Ar(m);dm.run(u,{file:b},g);function g(A){A?B(A):E?E(b):F(null,b)}}}function d(m){var F,y;return i(),qn("processSync",u.Parser),Tn("processSync",u.Compiler),F=Ar(m),p(F,E),Sc("processSync","process",y),F;function E(B){y=!0,Bc(B)}}}function Tc(e,r){return typeof e=="function"&&e.prototype&&(gm(e.prototype)||r in e.prototype)}function gm(e){var r;for(r in e)return!0;return!1}function qn(e,r){if(typeof r!="function")throw new Error("Cannot `"+e+"` without `Parser`")}function Tn(e,r){if(typeof r!="function")throw new Error("Cannot `"+e+"` without `Compiler`")}function _n(e,r){if(r)throw new Error("Cannot invoke `"+e+"` on a frozen processor.\nCreate a new processor first, by invoking it: use `processor()` instead of `processor`.")}function _c(e){if(!e||typeof e.type!="string")throw new Error("Expected node, got `"+e+"`")}function Sc(e,r,t){if(!t)throw new Error("`"+e+"` finished async. Use `"+r+"` instead")}});var Tm={};Pn(Tm,{languages:()=>_i,options:()=>Si,parsers:()=>On,printers:()=>qm});var al=(e,r,t,n)=>{if(!(e&&r==null))return r.replaceAll?r.replaceAll(t,n):t.global?r.replace(t,n):r.split(t).join(n)},N=al;var ol=(e,r,t)=>{if(!(e&&r==null))return Array.isArray(r)||typeof r=="string"?r[t<0?r.length+t:t]:r.at(t)},M=ol;var qi=Ue(wr(),1);function Be(e){if(typeof e!="string")throw new TypeError("Expected a string");return e.replace(/[|\\{}()[\]^$+*?.]/g,"\\$&").replace(/-/g,"\\x2d")}var $="string",H="array",ge="cursor",ee="indent",re="align",oe="trim",K="group",J="fill",X="if-break",se="indent-if-break",ce="line-suffix",le="line-suffix-boundary",W="line",fe="label",te="break-parent",kr=new Set([ge,ee,re,oe,K,J,X,se,ce,le,W,fe,te]);function cl(e){if(typeof e=="string")return $;if(Array.isArray(e))return H;if(!e)return;let{type:r}=e;if(kr.has(r))return r}var Y=cl;var ll=e=>new Intl.ListFormat("en-US",{type:"disjunction"}).format(e);function fl(e){let r=e===null?"null":typeof e;if(r!=="string"&&r!=="object")return`Unexpected doc '${r}', 
-Expected it to be 'string' or 'object'.`;if(Y(e))throw new Error("doc is valid.");let t=Object.prototype.toString.call(e);if(t!=="[object Object]")return`Unexpected doc '${t}'.`;let n=ll([...kr].map(a=>`'${a}'`));return`Unexpected doc.type '${e.type}'.
-Expected it to be ${n}.`}var Dt=class extends Error{name="InvalidDocError";constructor(r){super(fl(r)),this.doc=r}},qe=Dt;var Nn={};function Dl(e,r,t,n){let a=[e];for(;a.length>0;){let u=a.pop();if(u===Nn){t(a.pop());continue}t&&a.push(u,Nn);let i=Y(u);if(!i)throw new qe(u);if((r==null?void 0:r(u))!==!1)switch(i){case H:case J:{let o=i===H?u:u.parts;for(let s=o.length,l=s-1;l>=0;--l)a.push(o[l]);break}case X:a.push(u.flatContents,u.breakContents);break;case K:if(n&&u.expandedStates)for(let o=u.expandedStates.length,s=o-1;s>=0;--s)a.push(u.expandedStates[s]);else a.push(u.contents);break;case re:case ee:case se:case fe:case ce:a.push(u.contents);break;case $:case ge:case oe:case le:case W:case te:break;default:throw new qe(u)}}}var Rn=Dl;var Un=()=>{},Te=Un,Br=Un;function Ze(e){return Te(e),{type:ee,contents:e}}function ve(e,r){return Te(r),{type:re,contents:r,n:e}}function ze(e,r={}){return Te(e),Br(r.expandedStates,!0),{type:K,id:r.id,contents:e,break:!!r.shouldBreak,expandedStates:r.expandedStates}}function _e(e){return ve({type:"root"},e)}function Ee(e){return Br(e),{type:J,parts:e}}function zn(e,r="",t={}){return Te(e),r!==""&&Te(r),{type:X,breakContents:e,flatContents:r,groupId:t.groupId}}var er={type:te};var rr={type:W,hard:!0},pl={type:W,hard:!0,literal:!0},qr={type:W},Tr={type:W,soft:!0},L=[rr,er],tr=[pl,er];function _r(e,r){Te(e),Br(r);let t=[];for(let n=0;n<r.length;n++)n!==0&&t.push(e),t.push(r[n]);return t}function dl(e,r){if(typeof e=="string")return r(e);let t=new Map;return n(e);function n(u){if(t.has(u))return t.get(u);let i=a(u);return t.set(u,i),i}function a(u){switch(Y(u)){case H:return r(u.map(n));case J:return r({...u,parts:u.parts.map(n)});case X:return r({...u,breakContents:n(u.breakContents),flatContents:n(u.flatContents)});case K:{let{expandedStates:i,contents:o}=u;return i?(i=i.map(n),o=i[0]):o=n(o),r({...u,contents:o,expandedStates:i})}case re:case ee:case se:case fe:case ce:return r({...u,contents:n(u.contents)});case $:case ge:case oe:case le:case W:case te:return r(u);default:throw new qe(u)}}}function Mn(e){if(e.length>0){let r=M(!1,e,-1);!r.expandedStates&&!r.break&&(r.break="propagated")}return null}function Yn(e){let r=new Set,t=[];function n(u){if(u.type===te&&Mn(t),u.type===K){if(t.push(u),r.has(u))return!1;r.add(u)}}function a(u){u.type===K&&t.pop().break&&Mn(t)}Rn(e,n,a,!0)}function Ce(e,r=tr){return dl(e,t=>typeof t=="string"?_r(r,t.split(`
-`)):t)}function hl(e,r){let t=e.match(new RegExp(`(${Be(r)})+`,"gu"));return t===null?0:t.reduce((n,a)=>Math.max(n,a.length/r.length),0)}var Sr=hl;function ml(e,r){let t=e.match(new RegExp(`(${Be(r)})+`,"gu"));if(t===null)return 0;let n=new Map,a=0;for(let u of t){let i=u.length/r.length;n.set(i,!0),i>a&&(a=i)}for(let u=1;u<a;u++)if(!n.get(u))return u;return a+1}var Gn=ml;var Or="'",Vn='"';function Fl(e,r){let t=r===!0||r===Or?Or:Vn,n=t===Or?Vn:Or,a=0,u=0;for(let i of e)i===t?a++:i===n&&u++;return a>u?n:t}var jn=Fl;var pt=class extends Error{name="UnexpectedNodeError";constructor(r,t,n="type"){super(`Unexpected ${t} node ${n}: ${JSON.stringify(r[n])}.`),this.node=r}},$n=pt;var Xn=Ue(wr(),1);function gl(e){return(e==null?void 0:e.type)==="front-matter"}var Hn=gl;var nr=3;function vl(e){let r=e.slice(0,nr);if(r!=="---"&&r!=="+++")return;let t=e.indexOf(`
-`,nr);if(t===-1)return;let n=e.slice(nr,t).trim(),a=e.indexOf(`
-${r}`,t),u=n;if(u||(u=r==="+++"?"toml":"yaml"),a===-1&&r==="---"&&u==="yaml"&&(a=e.indexOf(`
-...`,t)),a===-1)return;let i=a+1+nr,o=e.charAt(i+1);if(!/\s?/u.test(o))return;let s=e.slice(0,i);return{type:"front-matter",language:u,explicitLanguage:n,value:e.slice(t+1,a),startDelimiter:r,endDelimiter:s.slice(-nr),raw:s}}function El(e){let r=vl(e);if(!r)return{content:e};let{raw:t}=r;return{frontMatter:r,content:N(!1,t,/[^\n]/gu," ")+e.slice(t.length)}}var ir=El;var Wn=["format","prettier"];function dt(e){let r=`@(${Wn.join("|")})`,t=new RegExp([`<!--\\s*${r}\\s*-->`,`\\{\\s*\\/\\*\\s*${r}\\s*\\*\\/\\s*\\}`,`<!--.*\r?
-[\\s\\S]*(^|
-)[^\\S
-]*${r}[^\\S
-]*($|
-)[\\s\\S]*
-.*-->`].join("|"),"mu"),n=e.match(t);return(n==null?void 0:n.index)===0}var Kn=e=>dt(ir(e).content.trimStart()),Jn=e=>{let r=ir(e),t=`<!-- @${Wn[0]} -->`;return r.frontMatter?`${r.frontMatter.raw}
-
-${t}
-
-${r.content}`:`${t}
-
-${r.content}`};var Cl=new Set(["position","raw"]);function Qn(e,r,t){if((e.type==="front-matter"||e.type==="code"||e.type==="yaml"||e.type==="import"||e.type==="export"||e.type==="jsx")&&delete r.value,e.type==="list"&&delete r.isAligned,(e.type==="list"||e.type==="listItem")&&delete r.spread,e.type==="text")return null;if(e.type==="inlineCode"&&(r.value=N(!1,e.value,`
-`," ")),e.type==="wikiLink"&&(r.value=N(!1,e.value.trim(),/[\t\n]+/gu," ")),(e.type==="definition"||e.type==="linkReference"||e.type==="imageReference")&&(r.label=(0,Xn.default)(e.label)),(e.type==="link"||e.type==="image")&&e.url&&e.url.includes("("))for(let n of"<>")r.url=N(!1,e.url,n,encodeURIComponent(n));if((e.type==="definition"||e.type==="link"||e.type==="image")&&e.title&&(r.title=N(!1,e.title,/\\(?=["')])/gu,"")),(t==null?void 0:t.type)==="root"&&t.children.length>0&&(t.children[0]===e||Hn(t.children[0])&&t.children[1]===e)&&e.type==="html"&&dt(e.value))return null}Qn.ignoredProperties=Cl;var Zn=Qn;var ei=/(?:[\u02ea-\u02eb\u1100-\u11ff\u2e80-\u2e99\u2e9b-\u2ef3\u2f00-\u2fd5\u2ff0-\u303f\u3041-\u3096\u3099-\u309f\u30a1-\u30fa\u30fc-\u30ff\u3105-\u312f\u3131-\u318e\u3190-\u4dbf\u4e00-\u9fff\ua700-\ua707\ua960-\ua97c\uac00-\ud7a3\ud7b0-\ud7c6\ud7cb-\ud7fb\uf900-\ufa6d\ufa70-\ufad9\ufe10-\ufe1f\ufe30-\ufe6f\uff00-\uffef]|[\ud840-\ud868\ud86a-\ud86c\ud86f-\ud872\ud874-\ud879\ud880-\ud883\ud885-\ud887][\udc00-\udfff]|\ud81b[\udfe3]|\ud82b[\udff0-\udff3\udff5-\udffb\udffd-\udffe]|\ud82c[\udc00-\udd22\udd32\udd50-\udd52\udd55\udd64-\udd67]|\ud83c[\ude00\ude50-\ude51]|\ud869[\udc00-\udedf\udf00-\udfff]|\ud86d[\udc00-\udf39\udf40-\udfff]|\ud86e[\udc00-\udc1d\udc20-\udfff]|\ud873[\udc00-\udea1\udeb0-\udfff]|\ud87a[\udc00-\udfe0]|\ud87e[\udc00-\ude1d]|\ud884[\udc00-\udf4a\udf50-\udfff]|\ud888[\udc00-\udfaf])(?:[\ufe00-\ufe0f]|\udb40[\udd00-\uddef])?/u,Se=/(?:[\u0021-\u002f\u003a-\u0040\u005b-\u0060\u007b-\u007e]|\p{General_Category=Connector_Punctuation}|\p{General_Category=Dash_Punctuation}|\p{General_Category=Close_Punctuation}|\p{General_Category=Final_Punctuation}|\p{General_Category=Initial_Punctuation}|\p{General_Category=Other_Punctuation}|\p{General_Category=Open_Punctuation})/u;async function bl(e,r){if(e.language==="yaml"){let t=e.value.trim(),n=t?await r(t,{parser:"yaml"}):"";return _e([e.startDelimiter,e.explicitLanguage,L,n,n?L:"",e.endDelimiter])}}var ri=bl;var yl=e=>String(e).split(/[/\\]/u).pop();function ti(e,r){if(!r)return;let t=yl(r).toLowerCase();return e.find(({filenames:n})=>n==null?void 0:n.some(a=>a.toLowerCase()===t))??e.find(({extensions:n})=>n==null?void 0:n.some(a=>t.endsWith(a)))}function Al(e,r){if(r)return e.find(({name:t})=>t.toLowerCase()===r)??e.find(({aliases:t})=>t==null?void 0:t.includes(r))??e.find(({extensions:t})=>t==null?void 0:t.includes(`.${r}`))}function xl(e,r){let t=e.plugins.flatMap(a=>a.languages??[]),n=Al(t,r.language)??ti(t,r.physicalFile)??ti(t,r.file)??(r.physicalFile,void 0);return n==null?void 0:n.parsers[0]}var ni=xl;var wl=new Proxy(()=>{},{get:()=>wl});function Oe(e){return e.position.start.offset}function Pe(e){return e.position.end.offset}var ht=new Set(["liquidNode","inlineCode","emphasis","esComment","strong","delete","wikiLink","link","linkReference","image","imageReference","footnote","footnoteReference","sentence","whitespace","word","break","inlineMath"]),Pr=new Set([...ht,"tableCell","paragraph","heading"]),Le="non-cjk",De="cj-letter",be="k-letter",ur="cjk-punctuation",kl=/\p{Script_Extensions=Hangul}/u;function Lr(e){let r=[],t=e.split(/([\t\n ]+)/u);for(let[a,u]of t.entries()){if(a%2===1){r.push({type:"whitespace",value:/\n/u.test(u)?`
-`:" "});continue}if((a===0||a===t.length-1)&&u==="")continue;let i=u.split(new RegExp(`(${ei.source})`,"u"));for(let[o,s]of i.entries())if(!((o===0||o===i.length-1)&&s==="")){if(o%2===0){s!==""&&n({type:"word",value:s,kind:Le,hasLeadingPunctuation:Se.test(s[0]),hasTrailingPunctuation:Se.test(M(!1,s,-1))});continue}n(Se.test(s)?{type:"word",value:s,kind:ur,hasLeadingPunctuation:!0,hasTrailingPunctuation:!0}:{type:"word",value:s,kind:kl.test(s)?be:De,hasLeadingPunctuation:!1,hasTrailingPunctuation:!1})}}return r;function n(a){let u=M(!1,r,-1);(u==null?void 0:u.type)==="word"&&!i(Le,ur)&&![u.value,a.value].some(o=>/\u3000/u.test(o))&&r.push({type:"whitespace",value:""}),r.push(a);function i(o,s){return u.kind===o&&a.kind===s||u.kind===s&&a.kind===o}}}function Me(e,r){let t=r.originalText.slice(e.position.start.offset,e.position.end.offset),{numberText:n,leadingSpaces:a}=t.match(/^\s*(?<numberText>\d+)(\.|\))(?<leadingSpaces>\s*)/u).groups;return{number:Number(n),leadingSpaces:a}}function ii(e,r){return!e.ordered||e.children.length<2||Me(e.children[1],r).number!==1?!1:Me(e.children[0],r).number!==0?!0:e.children.length>2&&Me(e.children[2],r).number===1}function Ir(e,r){let{value:t}=e;return e.position.end.offset===r.length&&t.endsWith(`
-`)&&r.endsWith(`
-`)?t.slice(0,-1):t}function ye(e,r){return function t(n,a,u){let i={...r(n,a,u)};return i.children&&(i.children=i.children.map((o,s)=>t(o,s,[i,...u]))),i}(e,null,[])}function mt(e){if((e==null?void 0:e.type)!=="link"||e.children.length!==1)return!1;let[r]=e.children;return Oe(e)===Oe(r)&&Pe(e)===Pe(r)}function Bl(e,r){let{node:t}=e;if(t.type==="code"&&t.lang!==null){let n=ni(r,{language:t.lang});if(n)return async a=>{let u=r.__inJsTemplate?"~":"`",i=u.repeat(Math.max(3,Sr(t.value,u)+1)),o={parser:n};t.lang==="ts"||t.lang==="typescript"?o.filepath="dummy.ts":t.lang==="tsx"&&(o.filepath="dummy.tsx");let s=await a(Ir(t,r.originalText),o);return _e([i,t.lang,t.meta?" "+t.meta:"",L,Ce(s),L,i])}}switch(t.type){case"front-matter":return n=>ri(t,n);case"import":case"export":return n=>n(t.value,{parser:"babel"});case"jsx":return n=>n(`<$>${t.value}</$>`,{parser:"__js_expression",rootMarker:"mdx"})}return null}var ui=Bl;var ar=null;function or(e){if(ar!==null&&typeof ar.property){let r=ar;return ar=or.prototype=null,r}return ar=or.prototype=e??Object.create(null),new or}var ql=10;for(let e=0;e<=ql;e++)or();function Ft(e){return or(e)}function Tl(e,r="type"){Ft(e);function t(n){let a=n[r],u=e[a];if(!Array.isArray(u))throw Object.assign(new Error(`Missing visitor keys for '${a}'.`),{node:n});return u}return t}var ai=Tl;var _l={"front-matter":[],root:["children"],paragraph:["children"],sentence:["children"],word:[],whitespace:[],emphasis:["children"],strong:["children"],delete:["children"],inlineCode:[],wikiLink:[],link:["children"],image:[],blockquote:["children"],heading:["children"],code:[],html:[],list:["children"],thematicBreak:[],linkReference:["children"],imageReference:[],definition:[],footnote:["children"],footnoteReference:[],footnoteDefinition:["children"],table:["children"],tableCell:["children"],break:[],liquidNode:[],import:[],export:[],esComment:[],jsx:[],math:[],inlineMath:[],tableRow:["children"],listItem:["children"],text:[]},oi=_l;var Sl=ai(oi),si=Sl;function ci(e){switch(e){case"cr":return"\r";case"crlf":return`\r
-`;default:return`
-`}}var li=()=>/[#*0-9]\uFE0F?\u20E3|[\xA9\xAE\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA\u231A\u231B\u2328\u23CF\u23ED-\u23EF\u23F1\u23F2\u23F8-\u23FA\u24C2\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC\u25FE\u2600-\u2604\u260E\u2611\u2614\u2615\u2618\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642\u2648-\u2653\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E\u267F\u2692\u2694-\u2697\u2699\u269B\u269C\u26A0\u26A7\u26AA\u26B0\u26B1\u26BD\u26BE\u26C4\u26C8\u26CF\u26D1\u26E9\u26F0-\u26F5\u26F7\u26F8\u26FA\u2702\u2708\u2709\u270F\u2712\u2714\u2716\u271D\u2721\u2733\u2734\u2744\u2747\u2757\u2763\u27A1\u2934\u2935\u2B05-\u2B07\u2B1B\u2B1C\u2B55\u3030\u303D\u3297\u3299]\uFE0F?|[\u261D\u270C\u270D](?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?|[\u270A\u270B](?:\uD83C[\uDFFB-\uDFFF])?|[\u23E9-\u23EC\u23F0\u23F3\u25FD\u2693\u26A1\u26AB\u26C5\u26CE\u26D4\u26EA\u26FD\u2705\u2728\u274C\u274E\u2753-\u2755\u2795-\u2797\u27B0\u27BF\u2B50]|\u26D3\uFE0F?(?:\u200D\uD83D\uDCA5)?|\u26F9(?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|\u2764\uFE0F?(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79))?|\uD83C(?:[\uDC04\uDD70\uDD71\uDD7E\uDD7F\uDE02\uDE37\uDF21\uDF24-\uDF2C\uDF36\uDF7D\uDF96\uDF97\uDF99-\uDF9B\uDF9E\uDF9F\uDFCD\uDFCE\uDFD4-\uDFDF\uDFF5\uDFF7]\uFE0F?|[\uDF85\uDFC2\uDFC7](?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC4\uDFCA](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDFCB\uDFCC](?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDCCF\uDD8E\uDD91-\uDD9A\uDE01\uDE1A\uDE2F\uDE32-\uDE36\uDE38-\uDE3A\uDE50\uDE51\uDF00-\uDF20\uDF2D-\uDF35\uDF37-\uDF43\uDF45-\uDF4A\uDF4C-\uDF7C\uDF7E-\uDF84\uDF86-\uDF93\uDFA0-\uDFC1\uDFC5\uDFC6\uDFC8\uDFC9\uDFCF-\uDFD3\uDFE0-\uDFF0\uDFF8-\uDFFF]|\uDDE6\uD83C[\uDDE8-\uDDEC\uDDEE\uDDF1\uDDF2\uDDF4\uDDF6-\uDDFA\uDDFC\uDDFD\uDDFF]|\uDDE7\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEF\uDDF1-\uDDF4\uDDF6-\uDDF9\uDDFB\uDDFC\uDDFE\uDDFF]|\uDDE8\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDEE\uDDF0-\uDDF5\uDDF7\uDDFA-\uDDFF]|\uDDE9\uD83C[\uDDEA\uDDEC\uDDEF\uDDF0\uDDF2\uDDF4\uDDFF]|\uDDEA\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDED\uDDF7-\uDDFA]|\uDDEB\uD83C[\uDDEE-\uDDF0\uDDF2\uDDF4\uDDF7]|\uDDEC\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEE\uDDF1-\uDDF3\uDDF5-\uDDFA\uDDFC\uDDFE]|\uDDED\uD83C[\uDDF0\uDDF2\uDDF3\uDDF7\uDDF9\uDDFA]|\uDDEE\uD83C[\uDDE8-\uDDEA\uDDF1-\uDDF4\uDDF6-\uDDF9]|\uDDEF\uD83C[\uDDEA\uDDF2\uDDF4\uDDF5]|\uDDF0\uD83C[\uDDEA\uDDEC-\uDDEE\uDDF2\uDDF3\uDDF5\uDDF7\uDDFC\uDDFE\uDDFF]|\uDDF1\uD83C[\uDDE6-\uDDE8\uDDEE\uDDF0\uDDF7-\uDDFB\uDDFE]|\uDDF2\uD83C[\uDDE6\uDDE8-\uDDED\uDDF0-\uDDFF]|\uDDF3\uD83C[\uDDE6\uDDE8\uDDEA-\uDDEC\uDDEE\uDDF1\uDDF4\uDDF5\uDDF7\uDDFA\uDDFF]|\uDDF4\uD83C\uDDF2|\uDDF5\uD83C[\uDDE6\uDDEA-\uDDED\uDDF0-\uDDF3\uDDF7-\uDDF9\uDDFC\uDDFE]|\uDDF6\uD83C\uDDE6|\uDDF7\uD83C[\uDDEA\uDDF4\uDDF8\uDDFA\uDDFC]|\uDDF8\uD83C[\uDDE6-\uDDEA\uDDEC-\uDDF4\uDDF7-\uDDF9\uDDFB\uDDFD-\uDDFF]|\uDDF9\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDED\uDDEF-\uDDF4\uDDF7\uDDF9\uDDFB\uDDFC\uDDFF]|\uDDFA\uD83C[\uDDE6\uDDEC\uDDF2\uDDF3\uDDF8\uDDFE\uDDFF]|\uDDFB\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDEE\uDDF3\uDDFA]|\uDDFC\uD83C[\uDDEB\uDDF8]|\uDDFD\uD83C\uDDF0|\uDDFE\uD83C[\uDDEA\uDDF9]|\uDDFF\uD83C[\uDDE6\uDDF2\uDDFC]|\uDF44(?:\u200D\uD83D\uDFEB)?|\uDF4B(?:\u200D\uD83D\uDFE9)?|\uDFC3(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDFF3\uFE0F?(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08))?|\uDFF4(?:\u200D\u2620\uFE0F?|\uDB40\uDC67\uDB40\uDC62\uDB40(?:\uDC65\uDB40\uDC6E\uDB40\uDC67|\uDC73\uDB40\uDC63\uDB40\uDC74|\uDC77\uDB40\uDC6C\uDB40\uDC73)\uDB40\uDC7F)?)|\uD83D(?:[\uDC3F\uDCFD\uDD49\uDD4A\uDD6F\uDD70\uDD73\uDD76-\uDD79\uDD87\uDD8A-\uDD8D\uDDA5\uDDA8\uDDB1\uDDB2\uDDBC\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA\uDECB\uDECD-\uDECF\uDEE0-\uDEE5\uDEE9\uDEF0\uDEF3]\uFE0F?|[\uDC42\uDC43\uDC46-\uDC50\uDC66\uDC67\uDC6B-\uDC6D\uDC72\uDC74-\uDC76\uDC78\uDC7C\uDC83\uDC85\uDC8F\uDC91\uDCAA\uDD7A\uDD95\uDD96\uDE4C\uDE4F\uDEC0\uDECC](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC6E\uDC70\uDC71\uDC73\uDC77\uDC81\uDC82\uDC86\uDC87\uDE45-\uDE47\uDE4B\uDE4D\uDE4E\uDEA3\uDEB4\uDEB5](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD74\uDD90](?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?|[\uDC00-\uDC07\uDC09-\uDC14\uDC16-\uDC25\uDC27-\uDC3A\uDC3C-\uDC3E\uDC40\uDC44\uDC45\uDC51-\uDC65\uDC6A\uDC79-\uDC7B\uDC7D-\uDC80\uDC84\uDC88-\uDC8E\uDC90\uDC92-\uDCA9\uDCAB-\uDCFC\uDCFF-\uDD3D\uDD4B-\uDD4E\uDD50-\uDD67\uDDA4\uDDFB-\uDE2D\uDE2F-\uDE34\uDE37-\uDE41\uDE43\uDE44\uDE48-\uDE4A\uDE80-\uDEA2\uDEA4-\uDEB3\uDEB7-\uDEBF\uDEC1-\uDEC5\uDED0-\uDED2\uDED5-\uDED7\uDEDC-\uDEDF\uDEEB\uDEEC\uDEF4-\uDEFC\uDFE0-\uDFEB\uDFF0]|\uDC08(?:\u200D\u2B1B)?|\uDC15(?:\u200D\uD83E\uDDBA)?|\uDC26(?:\u200D(?:\u2B1B|\uD83D\uDD25))?|\uDC3B(?:\u200D\u2744\uFE0F?)?|\uDC41\uFE0F?(?:\u200D\uD83D\uDDE8\uFE0F?)?|\uDC68(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDC68\uDC69]\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE])))?))?|\uDC69(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?[\uDC68\uDC69]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|\uDC69\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?))|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFE])))?))?|\uDC6F(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDD75(?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDE2E(?:\u200D\uD83D\uDCA8)?|\uDE35(?:\u200D\uD83D\uDCAB)?|\uDE36(?:\u200D\uD83C\uDF2B\uFE0F?)?|\uDE42(?:\u200D[\u2194\u2195]\uFE0F?)?|\uDEB6(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?)|\uD83E(?:[\uDD0C\uDD0F\uDD18-\uDD1F\uDD30-\uDD34\uDD36\uDD77\uDDB5\uDDB6\uDDBB\uDDD2\uDDD3\uDDD5\uDEC3-\uDEC5\uDEF0\uDEF2-\uDEF8](?:\uD83C[\uDFFB-\uDFFF])?|[\uDD26\uDD35\uDD37-\uDD39\uDD3D\uDD3E\uDDB8\uDDB9\uDDCD\uDDCF\uDDD4\uDDD6-\uDDDD](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDDDE\uDDDF](?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD0D\uDD0E\uDD10-\uDD17\uDD20-\uDD25\uDD27-\uDD2F\uDD3A\uDD3F-\uDD45\uDD47-\uDD76\uDD78-\uDDB4\uDDB7\uDDBA\uDDBC-\uDDCC\uDDD0\uDDE0-\uDDFF\uDE70-\uDE7C\uDE80-\uDE88\uDE90-\uDEBD\uDEBF-\uDEC2\uDECE-\uDEDB\uDEE0-\uDEE8]|\uDD3C(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF])?|\uDDCE(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDDD1(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1|\uDDD1\u200D\uD83E\uDDD2(?:\u200D\uD83E\uDDD2)?|\uDDD2(?:\u200D\uD83E\uDDD2)?))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?))?|\uDEF1(?:\uD83C(?:\uDFFB(?:\u200D\uD83E\uDEF2\uD83C[\uDFFC-\uDFFF])?|\uDFFC(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFD-\uDFFF])?|\uDFFD(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])?|\uDFFE(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFD\uDFFF])?|\uDFFF(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFE])?))?)/g;function fi(e){return e===12288||e>=65281&&e<=65376||e>=65504&&e<=65510}function Di(e){return e>=4352&&e<=4447||e===8986||e===8987||e===9001||e===9002||e>=9193&&e<=9196||e===9200||e===9203||e===9725||e===9726||e===9748||e===9749||e>=9800&&e<=9811||e===9855||e===9875||e===9889||e===9898||e===9899||e===9917||e===9918||e===9924||e===9925||e===9934||e===9940||e===9962||e===9970||e===9971||e===9973||e===9978||e===9981||e===9989||e===9994||e===9995||e===10024||e===10060||e===10062||e>=10067&&e<=10069||e===10071||e>=10133&&e<=10135||e===10160||e===10175||e===11035||e===11036||e===11088||e===11093||e>=11904&&e<=11929||e>=11931&&e<=12019||e>=12032&&e<=12245||e>=12272&&e<=12287||e>=12289&&e<=12350||e>=12353&&e<=12438||e>=12441&&e<=12543||e>=12549&&e<=12591||e>=12593&&e<=12686||e>=12688&&e<=12771||e>=12783&&e<=12830||e>=12832&&e<=12871||e>=12880&&e<=19903||e>=19968&&e<=42124||e>=42128&&e<=42182||e>=43360&&e<=43388||e>=44032&&e<=55203||e>=63744&&e<=64255||e>=65040&&e<=65049||e>=65072&&e<=65106||e>=65108&&e<=65126||e>=65128&&e<=65131||e>=94176&&e<=94180||e===94192||e===94193||e>=94208&&e<=100343||e>=100352&&e<=101589||e>=101632&&e<=101640||e>=110576&&e<=110579||e>=110581&&e<=110587||e===110589||e===110590||e>=110592&&e<=110882||e===110898||e>=110928&&e<=110930||e===110933||e>=110948&&e<=110951||e>=110960&&e<=111355||e===126980||e===127183||e===127374||e>=127377&&e<=127386||e>=127488&&e<=127490||e>=127504&&e<=127547||e>=127552&&e<=127560||e===127568||e===127569||e>=127584&&e<=127589||e>=127744&&e<=127776||e>=127789&&e<=127797||e>=127799&&e<=127868||e>=127870&&e<=127891||e>=127904&&e<=127946||e>=127951&&e<=127955||e>=127968&&e<=127984||e===127988||e>=127992&&e<=128062||e===128064||e>=128066&&e<=128252||e>=128255&&e<=128317||e>=128331&&e<=128334||e>=128336&&e<=128359||e===128378||e===128405||e===128406||e===128420||e>=128507&&e<=128591||e>=128640&&e<=128709||e===128716||e>=128720&&e<=128722||e>=128725&&e<=128727||e>=128732&&e<=128735||e===128747||e===128748||e>=128756&&e<=128764||e>=128992&&e<=129003||e===129008||e>=129292&&e<=129338||e>=129340&&e<=129349||e>=129351&&e<=129535||e>=129648&&e<=129660||e>=129664&&e<=129672||e>=129680&&e<=129725||e>=129727&&e<=129733||e>=129742&&e<=129755||e>=129760&&e<=129768||e>=129776&&e<=129784||e>=131072&&e<=196605||e>=196608&&e<=262141}var pi=e=>!(fi(e)||Di(e));var Ol=/[^\x20-\x7F]/u;function Pl(e){if(!e)return 0;if(!Ol.test(e))return e.length;e=e.replace(li(),"  ");let r=0;for(let t of e){let n=t.codePointAt(0);n<=31||n>=127&&n<=159||n>=768&&n<=879||(r+=pi(n)?1:2)}return r}var sr=Pl;var G=Symbol("MODE_BREAK"),ne=Symbol("MODE_FLAT"),cr=Symbol("cursor");function di(){return{value:"",length:0,queue:[]}}function Ll(e,r){return gt(e,{type:"indent"},r)}function Il(e,r,t){return r===Number.NEGATIVE_INFINITY?e.root||di():r<0?gt(e,{type:"dedent"},t):r?r.type==="root"?{...e,root:e}:gt(e,{type:typeof r=="string"?"stringAlign":"numberAlign",n:r},t):e}function gt(e,r,t){let n=r.type==="dedent"?e.queue.slice(0,-1):[...e.queue,r],a="",u=0,i=0,o=0;for(let p of n)switch(p.type){case"indent":c(),t.useTabs?s(1):l(t.tabWidth);break;case"stringAlign":c(),a+=p.n,u+=p.n.length;break;case"numberAlign":i+=1,o+=p.n;break;default:throw new Error(`Unexpected type '${p.type}'`)}return D(),{...e,value:a,length:u,queue:n};function s(p){a+="	".repeat(p),u+=t.tabWidth*p}function l(p){a+=" ".repeat(p),u+=p}function c(){t.useTabs?f():D()}function f(){i>0&&s(i),h()}function D(){o>0&&l(o),h()}function h(){i=0,o=0}}function vt(e){let r=0,t=0,n=e.length;e:for(;n--;){let a=e[n];if(a===cr){t++;continue}for(let u=a.length-1;u>=0;u--){let i=a[u];if(i===" "||i==="	")r++;else{e[n]=a.slice(0,u+1);break e}}}if(r>0||t>0)for(e.length=n+1;t-- >0;)e.push(cr);return r}function Nr(e,r,t,n,a,u){if(t===Number.POSITIVE_INFINITY)return!0;let i=r.length,o=[e],s=[];for(;t>=0;){if(o.length===0){if(i===0)return!0;o.push(r[--i]);continue}let{mode:l,doc:c}=o.pop(),f=Y(c);switch(f){case $:s.push(c),t-=sr(c);break;case H:case J:{let D=f===H?c:c.parts;for(let h=D.length-1;h>=0;h--)o.push({mode:l,doc:D[h]});break}case ee:case re:case se:case fe:o.push({mode:l,doc:c.contents});break;case oe:t+=vt(s);break;case K:{if(u&&c.break)return!1;let D=c.break?G:l,h=c.expandedStates&&D===G?M(!1,c.expandedStates,-1):c.contents;o.push({mode:D,doc:h});break}case X:{let h=(c.groupId?a[c.groupId]||ne:l)===G?c.breakContents:c.flatContents;h&&o.push({mode:l,doc:h});break}case W:if(l===G||c.hard)return!0;c.soft||(s.push(" "),t--);break;case ce:n=!0;break;case le:if(n)return!1;break}}return!1}function hi(e,r){let t={},n=r.printWidth,a=ci(r.endOfLine),u=0,i=[{ind:di(),mode:G,doc:e}],o=[],s=!1,l=[],c=0;for(Yn(e);i.length>0;){let{ind:D,mode:h,doc:p}=i.pop();switch(Y(p)){case $:{let d=a!==`
-`?N(!1,p,`
-`,a):p;o.push(d),i.length>0&&(u+=sr(d));break}case H:for(let d=p.length-1;d>=0;d--)i.push({ind:D,mode:h,doc:p[d]});break;case ge:if(c>=2)throw new Error("There are too many 'cursor' in doc.");o.push(cr),c++;break;case ee:i.push({ind:Ll(D,r),mode:h,doc:p.contents});break;case re:i.push({ind:Il(D,p.n,r),mode:h,doc:p.contents});break;case oe:u-=vt(o);break;case K:switch(h){case ne:if(!s){i.push({ind:D,mode:p.break?G:ne,doc:p.contents});break}case G:{s=!1;let d={ind:D,mode:ne,doc:p.contents},m=n-u,F=l.length>0;if(!p.break&&Nr(d,i,m,F,t))i.push(d);else if(p.expandedStates){let y=M(!1,p.expandedStates,-1);if(p.break){i.push({ind:D,mode:G,doc:y});break}else for(let E=1;E<p.expandedStates.length+1;E++)if(E>=p.expandedStates.length){i.push({ind:D,mode:G,doc:y});break}else{let B=p.expandedStates[E],b={ind:D,mode:ne,doc:B};if(Nr(b,i,m,F,t)){i.push(b);break}}}else i.push({ind:D,mode:G,doc:p.contents});break}}p.id&&(t[p.id]=M(!1,i,-1).mode);break;case J:{let d=n-u,{parts:m}=p;if(m.length===0)break;let[F,y]=m,E={ind:D,mode:ne,doc:F},B={ind:D,mode:G,doc:F},b=Nr(E,[],d,l.length>0,t,!0);if(m.length===1){b?i.push(E):i.push(B);break}let g={ind:D,mode:ne,doc:y},A={ind:D,mode:G,doc:y};if(m.length===2){b?i.push(g,E):i.push(A,B);break}m.splice(0,2);let x={ind:D,mode:h,doc:Ee(m)},v=m[0];Nr({ind:D,mode:ne,doc:[F,y,v]},[],d,l.length>0,t,!0)?i.push(x,g,E):b?i.push(x,A,E):i.push(x,A,B);break}case X:case se:{let d=p.groupId?t[p.groupId]:h;if(d===G){let m=p.type===X?p.breakContents:p.negate?p.contents:Ze(p.contents);m&&i.push({ind:D,mode:h,doc:m})}if(d===ne){let m=p.type===X?p.flatContents:p.negate?Ze(p.contents):p.contents;m&&i.push({ind:D,mode:h,doc:m})}break}case ce:l.push({ind:D,mode:h,doc:p.contents});break;case le:l.length>0&&i.push({ind:D,mode:h,doc:rr});break;case W:switch(h){case ne:if(p.hard)s=!0;else{p.soft||(o.push(" "),u+=1);break}case G:if(l.length>0){i.push({ind:D,mode:h,doc:p},...l.reverse()),l.length=0;break}p.literal?D.root?(o.push(a,D.root.value),u=D.root.length):(o.push(a),u=0):(u-=vt(o),o.push(a+D.value),u=D.length);break}break;case fe:i.push({ind:D,mode:h,doc:p.contents});break;case te:break;default:throw new qe(p)}i.length===0&&l.length>0&&(i.push(...l.reverse()),l.length=0)}let f=o.indexOf(cr);if(f!==-1){let D=o.indexOf(cr,f+1),h=o.slice(0,f).join(""),p=o.slice(f+1,D).join(""),d=o.slice(D+1).join("");return{formatted:h+p+d,cursorNodeStart:h.length,cursorNodeText:p}}return{formatted:o.join("")}}function mi(e,r,t){let{node:n}=e,a=[],u=e.map(()=>e.map(({index:f})=>{let D=hi(t(),r).formatted,h=sr(D);return a[f]=Math.max(a[f]??3,h),{text:D,width:h}},"children"),"children"),i=s(!1);if(r.proseWrap!=="never")return[er,i];let o=s(!0);return[er,ze(zn(o,i))];function s(f){return _r(rr,[c(u[0],f),l(f),...u.slice(1).map(D=>c(D,f))].map(D=>`| ${D.join(" | ")} |`))}function l(f){return a.map((D,h)=>{let p=n.align[h],d=p==="center"||p==="left"?":":"-",m=p==="center"||p==="right"?":":"-",F=f?"-":"-".repeat(D-2);return`${d}${F}${m}`})}function c(f,D){return f.map(({text:h,width:p},d)=>{if(D)return h;let m=a[d]-p,F=n.align[d],y=0;F==="right"?y=m:F==="center"&&(y=Math.floor(m/2));let E=m-y;return`${" ".repeat(y)}${h}${" ".repeat(E)}`})}}function Fi(e,r,t){let n=e.map(t,"children");return Nl(n)}function Nl(e){let r=[""];return function t(n){for(let a of n){let u=Y(a);if(u===H){t(a);continue}let i=a,o=[];u===J&&([i,...o]=a.parts),r.push([r.pop(),i],...o)}}(e),Ee(r)}var Rl=/^.$/su;function Ul(e,r){return e=zl(e,r),e=Yl(e),e=Vl(e,r),e=jl(e,r),e=Gl(e),e}function zl(e,r){return ye(e,t=>t.type!=="text"||t.value==="*"||t.value==="_"||!Rl.test(t.value)||t.position.end.offset-t.position.start.offset===t.value.length?t:{...t,value:r.originalText.slice(t.position.start.offset,t.position.end.offset)})}function Ml(e,r,t){return ye(e,n=>{if(!n.children)return n;let a=n.children.reduce((u,i)=>{let o=M(!1,u,-1);return o&&r(o,i)?u.splice(-1,1,t(o,i)):u.push(i),u},[]);return{...n,children:a}})}function Yl(e){return Ml(e,(r,t)=>r.type==="text"&&t.type==="text",(r,t)=>({type:"text",value:r.value+t.value,position:{start:r.position.start,end:t.position.end}}))}function Gl(e){return ye(e,(r,t,[n])=>{if(r.type!=="text")return r;let{value:a}=r;return n.type==="paragraph"&&(t===0&&(a=a.trimStart()),t===n.children.length-1&&(a=a.trimEnd())),{type:"sentence",position:r.position,children:Lr(a)}})}function Vl(e,r){return ye(e,(t,n,a)=>{if(t.type==="code"){let u=/^\n?(?: {4,}|\t)/u.test(r.originalText.slice(t.position.start.offset,t.position.end.offset));if(t.isIndented=u,u)for(let i=0;i<a.length;i++){let o=a[i];if(o.hasIndentedCodeblock)break;o.type==="list"&&(o.hasIndentedCodeblock=!0)}}return t})}function jl(e,r){return ye(e,(a,u,i)=>{if(a.type==="list"&&a.children.length>0){for(let o=0;o<i.length;o++){let s=i[o];if(s.type==="list"&&!s.isAligned)return a.isAligned=!1,a}a.isAligned=n(a)}return a});function t(a){return a.children.length===0?-1:a.children[0].position.start.column-1}function n(a){if(!a.ordered)return!0;let[u,i]=a.children;if(Me(u,r).leadingSpaces.length>1)return!0;let s=t(u);if(s===-1)return!1;if(a.children.length===1)return s%r.tabWidth===0;let l=t(i);return s!==l?!1:s%r.tabWidth===0?!0:Me(i,r).leadingSpaces.length>1}}var gi=Ul;function vi(e,r){let t=[""];return e.each(()=>{let{node:n}=e,a=r();switch(n.type){case"whitespace":if(Y(a)!==$){t.push(a,"");break}default:t.push([t.pop(),a])}},"children"),Ee(t)}var $l=new Set(["heading","tableCell","link","wikiLink"]),Hl=new Set(`$(\xA3\xA5\xB7'"\u3008\u300A\u300C\u300E\u3010\u3014\u3016\u301D\uFE59\uFE5B\uFF04\uFF08\uFF3B\uFF5B\uFFE1\uFFE5[{\u2035\uFE34\uFE35\uFE37\uFE39\uFE3B\uFE3D\uFE3F\uFE41\uFE43\uFE4F\u3018\uFF5F\xAB`),Wl=new Set(`!%),.:;?]}\xA2\xB0\xB7'"\u2020\u2021\u203A\u2103\u2236\u3001\u3002\u3003\u3006\u3015\u3017\u301E\uFE5A\uFE5C\uFF01\uFF02\uFF05\uFF07\uFF09\uFF0C\uFF0E\uFF1A\uFF1B\uFF1F\uFF3D\uFF5D\uFF5E\u2013\u2014\u2022\u3009\u300B\u300D\uFE30\uFE31\uFE32\uFE33\uFE50\uFE51\uFE52\uFE53\uFE54\uFE55\uFE56\uFE58\uFE36\uFE38\uFE3A\uFE3C\uFE3E\uFE40\uFE42\uFE57\uFF5C\uFF64\u300F\u3011\u3019\u301F\uFF60\xBB\u30FD\u30FE\u30FC\u30A1\u30A3\u30A5\u30A7\u30A9\u30C3\u30E3\u30E5\u30E7\u30EE\u30F5\u30F6\u3041\u3043\u3045\u3047\u3049\u3063\u3083\u3085\u3087\u308E\u3095\u3096\u31F0\u31F1\u31F2\u31F3\u31F4\u31F5\u31F6\u31F7\u31F8\u31F9\u31FA\u31FB\u31FC\u31FD\u31FE\u31FF\u3005\u303B\u2010\u30A0\u301C\uFF5E\u203C\u2047\u2048\u2049\u30FB\u3099\u309A`),Ei=new Set("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~");function Kl({parent:e}){if(e.usesCJSpaces===void 0){let r={" ":0,"":0},{children:t}=e;for(let n=1;n<t.length-1;++n){let a=t[n];if(a.type==="whitespace"&&(a.value===" "||a.value==="")){let u=t[n-1].kind,i=t[n+1].kind;(u===De&&i===Le||u===Le&&i===De)&&++r[a.value]}}e.usesCJSpaces=r[" "]>r[""]}return e.usesCJSpaces}function Jl(e,r){if(r)return!0;let{previous:t,next:n}=e;if(!t||!n)return!0;let a=t.kind,u=n.kind;return bi(a)&&bi(u)||a===be&&u===De||u===be&&a===De?!0:a===ur||u===ur||a===De&&u===De?!1:Ei.has(n.value[0])||Ei.has(M(!1,t.value,-1))?!0:t.hasTrailingPunctuation||n.hasLeadingPunctuation?!1:Kl(e)}function Ci(e){return e===Le||e===De||e===be}function bi(e){return e===Le||e===be}function Xl(e,r,t,n,a){if(t!=="always"||e.hasAncestor(s=>$l.has(s.type)))return!1;if(n)return r!=="";if(r===" ")return!0;let{previous:u,next:i}=e;return!(r===""&&((u==null?void 0:u.kind)===be&&Ci(i==null?void 0:i.kind)||(i==null?void 0:i.kind)===be&&Ci(u==null?void 0:u.kind))||!a&&(i&&Wl.has(i.value[0])||u&&Hl.has(M(!1,u.value,-1))))}function Et(e,r,t,n){if(t==="preserve"&&r===`
-`)return L;let a=r===" "||r===`
-`&&Jl(e,n);return Xl(e,r,t,n,a)?a?qr:Tr:a?" ":""}var Ql=new Set(["listItem","definition"]);function Zl(e,r,t){var a,u;let{node:n}=e;if(af(e)){let i=[""],o=Lr(r.originalText.slice(n.position.start.offset,n.position.end.offset));for(let s of o){if(s.type==="word"){i.push([i.pop(),s.value]);continue}let l=Et(e,s.value,r.proseWrap,!0);if(Y(l)===$){i.push([i.pop(),l]);continue}i.push(l)}return Ee(i)}switch(n.type){case"front-matter":return r.originalText.slice(n.position.start.offset,n.position.end.offset);case"root":return n.children.length===0?"":[tf(e,r,t),L];case"paragraph":return Fi(e,r,t);case"sentence":return vi(e,t);case"word":{let i=N(!1,N(!1,n.value,"*",String.raw`\*`),new RegExp([`(^|${Se.source})(_+)`,`(_+)(${Se.source}|$)`].join("|"),"gu"),(l,c,f,D,h)=>N(!1,f?`${c}${f}`:`${D}${h}`,"_",String.raw`\_`)),o=(l,c,f)=>l.type==="sentence"&&f===0,s=(l,c,f)=>mt(l.children[f-1]);return i!==n.value&&(e.match(void 0,o,s)||e.match(void 0,o,(l,c,f)=>l.type==="emphasis"&&f===0,s))&&(i=i.replace(/^(\\?[*_])+/u,l=>N(!1,l,"\\",""))),i}case"whitespace":{let{next:i}=e,o=i&&/^>|^(?:[*+-]|#{1,6}|\d+[).])$/u.test(i.value)?"never":r.proseWrap;return Et(e,n.value,o)}case"emphasis":{let i;if(mt(n.children[0]))i=r.originalText[n.position.start.offset];else{let{previous:o,next:s}=e;i=(o==null?void 0:o.type)==="sentence"&&((a=M(!1,o.children,-1))==null?void 0:a.type)==="word"&&!M(!1,o.children,-1).hasTrailingPunctuation||(s==null?void 0:s.type)==="sentence"&&((u=s.children[0])==null?void 0:u.type)==="word"&&!s.children[0].hasLeadingPunctuation||e.hasAncestor(c=>c.type==="emphasis")?"*":"_"}return[i,V(e,r,t),i]}case"strong":return["**",V(e,r,t),"**"];case"delete":return["~~",V(e,r,t),"~~"];case"inlineCode":{let i=r.proseWrap==="preserve"?n.value:N(!1,n.value,`
-`," "),o=Gn(i,"`"),s="`".repeat(o||1),l=i.startsWith("`")||i.endsWith("`")||/^[\n ]/u.test(i)&&/[\n ]$/u.test(i)&&/[^\n ]/u.test(i)?" ":"";return[s,l,i,l,s]}case"wikiLink":{let i="";return r.proseWrap==="preserve"?i=n.value:i=N(!1,n.value,/[\t\n]+/gu," "),["[[",i,"]]"]}case"link":switch(r.originalText[n.position.start.offset]){case"<":{let i="mailto:";return["<",n.url.startsWith(i)&&r.originalText.slice(n.position.start.offset+1,n.position.start.offset+1+i.length)!==i?n.url.slice(i.length):n.url,">"]}case"[":return["[",V(e,r,t),"](",Ct(n.url,")"),Rr(n.title,r),")"];default:return r.originalText.slice(n.position.start.offset,n.position.end.offset)}case"image":return["![",n.alt||"","](",Ct(n.url,")"),Rr(n.title,r),")"];case"blockquote":return["> ",ve("> ",V(e,r,t))];case"heading":return["#".repeat(n.depth)+" ",V(e,r,t)];case"code":{if(n.isIndented){let s=" ".repeat(4);return ve(s,[s,Ce(n.value,L)])}let i=r.__inJsTemplate?"~":"`",o=i.repeat(Math.max(3,Sr(n.value,i)+1));return[o,n.lang||"",n.meta?" "+n.meta:"",L,Ce(Ir(n,r.originalText),L),L,o]}case"html":{let{parent:i,isLast:o}=e,s=i.type==="root"&&o?n.value.trimEnd():n.value,l=/^<!--.*-->$/su.test(s);return Ce(s,l?L:_e(tr))}case"list":{let i=Ai(n,e.parent),o=ii(n,r);return V(e,r,t,{processor(s){let l=f(),c=s.node;if(c.children.length===2&&c.children[1].type==="html"&&c.children[0].position.start.column!==c.children[1].position.start.column)return[l,yi(s,r,t,l)];return[l,ve(" ".repeat(l.length),yi(s,r,t,l))];function f(){let D=n.ordered?(s.isFirst?n.start:o?1:n.start+s.index)+(i%2===0?". ":") "):i%2===0?"- ":"* ";return n.isAligned||n.hasIndentedCodeblock?ef(D,r):D}}})}case"thematicBreak":{let{ancestors:i}=e,o=i.findIndex(l=>l.type==="list");return o===-1?"---":Ai(i[o],i[o+1])%2===0?"***":"---"}case"linkReference":return["[",V(e,r,t),"]",n.referenceType==="full"?bt(n):n.referenceType==="collapsed"?"[]":""];case"imageReference":switch(n.referenceType){case"full":return["![",n.alt||"","]",bt(n)];default:return["![",n.alt,"]",n.referenceType==="collapsed"?"[]":""]}case"definition":{let i=r.proseWrap==="always"?qr:" ";return ze([bt(n),":",Ze([i,Ct(n.url),n.title===null?"":[i,Rr(n.title,r,!1)]])])}case"footnote":return["[^",V(e,r,t),"]"];case"footnoteReference":return Bi(n);case"footnoteDefinition":{let i=n.children.length===1&&n.children[0].type==="paragraph"&&(r.proseWrap==="never"||r.proseWrap==="preserve"&&n.children[0].position.start.line===n.children[0].position.end.line);return[Bi(n),": ",i?V(e,r,t):ze([ve(" ".repeat(4),V(e,r,t,{processor:({isFirst:o})=>o?ze([Tr,t()]):t()}))])]}case"table":return mi(e,r,t);case"tableCell":return V(e,r,t);case"break":return/\s/u.test(r.originalText[n.position.start.offset])?["  ",_e(tr)]:["\\",L];case"liquidNode":return Ce(n.value,L);case"import":case"export":case"jsx":return n.value;case"esComment":return["{/* ",n.value," */}"];case"math":return["$$",L,n.value?[Ce(n.value,L),L]:"","$$"];case"inlineMath":return r.originalText.slice(Oe(n),Pe(n));case"tableRow":case"listItem":case"text":default:throw new $n(n,"Markdown")}}function yi(e,r,t,n){let{node:a}=e,u=a.checked===null?"":a.checked?"[x] ":"[ ] ";return[u,V(e,r,t,{processor({node:i,isFirst:o}){if(o&&i.type!=="list")return ve(" ".repeat(u.length),t());let s=" ".repeat(sf(r.tabWidth-n.length,0,3));return[s,ve(s,t())]}})]}function ef(e,r){let t=n();return e+" ".repeat(t>=4?0:t);function n(){let a=e.length%r.tabWidth;return a===0?0:r.tabWidth-a}}function Ai(e,r){return rf(e,r,t=>t.ordered===e.ordered)}function rf(e,r,t){let n=-1;for(let a of r.children)if(a.type===e.type&&t(a)?n++:n=-1,a===e)return n}function tf(e,r,t){let n=[],a=null,{children:u}=e.node;for(let[i,o]of u.entries())switch(yt(o)){case"start":a===null&&(a={index:i,offset:o.position.end.offset});break;case"end":a!==null&&(n.push({start:a,end:{index:i,offset:o.position.start.offset}}),a=null);break;default:break}return V(e,r,t,{processor({index:i}){if(n.length>0){let o=n[0];if(i===o.start.index)return[xi(u[o.start.index]),r.originalText.slice(o.start.offset,o.end.offset),xi(u[o.end.index])];if(o.start.index<i&&i<o.end.index)return!1;if(i===o.end.index)return n.shift(),!1}return t()}})}function V(e,r,t,n={}){let{processor:a=t}=n,u=[];return e.each(()=>{let i=a(e);i!==!1&&(u.length>0&&nf(e)&&(u.push(L),(uf(e,r)||ki(e))&&u.push(L),ki(e)&&u.push(L)),u.push(i))},"children"),u}function xi(e){if(e.type==="html")return e.value;if(e.type==="paragraph"&&Array.isArray(e.children)&&e.children.length===1&&e.children[0].type==="esComment")return["{/* ",e.children[0].value," */}"]}function yt(e){let r;if(e.type==="html")r=e.value.match(/^<!--\s*prettier-ignore(?:-(start|end))?\s*-->$/u);else{let t;e.type==="esComment"?t=e:e.type==="paragraph"&&e.children.length===1&&e.children[0].type==="esComment"&&(t=e.children[0]),t&&(r=t.value.match(/^prettier-ignore(?:-(start|end))?$/u))}return r?r[1]||"next":!1}function nf({node:e,parent:r}){let t=ht.has(e.type),n=e.type==="html"&&Pr.has(r.type);return!t&&!n}function wi(e,r){return e.type==="listItem"&&(e.spread||r.originalText.charAt(e.position.end.offset-1)===`
-`)}function uf({node:e,previous:r,parent:t},n){if(wi(r,n))return!0;let i=r.type===e.type&&Ql.has(e.type),o=t.type==="listItem"&&!wi(t,n),s=yt(r)==="next",l=e.type==="html"&&r.type==="html"&&r.position.end.line+1===e.position.start.line,c=e.type==="html"&&t.type==="listItem"&&r.type==="paragraph"&&r.position.end.line+1===e.position.start.line;return!(i||o||s||l||c)}function ki({node:e,previous:r}){let t=r.type==="list",n=e.type==="code"&&e.isIndented;return t&&n}function af(e){let r=e.findAncestor(t=>t.type==="linkReference"||t.type==="imageReference");return r&&(r.type!=="linkReference"||r.referenceType!=="full")}var of=(e,r)=>{for(let t of r)e=N(!1,e,t,encodeURIComponent(t));return e};function Ct(e,r=[]){let t=[" ",...Array.isArray(r)?r:[r]];return new RegExp(t.map(n=>Be(n)).join("|"),"u").test(e)?`<${of(e,"<>")}>`:e}function Rr(e,r,t=!0){if(!e)return"";if(t)return" "+Rr(e,r,!1);if(e=N(!1,e,/\\(?=["')])/gu,""),e.includes('"')&&e.includes("'")&&!e.includes(")"))return`(${e})`;let n=jn(e,r.singleQuote);return e=N(!1,e,"\\","\\\\"),e=N(!1,e,n,`\\${n}`),`${n}${e}${n}`}function sf(e,r,t){return e<r?r:e>t?t:e}function cf(e){return e.index>0&&yt(e.previous)==="next"}function bt(e){return`[${(0,qi.default)(e.label)}]`}function Bi(e){return`[^${e.label}]`}var lf={preprocess:gi,print:Zl,embed:ui,massageAstNode:Zn,hasPrettierIgnore:cf,insertPragma:Jn,getVisitorKeys:si},Ti=lf;var _i=[{linguistLanguageId:222,name:"Markdown",type:"prose",color:"#083fa1",aliases:["md","pandoc"],aceMode:"markdown",codemirrorMode:"gfm",codemirrorMimeType:"text/x-gfm",wrap:!0,extensions:[".md",".livemd",".markdown",".mdown",".mdwn",".mkd",".mkdn",".mkdown",".ronn",".scd",".workbook"],filenames:["contents.lr","README"],tmScope:"text.md",parsers:["markdown"],vscodeLanguageIds:["markdown"]},{linguistLanguageId:222,name:"MDX",type:"prose",color:"#083fa1",aliases:["md","pandoc"],aceMode:"markdown",codemirrorMode:"gfm",codemirrorMimeType:"text/x-gfm",wrap:!0,extensions:[".mdx"],filenames:[],tmScope:"text.md",parsers:["mdx"],vscodeLanguageIds:["mdx"]}];var At={bracketSpacing:{category:"Common",type:"boolean",default:!0,description:"Print spaces between brackets.",oppositeDescription:"Do not print spaces between brackets."},singleQuote:{category:"Common",type:"boolean",default:!1,description:"Use single quotes instead of double quotes."},proseWrap:{category:"Common",type:"choice",default:"preserve",description:"How to wrap prose.",choices:[{value:"always",description:"Wrap prose if it exceeds the print width."},{value:"never",description:"Do not wrap prose."},{value:"preserve",description:"Wrap prose as-is."}]},bracketSameLine:{category:"Common",type:"boolean",default:!1,description:"Put > of opening tags on the last line instead of on a new line."},singleAttributePerLine:{category:"Common",type:"boolean",default:!1,description:"Enforce single attribute per line in HTML, Vue and JSX."}};var ff={proseWrap:At.proseWrap,singleQuote:At.singleQuote},Si=ff;var On={};Pn(On,{markdown:()=>km,mdx:()=>Bm,remark:()=>km});var Wc=Ue(Pi(),1),Kc=Ue(Wi(),1),Jc=Ue(Gs(),1),Xc=Ue(Ic(),1);var vm=/^import\s/u,Em=/^export\s/u,Nc=String.raw`[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)*|`,Rc=/<!---->|<!---?[^>-](?:-?[^-])*-->/u,Cm=/^\{\s*\/\*(.*)\*\/\s*\}/u,bm=`
-
-`,Uc=e=>vm.test(e),Sn=e=>Em.test(e),zc=(e,r)=>{let t=r.indexOf(bm),n=r.slice(0,t);if(Sn(n)||Uc(n))return e(n)({type:Sn(n)?"export":"import",value:n})},Mc=(e,r)=>{let t=Cm.exec(r);if(t)return e(t[0])({type:"esComment",value:t[1].trim()})};zc.locator=e=>Sn(e)||Uc(e)?-1:1;Mc.locator=(e,r)=>e.indexOf("{",r);var Yc=function(){let{Parser:e}=this,{blockTokenizers:r,blockMethods:t,inlineTokenizers:n,inlineMethods:a}=e.prototype;r.esSyntax=zc,n.esComment=Mc,t.splice(t.indexOf("paragraph"),0,"esSyntax"),a.splice(a.indexOf("text"),0,"esComment")};var ym=function(){let e=this.Parser.prototype;e.blockMethods=["frontMatter",...e.blockMethods],e.blockTokenizers.frontMatter=r;function r(t,n){let a=ir(n);if(a.frontMatter)return t(a.frontMatter.raw)(a.frontMatter)}r.onlyAtStart=!0},Gc=ym;function Am(){return e=>ye(e,(r,t,[n])=>r.type!=="html"||Rc.test(r.value)||Pr.has(n.type)?r:{...r,type:"jsx"})}var Vc=Am;var xm=function(){let e=this.Parser.prototype,r=e.inlineMethods;r.splice(r.indexOf("text"),0,"liquid"),e.inlineTokenizers.liquid=t;function t(n,a){let u=a.match(/^(\{%.*?%\}|\{\{.*?\}\})/su);if(u)return n(u[0])({type:"liquidNode",value:u[0]})}t.locator=function(n,a){return n.indexOf("{",a)}},jc=xm;var wm=function(){let e="wikiLink",r=/^\[\[(?<linkContents>.+?)\]\]/su,t=this.Parser.prototype,n=t.inlineMethods;n.splice(n.indexOf("link"),0,e),t.inlineTokenizers.wikiLink=a;function a(u,i){let o=r.exec(i);if(o){let s=o.groups.linkContents.trim();return u(o[0])({type:e,value:s})}}a.locator=function(u,i){return u.indexOf("[",i)}},$c=wm;function Qc({isMDX:e}){return r=>{let t=(0,Xc.default)().use(Jc.default,{commonmark:!0,...e&&{blocks:[Nc]}}).use(Wc.default).use(Gc).use(Kc.default).use(e?Yc:Hc).use(jc).use(e?Vc:Hc).use($c);return t.run(t.parse(r))}}function Hc(){}var Zc={astFormat:"mdast",hasPragma:Kn,locStart:Oe,locEnd:Pe},km={...Zc,parse:Qc({isMDX:!1})},Bm={...Zc,parse:Qc({isMDX:!0})};var qm={mdast:Ti};return ul(Tm);});
-
-/***/ }),
-
-/***/ 9882:
-/***/ ((module) => {
-
-(function(t){function e(){var o=t();return o.default||o}if(true)module.exports=e();else { var f; }})(function(){"use strict";var yu=Object.create;var He=Object.defineProperty;var Au=Object.getOwnPropertyDescriptor;var Bu=Object.getOwnPropertyNames;var wu=Object.getPrototypeOf,_u=Object.prototype.hasOwnProperty;var or=e=>{throw TypeError(e)};var xu=(e,t)=>()=>(e&&(t=e(e=0)),t);var At=(e,t)=>()=>(t||e((t={exports:{}}).exports,t),t.exports),We=(e,t)=>{for(var r in t)He(e,r,{get:t[r],enumerable:!0})},sr=(e,t,r,n)=>{if(t&&typeof t=="object"||typeof t=="function")for(let i of Bu(t))!_u.call(e,i)&&i!==r&&He(e,i,{get:()=>t[i],enumerable:!(n=Au(t,i))||n.enumerable});return e};var Me=(e,t,r)=>(r=e!=null?yu(wu(e)):{},sr(t||!e||!e.__esModule?He(r,"default",{value:e,enumerable:!0}):r,e)),ar=e=>sr(He({},"__esModule",{value:!0}),e);var vu=(e,t,r)=>t.has(e)||or("Cannot "+r);var Dr=(e,t,r)=>t.has(e)?or("Cannot add the same private member more than once"):t instanceof WeakSet?t.add(e):t.set(e,r);var pe=(e,t,r)=>(vu(e,t,"access private method"),r);var ot=At((oa,sn)=>{"use strict";var on=new Proxy(String,{get:()=>on});sn.exports=on});var Tn={};We(Tn,{default:()=>wi,shouldHighlight:()=>Bi});var Bi,wi,kn=xu(()=>{Bi=()=>!1,wi=String});var Pn=At((bD,Xt)=>{var g=String,Ln=function(){return{isColorSupported:!1,reset:g,bold:g,dim:g,italic:g,underline:g,inverse:g,hidden:g,strikethrough:g,black:g,red:g,green:g,yellow:g,blue:g,magenta:g,cyan:g,white:g,gray:g,bgBlack:g,bgRed:g,bgGreen:g,bgYellow:g,bgBlue:g,bgMagenta:g,bgCyan:g,bgWhite:g}};Xt.exports=Ln();Xt.exports.createColors=Ln});var $n=At(Ct=>{"use strict";Object.defineProperty(Ct,"__esModule",{value:!0});Ct.codeFrameColumns=Mn;Ct.default=Si;var In=(kn(),ar(Tn)),Hn=_i(Pn(),!0);function Wn(e){if(typeof WeakMap!="function")return null;var t=new WeakMap,r=new WeakMap;return(Wn=function(n){return n?r:t})(e)}function _i(e,t){if(!t&&e&&e.__esModule)return e;if(e===null||typeof e!="object"&&typeof e!="function")return{default:e};var r=Wn(t);if(r&&r.has(e))return r.get(e);var n={__proto__:null},i=Object.defineProperty&&Object.getOwnPropertyDescriptor;for(var u in e)if(u!=="default"&&{}.hasOwnProperty.call(e,u)){var o=i?Object.getOwnPropertyDescriptor(e,u):null;o&&(o.get||o.set)?Object.defineProperty(n,u,o):n[u]=e[u]}return n.default=e,r&&r.set(e,n),n}var xi=Hn.default,Rn=(e,t)=>r=>e(t(r)),Zt;function vi(e){if(e){var t;return(t=Zt)!=null||(Zt=(0,Hn.createColors)(!0)),Zt}return xi}var Yn=!1;function bi(e){return{gutter:e.gray,marker:Rn(e.red,e.bold),message:Rn(e.red,e.bold)}}var jn=/\r\n|[\n\r\u2028\u2029]/;function Oi(e,t,r){let n=Object.assign({column:0,line:-1},e.start),i=Object.assign({},n,e.end),{linesAbove:u=2,linesBelow:o=3}=r||{},s=n.line,a=n.column,D=i.line,l=i.column,d=Math.max(s-(u+1),0),f=Math.min(t.length,D+o);s===-1&&(d=0),D===-1&&(f=t.length);let p=D-s,c={};if(p)for(let F=0;F<=p;F++){let m=F+s;if(!a)c[m]=!0;else if(F===0){let E=t[m-1].length;c[m]=[a,E-a+1]}else if(F===p)c[m]=[0,l];else{let E=t[m-F].length;c[m]=[0,E]}}else a===l?a?c[s]=[a,0]:c[s]=!0:c[s]=[a,l-a];return{start:d,end:f,markerLines:c}}function Mn(e,t,r={}){let n=(r.highlightCode||r.forceColor)&&(0,In.shouldHighlight)(r),i=vi(r.forceColor),u=bi(i),o=(F,m)=>n?F(m):m,s=e.split(jn),{start:a,end:D,markerLines:l}=Oi(t,s,r),d=t.start&&typeof t.start.column=="number",f=String(D).length,c=(n?(0,In.default)(e,r):e).split(jn,D).slice(a,D).map((F,m)=>{let E=a+1+m,w=` ${` ${E}`.slice(-f)} |`,h=l[E],C=!l[E+1];if(h){let k="";if(Array.isArray(h)){let v=F.slice(0,Math.max(h[0]-1,0)).replace(/[^\t]/g," "),$=h[1]||1;k=[`
- `,o(u.gutter,w.replace(/\d/g," "))," ",v,o(u.marker,"^").repeat($)].join(""),C&&r.message&&(k+=" "+o(u.message,r.message))}return[o(u.marker,">"),o(u.gutter,w),F.length>0?` ${F}`:"",k].join("")}else return` ${o(u.gutter,w)}${F.length>0?` ${F}`:""}`}).join(`
-`);return r.message&&!d&&(c=`${" ".repeat(f+1)}${r.message}
-${c}`),n?i.reset(c):c}function Si(e,t,r,n={}){if(!Yn){Yn=!0;let u="Passing lineNumber and colNumber is deprecated to @babel/code-frame. Please use `codeFrameColumns`.";{let o=new Error(u);o.name="DeprecationWarning",console.warn(new Error(u))}}return r=Math.max(r,0),Mn(e,{start:{column:r,line:t}},n)}});var po={};We(po,{__debug:()=>fo,check:()=>lo,doc:()=>nr,format:()=>gu,formatWithCursor:()=>Cu,getSupportInfo:()=>co,util:()=>ir,version:()=>fu});var bu=(e,t,r,n)=>{if(!(e&&t==null))return t.replaceAll?t.replaceAll(r,n):r.global?t.replace(r,n):t.split(r).join(n)},ne=bu;function Z(){}Z.prototype={diff:function(t,r){var n,i=arguments.length>2&&arguments[2]!==void 0?arguments[2]:{},u=i.callback;typeof i=="function"&&(u=i,i={}),this.options=i;var o=this;function s(h){return u?(setTimeout(function(){u(void 0,h)},0),!0):h}t=this.castInput(t),r=this.castInput(r),t=this.removeEmpty(this.tokenize(t)),r=this.removeEmpty(this.tokenize(r));var a=r.length,D=t.length,l=1,d=a+D;i.maxEditLength&&(d=Math.min(d,i.maxEditLength));var f=(n=i.timeout)!==null&&n!==void 0?n:1/0,p=Date.now()+f,c=[{oldPos:-1,lastComponent:void 0}],F=this.extractCommon(c[0],r,t,0);if(c[0].oldPos+1>=D&&F+1>=a)return s([{value:this.join(r),count:r.length}]);var m=-1/0,E=1/0;function A(){for(var h=Math.max(m,-l);h<=Math.min(E,l);h+=2){var C=void 0,k=c[h-1],v=c[h+1];k&&(c[h-1]=void 0);var $=!1;if(v){var ye=v.oldPos-h;$=v&&0<=ye&&ye<a}var yt=k&&k.oldPos+1<D;if(!$&&!yt){c[h]=void 0;continue}if(!yt||$&&k.oldPos+1<v.oldPos?C=o.addToPath(v,!0,void 0,0):C=o.addToPath(k,void 0,!0,1),F=o.extractCommon(C,r,t,h),C.oldPos+1>=D&&F+1>=a)return s(Ou(o,C.lastComponent,r,t,o.useLongestToken));c[h]=C,C.oldPos+1>=D&&(E=Math.min(E,h-1)),F+1>=a&&(m=Math.max(m,h+1))}l++}if(u)(function h(){setTimeout(function(){if(l>d||Date.now()>p)return u();A()||h()},0)})();else for(;l<=d&&Date.now()<=p;){var w=A();if(w)return w}},addToPath:function(t,r,n,i){var u=t.lastComponent;return u&&u.added===r&&u.removed===n?{oldPos:t.oldPos+i,lastComponent:{count:u.count+1,added:r,removed:n,previousComponent:u.previousComponent}}:{oldPos:t.oldPos+i,lastComponent:{count:1,added:r,removed:n,previousComponent:u}}},extractCommon:function(t,r,n,i){for(var u=r.length,o=n.length,s=t.oldPos,a=s-i,D=0;a+1<u&&s+1<o&&this.equals(r[a+1],n[s+1]);)a++,s++,D++;return D&&(t.lastComponent={count:D,previousComponent:t.lastComponent}),t.oldPos=s,a},equals:function(t,r){return this.options.comparator?this.options.comparator(t,r):t===r||this.options.ignoreCase&&t.toLowerCase()===r.toLowerCase()},removeEmpty:function(t){for(var r=[],n=0;n<t.length;n++)t[n]&&r.push(t[n]);return r},castInput:function(t){return t},tokenize:function(t){return t.split("")},join:function(t){return t.join("")}};function Ou(e,t,r,n,i){for(var u=[],o;t;)u.push(t),o=t.previousComponent,delete t.previousComponent,t=o;u.reverse();for(var s=0,a=u.length,D=0,l=0;s<a;s++){var d=u[s];if(d.removed){if(d.value=e.join(n.slice(l,l+d.count)),l+=d.count,s&&u[s-1].added){var p=u[s-1];u[s-1]=u[s],u[s]=p}}else{if(!d.added&&i){var f=r.slice(D,D+d.count);f=f.map(function(F,m){var E=n[l+m];return E.length>F.length?E:F}),d.value=e.join(f)}else d.value=e.join(r.slice(D,D+d.count));D+=d.count,d.added||(l+=d.count)}}var c=u[a-1];return a>1&&typeof c.value=="string"&&(c.added||c.removed)&&e.equals("",c.value)&&(u[a-2].value+=c.value,u.pop()),u}var ho=new Z;var lr=/^[A-Za-z\xC0-\u02C6\u02C8-\u02D7\u02DE-\u02FF\u1E00-\u1EFF]+$/,cr=/\S/,fr=new Z;fr.equals=function(e,t){return this.options.ignoreCase&&(e=e.toLowerCase(),t=t.toLowerCase()),e===t||this.options.ignoreWhitespace&&!cr.test(e)&&!cr.test(t)};fr.tokenize=function(e){for(var t=e.split(/([^\S\r\n]+|[()[\]{}'"\r\n]|\b)/),r=0;r<t.length-1;r++)!t[r+1]&&t[r+2]&&lr.test(t[r])&&lr.test(t[r+2])&&(t[r]+=t[r+2],t.splice(r+1,2),r--);return t};var pr=new Z;pr.tokenize=function(e){this.options.stripTrailingCr&&(e=e.replace(/\r\n/g,`
-`));var t=[],r=e.split(/(\n|\r\n)/);r[r.length-1]||r.pop();for(var n=0;n<r.length;n++){var i=r[n];n%2&&!this.options.newlineIsToken?t[t.length-1]+=i:(this.options.ignoreWhitespace&&(i=i.trim()),t.push(i))}return t};var Su=new Z;Su.tokenize=function(e){return e.split(/(\S.+?[.!?])(?=\s+|$)/)};var Nu=new Z;Nu.tokenize=function(e){return e.split(/([{}:;,]|\s+)/)};function $e(e){"@babel/helpers - typeof";return typeof Symbol=="function"&&typeof Symbol.iterator=="symbol"?$e=function(t){return typeof t}:$e=function(t){return t&&typeof Symbol=="function"&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":typeof t},$e(e)}var Tu=Object.prototype.toString,Ae=new Z;Ae.useLongestToken=!0;Ae.tokenize=pr.tokenize;Ae.castInput=function(e){var t=this.options,r=t.undefinedReplacement,n=t.stringifyReplacer,i=n===void 0?function(u,o){return typeof o>"u"?r:o}:n;return typeof e=="string"?e:JSON.stringify(Bt(e,null,null,i),i,"  ")};Ae.equals=function(e,t){return Z.prototype.equals.call(Ae,e.replace(/,([\r\n])/g,"$1"),t.replace(/,([\r\n])/g,"$1"))};function Bt(e,t,r,n,i){t=t||[],r=r||[],n&&(e=n(i,e));var u;for(u=0;u<t.length;u+=1)if(t[u]===e)return r[u];var o;if(Tu.call(e)==="[object Array]"){for(t.push(e),o=new Array(e.length),r.push(o),u=0;u<e.length;u+=1)o[u]=Bt(e[u],t,r,n,i);return t.pop(),r.pop(),o}if(e&&e.toJSON&&(e=e.toJSON()),$e(e)==="object"&&e!==null){t.push(e),o={},r.push(o);var s=[],a;for(a in e)e.hasOwnProperty(a)&&s.push(a);for(s.sort(),u=0;u<s.length;u+=1)a=s[u],o[a]=Bt(e[a],t,r,n,a);t.pop(),r.pop()}else o=e;return o}var Ve=new Z;Ve.tokenize=function(e){return e.slice()};Ve.join=Ve.removeEmpty=function(e){return e};function dr(e,t,r){return Ve.diff(e,t,r)}function Fr(e){let t=e.indexOf("\r");return t>=0?e.charAt(t+1)===`
-`?"crlf":"cr":"lf"}function Be(e){switch(e){case"cr":return"\r";case"crlf":return`\r
-`;default:return`
-`}}function wt(e,t){let r;switch(t){case`
-`:r=/\n/gu;break;case"\r":r=/\r/gu;break;case`\r
-`:r=/\r\n/gu;break;default:throw new Error(`Unexpected "eol" ${JSON.stringify(t)}.`)}let n=e.match(r);return n?n.length:0}function mr(e){return ne(!1,e,/\r\n?/gu,`
-`)}var U="string",W="array",z="cursor",L="indent",P="align",I="trim",_="group",S="fill",x="if-break",R="indent-if-break",Y="line-suffix",j="line-suffix-boundary",B="line",N="label",b="break-parent",Ue=new Set([z,L,P,I,_,S,x,R,Y,j,B,N,b]);function ku(e){if(typeof e=="string")return U;if(Array.isArray(e))return W;if(!e)return;let{type:t}=e;if(Ue.has(t))return t}var G=ku;var Lu=e=>new Intl.ListFormat("en-US",{type:"disjunction"}).format(e);function Pu(e){let t=e===null?"null":typeof e;if(t!=="string"&&t!=="object")return`Unexpected doc '${t}', 
-Expected it to be 'string' or 'object'.`;if(G(e))throw new Error("doc is valid.");let r=Object.prototype.toString.call(e);if(r!=="[object Object]")return`Unexpected doc '${r}'.`;let n=Lu([...Ue].map(i=>`'${i}'`));return`Unexpected doc.type '${e.type}'.
-Expected it to be ${n}.`}var _t=class extends Error{name="InvalidDocError";constructor(t){super(Pu(t)),this.doc=t}},Q=_t;var Er={};function Iu(e,t,r,n){let i=[e];for(;i.length>0;){let u=i.pop();if(u===Er){r(i.pop());continue}r&&i.push(u,Er);let o=G(u);if(!o)throw new Q(u);if((t==null?void 0:t(u))!==!1)switch(o){case W:case S:{let s=o===W?u:u.parts;for(let a=s.length,D=a-1;D>=0;--D)i.push(s[D]);break}case x:i.push(u.flatContents,u.breakContents);break;case _:if(n&&u.expandedStates)for(let s=u.expandedStates.length,a=s-1;a>=0;--a)i.push(u.expandedStates[a]);else i.push(u.contents);break;case P:case L:case R:case N:case Y:i.push(u.contents);break;case U:case z:case I:case j:case B:case b:break;default:throw new Q(u)}}}var we=Iu;var hr=()=>{},K=hr,ze=hr;function De(e){return K(e),{type:L,contents:e}}function ae(e,t){return K(t),{type:P,contents:t,n:e}}function xt(e,t={}){return K(e),ze(t.expandedStates,!0),{type:_,id:t.id,contents:e,break:!!t.shouldBreak,expandedStates:t.expandedStates}}function Cr(e){return ae(Number.NEGATIVE_INFINITY,e)}function gr(e){return ae({type:"root"},e)}function yr(e){return ae(-1,e)}function Ar(e,t){return xt(e[0],{...t,expandedStates:e})}function Ge(e){return ze(e),{type:S,parts:e}}function Br(e,t="",r={}){return K(e),t!==""&&K(t),{type:x,breakContents:e,flatContents:t,groupId:r.groupId}}function wr(e,t){return K(e),{type:R,contents:e,groupId:t.groupId,negate:t.negate}}function _e(e){return K(e),{type:Y,contents:e}}var _r={type:j},de={type:b},xr={type:I},xe={type:B,hard:!0},vt={type:B,hard:!0,literal:!0},Ke={type:B},vr={type:B,soft:!0},q=[xe,de],qe=[vt,de],ve={type:z};function be(e,t){K(e),ze(t);let r=[];for(let n=0;n<t.length;n++)n!==0&&r.push(e),r.push(t[n]);return r}function Je(e,t,r){K(e);let n=e;if(t>0){for(let i=0;i<Math.floor(t/r);++i)n=De(n);n=ae(t%r,n),n=ae(Number.NEGATIVE_INFINITY,n)}return n}function br(e,t){return K(t),e?{type:N,label:e,contents:t}:t}function ee(e){var t;if(!e)return"";if(Array.isArray(e)){let r=[];for(let n of e)if(Array.isArray(n))r.push(...ee(n));else{let i=ee(n);i!==""&&r.push(i)}return r}return e.type===x?{...e,breakContents:ee(e.breakContents),flatContents:ee(e.flatContents)}:e.type===_?{...e,contents:ee(e.contents),expandedStates:(t=e.expandedStates)==null?void 0:t.map(ee)}:e.type===S?{type:"fill",parts:e.parts.map(ee)}:e.contents?{...e,contents:ee(e.contents)}:e}function Or(e){let t=Object.create(null),r=new Set;return n(ee(e));function n(u,o,s){var a,D;if(typeof u=="string")return JSON.stringify(u);if(Array.isArray(u)){let l=u.map(n).filter(Boolean);return l.length===1?l[0]:`[${l.join(", ")}]`}if(u.type===B){let l=((a=s==null?void 0:s[o+1])==null?void 0:a.type)===b;return u.literal?l?"literalline":"literallineWithoutBreakParent":u.hard?l?"hardline":"hardlineWithoutBreakParent":u.soft?"softline":"line"}if(u.type===b)return((D=s==null?void 0:s[o-1])==null?void 0:D.type)===B&&s[o-1].hard?void 0:"breakParent";if(u.type===I)return"trim";if(u.type===L)return"indent("+n(u.contents)+")";if(u.type===P)return u.n===Number.NEGATIVE_INFINITY?"dedentToRoot("+n(u.contents)+")":u.n<0?"dedent("+n(u.contents)+")":u.n.type==="root"?"markAsRoot("+n(u.contents)+")":"align("+JSON.stringify(u.n)+", "+n(u.contents)+")";if(u.type===x)return"ifBreak("+n(u.breakContents)+(u.flatContents?", "+n(u.flatContents):"")+(u.groupId?(u.flatContents?"":', ""')+`, { groupId: ${i(u.groupId)} }`:"")+")";if(u.type===R){let l=[];u.negate&&l.push("negate: true"),u.groupId&&l.push(`groupId: ${i(u.groupId)}`);let d=l.length>0?`, { ${l.join(", ")} }`:"";return`indentIfBreak(${n(u.contents)}${d})`}if(u.type===_){let l=[];u.break&&u.break!=="propagated"&&l.push("shouldBreak: true"),u.id&&l.push(`id: ${i(u.id)}`);let d=l.length>0?`, { ${l.join(", ")} }`:"";return u.expandedStates?`conditionalGroup([${u.expandedStates.map(f=>n(f)).join(",")}]${d})`:`group(${n(u.contents)}${d})`}if(u.type===S)return`fill([${u.parts.map(l=>n(l)).join(", ")}])`;if(u.type===Y)return"lineSuffix("+n(u.contents)+")";if(u.type===j)return"lineSuffixBoundary";if(u.type===N)return`label(${JSON.stringify(u.label)}, ${n(u.contents)})`;throw new Error("Unknown doc type "+u.type)}function i(u){if(typeof u!="symbol")return JSON.stringify(String(u));if(u in t)return t[u];let o=u.description||"symbol";for(let s=0;;s++){let a=o+(s>0?` #${s}`:"");if(!r.has(a))return r.add(a),t[u]=`Symbol.for(${JSON.stringify(a)})`}}}var Ru=(e,t,r)=>{if(!(e&&t==null))return Array.isArray(t)||typeof t=="string"?t[r<0?t.length+r:r]:t.at(r)},y=Ru;var Sr=()=>/[#*0-9]\uFE0F?\u20E3|[\xA9\xAE\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA\u231A\u231B\u2328\u23CF\u23ED-\u23EF\u23F1\u23F2\u23F8-\u23FA\u24C2\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC\u25FE\u2600-\u2604\u260E\u2611\u2614\u2615\u2618\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642\u2648-\u2653\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E\u267F\u2692\u2694-\u2697\u2699\u269B\u269C\u26A0\u26A7\u26AA\u26B0\u26B1\u26BD\u26BE\u26C4\u26C8\u26CF\u26D1\u26E9\u26F0-\u26F5\u26F7\u26F8\u26FA\u2702\u2708\u2709\u270F\u2712\u2714\u2716\u271D\u2721\u2733\u2734\u2744\u2747\u2757\u2763\u27A1\u2934\u2935\u2B05-\u2B07\u2B1B\u2B1C\u2B55\u3030\u303D\u3297\u3299]\uFE0F?|[\u261D\u270C\u270D](?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?|[\u270A\u270B](?:\uD83C[\uDFFB-\uDFFF])?|[\u23E9-\u23EC\u23F0\u23F3\u25FD\u2693\u26A1\u26AB\u26C5\u26CE\u26D4\u26EA\u26FD\u2705\u2728\u274C\u274E\u2753-\u2755\u2795-\u2797\u27B0\u27BF\u2B50]|\u26D3\uFE0F?(?:\u200D\uD83D\uDCA5)?|\u26F9(?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|\u2764\uFE0F?(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79))?|\uD83C(?:[\uDC04\uDD70\uDD71\uDD7E\uDD7F\uDE02\uDE37\uDF21\uDF24-\uDF2C\uDF36\uDF7D\uDF96\uDF97\uDF99-\uDF9B\uDF9E\uDF9F\uDFCD\uDFCE\uDFD4-\uDFDF\uDFF5\uDFF7]\uFE0F?|[\uDF85\uDFC2\uDFC7](?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC4\uDFCA](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDFCB\uDFCC](?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDCCF\uDD8E\uDD91-\uDD9A\uDE01\uDE1A\uDE2F\uDE32-\uDE36\uDE38-\uDE3A\uDE50\uDE51\uDF00-\uDF20\uDF2D-\uDF35\uDF37-\uDF43\uDF45-\uDF4A\uDF4C-\uDF7C\uDF7E-\uDF84\uDF86-\uDF93\uDFA0-\uDFC1\uDFC5\uDFC6\uDFC8\uDFC9\uDFCF-\uDFD3\uDFE0-\uDFF0\uDFF8-\uDFFF]|\uDDE6\uD83C[\uDDE8-\uDDEC\uDDEE\uDDF1\uDDF2\uDDF4\uDDF6-\uDDFA\uDDFC\uDDFD\uDDFF]|\uDDE7\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEF\uDDF1-\uDDF4\uDDF6-\uDDF9\uDDFB\uDDFC\uDDFE\uDDFF]|\uDDE8\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDEE\uDDF0-\uDDF5\uDDF7\uDDFA-\uDDFF]|\uDDE9\uD83C[\uDDEA\uDDEC\uDDEF\uDDF0\uDDF2\uDDF4\uDDFF]|\uDDEA\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDED\uDDF7-\uDDFA]|\uDDEB\uD83C[\uDDEE-\uDDF0\uDDF2\uDDF4\uDDF7]|\uDDEC\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEE\uDDF1-\uDDF3\uDDF5-\uDDFA\uDDFC\uDDFE]|\uDDED\uD83C[\uDDF0\uDDF2\uDDF3\uDDF7\uDDF9\uDDFA]|\uDDEE\uD83C[\uDDE8-\uDDEA\uDDF1-\uDDF4\uDDF6-\uDDF9]|\uDDEF\uD83C[\uDDEA\uDDF2\uDDF4\uDDF5]|\uDDF0\uD83C[\uDDEA\uDDEC-\uDDEE\uDDF2\uDDF3\uDDF5\uDDF7\uDDFC\uDDFE\uDDFF]|\uDDF1\uD83C[\uDDE6-\uDDE8\uDDEE\uDDF0\uDDF7-\uDDFB\uDDFE]|\uDDF2\uD83C[\uDDE6\uDDE8-\uDDED\uDDF0-\uDDFF]|\uDDF3\uD83C[\uDDE6\uDDE8\uDDEA-\uDDEC\uDDEE\uDDF1\uDDF4\uDDF5\uDDF7\uDDFA\uDDFF]|\uDDF4\uD83C\uDDF2|\uDDF5\uD83C[\uDDE6\uDDEA-\uDDED\uDDF0-\uDDF3\uDDF7-\uDDF9\uDDFC\uDDFE]|\uDDF6\uD83C\uDDE6|\uDDF7\uD83C[\uDDEA\uDDF4\uDDF8\uDDFA\uDDFC]|\uDDF8\uD83C[\uDDE6-\uDDEA\uDDEC-\uDDF4\uDDF7-\uDDF9\uDDFB\uDDFD-\uDDFF]|\uDDF9\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDED\uDDEF-\uDDF4\uDDF7\uDDF9\uDDFB\uDDFC\uDDFF]|\uDDFA\uD83C[\uDDE6\uDDEC\uDDF2\uDDF3\uDDF8\uDDFE\uDDFF]|\uDDFB\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDEE\uDDF3\uDDFA]|\uDDFC\uD83C[\uDDEB\uDDF8]|\uDDFD\uD83C\uDDF0|\uDDFE\uD83C[\uDDEA\uDDF9]|\uDDFF\uD83C[\uDDE6\uDDF2\uDDFC]|\uDF44(?:\u200D\uD83D\uDFEB)?|\uDF4B(?:\u200D\uD83D\uDFE9)?|\uDFC3(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDFF3\uFE0F?(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08))?|\uDFF4(?:\u200D\u2620\uFE0F?|\uDB40\uDC67\uDB40\uDC62\uDB40(?:\uDC65\uDB40\uDC6E\uDB40\uDC67|\uDC73\uDB40\uDC63\uDB40\uDC74|\uDC77\uDB40\uDC6C\uDB40\uDC73)\uDB40\uDC7F)?)|\uD83D(?:[\uDC3F\uDCFD\uDD49\uDD4A\uDD6F\uDD70\uDD73\uDD76-\uDD79\uDD87\uDD8A-\uDD8D\uDDA5\uDDA8\uDDB1\uDDB2\uDDBC\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA\uDECB\uDECD-\uDECF\uDEE0-\uDEE5\uDEE9\uDEF0\uDEF3]\uFE0F?|[\uDC42\uDC43\uDC46-\uDC50\uDC66\uDC67\uDC6B-\uDC6D\uDC72\uDC74-\uDC76\uDC78\uDC7C\uDC83\uDC85\uDC8F\uDC91\uDCAA\uDD7A\uDD95\uDD96\uDE4C\uDE4F\uDEC0\uDECC](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC6E\uDC70\uDC71\uDC73\uDC77\uDC81\uDC82\uDC86\uDC87\uDE45-\uDE47\uDE4B\uDE4D\uDE4E\uDEA3\uDEB4\uDEB5](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD74\uDD90](?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?|[\uDC00-\uDC07\uDC09-\uDC14\uDC16-\uDC25\uDC27-\uDC3A\uDC3C-\uDC3E\uDC40\uDC44\uDC45\uDC51-\uDC65\uDC6A\uDC79-\uDC7B\uDC7D-\uDC80\uDC84\uDC88-\uDC8E\uDC90\uDC92-\uDCA9\uDCAB-\uDCFC\uDCFF-\uDD3D\uDD4B-\uDD4E\uDD50-\uDD67\uDDA4\uDDFB-\uDE2D\uDE2F-\uDE34\uDE37-\uDE41\uDE43\uDE44\uDE48-\uDE4A\uDE80-\uDEA2\uDEA4-\uDEB3\uDEB7-\uDEBF\uDEC1-\uDEC5\uDED0-\uDED2\uDED5-\uDED7\uDEDC-\uDEDF\uDEEB\uDEEC\uDEF4-\uDEFC\uDFE0-\uDFEB\uDFF0]|\uDC08(?:\u200D\u2B1B)?|\uDC15(?:\u200D\uD83E\uDDBA)?|\uDC26(?:\u200D(?:\u2B1B|\uD83D\uDD25))?|\uDC3B(?:\u200D\u2744\uFE0F?)?|\uDC41\uFE0F?(?:\u200D\uD83D\uDDE8\uFE0F?)?|\uDC68(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDC68\uDC69]\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE])))?))?|\uDC69(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?[\uDC68\uDC69]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|\uDC69\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?))|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFE])))?))?|\uDC6F(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDD75(?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDE2E(?:\u200D\uD83D\uDCA8)?|\uDE35(?:\u200D\uD83D\uDCAB)?|\uDE36(?:\u200D\uD83C\uDF2B\uFE0F?)?|\uDE42(?:\u200D[\u2194\u2195]\uFE0F?)?|\uDEB6(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?)|\uD83E(?:[\uDD0C\uDD0F\uDD18-\uDD1F\uDD30-\uDD34\uDD36\uDD77\uDDB5\uDDB6\uDDBB\uDDD2\uDDD3\uDDD5\uDEC3-\uDEC5\uDEF0\uDEF2-\uDEF8](?:\uD83C[\uDFFB-\uDFFF])?|[\uDD26\uDD35\uDD37-\uDD39\uDD3D\uDD3E\uDDB8\uDDB9\uDDCD\uDDCF\uDDD4\uDDD6-\uDDDD](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDDDE\uDDDF](?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD0D\uDD0E\uDD10-\uDD17\uDD20-\uDD25\uDD27-\uDD2F\uDD3A\uDD3F-\uDD45\uDD47-\uDD76\uDD78-\uDDB4\uDDB7\uDDBA\uDDBC-\uDDCC\uDDD0\uDDE0-\uDDFF\uDE70-\uDE7C\uDE80-\uDE88\uDE90-\uDEBD\uDEBF-\uDEC2\uDECE-\uDEDB\uDEE0-\uDEE8]|\uDD3C(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF])?|\uDDCE(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDDD1(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1|\uDDD1\u200D\uD83E\uDDD2(?:\u200D\uD83E\uDDD2)?|\uDDD2(?:\u200D\uD83E\uDDD2)?))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?))?|\uDEF1(?:\uD83C(?:\uDFFB(?:\u200D\uD83E\uDEF2\uD83C[\uDFFC-\uDFFF])?|\uDFFC(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFD-\uDFFF])?|\uDFFD(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])?|\uDFFE(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFD\uDFFF])?|\uDFFF(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFE])?))?)/g;function Nr(e){return e===12288||e>=65281&&e<=65376||e>=65504&&e<=65510}function Tr(e){return e>=4352&&e<=4447||e===8986||e===8987||e===9001||e===9002||e>=9193&&e<=9196||e===9200||e===9203||e===9725||e===9726||e===9748||e===9749||e>=9800&&e<=9811||e===9855||e===9875||e===9889||e===9898||e===9899||e===9917||e===9918||e===9924||e===9925||e===9934||e===9940||e===9962||e===9970||e===9971||e===9973||e===9978||e===9981||e===9989||e===9994||e===9995||e===10024||e===10060||e===10062||e>=10067&&e<=10069||e===10071||e>=10133&&e<=10135||e===10160||e===10175||e===11035||e===11036||e===11088||e===11093||e>=11904&&e<=11929||e>=11931&&e<=12019||e>=12032&&e<=12245||e>=12272&&e<=12287||e>=12289&&e<=12350||e>=12353&&e<=12438||e>=12441&&e<=12543||e>=12549&&e<=12591||e>=12593&&e<=12686||e>=12688&&e<=12771||e>=12783&&e<=12830||e>=12832&&e<=12871||e>=12880&&e<=19903||e>=19968&&e<=42124||e>=42128&&e<=42182||e>=43360&&e<=43388||e>=44032&&e<=55203||e>=63744&&e<=64255||e>=65040&&e<=65049||e>=65072&&e<=65106||e>=65108&&e<=65126||e>=65128&&e<=65131||e>=94176&&e<=94180||e===94192||e===94193||e>=94208&&e<=100343||e>=100352&&e<=101589||e>=101632&&e<=101640||e>=110576&&e<=110579||e>=110581&&e<=110587||e===110589||e===110590||e>=110592&&e<=110882||e===110898||e>=110928&&e<=110930||e===110933||e>=110948&&e<=110951||e>=110960&&e<=111355||e===126980||e===127183||e===127374||e>=127377&&e<=127386||e>=127488&&e<=127490||e>=127504&&e<=127547||e>=127552&&e<=127560||e===127568||e===127569||e>=127584&&e<=127589||e>=127744&&e<=127776||e>=127789&&e<=127797||e>=127799&&e<=127868||e>=127870&&e<=127891||e>=127904&&e<=127946||e>=127951&&e<=127955||e>=127968&&e<=127984||e===127988||e>=127992&&e<=128062||e===128064||e>=128066&&e<=128252||e>=128255&&e<=128317||e>=128331&&e<=128334||e>=128336&&e<=128359||e===128378||e===128405||e===128406||e===128420||e>=128507&&e<=128591||e>=128640&&e<=128709||e===128716||e>=128720&&e<=128722||e>=128725&&e<=128727||e>=128732&&e<=128735||e===128747||e===128748||e>=128756&&e<=128764||e>=128992&&e<=129003||e===129008||e>=129292&&e<=129338||e>=129340&&e<=129349||e>=129351&&e<=129535||e>=129648&&e<=129660||e>=129664&&e<=129672||e>=129680&&e<=129725||e>=129727&&e<=129733||e>=129742&&e<=129755||e>=129760&&e<=129768||e>=129776&&e<=129784||e>=131072&&e<=196605||e>=196608&&e<=262141}var kr=e=>!(Nr(e)||Tr(e));var Yu=/[^\x20-\x7F]/u;function ju(e){if(!e)return 0;if(!Yu.test(e))return e.length;e=e.replace(Sr(),"  ");let t=0;for(let r of e){let n=r.codePointAt(0);n<=31||n>=127&&n<=159||n>=768&&n<=879||(t+=kr(n)?1:2)}return t}var Oe=ju;function Ne(e,t){if(typeof e=="string")return t(e);let r=new Map;return n(e);function n(u){if(r.has(u))return r.get(u);let o=i(u);return r.set(u,o),o}function i(u){switch(G(u)){case W:return t(u.map(n));case S:return t({...u,parts:u.parts.map(n)});case x:return t({...u,breakContents:n(u.breakContents),flatContents:n(u.flatContents)});case _:{let{expandedStates:o,contents:s}=u;return o?(o=o.map(n),s=o[0]):s=n(s),t({...u,contents:s,expandedStates:o})}case P:case L:case R:case N:case Y:return t({...u,contents:n(u.contents)});case U:case z:case I:case j:case B:case b:return t(u);default:throw new Q(u)}}}function Xe(e,t,r){let n=r,i=!1;function u(o){if(i)return!1;let s=t(o);s!==void 0&&(i=!0,n=s)}return we(e,u),n}function Hu(e){if(e.type===_&&e.break||e.type===B&&e.hard||e.type===b)return!0}function Ir(e){return Xe(e,Hu,!1)}function Lr(e){if(e.length>0){let t=y(!1,e,-1);!t.expandedStates&&!t.break&&(t.break="propagated")}return null}function Rr(e){let t=new Set,r=[];function n(u){if(u.type===b&&Lr(r),u.type===_){if(r.push(u),t.has(u))return!1;t.add(u)}}function i(u){u.type===_&&r.pop().break&&Lr(r)}we(e,n,i,!0)}function Wu(e){return e.type===B&&!e.hard?e.soft?"":" ":e.type===x?e.flatContents:e}function Yr(e){return Ne(e,Wu)}function Pr(e){for(e=[...e];e.length>=2&&y(!1,e,-2).type===B&&y(!1,e,-1).type===b;)e.length-=2;if(e.length>0){let t=Se(y(!1,e,-1));e[e.length-1]=t}return e}function Se(e){switch(G(e)){case L:case R:case _:case Y:case N:{let t=Se(e.contents);return{...e,contents:t}}case x:return{...e,breakContents:Se(e.breakContents),flatContents:Se(e.flatContents)};case S:return{...e,parts:Pr(e.parts)};case W:return Pr(e);case U:return e.replace(/[\n\r]*$/u,"");case P:case z:case I:case j:case B:case b:break;default:throw new Q(e)}return e}function Ze(e){return Se($u(e))}function Mu(e){switch(G(e)){case S:if(e.parts.every(t=>t===""))return"";break;case _:if(!e.contents&&!e.id&&!e.break&&!e.expandedStates)return"";if(e.contents.type===_&&e.contents.id===e.id&&e.contents.break===e.break&&e.contents.expandedStates===e.expandedStates)return e.contents;break;case P:case L:case R:case Y:if(!e.contents)return"";break;case x:if(!e.flatContents&&!e.breakContents)return"";break;case W:{let t=[];for(let r of e){if(!r)continue;let[n,...i]=Array.isArray(r)?r:[r];typeof n=="string"&&typeof y(!1,t,-1)=="string"?t[t.length-1]+=n:t.push(n),t.push(...i)}return t.length===0?"":t.length===1?t[0]:t}case U:case z:case I:case j:case B:case N:case b:break;default:throw new Q(e)}return e}function $u(e){return Ne(e,t=>Mu(t))}function jr(e,t=qe){return Ne(e,r=>typeof r=="string"?be(t,r.split(`
-`)):r)}function Vu(e){if(e.type===B)return!0}function Hr(e){return Xe(e,Vu,!1)}function Qe(e,t){return e.type===N?{...e,contents:t(e.contents)}:t(e)}var H=Symbol("MODE_BREAK"),J=Symbol("MODE_FLAT"),Te=Symbol("cursor");function Wr(){return{value:"",length:0,queue:[]}}function Uu(e,t){return bt(e,{type:"indent"},t)}function zu(e,t,r){return t===Number.NEGATIVE_INFINITY?e.root||Wr():t<0?bt(e,{type:"dedent"},r):t?t.type==="root"?{...e,root:e}:bt(e,{type:typeof t=="string"?"stringAlign":"numberAlign",n:t},r):e}function bt(e,t,r){let n=t.type==="dedent"?e.queue.slice(0,-1):[...e.queue,t],i="",u=0,o=0,s=0;for(let c of n)switch(c.type){case"indent":l(),r.useTabs?a(1):D(r.tabWidth);break;case"stringAlign":l(),i+=c.n,u+=c.n.length;break;case"numberAlign":o+=1,s+=c.n;break;default:throw new Error(`Unexpected type '${c.type}'`)}return f(),{...e,value:i,length:u,queue:n};function a(c){i+="	".repeat(c),u+=r.tabWidth*c}function D(c){i+=" ".repeat(c),u+=c}function l(){r.useTabs?d():f()}function d(){o>0&&a(o),p()}function f(){s>0&&D(s),p()}function p(){o=0,s=0}}function Ot(e){let t=0,r=0,n=e.length;e:for(;n--;){let i=e[n];if(i===Te){r++;continue}for(let u=i.length-1;u>=0;u--){let o=i[u];if(o===" "||o==="	")t++;else{e[n]=i.slice(0,u+1);break e}}}if(t>0||r>0)for(e.length=n+1;r-- >0;)e.push(Te);return t}function et(e,t,r,n,i,u){if(r===Number.POSITIVE_INFINITY)return!0;let o=t.length,s=[e],a=[];for(;r>=0;){if(s.length===0){if(o===0)return!0;s.push(t[--o]);continue}let{mode:D,doc:l}=s.pop(),d=G(l);switch(d){case U:a.push(l),r-=Oe(l);break;case W:case S:{let f=d===W?l:l.parts;for(let p=f.length-1;p>=0;p--)s.push({mode:D,doc:f[p]});break}case L:case P:case R:case N:s.push({mode:D,doc:l.contents});break;case I:r+=Ot(a);break;case _:{if(u&&l.break)return!1;let f=l.break?H:D,p=l.expandedStates&&f===H?y(!1,l.expandedStates,-1):l.contents;s.push({mode:f,doc:p});break}case x:{let p=(l.groupId?i[l.groupId]||J:D)===H?l.breakContents:l.flatContents;p&&s.push({mode:D,doc:p});break}case B:if(D===H||l.hard)return!0;l.soft||(a.push(" "),r--);break;case Y:n=!0;break;case j:if(n)return!1;break}}return!1}function Fe(e,t){let r={},n=t.printWidth,i=Be(t.endOfLine),u=0,o=[{ind:Wr(),mode:H,doc:e}],s=[],a=!1,D=[],l=0;for(Rr(e);o.length>0;){let{ind:f,mode:p,doc:c}=o.pop();switch(G(c)){case U:{let F=i!==`
-`?ne(!1,c,`
-`,i):c;s.push(F),o.length>0&&(u+=Oe(F));break}case W:for(let F=c.length-1;F>=0;F--)o.push({ind:f,mode:p,doc:c[F]});break;case z:if(l>=2)throw new Error("There are too many 'cursor' in doc.");s.push(Te),l++;break;case L:o.push({ind:Uu(f,t),mode:p,doc:c.contents});break;case P:o.push({ind:zu(f,c.n,t),mode:p,doc:c.contents});break;case I:u-=Ot(s);break;case _:switch(p){case J:if(!a){o.push({ind:f,mode:c.break?H:J,doc:c.contents});break}case H:{a=!1;let F={ind:f,mode:J,doc:c.contents},m=n-u,E=D.length>0;if(!c.break&&et(F,o,m,E,r))o.push(F);else if(c.expandedStates){let A=y(!1,c.expandedStates,-1);if(c.break){o.push({ind:f,mode:H,doc:A});break}else for(let w=1;w<c.expandedStates.length+1;w++)if(w>=c.expandedStates.length){o.push({ind:f,mode:H,doc:A});break}else{let h=c.expandedStates[w],C={ind:f,mode:J,doc:h};if(et(C,o,m,E,r)){o.push(C);break}}}else o.push({ind:f,mode:H,doc:c.contents});break}}c.id&&(r[c.id]=y(!1,o,-1).mode);break;case S:{let F=n-u,{parts:m}=c;if(m.length===0)break;let[E,A]=m,w={ind:f,mode:J,doc:E},h={ind:f,mode:H,doc:E},C=et(w,[],F,D.length>0,r,!0);if(m.length===1){C?o.push(w):o.push(h);break}let k={ind:f,mode:J,doc:A},v={ind:f,mode:H,doc:A};if(m.length===2){C?o.push(k,w):o.push(v,h);break}m.splice(0,2);let $={ind:f,mode:p,doc:Ge(m)},ye=m[0];et({ind:f,mode:J,doc:[E,A,ye]},[],F,D.length>0,r,!0)?o.push($,k,w):C?o.push($,v,w):o.push($,v,h);break}case x:case R:{let F=c.groupId?r[c.groupId]:p;if(F===H){let m=c.type===x?c.breakContents:c.negate?c.contents:De(c.contents);m&&o.push({ind:f,mode:p,doc:m})}if(F===J){let m=c.type===x?c.flatContents:c.negate?De(c.contents):c.contents;m&&o.push({ind:f,mode:p,doc:m})}break}case Y:D.push({ind:f,mode:p,doc:c.contents});break;case j:D.length>0&&o.push({ind:f,mode:p,doc:xe});break;case B:switch(p){case J:if(c.hard)a=!0;else{c.soft||(s.push(" "),u+=1);break}case H:if(D.length>0){o.push({ind:f,mode:p,doc:c},...D.reverse()),D.length=0;break}c.literal?f.root?(s.push(i,f.root.value),u=f.root.length):(s.push(i),u=0):(u-=Ot(s),s.push(i+f.value),u=f.length);break}break;case N:o.push({ind:f,mode:p,doc:c.contents});break;case b:break;default:throw new Q(c)}o.length===0&&D.length>0&&(o.push(...D.reverse()),D.length=0)}let d=s.indexOf(Te);if(d!==-1){let f=s.indexOf(Te,d+1),p=s.slice(0,d).join(""),c=s.slice(d+1,f).join(""),F=s.slice(f+1).join("");return{formatted:p+c+F,cursorNodeStart:p.length,cursorNodeText:c}}return{formatted:s.join("")}}function Gu(e,t,r=0){let n=0;for(let i=r;i<e.length;++i)e[i]==="	"?n=n+t-n%t:n++;return n}var me=Gu;var te,Nt,tt,St=class{constructor(t){Dr(this,te);this.stack=[t]}get key(){let{stack:t,siblings:r}=this;return y(!1,t,r===null?-2:-4)??null}get index(){return this.siblings===null?null:y(!1,this.stack,-2)}get node(){return y(!1,this.stack,-1)}get parent(){return this.getNode(1)}get grandparent(){return this.getNode(2)}get isInArray(){return this.siblings!==null}get siblings(){let{stack:t}=this,r=y(!1,t,-3);return Array.isArray(r)?r:null}get next(){let{siblings:t}=this;return t===null?null:t[this.index+1]}get previous(){let{siblings:t}=this;return t===null?null:t[this.index-1]}get isFirst(){return this.index===0}get isLast(){let{siblings:t,index:r}=this;return t!==null&&r===t.length-1}get isRoot(){return this.stack.length===1}get root(){return this.stack[0]}get ancestors(){return[...pe(this,te,tt).call(this)]}getName(){let{stack:t}=this,{length:r}=t;return r>1?y(!1,t,-2):null}getValue(){return y(!1,this.stack,-1)}getNode(t=0){let r=pe(this,te,Nt).call(this,t);return r===-1?null:this.stack[r]}getParentNode(t=0){return this.getNode(t+1)}call(t,...r){let{stack:n}=this,{length:i}=n,u=y(!1,n,-1);for(let o of r)u=u[o],n.push(o,u);try{return t(this)}finally{n.length=i}}callParent(t,r=0){let n=pe(this,te,Nt).call(this,r+1),i=this.stack.splice(n+1);try{return t(this)}finally{this.stack.push(...i)}}each(t,...r){let{stack:n}=this,{length:i}=n,u=y(!1,n,-1);for(let o of r)u=u[o],n.push(o,u);try{for(let o=0;o<u.length;++o)n.push(o,u[o]),t(this,o,u),n.length-=2}finally{n.length=i}}map(t,...r){let n=[];return this.each((i,u,o)=>{n[u]=t(i,u,o)},...r),n}match(...t){let r=this.stack.length-1,n=null,i=this.stack[r--];for(let u of t){if(i===void 0)return!1;let o=null;if(typeof n=="number"&&(o=n,n=this.stack[r--],i=this.stack[r--]),u&&!u(i,n,o))return!1;n=this.stack[r--],i=this.stack[r--]}return!0}findAncestor(t){for(let r of pe(this,te,tt).call(this))if(t(r))return r}hasAncestor(t){for(let r of pe(this,te,tt).call(this))if(t(r))return!0;return!1}};te=new WeakSet,Nt=function(t){let{stack:r}=this;for(let n=r.length-1;n>=0;n-=2)if(!Array.isArray(r[n])&&--t<0)return n;return-1},tt=function*(){let{stack:t}=this;for(let r=t.length-3;r>=0;r-=2){let n=t[r];Array.isArray(n)||(yield n)}};var Mr=St;var $r=new Proxy(()=>{},{get:()=>$r}),ke=$r;function Ku(e){return e!==null&&typeof e=="object"}var Vr=Ku;function*Tt(e,t){let{getVisitorKeys:r,filter:n=()=>!0}=t,i=u=>Vr(u)&&n(u);for(let u of r(e)){let o=e[u];if(Array.isArray(o))for(let s of o)i(s)&&(yield s);else i(o)&&(yield o)}}function*Ur(e,t){let r=[e];for(let n=0;n<r.length;n++){let i=r[n];for(let u of Tt(i,t))yield u,r.push(u)}}function Ee(e){return(t,r,n)=>{let i=!!(n!=null&&n.backwards);if(r===!1)return!1;let{length:u}=t,o=r;for(;o>=0&&o<u;){let s=t.charAt(o);if(e instanceof RegExp){if(!e.test(s))return o}else if(!e.includes(s))return o;i?o--:o++}return o===-1||o===u?o:!1}}var zr=Ee(/\s/u),T=Ee(" 	"),rt=Ee(",; 	"),nt=Ee(/[^\n\r]/u);function qu(e,t,r){let n=!!(r!=null&&r.backwards);if(t===!1)return!1;let i=e.charAt(t);if(n){if(e.charAt(t-1)==="\r"&&i===`
-`)return t-2;if(i===`
-`||i==="\r"||i==="\u2028"||i==="\u2029")return t-1}else{if(i==="\r"&&e.charAt(t+1)===`
-`)return t+2;if(i===`
-`||i==="\r"||i==="\u2028"||i==="\u2029")return t+1}return t}var M=qu;function Ju(e,t,r={}){let n=T(e,r.backwards?t-1:t,r),i=M(e,n,r);return n!==i}var V=Ju;function Xu(e){return Array.isArray(e)&&e.length>0}var kt=Xu;var Gr=new Set(["tokens","comments","parent","enclosingNode","precedingNode","followingNode"]),Zu=e=>Object.keys(e).filter(t=>!Gr.has(t));function Qu(e){return e?t=>e(t,Gr):Zu}var X=Qu;function ei(e){let t=e.type||e.kind||"(unknown type)",r=String(e.name||e.id&&(typeof e.id=="object"?e.id.name:e.id)||e.key&&(typeof e.key=="object"?e.key.name:e.key)||e.value&&(typeof e.value=="object"?"":String(e.value))||e.operator||"");return r.length>20&&(r=r.slice(0,19)+"\u2026"),t+(r?" "+r:"")}function Lt(e,t){(e.comments??(e.comments=[])).push(t),t.printed=!1,t.nodeDescription=ei(e)}function ue(e,t){t.leading=!0,t.trailing=!1,Lt(e,t)}function re(e,t,r){t.leading=!1,t.trailing=!1,r&&(t.marker=r),Lt(e,t)}function ie(e,t){t.leading=!1,t.trailing=!0,Lt(e,t)}var Pt=new WeakMap;function ut(e,t){if(Pt.has(e))return Pt.get(e);let{printer:{getCommentChildNodes:r,canAttachComment:n,getVisitorKeys:i},locStart:u,locEnd:o}=t;if(!n)return[];let s=((r==null?void 0:r(e,t))??[...Tt(e,{getVisitorKeys:X(i)})]).flatMap(a=>n(a)?[a]:ut(a,t));return s.sort((a,D)=>u(a)-u(D)||o(a)-o(D)),Pt.set(e,s),s}function qr(e,t,r,n){let{locStart:i,locEnd:u}=r,o=i(t),s=u(t),a=ut(e,r),D,l,d=0,f=a.length;for(;d<f;){let p=d+f>>1,c=a[p],F=i(c),m=u(c);if(F<=o&&s<=m)return qr(c,t,r,c);if(m<=o){D=c,d=p+1;continue}if(s<=F){l=c,f=p;continue}throw new Error("Comment location overlaps with node location")}if((n==null?void 0:n.type)==="TemplateLiteral"){let{quasis:p}=n,c=Rt(p,t,r);D&&Rt(p,D,r)!==c&&(D=null),l&&Rt(p,l,r)!==c&&(l=null)}return{enclosingNode:n,precedingNode:D,followingNode:l}}var It=()=>!1;function Jr(e,t){let{comments:r}=e;if(delete e.comments,!kt(r)||!t.printer.canAttachComment)return;let n=[],{locStart:i,locEnd:u,printer:{experimentalFeatures:{avoidAstMutation:o=!1}={},handleComments:s={}},originalText:a}=t,{ownLine:D=It,endOfLine:l=It,remaining:d=It}=s,f=r.map((p,c)=>({...qr(e,p,t),comment:p,text:a,options:t,ast:e,isLastComment:r.length-1===c}));for(let[p,c]of f.entries()){let{comment:F,precedingNode:m,enclosingNode:E,followingNode:A,text:w,options:h,ast:C,isLastComment:k}=c;if(h.parser==="json"||h.parser==="json5"||h.parser==="jsonc"||h.parser==="__js_expression"||h.parser==="__ts_expression"||h.parser==="__vue_expression"||h.parser==="__vue_ts_expression"){if(i(F)-i(C)<=0){ue(C,F);continue}if(u(F)-u(C)>=0){ie(C,F);continue}}let v;if(o?v=[c]:(F.enclosingNode=E,F.precedingNode=m,F.followingNode=A,v=[F,w,h,C,k]),ti(w,h,f,p))F.placement="ownLine",D(...v)||(A?ue(A,F):m?ie(m,F):E?re(E,F):re(C,F));else if(ri(w,h,f,p))F.placement="endOfLine",l(...v)||(m?ie(m,F):A?ue(A,F):E?re(E,F):re(C,F));else if(F.placement="remaining",!d(...v))if(m&&A){let $=n.length;$>0&&n[$-1].followingNode!==A&&Kr(n,h),n.push(c)}else m?ie(m,F):A?ue(A,F):E?re(E,F):re(C,F)}if(Kr(n,t),!o)for(let p of r)delete p.precedingNode,delete p.enclosingNode,delete p.followingNode}var Xr=e=>!/[\S\n\u2028\u2029]/u.test(e);function ti(e,t,r,n){let{comment:i,precedingNode:u}=r[n],{locStart:o,locEnd:s}=t,a=o(i);if(u)for(let D=n-1;D>=0;D--){let{comment:l,precedingNode:d}=r[D];if(d!==u||!Xr(e.slice(s(l),a)))break;a=o(l)}return V(e,a,{backwards:!0})}function ri(e,t,r,n){let{comment:i,followingNode:u}=r[n],{locStart:o,locEnd:s}=t,a=s(i);if(u)for(let D=n+1;D<r.length;D++){let{comment:l,followingNode:d}=r[D];if(d!==u||!Xr(e.slice(a,o(l))))break;a=s(l)}return V(e,a)}function Kr(e,t){var s,a;let r=e.length;if(r===0)return;let{precedingNode:n,followingNode:i}=e[0],u=t.locStart(i),o;for(o=r;o>0;--o){let{comment:D,precedingNode:l,followingNode:d}=e[o-1];ke.strictEqual(l,n),ke.strictEqual(d,i);let f=t.originalText.slice(t.locEnd(D),u);if(((a=(s=t.printer).isGap)==null?void 0:a.call(s,f,t))??/^[\s(]*$/u.test(f))u=t.locStart(D);else break}for(let[D,{comment:l}]of e.entries())D<o?ie(n,l):ue(i,l);for(let D of[n,i])D.comments&&D.comments.length>1&&D.comments.sort((l,d)=>t.locStart(l)-t.locStart(d));e.length=0}function Rt(e,t,r){let n=r.locStart(t)-1;for(let i=1;i<e.length;++i)if(n<r.locStart(e[i]))return i-1;return 0}function ni(e,t){let r=t-1;r=T(e,r,{backwards:!0}),r=M(e,r,{backwards:!0}),r=T(e,r,{backwards:!0});let n=M(e,r,{backwards:!0});return r!==n}var Le=ni;function Zr(e,t){let r=e.node;return r.printed=!0,t.printer.printComment(e,t)}function ui(e,t){var l;let r=e.node,n=[Zr(e,t)],{printer:i,originalText:u,locStart:o,locEnd:s}=t;if((l=i.isBlockComment)==null?void 0:l.call(i,r)){let d=V(u,s(r))?V(u,o(r),{backwards:!0})?q:Ke:" ";n.push(d)}else n.push(q);let D=M(u,T(u,s(r)));return D!==!1&&V(u,D)&&n.push(q),n}function ii(e,t,r){var D;let n=e.node,i=Zr(e,t),{printer:u,originalText:o,locStart:s}=t,a=(D=u.isBlockComment)==null?void 0:D.call(u,n);if(r!=null&&r.hasLineSuffix&&!(r!=null&&r.isBlock)||V(o,s(n),{backwards:!0})){let l=Le(o,s(n));return{doc:_e([q,l?q:"",i]),isBlock:a,hasLineSuffix:!0}}return!a||r!=null&&r.hasLineSuffix?{doc:[_e([" ",i]),de],isBlock:a,hasLineSuffix:!0}:{doc:[" ",i],isBlock:a,hasLineSuffix:!1}}function oi(e,t){let r=e.node;if(!r)return{};let n=t[Symbol.for("printedComments")];if((r.comments||[]).filter(a=>!n.has(a)).length===0)return{leading:"",trailing:""};let u=[],o=[],s;return e.each(()=>{let a=e.node;if(n!=null&&n.has(a))return;let{leading:D,trailing:l}=a;D?u.push(ui(e,t)):l&&(s=ii(e,t,s),o.push(s.doc))},"comments"),{leading:u,trailing:o}}function Qr(e,t,r){let{leading:n,trailing:i}=oi(e,r);return!n&&!i?t:Qe(t,u=>[n,u,i])}function en(e){let{[Symbol.for("comments")]:t,[Symbol.for("printedComments")]:r}=e;for(let n of t){if(!n.printed&&!r.has(n))throw new Error('Comment "'+n.value.trim()+'" was not printed. Please report this error!');delete n.printed}}function si(e){return()=>{}}var tn=si;var Pe=class extends Error{name="ConfigError"},Ie=class extends Error{name="UndefinedParserError"};var rn={cursorOffset:{category:"Special",type:"int",default:-1,range:{start:-1,end:1/0,step:1},description:"Print (to stderr) where a cursor at the given position would move to after formatting.",cliCategory:"Editor"},endOfLine:{category:"Global",type:"choice",default:"lf",description:"Which end of line characters to apply.",choices:[{value:"lf",description:"Line Feed only (\\n), common on Linux and macOS as well as inside git repos"},{value:"crlf",description:"Carriage Return + Line Feed characters (\\r\\n), common on Windows"},{value:"cr",description:"Carriage Return character only (\\r), used very rarely"},{value:"auto",description:`Maintain existing
-(mixed values within one file are normalised by looking at what's used after the first line)`}]},filepath:{category:"Special",type:"path",description:"Specify the input filepath. This will be used to do parser inference.",cliName:"stdin-filepath",cliCategory:"Other",cliDescription:"Path to the file to pretend that stdin comes from."},insertPragma:{category:"Special",type:"boolean",default:!1,description:"Insert @format pragma into file's first docblock comment.",cliCategory:"Other"},parser:{category:"Global",type:"choice",default:void 0,description:"Which parser to use.",exception:e=>typeof e=="string"||typeof e=="function",choices:[{value:"flow",description:"Flow"},{value:"babel",description:"JavaScript"},{value:"babel-flow",description:"Flow"},{value:"babel-ts",description:"TypeScript"},{value:"typescript",description:"TypeScript"},{value:"acorn",description:"JavaScript"},{value:"espree",description:"JavaScript"},{value:"meriyah",description:"JavaScript"},{value:"css",description:"CSS"},{value:"less",description:"Less"},{value:"scss",description:"SCSS"},{value:"json",description:"JSON"},{value:"json5",description:"JSON5"},{value:"jsonc",description:"JSON with Comments"},{value:"json-stringify",description:"JSON.stringify"},{value:"graphql",description:"GraphQL"},{value:"markdown",description:"Markdown"},{value:"mdx",description:"MDX"},{value:"vue",description:"Vue"},{value:"yaml",description:"YAML"},{value:"glimmer",description:"Ember / Handlebars"},{value:"html",description:"HTML"},{value:"angular",description:"Angular"},{value:"lwc",description:"Lightning Web Components"}]},plugins:{type:"path",array:!0,default:[{value:[]}],category:"Global",description:"Add a plugin. Multiple plugins can be passed as separate `--plugin`s.",exception:e=>typeof e=="string"||typeof e=="object",cliName:"plugin",cliCategory:"Config"},printWidth:{category:"Global",type:"int",default:80,description:"The line length where Prettier will try wrap.",range:{start:0,end:1/0,step:1}},rangeEnd:{category:"Special",type:"int",default:1/0,range:{start:0,end:1/0,step:1},description:`Format code ending at a given character offset (exclusive).
-The range will extend forwards to the end of the selected statement.`,cliCategory:"Editor"},rangeStart:{category:"Special",type:"int",default:0,range:{start:0,end:1/0,step:1},description:`Format code starting at a given character offset.
-The range will extend backwards to the start of the first line containing the selected statement.`,cliCategory:"Editor"},requirePragma:{category:"Special",type:"boolean",default:!1,description:`Require either '@prettier' or '@format' to be present in the file's first docblock comment
-in order for it to be formatted.`,cliCategory:"Other"},tabWidth:{type:"int",category:"Global",default:2,description:"Number of spaces per indentation level.",range:{start:0,end:1/0,step:1}},useTabs:{category:"Global",type:"boolean",default:!1,description:"Indent with tabs instead of spaces."},embeddedLanguageFormatting:{category:"Global",type:"choice",default:"auto",description:"Control how Prettier formats quoted code embedded in the file.",choices:[{value:"auto",description:"Format embedded code if Prettier can automatically identify it."},{value:"off",description:"Never automatically format embedded code."}]}};function it({plugins:e=[],showDeprecated:t=!1}={}){let r=e.flatMap(i=>i.languages??[]),n=[];for(let i of Di(Object.assign({},...e.map(({options:u})=>u),rn)))!t&&i.deprecated||(Array.isArray(i.choices)&&(t||(i.choices=i.choices.filter(u=>!u.deprecated)),i.name==="parser"&&(i.choices=[...i.choices,...ai(i.choices,r,e)])),i.pluginDefaults=Object.fromEntries(e.filter(u=>{var o;return((o=u.defaultOptions)==null?void 0:o[i.name])!==void 0}).map(u=>[u.name,u.defaultOptions[i.name]])),n.push(i));return{languages:r,options:n}}function*ai(e,t,r){let n=new Set(e.map(i=>i.value));for(let i of t)if(i.parsers){for(let u of i.parsers)if(!n.has(u)){n.add(u);let o=r.find(a=>a.parsers&&Object.prototype.hasOwnProperty.call(a.parsers,u)),s=i.name;o!=null&&o.name&&(s+=` (plugin: ${o.name})`),yield{value:u,description:s}}}}function Di(e){let t=[];for(let[r,n]of Object.entries(e)){let i={name:r,...n};Array.isArray(i.default)&&(i.default=y(!1,i.default,-1).value),t.push(i)}return t}var li=e=>String(e).split(/[/\\]/u).pop();function nn(e,t){if(!t)return;let r=li(t).toLowerCase();return e.find(({filenames:n})=>n==null?void 0:n.some(i=>i.toLowerCase()===r))??e.find(({extensions:n})=>n==null?void 0:n.some(i=>r.endsWith(i)))}function ci(e,t){if(t)return e.find(({name:r})=>r.toLowerCase()===t)??e.find(({aliases:r})=>r==null?void 0:r.includes(t))??e.find(({extensions:r})=>r==null?void 0:r.includes(`.${t}`))}function fi(e,t){let r=e.plugins.flatMap(i=>i.languages??[]),n=ci(r,t.language)??nn(r,t.physicalFile)??nn(r,t.file)??(t.physicalFile,void 0);return n==null?void 0:n.parsers[0]}var un=fi;var oe={key:e=>/^[$_a-zA-Z][$_a-zA-Z0-9]*$/.test(e)?e:JSON.stringify(e),value(e){if(e===null||typeof e!="object")return JSON.stringify(e);if(Array.isArray(e))return`[${e.map(r=>oe.value(r)).join(", ")}]`;let t=Object.keys(e);return t.length===0?"{}":`{ ${t.map(r=>`${oe.key(r)}: ${oe.value(e[r])}`).join(", ")} }`},pair:({key:e,value:t})=>oe.value({[e]:t})};var Yt=Me(ot(),1),an=(e,t,{descriptor:r})=>{let n=[`${Yt.default.yellow(typeof e=="string"?r.key(e):r.pair(e))} is deprecated`];return t&&n.push(`we now treat it as ${Yt.default.blue(typeof t=="string"?r.key(t):r.pair(t))}`),n.join("; ")+"."};var le=Me(ot(),1);var st=Symbol.for("vnopts.VALUE_NOT_EXIST"),he=Symbol.for("vnopts.VALUE_UNCHANGED");var Dn=" ".repeat(2),cn=(e,t,r)=>{let{text:n,list:i}=r.normalizeExpectedResult(r.schemas[e].expected(r)),u=[];return n&&u.push(ln(e,t,n,r.descriptor)),i&&u.push([ln(e,t,i.title,r.descriptor)].concat(i.values.map(o=>fn(o,r.loggerPrintWidth))).join(`
-`)),pn(u,r.loggerPrintWidth)};function ln(e,t,r,n){return[`Invalid ${le.default.red(n.key(e))} value.`,`Expected ${le.default.blue(r)},`,`but received ${t===st?le.default.gray("nothing"):le.default.red(n.value(t))}.`].join(" ")}function fn({text:e,list:t},r){let n=[];return e&&n.push(`- ${le.default.blue(e)}`),t&&n.push([`- ${le.default.blue(t.title)}:`].concat(t.values.map(i=>fn(i,r-Dn.length).replace(/^|\n/g,`$&${Dn}`))).join(`
-`)),pn(n,r)}function pn(e,t){if(e.length===1)return e[0];let[r,n]=e,[i,u]=e.map(o=>o.split(`
-`,1)[0].length);return i>t&&i>u?n:r}var Wt=Me(ot(),1);var jt=[],dn=[];function Ht(e,t){if(e===t)return 0;let r=e;e.length>t.length&&(e=t,t=r);let n=e.length,i=t.length;for(;n>0&&e.charCodeAt(~-n)===t.charCodeAt(~-i);)n--,i--;let u=0;for(;u<n&&e.charCodeAt(u)===t.charCodeAt(u);)u++;if(n-=u,i-=u,n===0)return i;let o,s,a,D,l=0,d=0;for(;l<n;)dn[l]=e.charCodeAt(u+l),jt[l]=++l;for(;d<i;)for(o=t.charCodeAt(u+d),a=d++,s=d,l=0;l<n;l++)D=o===dn[l]?a:a+1,a=jt[l],s=jt[l]=a>s?D>s?s+1:D:D>a?a+1:D;return s}var at=(e,t,{descriptor:r,logger:n,schemas:i})=>{let u=[`Ignored unknown option ${Wt.default.yellow(r.pair({key:e,value:t}))}.`],o=Object.keys(i).sort().find(s=>Ht(e,s)<3);o&&u.push(`Did you mean ${Wt.default.blue(r.key(o))}?`),n.warn(u.join(" "))};var pi=["default","expected","validate","deprecated","forward","redirect","overlap","preprocess","postprocess"];function di(e,t){let r=new e(t),n=Object.create(r);for(let i of pi)i in t&&(n[i]=Fi(t[i],r,O.prototype[i].length));return n}var O=class{static create(t){return di(this,t)}constructor(t){this.name=t.name}default(t){}expected(t){return"nothing"}validate(t,r){return!1}deprecated(t,r){return!1}forward(t,r){}redirect(t,r){}overlap(t,r,n){return t}preprocess(t,r){return t}postprocess(t,r){return he}};function Fi(e,t,r){return typeof e=="function"?(...n)=>e(...n.slice(0,r-1),t,...n.slice(r-1)):()=>e}var Dt=class extends O{constructor(t){super(t),this._sourceName=t.sourceName}expected(t){return t.schemas[this._sourceName].expected(t)}validate(t,r){return r.schemas[this._sourceName].validate(t,r)}redirect(t,r){return this._sourceName}};var lt=class extends O{expected(){return"anything"}validate(){return!0}};var ct=class extends O{constructor({valueSchema:t,name:r=t.name,...n}){super({...n,name:r}),this._valueSchema=t}expected(t){let{text:r,list:n}=t.normalizeExpectedResult(this._valueSchema.expected(t));return{text:r&&`an array of ${r}`,list:n&&{title:"an array of the following values",values:[{list:n}]}}}validate(t,r){if(!Array.isArray(t))return!1;let n=[];for(let i of t){let u=r.normalizeValidateResult(this._valueSchema.validate(i,r),i);u!==!0&&n.push(u.value)}return n.length===0?!0:{value:n}}deprecated(t,r){let n=[];for(let i of t){let u=r.normalizeDeprecatedResult(this._valueSchema.deprecated(i,r),i);u!==!1&&n.push(...u.map(({value:o})=>({value:[o]})))}return n}forward(t,r){let n=[];for(let i of t){let u=r.normalizeForwardResult(this._valueSchema.forward(i,r),i);n.push(...u.map(Fn))}return n}redirect(t,r){let n=[],i=[];for(let u of t){let o=r.normalizeRedirectResult(this._valueSchema.redirect(u,r),u);"remain"in o&&n.push(o.remain),i.push(...o.redirect.map(Fn))}return n.length===0?{redirect:i}:{redirect:i,remain:n}}overlap(t,r){return t.concat(r)}};function Fn({from:e,to:t}){return{from:[e],to:t}}var ft=class extends O{expected(){return"true or false"}validate(t){return typeof t=="boolean"}};function En(e,t){let r=Object.create(null);for(let n of e){let i=n[t];if(r[i])throw new Error(`Duplicate ${t} ${JSON.stringify(i)}`);r[i]=n}return r}function hn(e,t){let r=new Map;for(let n of e){let i=n[t];if(r.has(i))throw new Error(`Duplicate ${t} ${JSON.stringify(i)}`);r.set(i,n)}return r}function Cn(){let e=Object.create(null);return t=>{let r=JSON.stringify(t);return e[r]?!0:(e[r]=!0,!1)}}function gn(e,t){let r=[],n=[];for(let i of e)t(i)?r.push(i):n.push(i);return[r,n]}function yn(e){return e===Math.floor(e)}function An(e,t){if(e===t)return 0;let r=typeof e,n=typeof t,i=["undefined","object","boolean","number","string"];return r!==n?i.indexOf(r)-i.indexOf(n):r!=="string"?Number(e)-Number(t):e.localeCompare(t)}function Bn(e){return(...t)=>{let r=e(...t);return typeof r=="string"?new Error(r):r}}function Mt(e){return e===void 0?{}:e}function $t(e){if(typeof e=="string")return{text:e};let{text:t,list:r}=e;return mi((t||r)!==void 0,"Unexpected `expected` result, there should be at least one field."),r?{text:t,list:{title:r.title,values:r.values.map($t)}}:{text:t}}function Vt(e,t){return e===!0?!0:e===!1?{value:t}:e}function Ut(e,t,r=!1){return e===!1?!1:e===!0?r?!0:[{value:t}]:"value"in e?[e]:e.length===0?!1:e}function mn(e,t){return typeof e=="string"||"key"in e?{from:t,to:e}:"from"in e?{from:e.from,to:e.to}:{from:t,to:e.to}}function pt(e,t){return e===void 0?[]:Array.isArray(e)?e.map(r=>mn(r,t)):[mn(e,t)]}function zt(e,t){let r=pt(typeof e=="object"&&"redirect"in e?e.redirect:e,t);return r.length===0?{remain:t,redirect:r}:typeof e=="object"&&"remain"in e?{remain:e.remain,redirect:r}:{redirect:r}}function mi(e,t){if(!e)throw new Error(t)}var dt=class extends O{constructor(t){super(t),this._choices=hn(t.choices.map(r=>r&&typeof r=="object"?r:{value:r}),"value")}expected({descriptor:t}){let r=Array.from(this._choices.keys()).map(o=>this._choices.get(o)).filter(({hidden:o})=>!o).map(o=>o.value).sort(An).map(t.value),n=r.slice(0,-2),i=r.slice(-2);return{text:n.concat(i.join(" or ")).join(", "),list:{title:"one of the following values",values:r}}}validate(t){return this._choices.has(t)}deprecated(t){let r=this._choices.get(t);return r&&r.deprecated?{value:t}:!1}forward(t){let r=this._choices.get(t);return r?r.forward:void 0}redirect(t){let r=this._choices.get(t);return r?r.redirect:void 0}};var Ft=class extends O{expected(){return"a number"}validate(t,r){return typeof t=="number"}};var mt=class extends Ft{expected(){return"an integer"}validate(t,r){return r.normalizeValidateResult(super.validate(t,r),t)===!0&&yn(t)}};var Re=class extends O{expected(){return"a string"}validate(t){return typeof t=="string"}};var wn=oe,_n=at,xn=cn,vn=an;var Et=class{constructor(t,r){let{logger:n=console,loggerPrintWidth:i=80,descriptor:u=wn,unknown:o=_n,invalid:s=xn,deprecated:a=vn,missing:D=()=>!1,required:l=()=>!1,preprocess:d=p=>p,postprocess:f=()=>he}=r||{};this._utils={descriptor:u,logger:n||{warn:()=>{}},loggerPrintWidth:i,schemas:En(t,"name"),normalizeDefaultResult:Mt,normalizeExpectedResult:$t,normalizeDeprecatedResult:Ut,normalizeForwardResult:pt,normalizeRedirectResult:zt,normalizeValidateResult:Vt},this._unknownHandler=o,this._invalidHandler=Bn(s),this._deprecatedHandler=a,this._identifyMissing=(p,c)=>!(p in c)||D(p,c),this._identifyRequired=l,this._preprocess=d,this._postprocess=f,this.cleanHistory()}cleanHistory(){this._hasDeprecationWarned=Cn()}normalize(t){let r={},i=[this._preprocess(t,this._utils)],u=()=>{for(;i.length!==0;){let o=i.shift(),s=this._applyNormalization(o,r);i.push(...s)}};u();for(let o of Object.keys(this._utils.schemas)){let s=this._utils.schemas[o];if(!(o in r)){let a=Mt(s.default(this._utils));"value"in a&&i.push({[o]:a.value})}}u();for(let o of Object.keys(this._utils.schemas)){if(!(o in r))continue;let s=this._utils.schemas[o],a=r[o],D=s.postprocess(a,this._utils);D!==he&&(this._applyValidation(D,o,s),r[o]=D)}return this._applyPostprocess(r),this._applyRequiredCheck(r),r}_applyNormalization(t,r){let n=[],{knownKeys:i,unknownKeys:u}=this._partitionOptionKeys(t);for(let o of i){let s=this._utils.schemas[o],a=s.preprocess(t[o],this._utils);this._applyValidation(a,o,s);let D=({from:p,to:c})=>{n.push(typeof c=="string"?{[c]:p}:{[c.key]:c.value})},l=({value:p,redirectTo:c})=>{let F=Ut(s.deprecated(p,this._utils),a,!0);if(F!==!1)if(F===!0)this._hasDeprecationWarned(o)||this._utils.logger.warn(this._deprecatedHandler(o,c,this._utils));else for(let{value:m}of F){let E={key:o,value:m};if(!this._hasDeprecationWarned(E)){let A=typeof c=="string"?{key:c,value:m}:c;this._utils.logger.warn(this._deprecatedHandler(E,A,this._utils))}}};pt(s.forward(a,this._utils),a).forEach(D);let f=zt(s.redirect(a,this._utils),a);if(f.redirect.forEach(D),"remain"in f){let p=f.remain;r[o]=o in r?s.overlap(r[o],p,this._utils):p,l({value:p})}for(let{from:p,to:c}of f.redirect)l({value:p,redirectTo:c})}for(let o of u){let s=t[o];this._applyUnknownHandler(o,s,r,(a,D)=>{n.push({[a]:D})})}return n}_applyRequiredCheck(t){for(let r of Object.keys(this._utils.schemas))if(this._identifyMissing(r,t)&&this._identifyRequired(r))throw this._invalidHandler(r,st,this._utils)}_partitionOptionKeys(t){let[r,n]=gn(Object.keys(t).filter(i=>!this._identifyMissing(i,t)),i=>i in this._utils.schemas);return{knownKeys:r,unknownKeys:n}}_applyValidation(t,r,n){let i=Vt(n.validate(t,this._utils),t);if(i!==!0)throw this._invalidHandler(r,i.value,this._utils)}_applyUnknownHandler(t,r,n,i){let u=this._unknownHandler(t,r,this._utils);if(u)for(let o of Object.keys(u)){if(this._identifyMissing(o,u))continue;let s=u[o];o in this._utils.schemas?i(o,s):n[o]=s}}_applyPostprocess(t){let r=this._postprocess(t,this._utils);if(r!==he){if(r.delete)for(let n of r.delete)delete t[n];if(r.override){let{knownKeys:n,unknownKeys:i}=this._partitionOptionKeys(r.override);for(let u of n){let o=r.override[u];this._applyValidation(o,u,this._utils.schemas[u]),t[u]=o}for(let u of i){let o=r.override[u];this._applyUnknownHandler(u,o,t,(s,a)=>{let D=this._utils.schemas[s];this._applyValidation(a,s,D),t[s]=a})}}}}};var Gt;function hi(e,t,{logger:r=!1,isCLI:n=!1,passThrough:i=!1,FlagSchema:u,descriptor:o}={}){if(n){if(!u)throw new Error("'FlagSchema' option is required.");if(!o)throw new Error("'descriptor' option is required.")}else o=oe;let s=i?Array.isArray(i)?(f,p)=>i.includes(f)?{[f]:p}:void 0:(f,p)=>({[f]:p}):(f,p,c)=>{let{_:F,...m}=c.schemas;return at(f,p,{...c,schemas:m})},a=Ci(t,{isCLI:n,FlagSchema:u}),D=new Et(a,{logger:r,unknown:s,descriptor:o}),l=r!==!1;l&&Gt&&(D._hasDeprecationWarned=Gt);let d=D.normalize(e);return l&&(Gt=D._hasDeprecationWarned),d}function Ci(e,{isCLI:t,FlagSchema:r}){let n=[];t&&n.push(lt.create({name:"_"}));for(let i of e)n.push(gi(i,{isCLI:t,optionInfos:e,FlagSchema:r})),i.alias&&t&&n.push(Dt.create({name:i.alias,sourceName:i.name}));return n}function gi(e,{isCLI:t,optionInfos:r,FlagSchema:n}){let{name:i}=e,u={name:i},o,s={};switch(e.type){case"int":o=mt,t&&(u.preprocess=Number);break;case"string":o=Re;break;case"choice":o=dt,u.choices=e.choices.map(a=>a!=null&&a.redirect?{...a,redirect:{to:{key:e.name,value:a.redirect}}}:a);break;case"boolean":o=ft;break;case"flag":o=n,u.flags=r.flatMap(a=>[a.alias,a.description&&a.name,a.oppositeDescription&&`no-${a.name}`].filter(Boolean));break;case"path":o=Re;break;default:throw new Error(`Unexpected type ${e.type}`)}if(e.exception?u.validate=(a,D,l)=>e.exception(a)||D.validate(a,l):u.validate=(a,D,l)=>a===void 0||D.validate(a,l),e.redirect&&(s.redirect=a=>a?{to:typeof e.redirect=="string"?e.redirect:{key:e.redirect.option,value:e.redirect.value}}:void 0),e.deprecated&&(s.deprecated=!0),t&&!e.array){let a=u.preprocess||(D=>D);u.preprocess=(D,l,d)=>l.preprocess(a(Array.isArray(D)?y(!1,D,-1):D),d)}return e.array?ct.create({...t?{preprocess:a=>Array.isArray(a)?a:[a]}:{},...s,valueSchema:o.create(u)}):o.create({...u,...s})}var bn=hi;var yi=(e,t,r)=>{if(!(e&&t==null)){if(t.findLast)return t.findLast(r);for(let n=t.length-1;n>=0;n--){let i=t[n];if(r(i,n,t))return i}}},Kt=yi;function qt(e,t){if(!t)throw new Error("parserName is required.");let r=Kt(!1,e,i=>i.parsers&&Object.prototype.hasOwnProperty.call(i.parsers,t));if(r)return r;let n=`Couldn't resolve parser "${t}".`;throw n+=" Plugins must be explicitly added to the standalone bundle.",new Pe(n)}function On(e,t){if(!t)throw new Error("astFormat is required.");let r=Kt(!1,e,i=>i.printers&&Object.prototype.hasOwnProperty.call(i.printers,t));if(r)return r;let n=`Couldn't find plugin for AST format "${t}".`;throw n+=" Plugins must be explicitly added to the standalone bundle.",new Pe(n)}function ht({plugins:e,parser:t}){let r=qt(e,t);return Jt(r,t)}function Jt(e,t){let r=e.parsers[t];return typeof r=="function"?r():r}function Sn(e,t){let r=e.printers[t];return typeof r=="function"?r():r}var Nn={astFormat:"estree",printer:{},originalText:void 0,locStart:null,locEnd:null};async function Ai(e,t={}){var d;let r={...e};if(!r.parser)if(r.filepath){if(r.parser=un(r,{physicalFile:r.filepath}),!r.parser)throw new Ie(`No parser could be inferred for file "${r.filepath}".`)}else throw new Ie("No parser and no file path given, couldn't infer a parser.");let n=it({plugins:e.plugins,showDeprecated:!0}).options,i={...Nn,...Object.fromEntries(n.filter(f=>f.default!==void 0).map(f=>[f.name,f.default]))},u=qt(r.plugins,r.parser),o=await Jt(u,r.parser);r.astFormat=o.astFormat,r.locEnd=o.locEnd,r.locStart=o.locStart;let s=(d=u.printers)!=null&&d[o.astFormat]?u:On(r.plugins,o.astFormat),a=await Sn(s,o.astFormat);r.printer=a;let D=s.defaultOptions?Object.fromEntries(Object.entries(s.defaultOptions).filter(([,f])=>f!==void 0)):{},l={...i,...D};for(let[f,p]of Object.entries(l))(r[f]===null||r[f]===void 0)&&(r[f]=p);return r.parser==="json"&&(r.trailingComma="none"),bn(r,n,{passThrough:Object.keys(Nn),...t})}var se=Ai;var Vn=Me($n(),1);async function Ni(e,t){let r=await ht(t),n=r.preprocess?r.preprocess(e,t):e;t.originalText=n;let i;try{i=await r.parse(n,t,t)}catch(u){Ti(u,e)}return{text:n,ast:i}}function Ti(e,t){let{loc:r}=e;if(r){let n=(0,Vn.codeFrameColumns)(t,r,{highlightCode:!0});throw e.message+=`
-`+n,e.codeFrame=n,e}throw e}var ce=Ni;async function Un(e,t,r,n,i){let{embeddedLanguageFormatting:u,printer:{embed:o,hasPrettierIgnore:s=()=>!1,getVisitorKeys:a}}=r;if(!o||u!=="auto")return;if(o.length>2)throw new Error("printer.embed has too many parameters. The API changed in Prettier v3. Please update your plugin. See https://prettier.io/docs/en/plugins.html#optional-embed");let D=X(o.getVisitorKeys??a),l=[];p();let d=e.stack;for(let{print:c,node:F,pathStack:m}of l)try{e.stack=m;let E=await c(f,t,e,r);E&&i.set(F,E)}catch(E){if(globalThis.PRETTIER_DEBUG)throw E}e.stack=d;function f(c,F){return ki(c,F,r,n)}function p(){let{node:c}=e;if(c===null||typeof c!="object"||s(e))return;for(let m of D(c))Array.isArray(c[m])?e.each(p,m):e.call(p,m);let F=o(e,r);if(F){if(typeof F=="function"){l.push({print:F,node:c,pathStack:[...e.stack]});return}i.set(c,F)}}}async function ki(e,t,r,n){let i=await se({...r,...t,parentParser:r.parser,originalText:e},{passThrough:!0}),{ast:u}=await ce(e,i),o=await n(u,i);return Ze(o)}function Li(e,t){let{originalText:r,[Symbol.for("comments")]:n,locStart:i,locEnd:u,[Symbol.for("printedComments")]:o}=t,{node:s}=e,a=i(s),D=u(s);for(let l of n)i(l)>=a&&u(l)<=D&&o.add(l);return r.slice(a,D)}var zn=Li;async function Ye(e,t){({ast:e}=await Qt(e,t));let r=new Map,n=new Mr(e),i=tn(t),u=new Map;await Un(n,s,t,Ye,u);let o=await Gn(n,t,s,void 0,u);return en(t),o;function s(D,l){return D===void 0||D===n?a(l):Array.isArray(D)?n.call(()=>a(l),...D):n.call(()=>a(l),D)}function a(D){i(n);let l=n.node;if(l==null)return"";let d=l&&typeof l=="object"&&D===void 0;if(d&&r.has(l))return r.get(l);let f=Gn(n,t,s,D,u);return d&&r.set(l,f),f}}function Gn(e,t,r,n,i){var a;let{node:u}=e,{printer:o}=t,s;return(a=o.hasPrettierIgnore)!=null&&a.call(o,e)?s=zn(e,t):i.has(u)?s=i.get(u):s=o.print(e,t,r,n),u===t.cursorNode&&(s=Qe(s,D=>[ve,D,ve])),o.printComment&&(!o.willPrintOwnComments||!o.willPrintOwnComments(e,t))&&(s=Qr(e,s,t)),s}async function Qt(e,t){let r=e.comments??[];t[Symbol.for("comments")]=r,t[Symbol.for("tokens")]=e.tokens??[],t[Symbol.for("printedComments")]=new Set,Jr(e,t);let{printer:{preprocess:n}}=t;return e=n?await n(e,t):e,{ast:e,comments:r}}function Pi(e,t){let{cursorOffset:r,locStart:n,locEnd:i}=t,u=X(t.printer.getVisitorKeys),o=a=>n(a)<=r&&i(a)>=r,s=e;for(let a of Ur(e,{getVisitorKeys:u,filter:o}))s=a;return s}var Kn=Pi;function Ii(e,t){let{printer:{massageAstNode:r,getVisitorKeys:n}}=t;if(!r)return e;let i=X(n),u=r.ignoredProperties??new Set;return o(e);function o(s,a){if(!(s!==null&&typeof s=="object"))return s;if(Array.isArray(s))return s.map(f=>o(f,a)).filter(Boolean);let D={},l=new Set(i(s));for(let f in s)!Object.prototype.hasOwnProperty.call(s,f)||u.has(f)||(l.has(f)?D[f]=o(s[f],s):D[f]=s[f]);let d=r(s,D,a);if(d!==null)return d??D}}var qn=Ii;var Ri=(e,t,r)=>{if(!(e&&t==null)){if(t.findLastIndex)return t.findLastIndex(r);for(let n=t.length-1;n>=0;n--){let i=t[n];if(r(i,n,t))return n}return-1}},Jn=Ri;var Yi=({parser:e})=>e==="json"||e==="json5"||e==="jsonc"||e==="json-stringify";function ji(e,t){let r=[e.node,...e.parentNodes],n=new Set([t.node,...t.parentNodes]);return r.find(i=>Qn.has(i.type)&&n.has(i))}function Xn(e){let t=Jn(!1,e,r=>r.type!=="Program"&&r.type!=="File");return t===-1?e:e.slice(0,t+1)}function Hi(e,t,{locStart:r,locEnd:n}){let i=e.node,u=t.node;if(i===u)return{startNode:i,endNode:u};let o=r(e.node);for(let a of Xn(t.parentNodes))if(r(a)>=o)u=a;else break;let s=n(t.node);for(let a of Xn(e.parentNodes)){if(n(a)<=s)i=a;else break;if(i===u)break}return{startNode:i,endNode:u}}function er(e,t,r,n,i=[],u){let{locStart:o,locEnd:s}=r,a=o(e),D=s(e);if(!(t>D||t<a||u==="rangeEnd"&&t===a||u==="rangeStart"&&t===D)){for(let l of ut(e,r)){let d=er(l,t,r,n,[e,...i],u);if(d)return d}if(!n||n(e,i[0]))return{node:e,parentNodes:i}}}function Wi(e,t){return t!=="DeclareExportDeclaration"&&e!=="TypeParameterDeclaration"&&(e==="Directive"||e==="TypeAlias"||e==="TSExportAssignment"||e.startsWith("Declare")||e.startsWith("TSDeclare")||e.endsWith("Statement")||e.endsWith("Declaration"))}var Qn=new Set(["JsonRoot","ObjectExpression","ArrayExpression","StringLiteral","NumericLiteral","BooleanLiteral","NullLiteral","UnaryExpression","TemplateLiteral"]),Mi=new Set(["OperationDefinition","FragmentDefinition","VariableDefinition","TypeExtensionDefinition","ObjectTypeDefinition","FieldDefinition","DirectiveDefinition","EnumTypeDefinition","EnumValueDefinition","InputValueDefinition","InputObjectTypeDefinition","SchemaDefinition","OperationTypeDefinition","InterfaceTypeDefinition","UnionTypeDefinition","ScalarTypeDefinition"]);function Zn(e,t,r){if(!t)return!1;switch(e.parser){case"flow":case"babel":case"babel-flow":case"babel-ts":case"typescript":case"acorn":case"espree":case"meriyah":case"__babel_estree":return Wi(t.type,r==null?void 0:r.type);case"json":case"json5":case"jsonc":case"json-stringify":return Qn.has(t.type);case"graphql":return Mi.has(t.kind);case"vue":return t.tag!=="root"}return!1}function eu(e,t,r){let{rangeStart:n,rangeEnd:i,locStart:u,locEnd:o}=t;ke.ok(i>n);let s=e.slice(n,i).search(/\S/u),a=s===-1;if(!a)for(n+=s;i>n&&!/\S/u.test(e[i-1]);--i);let D=er(r,n,t,(p,c)=>Zn(t,p,c),[],"rangeStart"),l=a?D:er(r,i,t,p=>Zn(t,p),[],"rangeEnd");if(!D||!l)return{rangeStart:0,rangeEnd:0};let d,f;if(Yi(t)){let p=ji(D,l);d=p,f=p}else({startNode:d,endNode:f}=Hi(D,l,t));return{rangeStart:Math.min(u(d),u(f)),rangeEnd:Math.max(o(d),o(f))}}var uu="\uFEFF",tu=Symbol("cursor");async function iu(e,t,r=0){if(!e||e.trim().length===0)return{formatted:"",cursorOffset:-1,comments:[]};let{ast:n,text:i}=await ce(e,t);t.cursorOffset>=0&&(t.cursorNode=Kn(n,t));let u=await Ye(n,t,r);r>0&&(u=Je([q,u],r,t.tabWidth));let o=Fe(u,t);if(r>0){let a=o.formatted.trim();o.cursorNodeStart!==void 0&&(o.cursorNodeStart-=o.formatted.indexOf(a)),o.formatted=a+Be(t.endOfLine)}let s=t[Symbol.for("comments")];if(t.cursorOffset>=0){let a,D,l,d,f;if(t.cursorNode&&o.cursorNodeText?(a=t.locStart(t.cursorNode),D=i.slice(a,t.locEnd(t.cursorNode)),l=t.cursorOffset-a,d=o.cursorNodeStart,f=o.cursorNodeText):(a=0,D=i,l=t.cursorOffset,d=0,f=o.formatted),D===f)return{formatted:o.formatted,cursorOffset:d+l,comments:s};let p=D.split("");p.splice(l,0,tu);let c=f.split(""),F=dr(p,c),m=d;for(let E of F)if(E.removed){if(E.value.includes(tu))break}else m+=E.count;return{formatted:o.formatted,cursorOffset:m,comments:s}}return{formatted:o.formatted,cursorOffset:-1,comments:s}}async function $i(e,t){let{ast:r,text:n}=await ce(e,t),{rangeStart:i,rangeEnd:u}=eu(n,t,r),o=n.slice(i,u),s=Math.min(i,n.lastIndexOf(`
-`,i)+1),a=n.slice(s,i).match(/^\s*/u)[0],D=me(a,t.tabWidth),l=await iu(o,{...t,rangeStart:0,rangeEnd:Number.POSITIVE_INFINITY,cursorOffset:t.cursorOffset>i&&t.cursorOffset<=u?t.cursorOffset-i:-1,endOfLine:"lf"},D),d=l.formatted.trimEnd(),{cursorOffset:f}=t;f>u?f+=d.length-o.length:l.cursorOffset>=0&&(f=l.cursorOffset+i);let p=n.slice(0,i)+d+n.slice(u);if(t.endOfLine!=="lf"){let c=Be(t.endOfLine);f>=0&&c===`\r
-`&&(f+=wt(p.slice(0,f),`
-`)),p=ne(!1,p,`
-`,c)}return{formatted:p,cursorOffset:f,comments:l.comments}}function tr(e,t,r){return typeof t!="number"||Number.isNaN(t)||t<0||t>e.length?r:t}function ru(e,t){let{cursorOffset:r,rangeStart:n,rangeEnd:i}=t;return r=tr(e,r,-1),n=tr(e,n,0),i=tr(e,i,e.length),{...t,cursorOffset:r,rangeStart:n,rangeEnd:i}}function ou(e,t){let{cursorOffset:r,rangeStart:n,rangeEnd:i,endOfLine:u}=ru(e,t),o=e.charAt(0)===uu;if(o&&(e=e.slice(1),r--,n--,i--),u==="auto"&&(u=Fr(e)),e.includes("\r")){let s=a=>wt(e.slice(0,Math.max(a,0)),`\r
-`);r-=s(r),n-=s(n),i-=s(i),e=mr(e)}return{hasBOM:o,text:e,options:ru(e,{...t,cursorOffset:r,rangeStart:n,rangeEnd:i,endOfLine:u})}}async function nu(e,t){let r=await ht(t);return!r.hasPragma||r.hasPragma(e)}async function rr(e,t){let{hasBOM:r,text:n,options:i}=ou(e,await se(t));if(i.rangeStart>=i.rangeEnd&&n!==""||i.requirePragma&&!await nu(n,i))return{formatted:e,cursorOffset:t.cursorOffset,comments:[]};let u;return i.rangeStart>0||i.rangeEnd<n.length?u=await $i(n,i):(!i.requirePragma&&i.insertPragma&&i.printer.insertPragma&&!await nu(n,i)&&(n=i.printer.insertPragma(n)),u=await iu(n,i)),r&&(u.formatted=uu+u.formatted,u.cursorOffset>=0&&u.cursorOffset++),u}async function su(e,t,r){let{text:n,options:i}=ou(e,await se(t)),u=await ce(n,i);return r&&(r.preprocessForPrint&&(u.ast=await Qt(u.ast,i)),r.massage&&(u.ast=qn(u.ast,i))),u}async function au(e,t){t=await se(t);let r=await Ye(e,t);return Fe(r,t)}async function Du(e,t){let r=Or(e),{formatted:n}=await rr(r,{...t,parser:"__js_expression"});return n}async function lu(e,t){t=await se(t);let{ast:r}=await ce(e,t);return Ye(r,t)}async function cu(e,t){return Fe(e,await se(t))}var nr={};We(nr,{builders:()=>Ui,printer:()=>zi,utils:()=>Gi});var Ui={join:be,line:Ke,softline:vr,hardline:q,literalline:qe,group:xt,conditionalGroup:Ar,fill:Ge,lineSuffix:_e,lineSuffixBoundary:_r,cursor:ve,breakParent:de,ifBreak:Br,trim:xr,indent:De,indentIfBreak:wr,align:ae,addAlignmentToDoc:Je,markAsRoot:gr,dedentToRoot:Cr,dedent:yr,hardlineWithoutBreakParent:xe,literallineWithoutBreakParent:vt,label:br,concat:e=>e},zi={printDocToString:Fe},Gi={willBreak:Ir,traverseDoc:we,findInDoc:Xe,mapDoc:Ne,removeLines:Yr,stripTrailingHardline:Ze,replaceEndOfLine:jr,canBreak:Hr};var fu="3.3.3";var ir={};We(ir,{addDanglingComment:()=>re,addLeadingComment:()=>ue,addTrailingComment:()=>ie,getAlignmentSize:()=>me,getIndentSize:()=>pu,getMaxContinuousCount:()=>du,getNextNonSpaceNonCommentCharacter:()=>Fu,getNextNonSpaceNonCommentCharacterIndex:()=>io,getStringWidth:()=>Oe,hasNewline:()=>V,hasNewlineInRange:()=>mu,hasSpaces:()=>Eu,isNextLineEmpty:()=>Do,isNextLineEmptyAfterIndex:()=>gt,isPreviousLineEmpty:()=>so,makeString:()=>hu,skip:()=>Ee,skipEverythingButNewLine:()=>nt,skipInlineComment:()=>Ce,skipNewline:()=>M,skipSpaces:()=>T,skipToLineEnd:()=>rt,skipTrailingComment:()=>ge,skipWhitespace:()=>zr});function Ki(e,t){if(t===!1)return!1;if(e.charAt(t)==="/"&&e.charAt(t+1)==="*"){for(let r=t+2;r<e.length;++r)if(e.charAt(r)==="*"&&e.charAt(r+1)==="/")return r+2}return t}var Ce=Ki;function qi(e,t){return t===!1?!1:e.charAt(t)==="/"&&e.charAt(t+1)==="/"?nt(e,t):t}var ge=qi;function Ji(e,t){let r=null,n=t;for(;n!==r;)r=n,n=T(e,n),n=Ce(e,n),n=ge(e,n),n=M(e,n);return n}var je=Ji;function Xi(e,t){let r=null,n=t;for(;n!==r;)r=n,n=rt(e,n),n=Ce(e,n),n=T(e,n);return n=ge(e,n),n=M(e,n),n!==!1&&V(e,n)}var gt=Xi;function Zi(e,t){let r=e.lastIndexOf(`
-`);return r===-1?0:me(e.slice(r+1).match(/^[\t ]*/u)[0],t)}var pu=Zi;function ur(e){if(typeof e!="string")throw new TypeError("Expected a string");return e.replace(/[|\\{}()[\]^$+*?.]/g,"\\$&").replace(/-/g,"\\x2d")}function Qi(e,t){let r=e.match(new RegExp(`(${ur(t)})+`,"gu"));return r===null?0:r.reduce((n,i)=>Math.max(n,i.length/t.length),0)}var du=Qi;function eo(e,t){let r=je(e,t);return r===!1?"":e.charAt(r)}var Fu=eo;function to(e,t,r){for(let n=t;n<r;++n)if(e.charAt(n)===`
-`)return!0;return!1}var mu=to;function ro(e,t,r={}){return T(e,r.backwards?t-1:t,r)!==t}var Eu=ro;function no(e,t,r){let n=t==='"'?"'":'"',u=ne(!1,e,/\\(.)|(["'])/gsu,(o,s,a)=>s===n?s:a===t?"\\"+a:a||(r&&/^[^\n\r"'0-7\\bfnrt-vx\u2028\u2029]$/u.test(s)?s:"\\"+s));return t+u+t}var hu=no;function uo(e,t,r){return je(e,r(t))}function io(e,t){return arguments.length===2||typeof t=="number"?je(e,t):uo(...arguments)}function oo(e,t,r){return Le(e,r(t))}function so(e,t){return arguments.length===2||typeof t=="number"?Le(e,t):oo(...arguments)}function ao(e,t,r){return gt(e,r(t))}function Do(e,t){return arguments.length===2||typeof t=="number"?gt(e,t):ao(...arguments)}function fe(e,t=1){return async(...r)=>{let n=r[t]??{},i=n.plugins??[];return r[t]={...n,plugins:Array.isArray(i)?i:Object.values(i)},e(...r)}}var Cu=fe(rr);async function gu(e,t){let{formatted:r}=await Cu(e,{...t,cursorOffset:-1});return r}async function lo(e,t){return await gu(e,t)===e}var co=fe(it,0),fo={parse:fe(su),formatAST:fe(au),formatDoc:fe(Du),printToDoc:fe(lu),printDocToString:fe(cu)};return ar(po);});
-
-/***/ }),
-
 /***/ 8341:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
@@ -13765,6 +16603,32 @@ exports.debug = debug; // for test
 
 /***/ }),
 
+/***/ 5030:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+
+function getUserAgent() {
+  if (typeof navigator === "object" && "userAgent" in navigator) {
+    return navigator.userAgent;
+  }
+
+  if (typeof process === "object" && process.version !== undefined) {
+    return `Node.js/${process.version.substr(1)} (${process.platform}; ${process.arch})`;
+  }
+
+  return "<environment undetectable>";
+}
+
+exports.getUserAgent = getUserAgent;
+//# sourceMappingURL=index.js.map
+
+
+/***/ }),
+
 /***/ 5840:
 /***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
@@ -15234,11 +18098,11 @@ __nccwpck_require__.r(__webpack_exports__);
 var markdown_namespaceObject = {};
 __nccwpck_require__.r(markdown_namespaceObject);
 __nccwpck_require__.d(markdown_namespaceObject, {
-  "default": () => (fC),
-  "languages": () => (_i),
-  "options": () => (Si),
-  "parsers": () => (On),
-  "printers": () => (qm)
+  "default": () => (gl),
+  "languages": () => (Ki),
+  "options": () => (Xi),
+  "parsers": () => (Wn),
+  "printers": () => (fF)
 });
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
@@ -15515,113 +18379,1622 @@ function versionToTag(version) {
     return `v${version}`;
 }
 //# sourceMappingURL=git-operations.js.map
-// EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/dist/index.js
-var auto_changelog_dist = __nccwpck_require__(9272);
+// EXTERNAL MODULE: ./node_modules/semver/index.js
+var semver = __nccwpck_require__(1383);
+;// CONCATENATED MODULE: ./node_modules/@metamask/auto-changelog/dist/constants.mjs
+/**
+ * A [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0/) type.
+ */
+var ConventionalCommitType;
+(function (ConventionalCommitType) {
+    ConventionalCommitType["FEAT"] = "feat";
+    ConventionalCommitType["FIX"] = "fix";
+    ConventionalCommitType["DOCS"] = "docs";
+    ConventionalCommitType["STYLE"] = "style";
+    ConventionalCommitType["REFACTOR"] = "refactor";
+    ConventionalCommitType["PERF"] = "perf";
+    ConventionalCommitType["TEST"] = "test";
+    ConventionalCommitType["BUILD"] = "build";
+    ConventionalCommitType["CI"] = "ci";
+    ConventionalCommitType["CHORE"] = "chore";
+    ConventionalCommitType["REVERT"] = "revert";
+    // Custom types for MetaMask
+    ConventionalCommitType["BUMP"] = "bump";
+    ConventionalCommitType["RELEASE"] = "release";
+})(ConventionalCommitType || (ConventionalCommitType = {}));
+/**
+ * Change categories.
+ *
+ * Most of these categories are from [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+ * The "Uncategorized" category was added because we have many changes from
+ * older releases that would be difficult to categorize.
+ */
+var ChangeCategory;
+(function (ChangeCategory) {
+    /**
+     * For new features.
+     */
+    ChangeCategory["Added"] = "Added";
+    /**
+     * For changes in existing functionality.
+     */
+    ChangeCategory["Changed"] = "Changed";
+    /**
+     * For soon-to-be-removed features.
+     */
+    ChangeCategory["Deprecated"] = "Deprecated";
+    /**
+     * For bug fixes.
+     */
+    ChangeCategory["Fixed"] = "Fixed";
+    /**
+     * For now removed features.
+     */
+    ChangeCategory["Removed"] = "Removed";
+    /**
+     * In case of vulnerabilities.
+     */
+    ChangeCategory["Security"] = "Security";
+    /**
+     * For any changes that have yet to be categorized.
+     */
+    ChangeCategory["Uncategorized"] = "Uncategorized";
+    /**
+     * For changes that should be excluded from the changelog.
+     */
+    ChangeCategory["Excluded"] = "Excluded";
+})(ChangeCategory || (ChangeCategory = {}));
+/**
+ * Change categories in the order in which they should be listed in the
+ * changelog.
+ */
+const orderedChangeCategories = [
+    ChangeCategory.Uncategorized,
+    ChangeCategory.Added,
+    ChangeCategory.Changed,
+    ChangeCategory.Deprecated,
+    ChangeCategory.Removed,
+    ChangeCategory.Fixed,
+    ChangeCategory.Security,
+];
+/**
+ * The header for the section of the changelog listing unreleased changes.
+ */
+const unreleased = 'Unreleased';
+/**
+ * Lowercase keywords that indicate a commit should be excluded from the changelog.
+ */
+const keywordsToIndicateExcluded = [
+    'Bump main version to',
+    'changelog',
+    'cherry-pick',
+    'cp-',
+    'e2e',
+    'flaky test',
+    'INFRA-',
+    'Merge pull request',
+    'New Crowdin translations',
+].map((word) => word.toLowerCase());
+//# sourceMappingURL=constants.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@metamask/auto-changelog/dist/changelog.mjs
+var __classPrivateFieldSet = (undefined && undefined.__classPrivateFieldSet) || function (receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return (kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value)), value;
+};
+var __classPrivateFieldGet = (undefined && undefined.__classPrivateFieldGet) || function (receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+};
+var _Changelog_releases, _Changelog_changes, _Changelog_repoUrl, _Changelog_tagPrefix, _Changelog_formatter, _Changelog_packageRename;
+function $importDefault(module) {
+    if (module === null || module === void 0 ? void 0 : module.__esModule) {
+        return module.default;
+    }
+    return module;
+}
+
+const changelog_semver = $importDefault(semver);
+
+
+/**
+ * Format a Markdown changelog string.
+ *
+ * @param changelog - The changelog string to format.
+ * @param formatter - The name of the formatter to use.
+ * @returns The formatted changelog string.
+ */
+async function format(changelog, formatter) {
+    // eslint-disable-next-line import/namespace
+    return await formatters[formatter](changelog);
+}
+/**
+ * `Object.getOwnPropertyNames()` is intentionally generic: it returns the
+ * immediate property names of an object, but it cannot make guarantees about
+ * the contents of that object, so the type of the property names is merely
+ * `string[]`. While this is technically accurate, it is also unnecessary if we
+ * have an object with a type that we own (such as an enum).
+ *
+ * IMPORTANT: This is copied from `@metamask/utils` in order to avoid a circular
+ * dependency between this package and `@metamask/utils`.
+ *
+ * @param object - The plain object.
+ * @returns The own property names of the object which are assigned a type
+ * derived from the object itself.
+ */
+function getKnownPropertyNames(object) {
+    return Object.getOwnPropertyNames(object);
+}
+const changelogTitle = '# Changelog';
+const changelogDescription = `All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).`;
+// Stringification helpers
+/**
+ * Stringify a changelog category section.
+ *
+ * @param category - The title of the changelog category.
+ * @param changes - The changes included in this category.
+ * @param repoUrl - The URL of the repository.
+ * @param useShortPrLink - Whether to use short PR links in the changelog entries.
+ * @returns The stringified category section.
+ */
+function stringifyCategory(category, changes, repoUrl, useShortPrLink = false) {
+    const categoryHeader = `### ${category}`;
+    if (changes.length === 0) {
+        return categoryHeader;
+    }
+    const changeDescriptions = changes
+        .map(({ description, prNumbers }) => {
+        const [firstLine, ...otherLines] = description.split('\n');
+        const stringifiedPrLinks = prNumbers
+            .map((prNumber) => useShortPrLink
+            ? `#${prNumber}`
+            : `[#${prNumber}](${repoUrl}/pull/${prNumber})`)
+            .join(', ');
+        const parenthesizedPrLinks = stringifiedPrLinks.length > 0 ? ` (${stringifiedPrLinks})` : '';
+        return [`- ${firstLine}${parenthesizedPrLinks}`, ...otherLines].join('\n');
+    })
+        .join('\n');
+    return `${categoryHeader}\n${changeDescriptions}`;
+}
+/**
+ * Stringify a changelog release section.
+ *
+ * @param version - The release version.
+ * @param categories - The categories of changes included in this release.
+ * @param repoUrl - The URL of the repository.
+ * @param useShortPrLink - Whether to use short PR links in the changelog entries.
+ * @param options - Additional release options.
+ * @param options.date - The date of the release.
+ * @param options.status - The status of the release (e.g., "DEPRECATED").
+ * @returns The stringified release section.
+ */
+function stringifyRelease(version, categories, repoUrl, useShortPrLink = false, { date, status } = {}) {
+    const releaseHeader = `## [${version}]${date ? ` - ${date}` : ''}${status ? ` [${status}]` : ''}`;
+    const categorizedChanges = orderedChangeCategories.filter((category) => categories[category])
+        .map((category) => {
+        var _a;
+        const changes = (_a = categories[category]) !== null && _a !== void 0 ? _a : [];
+        return stringifyCategory(category, changes, repoUrl, useShortPrLink);
+    })
+        .join('\n\n');
+    if (categorizedChanges === '') {
+        return releaseHeader;
+    }
+    return `${releaseHeader}\n${categorizedChanges}`;
+}
+/**
+ * Stringify a set of changelog release sections.
+ *
+ * @param releases - The releases to stringify.
+ * @param changes - The set of changes to include, organized by release.
+ * @param repoUrl - The URL of the repository.
+ * @param useShortPrLink - Whether to use short PR links in the changelog entries.
+ * @returns The stringified set of release sections.
+ */
+function stringifyReleases(releases, changes, repoUrl, useShortPrLink = false) {
+    const stringifiedUnreleased = stringifyRelease(unreleased, changes[unreleased], repoUrl, useShortPrLink);
+    const stringifiedReleases = releases.map(({ version, date, status }) => {
+        const categories = changes[version];
+        return stringifyRelease(version, categories, repoUrl, useShortPrLink, {
+            date,
+            status,
+        });
+    });
+    return [stringifiedUnreleased, ...stringifiedReleases].join('\n\n');
+}
+/**
+ * Return the given URL with a trailing slash. It is returned unaltered if it
+ * already has a trailing slash.
+ *
+ * @param url - The URL string.
+ * @returns The URL string with a trailing slash.
+ */
+function withTrailingSlash(url) {
+    return url.endsWith('/') ? url : `${url}/`;
+}
+/**
+ * Get the GitHub URL for comparing two git commits.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param firstRef - A reference (e.g., commit hash, tag, etc.) to the first commit to compare.
+ * @param secondRef - A reference (e.g., commit hash, tag, etc.) to the second commit to compare.
+ * @returns The comparison URL for the two given commits.
+ */
+function getCompareUrl(repoUrl, firstRef, secondRef) {
+    return `${withTrailingSlash(repoUrl)}compare/${firstRef}...${secondRef}`;
+}
+/**
+ * Get a GitHub tag URL.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param tag - The tag name.
+ * @returns The URL for the given tag.
+ */
+function getTagUrl(repoUrl, tag) {
+    return `${withTrailingSlash(repoUrl)}releases/tag/${tag}`;
+}
+/**
+ * Get a stringified list of link definitions for the given set of releases. The first release is
+ * linked to the corresponding tag, and each subsequent release is linked to a comparison with the
+ * previous release.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param tagPrefix - The prefix used in tags before the version number.
+ * @param releases - The releases to generate link definitions for.
+ * @param packageRename - The package rename properties
+ * An optional, which is required only in case of package renamed.
+ * @returns The stringified release link definitions.
+ */
+function stringifyLinkReferenceDefinitions(repoUrl, tagPrefix, releases, packageRename) {
+    const unreleasedLinkReferenceDefinition = getUnreleasedLinkReferenceDefinition(repoUrl, tagPrefix, releases, packageRename);
+    const releaseLinkReferenceDefinitions = getReleaseLinkReferenceDefinitions(repoUrl, tagPrefix, releases, packageRename).join('\n');
+    return `${unreleasedLinkReferenceDefinition}\n${releaseLinkReferenceDefinitions}${releases.length > 0 ? '\n' : ''}`;
+}
+/**
+ * Get a string of unreleased link reference definition.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param tagPrefix - The prefix used in tags before the version number.
+ * @param releases - The releases to generate link definitions for.
+ * @param packageRename - The package rename properties.
+ * @returns A unreleased link reference definition string.
+ */
+function getUnreleasedLinkReferenceDefinition(repoUrl, tagPrefix, releases, packageRename) {
+    // The "Unreleased" section represents all changes made since the *highest*
+    // release, not the most recent release. This is to accomodate patch releases
+    // of older versions that don't represent the latest set of changes.
+    //
+    // For example, if a library has a v2.0.0 but the v1.0.0 release needed a
+    // security update, the v1.0.1 release would then be the most recent, but the
+    // range of unreleased changes would remain `v2.0.0...HEAD`.
+    //
+    // If there have not been any releases yet, the repo URL is used directly as
+    // the link definition.
+    // A list of release versions in descending SemVer order
+    const descendingSemverVersions = releases
+        .map(({ version }) => version)
+        .sort((a, b) => {
+        return changelog_semver.gt(a, b) ? -1 : 1;
+    });
+    const latestSemverVersion = descendingSemverVersions[0];
+    const hasReleases = descendingSemverVersions.length > 0;
+    // if there is a package renamed, the tag prefix before the rename will be considered for compare
+    // [Unreleased]: https://github.com/ExampleUsernameOrOrganization/ExampleRepository/compare/test@0.0.2...HEAD
+    const tagPrefixToCompare = packageRename && packageRename.versionBeforeRename === latestSemverVersion
+        ? packageRename.tagPrefixBeforeRename
+        : tagPrefix;
+    return `[${unreleased}]: ${hasReleases
+        ? getCompareUrl(repoUrl, `${tagPrefixToCompare}${latestSemverVersion}`, 'HEAD')
+        : withTrailingSlash(repoUrl)}`;
+}
+/**
+ * Get a list of release link reference definitions.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @param tagPrefix - The prefix used in tags before the version number.
+ * @param releases - The releases to generate link definitions for.
+ * @param packageRename - The package rename properties.
+ * @returns A list of release link reference definitions.
+ */
+function getReleaseLinkReferenceDefinitions(repoUrl, tagPrefix, releases, packageRename) {
+    // The "previous" release that should be used for comparison is not always
+    // the most recent release chronologically. The _highest_ version that is
+    // lower than the current release is used as the previous release, so that
+    // patch releases on older releases can be accomodated.
+    const chronologicalVersions = releases.map(({ version }) => version);
+    let tagPrefixToCompare = tagPrefix;
+    const releaseLinkReferenceDefinitions = releases.map(({ version }) => {
+        let diffUrl;
+        // once the version matches with versionBeforeRename, rest of the lines in changelog will be assumed as migrated tags
+        if (packageRename && packageRename.versionBeforeRename === version) {
+            tagPrefixToCompare = packageRename.tagPrefixBeforeRename;
+        }
+        if (version === chronologicalVersions[chronologicalVersions.length - 1]) {
+            diffUrl = getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
+        }
+        else {
+            const versionIndex = chronologicalVersions.indexOf(version);
+            const previousVersion = chronologicalVersions
+                .slice(versionIndex)
+                .find((releaseVersion) => {
+                return changelog_semver.gt(version, releaseVersion);
+            });
+            if (previousVersion) {
+                if (packageRename &&
+                    packageRename.versionBeforeRename === previousVersion) {
+                    // The package was renamed at this version
+                    // (the tag prefix holds the new name).
+                    diffUrl = getCompareUrl(repoUrl, `${packageRename.tagPrefixBeforeRename}${previousVersion}`, `${tagPrefix}${version}`);
+                }
+                else {
+                    // If the package was ever renamed, it was not renamed at this version,
+                    // so use either the old tag prefix or the new tag prefix.
+                    // If the package was never renamed, use the tag prefix as it is.
+                    diffUrl = getCompareUrl(repoUrl, `${tagPrefixToCompare}${previousVersion}`, `${tagPrefixToCompare}${version}`);
+                }
+            }
+            else {
+                // This is the smallest release.
+                diffUrl = getTagUrl(repoUrl, `${tagPrefixToCompare}${version}`);
+            }
+        }
+        return `[${version}]: ${diffUrl}`;
+    });
+    return releaseLinkReferenceDefinitions;
+}
+/**
+ * Generate a changelog description from a DependencyBump.
+ *
+ * @param bump - The dependency bump data.
+ * @returns The formatted description string.
+ */
+function formatDependencyBumpDescription(bump) {
+    const prefix = bump.isBreaking ? '**BREAKING:** ' : '';
+    return `${prefix}Bump \`${bump.dependency}\` from \`${bump.oldVersion}\` to \`${bump.newVersion}\``;
+}
+/**
+ * A changelog that complies with the
+ * ["Keep a Changelog" v1.1.0 guidelines](https://keepachangelog.com/en/1.0.0/).
+ *
+ * This changelog starts out completely empty, and allows new releases and
+ * changes to be added such that the changelog remains compliant at all times.
+ * This can be used to help validate the contents of a changelog, normalize
+ * formatting, update a changelog, or build one from scratch.
+ */
+class Changelog {
+    /**
+     * Construct an empty changelog.
+     *
+     * @param options - Changelog options.
+     * @param options.repoUrl - The GitHub repository URL for the current project.
+     * @param options.tagPrefix - The prefix used in tags before the version number.
+     * @param options.formatter - A function that formats the changelog string.
+     * @param options.packageRename - The package rename properties.
+     * An optional, which is required only in case of package renamed.
+     */
+    constructor({ repoUrl, tagPrefix = 'v', formatter = (changelog) => changelog, packageRename, }) {
+        _Changelog_releases.set(this, void 0);
+        _Changelog_changes.set(this, void 0);
+        _Changelog_repoUrl.set(this, void 0);
+        _Changelog_tagPrefix.set(this, void 0);
+        _Changelog_formatter.set(this, void 0);
+        _Changelog_packageRename.set(this, void 0);
+        __classPrivateFieldSet(this, _Changelog_releases, [], "f");
+        __classPrivateFieldSet(this, _Changelog_changes, { [unreleased]: {} }, "f");
+        __classPrivateFieldSet(this, _Changelog_repoUrl, repoUrl, "f");
+        __classPrivateFieldSet(this, _Changelog_tagPrefix, tagPrefix, "f");
+        __classPrivateFieldSet(this, _Changelog_formatter, formatter, "f");
+        __classPrivateFieldSet(this, _Changelog_packageRename, packageRename, "f");
+    }
+    /**
+     * Add a release to the changelog.
+     *
+     * @param options - Release options.
+     * @param options.addToStart - Determines whether the change is added to the
+     * top or bottom of the list of changes in this category. This defaults to
+     * `true` because changes should be in reverse-chronological order. This
+     * should be set to `false` when parsing a changelog top-to-bottom.
+     * @param options.date - An ISO-8601 formatted date, representing the release
+     * date.
+     * @param options.status - The status of the release (e.g., 'WITHDRAWN',
+     * 'DEPRECATED').
+     * @param options.version - The version of the current release, which should
+     * be a [SemVer](https://semver.org/spec/v2.0.0.html)-compatible version.
+     */
+    addRelease({ addToStart = true, date, status, version }) {
+        if (!version) {
+            throw new Error('Version required');
+        }
+        else if (changelog_semver.valid(version) === null) {
+            throw new Error(`Not a valid semver version: '${version}'`);
+        }
+        else if (__classPrivateFieldGet(this, _Changelog_changes, "f")[version]) {
+            throw new Error(`Release already exists: '${version}'`);
+        }
+        __classPrivateFieldGet(this, _Changelog_changes, "f")[version] = {};
+        const newRelease = { version, date, status };
+        if (addToStart) {
+            __classPrivateFieldGet(this, _Changelog_releases, "f").unshift(newRelease);
+        }
+        else {
+            __classPrivateFieldGet(this, _Changelog_releases, "f").push(newRelease);
+        }
+    }
+    /**
+     * Add a change to the changelog.
+     *
+     * @param options - Change options.
+     * @param options.addToStart - Determines whether the change is added to the
+     * top or bottom of the list of changes in this category. This defaults to
+     * `true` because changes should be in reverse-chronological order. This
+     * should be set to `false` when parsing a changelog top-to-bottom.
+     * @param options.category - The category of the change.
+     * @param options.description - The description of the change. Optional if
+     * `dependencyBump` is provided, in which case the description is
+     * auto-generated.
+     * @param options.version - The version this change was released in. If this
+     * is not given, the change is assumed to be unreleased.
+     * @param options.prNumbers - The pull request numbers associated with the
+     * change.
+     * @param options.dependencyBump - Structured dependency bump data. When
+     * provided and no description is given, the description is auto-generated
+     * from the bump data.
+     */
+    addChange(options) {
+        var _a;
+        const { addToStart = true, category, description, version, prNumbers = [], } = options;
+        if (!category) {
+            throw new Error('Category required');
+        }
+        else if (!orderedChangeCategories.includes(category)) {
+            throw new Error(`Unrecognized category: '${category}'`);
+        }
+        else if (version !== undefined && !__classPrivateFieldGet(this, _Changelog_changes, "f")[version]) {
+            throw new Error(`Specified release version does not exist: '${version}'`);
+        }
+        const dependencyBump = 'dependencyBump' in options ? options.dependencyBump : undefined;
+        let effectiveDescription;
+        if (dependencyBump !== undefined) {
+            effectiveDescription =
+                description !== null && description !== void 0 ? description : formatDependencyBumpDescription(dependencyBump);
+        }
+        else if (description) {
+            effectiveDescription = description;
+        }
+        else {
+            throw new Error('Description required');
+        }
+        const release = version
+            ? __classPrivateFieldGet(this, _Changelog_changes, "f")[version]
+            : __classPrivateFieldGet(this, _Changelog_changes, "f")[unreleased];
+        const releaseCategory = (_a = release[category]) !== null && _a !== void 0 ? _a : [];
+        const change = {
+            description: effectiveDescription,
+            prNumbers,
+        };
+        if (dependencyBump !== undefined) {
+            change.dependencyBump = dependencyBump;
+        }
+        releaseCategory[addToStart ? 'unshift' : 'push'](change);
+        release[category] = releaseCategory;
+    }
+    /**
+     * Update an existing change entry in the changelog.
+     *
+     * @param options - Update options.
+     * @param options.version - The version of the release containing the change.
+     * If not given, the unreleased section is used.
+     * @param options.category - The category of the change.
+     * @param options.entryIndex - The index of the change within the category.
+     * @param options.description - New description (optional).
+     * @param options.prNumbers - New PR numbers (optional).
+     * @param options.dependencyBump - New dependency bump data (optional).
+     */
+    updateChange(options) {
+        const { version, category, entryIndex, prNumbers } = options;
+        const release = version
+            ? __classPrivateFieldGet(this, _Changelog_changes, "f")[version]
+            : __classPrivateFieldGet(this, _Changelog_changes, "f")[unreleased];
+        if (!release) {
+            throw new Error(version
+                ? `Could not find release: '${version}'`
+                : `Could not find '${unreleased}' section`);
+        }
+        const releaseCategory = release[category];
+        if (!releaseCategory) {
+            throw new Error(`Could not find category '${category}' in release section '${version !== null && version !== void 0 ? version : unreleased}'`);
+        }
+        if (entryIndex < 0 || entryIndex >= releaseCategory.length) {
+            throw new Error(`No change at index ${entryIndex} in category '${category}'`);
+        }
+        const change = releaseCategory[entryIndex];
+        const description = 'description' in options ? options.description : undefined;
+        const dependencyBump = 'dependencyBump' in options ? options.dependencyBump : undefined;
+        if (description !== undefined) {
+            change.description = description;
+            if (dependencyBump !== undefined) {
+                change.dependencyBump = dependencyBump;
+            }
+        }
+        else if (dependencyBump !== undefined) {
+            change.description = formatDependencyBumpDescription(dependencyBump);
+            change.dependencyBump = dependencyBump;
+        }
+        if (prNumbers !== undefined) {
+            change.prNumbers = prNumbers;
+        }
+    }
+    /**
+     * Migrate all unreleased changes to a release section.
+     *
+     * Changes are migrated in their existing categories, and placed above any
+     * pre-existing changes in that category.
+     *
+     * @param version - The release version to migrate unreleased changes to.
+     */
+    migrateUnreleasedChangesToRelease(version) {
+        var _a, _b;
+        const releaseChanges = __classPrivateFieldGet(this, _Changelog_changes, "f")[version];
+        if (!releaseChanges) {
+            throw new Error(`Specified release version does not exist: '${version}'`);
+        }
+        const unreleasedChanges = __classPrivateFieldGet(this, _Changelog_changes, "f")[unreleased];
+        for (const category of getKnownPropertyNames(unreleasedChanges)) {
+            if (releaseChanges[category]) {
+                releaseChanges[category] = [
+                    ...((_a = unreleasedChanges[category]) !== null && _a !== void 0 ? _a : []),
+                    ...((_b = releaseChanges[category]) !== null && _b !== void 0 ? _b : []),
+                ];
+            }
+            else {
+                releaseChanges[category] = unreleasedChanges[category];
+            }
+        }
+        __classPrivateFieldGet(this, _Changelog_changes, "f")[unreleased] = {};
+    }
+    /**
+     * Gets the metadata for all releases.
+     *
+     * @returns The metadata for each release.
+     */
+    getReleases() {
+        return __classPrivateFieldGet(this, _Changelog_releases, "f");
+    }
+    /**
+     * Gets the release of the given version.
+     *
+     * @param version - The version of the release to retrieve.
+     * @returns The specified release, or undefined if no such release exists.
+     */
+    getRelease(version) {
+        return this.getReleases().find(({ version: _version }) => _version === version);
+    }
+    /**
+     * Gets the stringified release of the given version.
+     * Throws an error if no such release exists.
+     *
+     * @param version - The version of the release to stringify.
+     * @param useShortPrLink - Whether to use short PR links in the changelog entries.
+     * @returns The stringified release, as it appears in the changelog.
+     */
+    getStringifiedRelease(version, useShortPrLink = false) {
+        const release = this.getRelease(version);
+        if (!release) {
+            throw new Error(`Specified release version does not exist: '${version}'`);
+        }
+        const releaseChanges = this.getReleaseChanges(version);
+        return stringifyRelease(version, releaseChanges, __classPrivateFieldGet(this, _Changelog_repoUrl, "f"), useShortPrLink, release);
+    }
+    /**
+     * Gets the changes in the given release, organized by category.
+     *
+     * @param version - The version of the release being retrieved.
+     * @returns The changes included in the given released.
+     */
+    getReleaseChanges(version) {
+        return __classPrivateFieldGet(this, _Changelog_changes, "f")[version];
+    }
+    /**
+     * Gets all changes that have not yet been released.
+     *
+     * @returns The changes that have not yet been released.
+     */
+    getUnreleasedChanges() {
+        return __classPrivateFieldGet(this, _Changelog_changes, "f")[unreleased];
+    }
+    /**
+     * The stringified changelog, formatted according to [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
+     *
+     * @param useShortPrLink - Whether to use short PR links in the changelog entries.
+     * @returns The stringified changelog.
+     */
+    async toString(useShortPrLink = false) {
+        const changelog = `${changelogTitle}
+${changelogDescription}
+
+${stringifyReleases(__classPrivateFieldGet(this, _Changelog_releases, "f"), __classPrivateFieldGet(this, _Changelog_changes, "f"), __classPrivateFieldGet(this, _Changelog_repoUrl, "f"), useShortPrLink)}
+
+${stringifyLinkReferenceDefinitions(__classPrivateFieldGet(this, _Changelog_repoUrl, "f"), __classPrivateFieldGet(this, _Changelog_tagPrefix, "f"), __classPrivateFieldGet(this, _Changelog_releases, "f"), __classPrivateFieldGet(this, _Changelog_packageRename, "f"))}`;
+        return await __classPrivateFieldGet(this, _Changelog_formatter, "f").call(this, changelog);
+    }
+}
+_Changelog_releases = new WeakMap(), _Changelog_changes = new WeakMap(), _Changelog_repoUrl = new WeakMap(), _Changelog_tagPrefix = new WeakMap(), _Changelog_formatter = new WeakMap(), _Changelog_packageRename = new WeakMap();
+//# sourceMappingURL=changelog.mjs.map
+// EXTERNAL MODULE: ./node_modules/@octokit/rest/dist-node/index.js
+var dist_node = __nccwpck_require__(5375);
 // EXTERNAL MODULE: external "fs"
 var external_fs_ = __nccwpck_require__(7147);
 // EXTERNAL MODULE: external "path"
 var external_path_ = __nccwpck_require__(1017);
 var external_path_default = /*#__PURE__*/__nccwpck_require__.n(external_path_);
+;// CONCATENATED MODULE: ./node_modules/@metamask/auto-changelog/dist/repo.mjs
+/* eslint-disable node/no-process-env, node/no-sync */
+
+
+/**
+ * Return the current project repository URL.
+ *
+ * @returns The repository URL.
+ */
+function getRepositoryUrl() {
+    var _a;
+    // Set automatically by NPM or Yarn 1.x
+    const npmPackageRepositoryUrl = process.env.npm_package_repository_url;
+    if (npmPackageRepositoryUrl) {
+        return npmPackageRepositoryUrl.replace(/\.git$/u, '');
+    }
+    // Set automatically by Yarn 3.x
+    const projectCwd = process.env.PROJECT_CWD;
+    if (projectCwd) {
+        const packageJson = path.resolve(projectCwd, 'package.json');
+        const packageJsonContent = JSON.parse(fs.readFileSync(packageJson, 'utf8'));
+        if (typeof packageJsonContent.repository === 'string') {
+            return packageJsonContent.repository.replace(/\.git$/u, '');
+        }
+        if (typeof ((_a = packageJsonContent.repository) === null || _a === void 0 ? void 0 : _a.url) === 'string') {
+            return packageJsonContent.repository.url.replace(/\.git$/u, '');
+        }
+    }
+    return null;
+}
+/**
+ * Extract the owner and repository name from a GitHub repository URL.
+ *
+ * Supports HTTPS and SSH GitHub URLs and removes any trailing .git; throws if parsing fails.
+ *
+ * @param repoUrl - The full GitHub repository URL (e.g., https://github.com/owner/repo or git@github.com:owner/repo).
+ * @returns An object containing the owner and repo name.
+ * @throws If the URL cannot be parsed.
+ */
+function getOwnerAndRepoFromUrl(repoUrl) {
+    const match = repoUrl.match(/github\.com[:/](?<owner>[^/]+)\/(?<repo>[^/]+)$/iu);
+    if (!(match === null || match === void 0 ? void 0 : match.groups)) {
+        throw new Error(`Cannot parse owner/repo from repoUrl: ${repoUrl}`);
+    }
+    return { owner: match.groups.owner, repo: match.groups.repo };
+}
+//# sourceMappingURL=repo.mjs.map
+// EXTERNAL MODULE: ./node_modules/@metamask/auto-changelog/node_modules/execa/index.js
+var node_modules_execa = __nccwpck_require__(6747);
+;// CONCATENATED MODULE: ./node_modules/@metamask/auto-changelog/dist/run-command.mjs
+function run_command_$importDefault(module) {
+    if (module === null || module === void 0 ? void 0 : module.__esModule) {
+        return module.default;
+    }
+    return module;
+}
+
+const run_command_execa = run_command_$importDefault(node_modules_execa);
+/**
+ * Executes a shell command in a child process and returns what it wrote to
+ * stdout, or rejects if the process exited with an error.
+ *
+ * @param command - The command to run, e.g. "git".
+ * @param args - The arguments to the command.
+ * @param options - Options passed directly to execa.
+ * @returns The stdout output as a string.
+ */
+async function runCommand(command, args, options) {
+    return (await run_command_execa(command, [...args], options)).stdout;
+}
+/**
+ * Executes a shell command in a child process and returns what it wrote to
+ * stdout, or rejects if the process exited with an error.
+ * Trims, splits the output by newlines, and filters out empty lines.
+ *
+ * @param command - The command to run, e.g. "git".
+ * @param args - The arguments to the command.
+ * @param options - Options passed directly to execa.
+ * @returns An array of the non-empty lines returned by the command.
+ */
+async function runCommandAndSplit(command, args, options) {
+    return (await run_command_execa(command, [...args], options)).stdout
+        .trim()
+        .split('\n')
+        .filter((line) => line !== '');
+}
+//# sourceMappingURL=run-command.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@metamask/auto-changelog/dist/get-new-changes.mjs
+
+
+
+
+let github;
+// Get array of all ConventionalCommitType values
+const conventionalCommitTypes = Object.values(ConventionalCommitType);
+// Create a regex pattern that matches any of the ConventionalCommitTypes
+const typesWithPipe = conventionalCommitTypes.join('|');
+/**
+ * Get all commit hashes included in the given commit range.
+ *
+ * @param commitRange - The commit range.
+ * @param rootDirectory - The project root directory.
+ * @returns A list of commit hashes for the given range.
+ */
+async function getCommitHashesInRange(commitRange, rootDirectory) {
+    const revListArgs = ['rev-list', commitRange];
+    if (rootDirectory) {
+        revListArgs.push(rootDirectory);
+    }
+    return await runCommandAndSplit('git', revListArgs);
+}
+/**
+ * Remove outer backticks if present in the given message.
+ *
+ * @param message - The changelog entry message.
+ * @returns The message without outer backticks.
+ */
+function removeOuterBackticksIfPresent(message) {
+    return message.replace(/^`(.*)`$/u, '$1');
+}
+/**
+ * Remove Conventional Commit prefix if it exists in the given message.
+ *
+ * @param message - The changelog entry message.
+ * @returns The message without Conventional Commit prefix.
+ */
+function removeConventionalCommitPrefixIfPresent(message) {
+    const regex = new RegExp(`^(${typesWithPipe})(\\([^)]*\\))?:\\s*`, 'iu');
+    return message.replace(regex, '');
+}
+/**
+ * Remove HTML comments from the given message.
+ * Handles both complete comments (<!-- ... -->) and unclosed comments (<!-- ...).
+ * This prevents PR template content from breaking the changelog markdown.
+ *
+ * @param message - The changelog entry message.
+ * @returns The message without HTML comments.
+ */
+function stripHtmlComments(message) {
+    // Remove complete HTML comments (<!-- ... -->)
+    let result = message.replace(/<!--[\s\S]*?-->/gu, '');
+    // Remove unclosed HTML comments (<!-- without closing -->)
+    result = result.replace(/<!--[\s\S]*$/gu, '');
+    return result.trim();
+}
+/**
+ * Get commit details for each given commit hash.
+ *
+ * @param commitHashes - The list of commit hashes.
+ * @param repoUrl - The repository URL.
+ * @param useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
+ * @returns Commit details for each commit, including description, PR number (if present), and merge commit indicator.
+ */
+async function getCommits(commitHashes, repoUrl, useChangelogEntry) {
+    var _a, _b, _c, _d;
+    // Only initialize Octokit if we need to fetch PR labels
+    if (useChangelogEntry) {
+        initOctoKit();
+    }
+    const commits = [];
+    for (const commitHash of commitHashes) {
+        const subject = await runCommand('git', [
+            'show',
+            '-s',
+            '--format=%s',
+            commitHash,
+        ]);
+        if (!subject) {
+            throw new Error(`"git show" returned empty subject for commit "${commitHash}".`);
+        }
+        const subjectMatch = subject.match(/\(#(\d+)\)/u);
+        let prNumber;
+        let description = subject;
+        let isMergeCommit = false;
+        if (subjectMatch) {
+            // Squash & Merge: the commit subject is parsed as `<description> (#<PR ID>)`
+            prNumber = subjectMatch[1];
+            if (useChangelogEntry) {
+                const body = await runCommand('git', [
+                    'show',
+                    '-s',
+                    '--format=%b',
+                    commitHash,
+                ]);
+                const changelogMatch = body.match(/\nCHANGELOG entry:\s(\S.+?)\n\n/su);
+                if (changelogMatch) {
+                    const changelogEntry = changelogMatch[1].replace('\n', ' ').trim();
+                    description = changelogEntry; // This may be string 'null' to indicate no description
+                    // Check for 'null' (case-insensitive) to exclude entries marked as no-changelog
+                    if (description.toLowerCase() !== 'null') {
+                        // Remove outer backticks if present. Example: `feat: new feature description` -> feat: new feature description
+                        description = removeOuterBackticksIfPresent(description);
+                        // Remove Conventional Commit prefix if present. Example: feat: new feature description -> new feature description
+                        description = removeConventionalCommitPrefixIfPresent(description);
+                        // Make description coming from `CHANGELOG entry:` start with an uppercase letter
+                        description =
+                            description.charAt(0).toUpperCase() + description.slice(1);
+                    }
+                }
+                else {
+                    description = (_b = (_a = subject.match(/^(.+)\s\(#\d+\)/u)) === null || _a === void 0 ? void 0 : _a[1]) !== null && _b !== void 0 ? _b : '';
+                }
+                // Filter out entries marked as no-changelog (case-insensitive null check)
+                if (description.toLowerCase() !== 'null') {
+                    const prLabels = await getPrLabels(repoUrl, prNumber);
+                    if (prLabels.includes('no-changelog')) {
+                        description = 'null'; // Has the no-changelog label, use string 'null' to indicate no description
+                    }
+                }
+            }
+            else {
+                description = (_d = (_c = subject.match(/^(.+)\s\(#\d+\)/u)) === null || _c === void 0 ? void 0 : _c[1]) !== null && _d !== void 0 ? _d : '';
+            }
+        }
+        else {
+            // Merge commit: the PR ID is parsed from the git subject (which is of the form `Merge pull request
+            // #<PR ID> from <branch>`, and the description is assumed to be the first line of the body.
+            const mergeMatch = subject.match(/#(\d+)\sfrom/u);
+            if (mergeMatch) {
+                prNumber = mergeMatch[1];
+                isMergeCommit = true;
+                const [firstLineOfBody] = await runCommandAndSplit('git', [
+                    'show',
+                    '-s',
+                    '--format=%b',
+                    commitHash,
+                ]);
+                description = firstLineOfBody || subject;
+            }
+        }
+        // String 'null' is used to indicate no description
+        if (description !== 'null') {
+            commits.push({
+                prNumber,
+                subject,
+                description: description.trim(),
+                isMergeCommit,
+            });
+        }
+    }
+    return commits;
+}
+/**
+ * Filter out duplicate commits based on PR numbers and descriptions.
+ *
+ * For PR-tagged commits: excludes if PR number already exists in changelog.
+ * For direct commits: excludes if a PR-tagged commit with the same description exists
+ * in the current batch (handles squash merges), or if already logged in changelog.
+ *
+ * @param commits - The list of commits to deduplicate.
+ * @param loggedPrNumbers - PR numbers already in the changelog.
+ * @param loggedDescriptions - Descriptions already in the changelog.
+ * @returns Filtered list of commits without duplicates.
+ */
+function deduplicateCommits(commits, loggedPrNumbers, loggedDescriptions) {
+    const prTaggedCommitDescriptions = new Set(commits
+        .filter((commit) => commit.prNumber !== undefined)
+        .map((commit) => commit.description));
+    return commits.filter(({ prNumber, description }) => {
+        if (prNumber !== undefined) {
+            return !loggedPrNumbers.includes(prNumber);
+        }
+        // Direct commit: skip if a PR-tagged commit with same description exists in this batch
+        if (prTaggedCommitDescriptions.has(description)) {
+            return false;
+        }
+        return !loggedDescriptions.includes(description);
+    });
+}
+/**
+ * Get the list of new change entries to add to a changelog.
+ *
+ * @param options - Options.
+ * @param options.mostRecentTag - The most recent tag.
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @param options.loggedPrNumbers - A list of all pull request numbers included in the relevant parsed changelog.
+ * @param options.loggedDescriptions - A list of all change descriptions included in the relevant parsed changelog.
+ * @param options.projectRootDirectory - The root project directory, used to
+ * filter results from various git commands. This path is assumed to be either
+ * absolute, or relative to the current directory. Defaults to the root of the
+ * current git repository.
+ * @param options.useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
+ * @param options.useShortPrLink - Whether to use short PR links in the changelog entries.
+ * @param options.requirePrNumbers - Whether to require PR numbers for all commits. If true, commits without PR numbers are filtered out.
+ * @returns A list of new change entries to add to the changelog, based on commits made since the last release.
+ */
+async function getNewChangeEntries({ mostRecentTag, repoUrl, loggedPrNumbers, loggedDescriptions, projectRootDirectory, useChangelogEntry, useShortPrLink, requirePrNumbers = false, }) {
+    const commitRange = mostRecentTag === null ? 'HEAD' : `${mostRecentTag}..HEAD`;
+    const commitsHashesSinceLastRelease = await getCommitHashesInRange(commitRange, projectRootDirectory);
+    const commits = await getCommits(commitsHashesSinceLastRelease, repoUrl, useChangelogEntry);
+    const filteredPrCommits = requirePrNumbers
+        ? commits.filter((commit) => commit.prNumber !== undefined)
+        : commits;
+    const newCommits = deduplicateCommits(filteredPrCommits, loggedPrNumbers, loggedDescriptions);
+    return newCommits.map(({ prNumber, subject, isMergeCommit, description }) => {
+        // Handle edge case where PR description includes multiple CHANGELOG entries
+        let newDescription = description === null || description === void 0 ? void 0 : description.replace(/CHANGELOG entry: /gu, '');
+        // Strip HTML comments that may come from PR templates to prevent broken markdown
+        if (newDescription) {
+            newDescription = stripHtmlComments(newDescription);
+        }
+        // For merge commits, use the description for categorization because the subject
+        // is "Merge pull request #123..." which would be incorrectly excluded
+        const subjectForCategorization = isMergeCommit ? description : subject;
+        if (prNumber) {
+            const suffix = useShortPrLink
+                ? `(#${prNumber})`
+                : `([#${prNumber}](${repoUrl}/pull/${prNumber}))`;
+            if (newDescription) {
+                const lines = newDescription.split('\n');
+                lines[0] = `${lines[0]} ${suffix}`; // Append suffix to the first line (next lines are considered part of the description and ignored by the parsing logic)
+                newDescription = lines.join('\n');
+            }
+            else {
+                newDescription = suffix;
+            }
+        }
+        return { description: newDescription, subject: subjectForCategorization };
+    });
+}
+/**
+ * Initialize the Octokit GitHub client with authentication token.
+ */
+function initOctoKit() {
+    // eslint-disable-next-line node/no-process-env
+    const githubToken = process.env.GITHUB_TOKEN;
+    if (!githubToken) {
+        throw new Error('GITHUB_TOKEN environment variable is not set');
+    }
+    github = new dist_node.Octokit({ auth: githubToken });
+}
+/**
+ * Fetch labels for a pull request.
+ *
+ * @param repoUrl - The repository URL.
+ * @param prNumber - The pull request number.
+ * @returns A list of label names for the PR (empty array if not found or invalid).
+ */
+async function getPrLabels(repoUrl, prNumber) {
+    if (!prNumber) {
+        return [];
+    }
+    if (!github) {
+        initOctoKit();
+    }
+    const { owner, repo } = getOwnerAndRepoFromUrl(repoUrl);
+    try {
+        const { data: pullRequest } = await github.rest.pulls.get({
+            owner,
+            repo,
+            // eslint-disable-next-line @typescript-eslint/naming-convention
+            pull_number: Number(prNumber),
+        });
+        if (pullRequest) {
+            const labels = pullRequest.labels.map((label) => label.name);
+            return labels;
+        }
+    }
+    catch (error) {
+        // If PR doesn't exist (404), return empty labels instead of throwing
+        if (error instanceof Error &&
+            'status' in error &&
+            error.status === 404) {
+            console.warn(`PR #${prNumber} not found in ${owner}/${repo}, skipping label check`);
+            return [];
+        }
+        throw error;
+    }
+    return [];
+}
+//# sourceMappingURL=get-new-changes.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@metamask/auto-changelog/dist/parse-changelog.mjs
+function parse_changelog_$importDefault(module) {
+    if (module === null || module === void 0 ? void 0 : module.__esModule) {
+        return module.default;
+    }
+    return module;
+}
+
+const parse_changelog_semver = parse_changelog_$importDefault(semver);
+
+
+/**
+ * Parse a dependency bump description into structured data.
+ *
+ * Detects the following patterns (case-insensitive verb):
+ * - `[**BREAKING:** ]Bump \`dep\` from \`old\` to \`new\``
+ * - `[**BREAKING:** ]Update \`dep\` from \`old\` to \`new\``
+ * - `[**BREAKING:** ]Upgrade \`dep\` from \`old\` to \`new\``
+ * - `[**BREAKING:** ]Update \`dep\` to \`new\`` (oldVersion omitted)
+ * - `[**BREAKING:** ]Upgrade \`dep\` to \`new\`` (oldVersion omitted)
+ *
+ * Note: The dependency type is inferred heuristically from the description:
+ * entries with `**BREAKING:**` prefix are classified as `peerDependencies`,
+ * all others as `dependencies`. This can be incorrect if a peerDependency
+ * bump was manually written without the prefix, or a regular dependency
+ * bump was manually given the prefix. This is an inherent limitation of
+ * round-tripping structured data through free-text descriptions.
+ *
+ * @param description - The change description to parse.
+ * @returns A DependencyBump if the description matches, undefined otherwise.
+ */
+function parsePossibleDependencyBumpDescription(description) {
+    // Full form: Bump/Update/Upgrade `dep` from `old` to `new`
+    const fullMatch = description.match(/^(\*\*BREAKING:\*\*\s+)?(?:Bump|Update|Upgrade) `([^`]+)` from `([^`]+)` to `([^`]+)`/u);
+    if (fullMatch) {
+        return {
+            dependency: fullMatch[2],
+            isBreaking: Boolean(fullMatch[1]),
+            oldVersion: fullMatch[3],
+            newVersion: fullMatch[4],
+        };
+    }
+    // Short form: Update/Upgrade `dep` to `new` (no "from")
+    const shortMatch = description.match(/^(\*\*BREAKING:\*\*\s+)?(?:Bump|Update|Upgrade) `([^`]+)` to `([^`]+)`/u);
+    if (shortMatch) {
+        return {
+            dependency: shortMatch[2],
+            isBreaking: Boolean(shortMatch[1]),
+            oldVersion: '',
+            newVersion: shortMatch[3],
+        };
+    }
+    return undefined;
+}
+/**
+ * Truncate the given string at 80 characters.
+ *
+ * @param line - The string to truncate.
+ * @returns The truncated string.
+ */
+function truncated(line) {
+    return line.length > 80 ? `${line.slice(0, 80)}...` : line;
+}
+/**
+ * Returns whether the given string is recognized as a valid change category.
+ *
+ * @param category - The string to validate.
+ * @returns Whether the given string is a valid change category.
+ */
+function isValidChangeCategory(category) {
+    return ChangeCategory[category] !== undefined;
+}
+/**
+ * Returns the repository name from a GitHub repository URL.
+ *
+ * @param repoUrl - The URL for the GitHub repository.
+ * @returns The repository name, or null if it could not be determined.
+ */
+function extractRepoName(repoUrl) {
+    const match = repoUrl === null || repoUrl === void 0 ? void 0 : repoUrl.match(/github\.com\/[^/]+\/([^/]+)/u); // Match and capture the repo name
+    return match ? match[1] : '';
+}
+/**
+ * Constructs a Changelog instance that represents the given changelog, which
+ * is parsed for release and change information.
+ *
+ * @param options - Options.
+ * @param options.changelogContent - The changelog to parse.
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @param options.tagPrefix - The prefix used in tags before the version number.
+ * @param options.formatter - A custom Markdown formatter to use.
+ * @param options.packageRename - The package rename properties
+ * An optional, which is required only in case of package renamed.
+ * @param options.shouldExtractPrLinks - When true, look for and parse pull
+ * request links at the end of change entries.
+ * @returns A changelog instance that reflects the changelog text provided.
+ */
+function parseChangelog({ changelogContent, repoUrl, tagPrefix = 'v', formatter = undefined, packageRename, shouldExtractPrLinks = false, }) {
+    const changelogLines = changelogContent.split(/(?:\r)?\n/u); // Split on either Windows or Unix line endings
+    const changelog = new Changelog({
+        repoUrl,
+        tagPrefix,
+        formatter,
+        packageRename,
+    });
+    const repoName = extractRepoName(repoUrl);
+    const unreleasedHeaderIndex = changelogLines.indexOf(`## [${unreleased}]`);
+    if (unreleasedHeaderIndex === -1) {
+        throw new Error(`Failed to find ${unreleased} header`);
+    }
+    const unreleasedLinkReferenceDefinition = changelogLines.findIndex((line) => {
+        return line.startsWith(`[${unreleased}]:`);
+    });
+    if (unreleasedLinkReferenceDefinition === -1) {
+        throw new Error(`Failed to find ${unreleased} link reference definition`);
+    }
+    const contentfulChangelogLines = changelogLines.slice(unreleasedHeaderIndex + 1, unreleasedLinkReferenceDefinition);
+    let mostRecentRelease;
+    let mostRecentCategory;
+    let currentChangeEntry;
+    /**
+     * Finalize a change entry, adding it to the changelog.
+     *
+     * This is required because change entries can span multiple lines.
+     *
+     * @param options - Options.
+     * @param options.removeTrailingNewline - Indicates that the trailing newline
+     * is not a part of the change description, and should therefore be removed.
+     */
+    function finalizePreviousChange({ removeTrailingNewline = false, } = {}) {
+        if (!currentChangeEntry) {
+            return;
+        }
+        // This should never happen in practice, because `mostRecentCategory` is
+        // guaranteed to be set if `currentChangeEntry` is set.
+        /* istanbul ignore next */
+        if (!mostRecentCategory) {
+            throw new Error('Cannot finalize change without most recent category.');
+        }
+        if (removeTrailingNewline && currentChangeEntry.endsWith('\n')) {
+            currentChangeEntry = currentChangeEntry.slice(0, currentChangeEntry.length - 1);
+        }
+        const { description, prNumbers } = shouldExtractPrLinks
+            ? extractPrLinks(currentChangeEntry, repoName)
+            : {
+                description: currentChangeEntry,
+                prNumbers: [],
+            };
+        const dependencyBump = parsePossibleDependencyBumpDescription(description);
+        changelog.addChange({
+            addToStart: false,
+            category: mostRecentCategory,
+            description,
+            version: mostRecentRelease,
+            prNumbers,
+            ...(dependencyBump !== undefined && { dependencyBump }),
+        });
+        currentChangeEntry = undefined;
+    }
+    for (const line of contentfulChangelogLines) {
+        if (line.startsWith('## [')) {
+            const results = line.match(/^## \[([^[\]]+)\](?: - (\d\d\d\d-\d\d-\d\d))?(?: \[(\w+)\])?/u);
+            if (results === null) {
+                throw new Error(`Malformed release header: '${truncated(line)}'`);
+            }
+            if (parse_changelog_semver.valid(results[1]) === null) {
+                throw new Error(`Invalid SemVer version in release header: '${truncated(line)}'`);
+            }
+            // Trailing newline removed because the release section is expected to
+            // be prefixed by a newline.
+            finalizePreviousChange({
+                removeTrailingNewline: true,
+            });
+            mostRecentRelease = results[1];
+            mostRecentCategory = undefined;
+            const date = results[2];
+            const status = results[3];
+            changelog.addRelease({
+                addToStart: false,
+                date,
+                status,
+                version: mostRecentRelease,
+            });
+        }
+        else if (line.startsWith('### ')) {
+            const results = line.match(/^### (\w+)$\b/u);
+            if (results === null) {
+                throw new Error(`Malformed category header: '${truncated(line)}'`);
+            }
+            const isFirstCategory = mostRecentCategory === null;
+            finalizePreviousChange({
+                removeTrailingNewline: !isFirstCategory,
+            });
+            if (!isValidChangeCategory(results[1])) {
+                throw new Error(`Invalid change category: '${results[1]}'`);
+            }
+            mostRecentCategory = results[1];
+        }
+        else if (line.startsWith('- ')) {
+            if (!mostRecentCategory) {
+                throw new Error(`Category missing for change: '${truncated(line)}'`);
+            }
+            const description = line.slice(2);
+            finalizePreviousChange();
+            currentChangeEntry = description;
+        }
+        else if (currentChangeEntry) {
+            currentChangeEntry += `\n${line}`;
+        }
+        else if (line === '') {
+            continue;
+        }
+        else {
+            throw new Error(`Unrecognized line: '${truncated(line)}'`);
+        }
+    }
+    // Trailing newline removed because the reference link definition section is
+    // expected to be separated by a newline.
+    finalizePreviousChange({ removeTrailingNewline: true });
+    return changelog;
+}
+/**
+ * Looks for potential links to pull requests from the end of the first line of
+ * a change entry and pulls them off.
+ *
+ * Note that the pattern to look for potential links is intentionally naive,
+ * so that we can offer better error messaging in case URLs do not match the
+ * repo URL (such an error would appear when attempting to stringify the
+ * changelog).
+ *
+ * @param changeEntry - The text of the change entry.
+ * @param repoName - The name of the GitHub repository.
+ * @returns The list of pull request numbers referenced by the change entry, and
+ * the change entry without the links to those pull requests.
+ */
+function extractPrLinks(changeEntry, repoName) {
+    const lines = changeEntry.split('\n');
+    const prNumbers = [];
+    // Only process the first line for PR link extraction
+    let firstLine = lines[0];
+    // We only extract PR links from the right repo, because it happens that some
+    // changelog entries include links to PRs from other repos like packages that were bumped.
+    // We don't want to accidentally extract those.
+    // eslint-disable-next-line prefer-regex-literals
+    const longGroupMatchPattern = new RegExp(
+    // Example of long match group: " ([#123](...), [#456](...))"
+    `\\s+\\(\\s*(\\[#\\d+\\]\\([^)]*${repoName}[^)]*\\)\\s*,?\\s*)+\\)`, 'gu');
+    // eslint-disable-next-line prefer-regex-literals
+    const longMatchPattern = new RegExp(
+    // Example of long match: "[#123](...)"
+    `\\[#(\\d+)\\]\\([^)]*${repoName}[^)]*\\)`, 'gu');
+    // Match and extract all long PR links like ([#123](...)) separated by commas
+    const longGroupMatches = [...firstLine.matchAll(longGroupMatchPattern)];
+    for (const longGroupMatch of longGroupMatches) {
+        const group = longGroupMatch[0];
+        const longMatches = [...group.matchAll(longMatchPattern)];
+        for (const match of longMatches) {
+            prNumbers.push(match[1]);
+        }
+    }
+    // Remove valid long PR links (grouped in parentheses, possibly comma-separated)
+    firstLine = firstLine.replace(longGroupMatchPattern, '');
+    // Example of short match group: " (#123), (#123)"
+    const shortGroupMatchPattern = /\s+(\(#\d+\)\s*,?\s*)+/gu;
+    // Example of short match: "(#123)"
+    const shortMatchPattern = /\(#(\d+)\)/gu;
+    // Match and extract all short PR links like (#123)
+    const shortGroupMatches = [...firstLine.matchAll(shortGroupMatchPattern)];
+    for (const shortGroupMatch of shortGroupMatches) {
+        const group = shortGroupMatch[0];
+        const shortMatches = [...group.matchAll(shortMatchPattern)];
+        for (const match of shortMatches) {
+            prNumbers.push(match[1]);
+        }
+    }
+    // Remove valid short PR links
+    firstLine = firstLine.replace(shortGroupMatchPattern, '');
+    // Prepare the cleaned description
+    const cleanedLines = [firstLine.trim(), ...lines.slice(1)];
+    const cleanedDescription = cleanedLines.join('\n');
+    // Return unique PR numbers and the cleaned description
+    return {
+        description: cleanedDescription.trim(),
+        prNumbers: [...new Set(prNumbers)],
+    };
+}
+//# sourceMappingURL=parse-changelog.mjs.map
+;// CONCATENATED MODULE: ./node_modules/@metamask/auto-changelog/dist/update-changelog.mjs
+
+
+
+
+
+/**
+ * Get the most recent tag for a project.
+ *
+ * @param options - Options.
+ * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
+ * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
+ * @returns The most recent tag.
+ */
+async function getMostRecentTag({ tagPrefixes, }) {
+    // Ensure we have all tags on remote (overwrite if necessary)
+    await runCommandAndSplit('git', ['fetch', '--tags', '--force']);
+    let mostRecentTagCommitHash = null;
+    for (const tagPrefix of tagPrefixes) {
+        const revListArgs = [
+            'rev-list',
+            `--tags=${tagPrefix}*`,
+            '--max-count=1',
+            '--date-order',
+        ];
+        const results = await runCommandAndSplit('git', revListArgs);
+        if (results.length) {
+            mostRecentTagCommitHash = results[0];
+            break;
+        }
+    }
+    if (mostRecentTagCommitHash === null) {
+        return null;
+    }
+    const [mostRecentTag] = await runCommandAndSplit('git', [
+        'describe',
+        '--tags',
+        mostRecentTagCommitHash,
+    ]);
+    return mostRecentTag;
+}
+/**
+ * Get all changes from a changelog.
+ *
+ * @param changelog - The changelog.
+ * @returns All commit descriptions included in the given changelog.
+ */
+function getAllChanges(changelog) {
+    const releases = changelog.getReleases();
+    const changes = Object.values(changelog.getUnreleasedChanges()).flat();
+    for (const release of releases) {
+        changes.push(...Object.values(changelog.getReleaseChanges(release.version)).flat());
+    }
+    return changes;
+}
+/**
+ * Get all pull request numbers included in the given changelog.
+ *
+ * @param changelog - The changelog.
+ * @returns All pull request numbers included in the given changelog.
+ */
+function getAllLoggedPrNumbers(changelog) {
+    return getAllChanges(changelog).flatMap((change) => change.prNumbers);
+}
+/**
+ * Get all change descriptions included in the given changelog.
+ * Descriptions are trimmed to match the normalization applied during comparison.
+ *
+ * @param changelog - The changelog.
+ * @returns All change descriptions included in the given changelog, trimmed.
+ */
+function getAllLoggedDescriptions(changelog) {
+    return getAllChanges(changelog).map((change) => change.description.trim());
+}
+/**
+ * Update a changelog with any commits made since the last release. Commits for
+ * PRs that are already included in the changelog are omitted.
+ *
+ * @param options - Update options.
+ * @param options.changelogContent - The current changelog.
+ * @param options.currentVersion - The current version. Required if
+ * `isReleaseCandidate` is set, but optional otherwise.
+ * @param options.repoUrl - The GitHub repository URL for the current project.
+ * @param options.isReleaseCandidate - Denotes whether the current project.
+ * is in the midst of release preparation or not. If this is set, any new
+ * changes are listed under the current release header. Otherwise, they are
+ * listed under the 'Unreleased' section.
+ * @param options.projectRootDirectory - The root project directory, used to
+ * filter results from various git commands. This path is assumed to be either
+ * absolute, or relative to the current directory. Defaults to the root of the
+ * current git repository.
+ * @param options.tagPrefixes - A list of tag prefixes to look for, where the first is the intended
+ * prefix and each subsequent prefix is a fallback in case the previous tag prefixes are not found.
+ * @param options.formatter - A custom Markdown formatter to use.
+ * @param options.packageRename - The package rename properties.
+ * An optional, which is required only in case of package renamed.
+ * @param options.autoCategorize - A flag indicating whether changes should be auto-categorized
+ * based on commit message prefixes.
+ * @param options.useChangelogEntry - Whether to use `CHANGELOG entry:` from the commit body and the no-changelog label.
+ * @param options.useShortPrLink - Whether to use short PR links in the changelog.
+ * @param options.requirePrNumbers - Whether to require PR numbers for all commits. If true, commits without PR numbers are filtered out.
+ * @returns The updated changelog text.
+ */
+async function updateChangelog({ changelogContent, currentVersion, repoUrl, isReleaseCandidate, projectRootDirectory, tagPrefixes = ['v'], formatter = undefined, packageRename, autoCategorize, useChangelogEntry = false, useShortPrLink = false, requirePrNumbers = false, }) {
+    const changelog = parseChangelog({
+        changelogContent,
+        repoUrl,
+        tagPrefix: tagPrefixes[0],
+        formatter,
+        packageRename,
+        shouldExtractPrLinks: true, // By setting this to true, we ensure we don't re-add a PR to the changelog if it was already added in previous releases
+    });
+    const mostRecentTag = await getMostRecentTag({
+        tagPrefixes,
+    });
+    if (isReleaseCandidate) {
+        if (!currentVersion) {
+            throw new Error(`A version must be specified if 'isReleaseCandidate' is set.`);
+        }
+        if (mostRecentTag === `${tagPrefixes[0]}${currentVersion}`) {
+            throw new Error(`Current version already has a tag ('${mostRecentTag}'), which is unexpected for a release candidate.`);
+        }
+        // Ensure release header exists, if necessary
+        if (!changelog
+            .getReleases()
+            .find((release) => release.version === currentVersion)) {
+            changelog.addRelease({ version: currentVersion });
+        }
+        const hasUnreleasedChangesToRelease = getKnownPropertyNames(changelog.getUnreleasedChanges()).length > 0;
+        if (hasUnreleasedChangesToRelease) {
+            changelog.migrateUnreleasedChangesToRelease(currentVersion);
+        }
+    }
+    const newChangeEntries = await getNewChangeEntries({
+        mostRecentTag,
+        repoUrl,
+        loggedPrNumbers: getAllLoggedPrNumbers(changelog),
+        loggedDescriptions: getAllLoggedDescriptions(changelog),
+        projectRootDirectory,
+        useChangelogEntry,
+        useShortPrLink,
+        requirePrNumbers,
+    });
+    for (const entry of newChangeEntries.reverse()) {
+        const category = autoCategorize
+            ? getCategory(entry.subject)
+            : ChangeCategory.Uncategorized;
+        if (category !== ChangeCategory.Excluded) {
+            changelog.addChange({
+                version: isReleaseCandidate ? currentVersion : undefined,
+                category,
+                description: entry.description,
+            });
+        }
+    }
+    const newChangelogContent = await changelog.toString(useShortPrLink);
+    const isChangelogUpdated = changelogContent !== newChangelogContent;
+    return isChangelogUpdated ? newChangelogContent : undefined;
+}
+/**
+ * Determine the category of a change based on the commit message prefix.
+ *
+ * @param description - The commit message description.
+ * @returns The category of the change.
+ */
+function getCategory(description) {
+    var _a;
+    // Check whether the commit description includes exclusion keywords
+    if (checkIfDescriptionIndicatesExcluded(description)) {
+        return ChangeCategory.Excluded;
+    }
+    // Get array of all ConventionalCommitType values
+    const conventionalCommitTypes = Object.values(ConventionalCommitType);
+    // Create a regex pattern that matches any of the ConventionalCommitTypes
+    const typesWithPipe = conventionalCommitTypes.join('|');
+    const conventionalCommitPattern = new RegExp(`^(${typesWithPipe})\\s*(\\([^)]*\\))?:.*$`, 'ui');
+    const match = description.match(conventionalCommitPattern);
+    if (match) {
+        const prefix = (_a = match[1]) === null || _a === void 0 ? void 0 : _a.toLowerCase(); // Always use lowercase for consistency
+        switch (prefix) {
+            case ConventionalCommitType.FEAT:
+                return ChangeCategory.Added;
+            case ConventionalCommitType.FIX:
+                return ChangeCategory.Fixed;
+            // Begin categories that should be excluded from the changelog
+            case ConventionalCommitType.STYLE:
+            case ConventionalCommitType.REFACTOR:
+            case ConventionalCommitType.TEST:
+            case ConventionalCommitType.BUILD:
+            case ConventionalCommitType.CI:
+            case ConventionalCommitType.RELEASE:
+                return ChangeCategory.Excluded;
+            // End categories that should be excluded from the changelog
+            default:
+                return ChangeCategory.Uncategorized;
+        }
+    }
+    // Return 'Uncategorized' if no colon is found or prefix doesn't match
+    return ChangeCategory.Uncategorized;
+}
+/**
+ * Check whether the commit description includes exclusion keywords.
+ *
+ * @param description - The raw or processed commit description.
+ * @returns True if the description contains any exclusion keywords; otherwise false.
+ */
+function checkIfDescriptionIndicatesExcluded(description) {
+    const _description = description.toLowerCase();
+    return keywordsToIndicateExcluded.some((word) => _description.includes(word));
+}
+//# sourceMappingURL=update-changelog.mjs.map
 ;// CONCATENATED MODULE: ./node_modules/prettier/plugins/markdown.mjs
-var el=Object.create;var ft=Object.defineProperty;var rl=Object.getOwnPropertyDescriptor;var tl=Object.getOwnPropertyNames;var nl=Object.getPrototypeOf,il=Object.prototype.hasOwnProperty;var C=(e,r)=>()=>(r||e((r={exports:{}}).exports,r),r.exports),Ln=(e,r)=>{for(var t in r)ft(e,t,{get:r[t],enumerable:!0})},ul=(e,r,t,n)=>{if(r&&typeof r=="object"||typeof r=="function")for(let a of tl(r))!il.call(e,a)&&a!==t&&ft(e,a,{get:()=>r[a],enumerable:!(n=rl(r,a))||n.enumerable});return e};var Ue=(e,r,t)=>(t=e!=null?el(nl(e)):{},ul(r||!e||!e.__esModule?ft(t,"default",{value:e,enumerable:!0}):t,e));var xr=C((Om,In)=>{"use strict";In.exports=sl;function sl(e){return String(e).replace(/\s+/g," ")}});var Pi=C((av,Oi)=>{"use strict";Oi.exports=mf;var lr=9,Rr=10,Ye=32,Df=33,pf=58,Ge=91,df=92,xt=93,fr=94,Ur=96,zr=4,hf=1024;function mf(e){var r=this.Parser,t=this.Compiler;Ff(r)&&vf(r,e),gf(t)&&Ef(t)}function Ff(e){return!!(e&&e.prototype&&e.prototype.blockTokenizers)}function gf(e){return!!(e&&e.prototype&&e.prototype.visitors)}function vf(e,r){for(var t=r||{},n=e.prototype,a=n.blockTokenizers,u=n.inlineTokenizers,i=n.blockMethods,o=n.inlineMethods,s=a.definition,l=u.reference,c=[],f=-1,D=i.length,h;++f<D;)h=i[f],!(h==="newline"||h==="indentedCode"||h==="paragraph"||h==="footnoteDefinition")&&c.push([h]);c.push(["footnoteDefinition"]),t.inlineNotes&&(wt(o,"reference","inlineNote"),u.inlineNote=m),wt(i,"definition","footnoteDefinition"),wt(o,"reference","footnoteCall"),a.definition=y,a.footnoteDefinition=p,u.footnoteCall=d,u.reference=F,n.interruptFootnoteDefinition=c,F.locator=l.locator,d.locator=E,m.locator=B;function p(b,g,A){for(var x=this,v=x.interruptFootnoteDefinition,w=x.offset,k=g.length+1,q=0,T=[],R,O,S,_,P,ke,j,I,Z,Q,me,Fe,z;q<k&&(_=g.charCodeAt(q),!(_!==lr&&_!==Ye));)q++;if(g.charCodeAt(q++)===Ge&&g.charCodeAt(q++)===fr){for(O=q;q<k;){if(_=g.charCodeAt(q),_!==_||_===Rr||_===lr||_===Ye)return;if(_===xt){S=q,q++;break}q++}if(!(S===void 0||O===S||g.charCodeAt(q++)!==pf)){if(A)return!0;for(R=g.slice(O,S),P=b.now(),Z=0,Q=0,me=q,Fe=[];q<k;){if(_=g.charCodeAt(q),_!==_||_===Rr)z={start:Z,contentStart:me||q,contentEnd:q,end:q},Fe.push(z),_===Rr&&(Z=q+1,Q=0,me=void 0,z.end=Z);else if(Q!==void 0)if(_===Ye||_===lr)Q+=_===Ye?1:zr-Q%zr,Q>zr&&(Q=void 0,me=q);else{if(Q<zr&&z&&(z.contentStart===z.contentEnd||Cf(v,a,x,[b,g.slice(q,hf),!0])))break;Q=void 0,me=q}q++}for(q=-1,k=Fe.length;k>0&&(z=Fe[k-1],z.contentStart===z.contentEnd);)k--;for(ke=b(g.slice(0,z.contentEnd));++q<k;)z=Fe[q],w[P.line+q]=(w[P.line+q]||0)+(z.contentStart-z.start),T.push(g.slice(z.contentStart,z.end));return j=x.enterBlock(),I=x.tokenizeBlock(T.join(""),P),j(),ke({type:"footnoteDefinition",identifier:R.toLowerCase(),label:R,children:I})}}}function d(b,g,A){var x=g.length+1,v=0,w,k,q,T;if(g.charCodeAt(v++)===Ge&&g.charCodeAt(v++)===fr){for(k=v;v<x;){if(T=g.charCodeAt(v),T!==T||T===Rr||T===lr||T===Ye)return;if(T===xt){q=v,v++;break}v++}if(!(q===void 0||k===q))return A?!0:(w=g.slice(k,q),b(g.slice(0,v))({type:"footnoteReference",identifier:w.toLowerCase(),label:w}))}}function m(b,g,A){var x=this,v=g.length+1,w=0,k=0,q,T,R,O,S,_,P;if(g.charCodeAt(w++)===fr&&g.charCodeAt(w++)===Ge){for(R=w;w<v;){if(T=g.charCodeAt(w),T!==T)return;if(_===void 0)if(T===df)w+=2;else if(T===Ge)k++,w++;else if(T===xt)if(k===0){O=w,w++;break}else k--,w++;else if(T===Ur){for(S=w,_=1;g.charCodeAt(S+_)===Ur;)_++;w+=_}else w++;else if(T===Ur){for(S=w,P=1;g.charCodeAt(S+P)===Ur;)P++;w+=P,_===P&&(_=void 0),P=void 0}else w++}if(O!==void 0)return A?!0:(q=b.now(),q.column+=2,q.offset+=2,b(g.slice(0,w))({type:"footnote",children:x.tokenizeInline(g.slice(R,O),q)}))}}function F(b,g,A){var x=0;if(g.charCodeAt(x)===Df&&x++,g.charCodeAt(x)===Ge&&g.charCodeAt(x+1)!==fr)return l.call(this,b,g,A)}function y(b,g,A){for(var x=0,v=g.charCodeAt(x);v===Ye||v===lr;)v=g.charCodeAt(++x);if(v===Ge&&g.charCodeAt(x+1)!==fr)return s.call(this,b,g,A)}function E(b,g){return b.indexOf("[",g)}function B(b,g){return b.indexOf("^[",g)}}function Ef(e){var r=e.prototype.visitors,t="    ";r.footnote=n,r.footnoteReference=a,r.footnoteDefinition=u;function n(i){return"^["+this.all(i).join("")+"]"}function a(i){return"[^"+(i.label||i.identifier)+"]"}function u(i){for(var o=this.all(i).join(`
+var El=Object.create;var Ft=Object.defineProperty;var Cl=Object.getOwnPropertyDescriptor;var vl=Object.getOwnPropertyNames;var Al=Object.getPrototypeOf,bl=Object.prototype.hasOwnProperty;var x=(e,r)=>()=>(r||e((r={exports:{}}).exports,r),r.exports),Vn=(e,r)=>{for(var t in r)Ft(e,t,{get:r[t],enumerable:!0})},xl=(e,r,t,n)=>{if(r&&typeof r=="object"||typeof r=="function")for(let i of vl(r))!bl.call(e,i)&&i!==t&&Ft(e,i,{get:()=>r[i],enumerable:!(n=Cl(r,i))||n.enumerable});return e};var Re=(e,r,t)=>(t=e!=null?El(Al(e)):{},xl(r||!e||!e.__esModule?Ft(t,"default",{value:e,enumerable:!0}):t,e));var Tr=x((gF,jn)=>{"use strict";jn.exports=Bl;function Bl(e){return String(e).replace(/\s+/g," ")}});var Qi=x((KC,Ji)=>{"use strict";Ji.exports=Qf;var pr=9,Wr=10,Ve=32,Hf=33,Kf=58,je=91,Xf=92,St=93,hr=94,Vr=96,jr=4,Jf=1024;function Qf(e){var r=this.Parser,t=this.Compiler;Zf(r)&&rD(r,e),eD(t)&&tD(t)}function Zf(e){return!!(e&&e.prototype&&e.prototype.blockTokenizers)}function eD(e){return!!(e&&e.prototype&&e.prototype.visitors)}function rD(e,r){for(var t=r||{},n=e.prototype,i=n.blockTokenizers,u=n.inlineTokenizers,a=n.blockMethods,o=n.inlineMethods,s=i.definition,l=u.reference,c=[],f=-1,D=a.length,m;++f<D;)m=a[f],!(m==="newline"||m==="indentedCode"||m==="paragraph"||m==="footnoteDefinition")&&c.push([m]);c.push(["footnoteDefinition"]),t.inlineNotes&&(Lt(o,"reference","inlineNote"),u.inlineNote=F),Lt(a,"definition","footnoteDefinition"),Lt(o,"reference","footnoteCall"),i.definition=E,i.footnoteDefinition=p,u.footnoteCall=h,u.reference=g,n.interruptFootnoteDefinition=c,g.locator=l.locator,h.locator=v,F.locator=A;function p(b,d,y){for(var w=this,C=w.interruptFootnoteDefinition,k=w.offset,T=d.length+1,B=0,_=[],S,P,N,O,I,le,K,L,ie,Z,ve,Ae,G;B<T&&(O=d.charCodeAt(B),!(O!==pr&&O!==Ve));)B++;if(d.charCodeAt(B++)===je&&d.charCodeAt(B++)===hr){for(P=B;B<T;){if(O=d.charCodeAt(B),O!==O||O===Wr||O===pr||O===Ve)return;if(O===St){N=B,B++;break}B++}if(!(N===void 0||P===N||d.charCodeAt(B++)!==Kf)){if(y)return!0;for(S=d.slice(P,N),I=b.now(),ie=0,Z=0,ve=B,Ae=[];B<T;){if(O=d.charCodeAt(B),O!==O||O===Wr)G={start:ie,contentStart:ve||B,contentEnd:B,end:B},Ae.push(G),O===Wr&&(ie=B+1,Z=0,ve=void 0,G.end=ie);else if(Z!==void 0)if(O===Ve||O===pr)Z+=O===Ve?1:jr-Z%jr,Z>jr&&(Z=void 0,ve=B);else{if(Z<jr&&G&&(G.contentStart===G.contentEnd||nD(C,i,w,[b,d.slice(B,Jf),!0])))break;Z=void 0,ve=B}B++}for(B=-1,T=Ae.length;T>0&&(G=Ae[T-1],G.contentStart===G.contentEnd);)T--;for(le=b(d.slice(0,G.contentEnd));++B<T;)G=Ae[B],k[I.line+B]=(k[I.line+B]||0)+(G.contentStart-G.start),_.push(d.slice(G.contentStart,G.end));return K=w.enterBlock(),L=w.tokenizeBlock(_.join(""),I),K(),le({type:"footnoteDefinition",identifier:S.toLowerCase(),label:S,children:L})}}}function h(b,d,y){var w=d.length+1,C=0,k,T,B,_;if(d.charCodeAt(C++)===je&&d.charCodeAt(C++)===hr){for(T=C;C<w;){if(_=d.charCodeAt(C),_!==_||_===Wr||_===pr||_===Ve)return;if(_===St){B=C,C++;break}C++}if(!(B===void 0||T===B))return y?!0:(k=d.slice(T,B),b(d.slice(0,C))({type:"footnoteReference",identifier:k.toLowerCase(),label:k}))}}function F(b,d,y){var w=this,C=d.length+1,k=0,T=0,B,_,S,P,N,O,I;if(d.charCodeAt(k++)===hr&&d.charCodeAt(k++)===je){for(S=k;k<C;){if(_=d.charCodeAt(k),_!==_)return;if(O===void 0)if(_===Xf)k+=2;else if(_===je)T++,k++;else if(_===St)if(T===0){P=k,k++;break}else T--,k++;else if(_===Vr){for(N=k,O=1;d.charCodeAt(N+O)===Vr;)O++;k+=O}else k++;else if(_===Vr){for(N=k,I=1;d.charCodeAt(N+I)===Vr;)I++;k+=I,O===I&&(O=void 0),I=void 0}else k++}if(P!==void 0)return y?!0:(B=b.now(),B.column+=2,B.offset+=2,b(d.slice(0,k))({type:"footnote",children:w.tokenizeInline(d.slice(S,P),B)}))}}function g(b,d,y){var w=0;if(d.charCodeAt(w)===Hf&&w++,d.charCodeAt(w)===je&&d.charCodeAt(w+1)!==hr)return l.call(this,b,d,y)}function E(b,d,y){for(var w=0,C=d.charCodeAt(w);C===Ve||C===pr;)C=d.charCodeAt(++w);if(C===je&&d.charCodeAt(w+1)!==hr)return s.call(this,b,d,y)}function v(b,d){return b.indexOf("[",d)}function A(b,d){return b.indexOf("^[",d)}}function tD(e){var r=e.prototype.visitors,t="    ";r.footnote=n,r.footnoteReference=i,r.footnoteDefinition=u;function n(a){return"^["+this.all(a).join("")+"]"}function i(a){return"[^"+(a.label||a.identifier)+"]"}function u(a){for(var o=this.all(a).join(`
 
 `).split(`
-`),s=0,l=o.length,c;++s<l;)c=o[s],c!==""&&(o[s]=t+c);return"[^"+(i.label||i.identifier)+"]: "+o.join(`
-`)}}function wt(e,r,t){e.splice(e.indexOf(r),0,t)}function Cf(e,r,t,n){for(var a=e.length,u=-1;++u<a;)if(r[e[u][0]].apply(t,n))return!0;return!1}});var Bt=C(kt=>{kt.isRemarkParser=bf;kt.isRemarkCompiler=yf;function bf(e){return!!(e&&e.prototype&&e.prototype.blockTokenizers)}function yf(e){return!!(e&&e.prototype&&e.prototype.visitors)}});var Mi=C((sv,zi)=>{var Li=Bt();zi.exports=kf;var Ii=9,Ni=32,Mr=36,Af=48,xf=57,Ri=92,wf=["math","math-inline"],Ui="math-display";function kf(e){let r=this.Parser,t=this.Compiler;Li.isRemarkParser(r)&&Bf(r,e),Li.isRemarkCompiler(t)&&qf(t,e)}function Bf(e,r){let t=e.prototype,n=t.inlineMethods;u.locator=a,t.inlineTokenizers.math=u,n.splice(n.indexOf("text"),0,"math");function a(i,o){return i.indexOf("$",o)}function u(i,o,s){let l=o.length,c=!1,f=!1,D=0,h,p,d,m,F,y,E;if(o.charCodeAt(D)===Ri&&(f=!0,D++),o.charCodeAt(D)===Mr){if(D++,f)return s?!0:i(o.slice(0,D))({type:"text",value:"$"});if(o.charCodeAt(D)===Mr&&(c=!0,D++),d=o.charCodeAt(D),!(d===Ni||d===Ii)){for(m=D;D<l;){if(p=d,d=o.charCodeAt(D+1),p===Mr){if(h=o.charCodeAt(D-1),h!==Ni&&h!==Ii&&(d!==d||d<Af||d>xf)&&(!c||d===Mr)){F=D-1,D++,c&&D++,y=D;break}}else p===Ri&&(D++,d=o.charCodeAt(D+1));D++}if(y!==void 0)return s?!0:(E=o.slice(m,F+1),i(o.slice(0,y))({type:"inlineMath",value:E,data:{hName:"span",hProperties:{className:wf.concat(c&&r.inlineMathDouble?[Ui]:[])},hChildren:[{type:"text",value:E}]}}))}}}}function qf(e){let r=e.prototype;r.visitors.inlineMath=t;function t(n){let a="$";return(n.data&&n.data.hProperties&&n.data.hProperties.className||[]).includes(Ui)&&(a="$$"),a+n.value+a}}});var $i=C((cv,ji)=>{var Yi=Bt();ji.exports=Of;var Gi=10,Dr=32,qt=36,Vi=`
-`,Tf="$",_f=2,Sf=["math","math-display"];function Of(){let e=this.Parser,r=this.Compiler;Yi.isRemarkParser(e)&&Pf(e),Yi.isRemarkCompiler(r)&&Lf(r)}function Pf(e){let r=e.prototype,t=r.blockMethods,n=r.interruptParagraph,a=r.interruptList,u=r.interruptBlockquote;r.blockTokenizers.math=i,t.splice(t.indexOf("fencedCode")+1,0,"math"),n.splice(n.indexOf("fencedCode")+1,0,["math"]),a.splice(a.indexOf("fencedCode")+1,0,["math"]),u.splice(u.indexOf("fencedCode")+1,0,["math"]);function i(o,s,l){var c=s.length,f=0;let D,h,p,d,m,F,y,E,B,b,g;for(;f<c&&s.charCodeAt(f)===Dr;)f++;for(m=f;f<c&&s.charCodeAt(f)===qt;)f++;if(F=f-m,!(F<_f)){for(;f<c&&s.charCodeAt(f)===Dr;)f++;for(y=f;f<c;){if(D=s.charCodeAt(f),D===qt)return;if(D===Gi)break;f++}if(s.charCodeAt(f)===Gi){if(l)return!0;for(h=[],y!==f&&h.push(s.slice(y,f)),f++,p=s.indexOf(Vi,f+1),p=p===-1?c:p;f<c;){for(E=!1,b=f,g=p,d=p,B=0;d>b&&s.charCodeAt(d-1)===Dr;)d--;for(;d>b&&s.charCodeAt(d-1)===qt;)B++,d--;for(F<=B&&s.indexOf(Tf,b)===d&&(E=!0,g=d);b<=g&&b-f<m&&s.charCodeAt(b)===Dr;)b++;if(E)for(;g>b&&s.charCodeAt(g-1)===Dr;)g--;if((!E||b!==g)&&h.push(s.slice(b,g)),E)break;f=p+1,p=s.indexOf(Vi,f+1),p=p===-1?c:p}return h=h.join(`
-`),o(s.slice(0,p))({type:"math",value:h,data:{hName:"div",hProperties:{className:Sf.concat()},hChildren:[{type:"text",value:h}]}})}}}}function Lf(e){let r=e.prototype;r.visitors.math=t;function t(n){return`$$
+`),s=0,l=o.length,c;++s<l;)c=o[s],c!==""&&(o[s]=t+c);return"[^"+(a.label||a.identifier)+"]: "+o.join(`
+`)}}function Lt(e,r,t){e.splice(e.indexOf(r),0,t)}function nD(e,r,t,n){for(var i=e.length,u=-1;++u<i;)if(r[e[u][0]].apply(t,n))return!0;return!1}});var Mt=x(Rt=>{Rt.isRemarkParser=iD;Rt.isRemarkCompiler=uD;function iD(e){return!!(e&&e.prototype&&e.prototype.blockTokenizers)}function uD(e){return!!(e&&e.prototype&&e.prototype.visitors)}});var uu=x((JC,iu)=>{var Zi=Mt();iu.exports=cD;var eu=9,ru=32,$r=36,aD=48,oD=57,tu=92,sD=["math","math-inline"],nu="math-display";function cD(e){let r=this.Parser,t=this.Compiler;Zi.isRemarkParser(r)&&lD(r,e),Zi.isRemarkCompiler(t)&&fD(t,e)}function lD(e,r){let t=e.prototype,n=t.inlineMethods;u.locator=i,t.inlineTokenizers.math=u,n.splice(n.indexOf("text"),0,"math");function i(a,o){return a.indexOf("$",o)}function u(a,o,s){let l=o.length,c=!1,f=!1,D=0,m,p,h,F,g,E,v;if(o.charCodeAt(D)===tu&&(f=!0,D++),o.charCodeAt(D)===$r){if(D++,f)return s?!0:a(o.slice(0,D))({type:"text",value:"$"});if(o.charCodeAt(D)===$r&&(c=!0,D++),h=o.charCodeAt(D),!(h===ru||h===eu)){for(F=D;D<l;){if(p=h,h=o.charCodeAt(D+1),p===$r){if(m=o.charCodeAt(D-1),m!==ru&&m!==eu&&(h!==h||h<aD||h>oD)&&(!c||h===$r)){g=D-1,D++,c&&D++,E=D;break}}else p===tu&&(D++,h=o.charCodeAt(D+1));D++}if(E!==void 0)return s?!0:(v=o.slice(F,g+1),a(o.slice(0,E))({type:"inlineMath",value:v,data:{hName:"span",hProperties:{className:sD.concat(c&&r.inlineMathDouble?[nu]:[])},hChildren:[{type:"text",value:v}]}}))}}}}function fD(e){let r=e.prototype;r.visitors.inlineMath=t;function t(n){let i="$";return(n.data&&n.data.hProperties&&n.data.hProperties.className||[]).includes(nu)&&(i="$$"),i+n.value+i}}});var lu=x((QC,cu)=>{var au=Mt();cu.exports=dD;var ou=10,dr=32,Ut=36,su=`
+`,DD="$",pD=2,hD=["math","math-display"];function dD(){let e=this.Parser,r=this.Compiler;au.isRemarkParser(e)&&mD(e),au.isRemarkCompiler(r)&&FD(r)}function mD(e){let r=e.prototype,t=r.blockMethods,n=r.interruptParagraph,i=r.interruptList,u=r.interruptBlockquote;r.blockTokenizers.math=a,t.splice(t.indexOf("fencedCode")+1,0,"math"),n.splice(n.indexOf("fencedCode")+1,0,["math"]),i.splice(i.indexOf("fencedCode")+1,0,["math"]),u.splice(u.indexOf("fencedCode")+1,0,["math"]);function a(o,s,l){var c=s.length,f=0;let D,m,p,h,F,g,E,v,A,b,d;for(;f<c&&s.charCodeAt(f)===dr;)f++;for(F=f;f<c&&s.charCodeAt(f)===Ut;)f++;if(g=f-F,!(g<pD)){for(;f<c&&s.charCodeAt(f)===dr;)f++;for(E=f;f<c;){if(D=s.charCodeAt(f),D===Ut)return;if(D===ou)break;f++}if(s.charCodeAt(f)===ou){if(l)return!0;for(m=[],E!==f&&m.push(s.slice(E,f)),f++,p=s.indexOf(su,f+1),p=p===-1?c:p;f<c;){for(v=!1,b=f,d=p,h=p,A=0;h>b&&s.charCodeAt(h-1)===dr;)h--;for(;h>b&&s.charCodeAt(h-1)===Ut;)A++,h--;for(g<=A&&s.indexOf(DD,b)===h&&(v=!0,d=h);b<=d&&b-f<F&&s.charCodeAt(b)===dr;)b++;if(v)for(;d>b&&s.charCodeAt(d-1)===dr;)d--;if((!v||b!==d)&&m.push(s.slice(b,d)),v)break;f=p+1,p=s.indexOf(su,f+1),p=p===-1?c:p}return m=m.join(`
+`),o(s.slice(0,p))({type:"math",value:m,data:{hName:"div",hProperties:{className:hD.concat()},hChildren:[{type:"text",value:m}]}})}}}}function FD(e){let r=e.prototype;r.visitors.math=t;function t(n){return`$$
 `+n.value+`
-$$`}}});var Wi=C((lv,Hi)=>{var If=Mi(),Nf=$i();Hi.exports=Rf;function Rf(e){var r=e||{};Nf.call(this,r),If.call(this,r)}});var Ie=C((fv,Ki)=>{Ki.exports=zf;var Uf=Object.prototype.hasOwnProperty;function zf(){for(var e={},r=0;r<arguments.length;r++){var t=arguments[r];for(var n in t)Uf.call(t,n)&&(e[n]=t[n])}return e}});var Ji=C((Dv,Tt)=>{typeof Object.create=="function"?Tt.exports=function(r,t){t&&(r.super_=t,r.prototype=Object.create(t.prototype,{constructor:{value:r,enumerable:!1,writable:!0,configurable:!0}}))}:Tt.exports=function(r,t){if(t){r.super_=t;var n=function(){};n.prototype=t.prototype,r.prototype=new n,r.prototype.constructor=r}}});var Zi=C((pv,Qi)=>{"use strict";var Mf=Ie(),Xi=Ji();Qi.exports=Yf;function Yf(e){var r,t,n;Xi(u,e),Xi(a,u),r=u.prototype;for(t in r)n=r[t],n&&typeof n=="object"&&(r[t]="concat"in n?n.concat():Mf(n));return u;function a(i){return e.apply(this,i)}function u(){return this instanceof u?e.apply(this,arguments):new a(arguments)}}});var ru=C((dv,eu)=>{"use strict";eu.exports=Gf;function Gf(e,r,t){return n;function n(){var a=t||this,u=a[e];return a[e]=!r,i;function i(){a[e]=u}}}});var nu=C((hv,tu)=>{"use strict";tu.exports=Vf;function Vf(e){for(var r=String(e),t=[],n=/\r?\n|\r/g;n.exec(r);)t.push(n.lastIndex);return t.push(r.length+1),{toPoint:a,toPosition:a,toOffset:u};function a(i){var o=-1;if(i>-1&&i<t[t.length-1]){for(;++o<t.length;)if(t[o]>i)return{line:o+1,column:i-(t[o-1]||0)+1,offset:i}}return{}}function u(i){var o=i&&i.line,s=i&&i.column,l;return!isNaN(o)&&!isNaN(s)&&o-1 in t&&(l=(t[o-2]||0)+s-1||0),l>-1&&l<t[t.length-1]?l:-1}}});var uu=C((mv,iu)=>{"use strict";iu.exports=jf;var _t="\\";function jf(e,r){return t;function t(n){for(var a=0,u=n.indexOf(_t),i=e[r],o=[],s;u!==-1;)o.push(n.slice(a,u)),a=u+1,s=n.charAt(a),(!s||i.indexOf(s)===-1)&&o.push(_t),u=n.indexOf(_t,a+1);return o.push(n.slice(a)),o.join("")}}});var au=C((Fv,$f)=>{$f.exports={AElig:"\xC6",AMP:"&",Aacute:"\xC1",Acirc:"\xC2",Agrave:"\xC0",Aring:"\xC5",Atilde:"\xC3",Auml:"\xC4",COPY:"\xA9",Ccedil:"\xC7",ETH:"\xD0",Eacute:"\xC9",Ecirc:"\xCA",Egrave:"\xC8",Euml:"\xCB",GT:">",Iacute:"\xCD",Icirc:"\xCE",Igrave:"\xCC",Iuml:"\xCF",LT:"<",Ntilde:"\xD1",Oacute:"\xD3",Ocirc:"\xD4",Ograve:"\xD2",Oslash:"\xD8",Otilde:"\xD5",Ouml:"\xD6",QUOT:'"',REG:"\xAE",THORN:"\xDE",Uacute:"\xDA",Ucirc:"\xDB",Ugrave:"\xD9",Uuml:"\xDC",Yacute:"\xDD",aacute:"\xE1",acirc:"\xE2",acute:"\xB4",aelig:"\xE6",agrave:"\xE0",amp:"&",aring:"\xE5",atilde:"\xE3",auml:"\xE4",brvbar:"\xA6",ccedil:"\xE7",cedil:"\xB8",cent:"\xA2",copy:"\xA9",curren:"\xA4",deg:"\xB0",divide:"\xF7",eacute:"\xE9",ecirc:"\xEA",egrave:"\xE8",eth:"\xF0",euml:"\xEB",frac12:"\xBD",frac14:"\xBC",frac34:"\xBE",gt:">",iacute:"\xED",icirc:"\xEE",iexcl:"\xA1",igrave:"\xEC",iquest:"\xBF",iuml:"\xEF",laquo:"\xAB",lt:"<",macr:"\xAF",micro:"\xB5",middot:"\xB7",nbsp:"\xA0",not:"\xAC",ntilde:"\xF1",oacute:"\xF3",ocirc:"\xF4",ograve:"\xF2",ordf:"\xAA",ordm:"\xBA",oslash:"\xF8",otilde:"\xF5",ouml:"\xF6",para:"\xB6",plusmn:"\xB1",pound:"\xA3",quot:'"',raquo:"\xBB",reg:"\xAE",sect:"\xA7",shy:"\xAD",sup1:"\xB9",sup2:"\xB2",sup3:"\xB3",szlig:"\xDF",thorn:"\xFE",times:"\xD7",uacute:"\xFA",ucirc:"\xFB",ugrave:"\xF9",uml:"\xA8",uuml:"\xFC",yacute:"\xFD",yen:"\xA5",yuml:"\xFF"}});var ou=C((gv,Hf)=>{Hf.exports={"0":"\uFFFD","128":"\u20AC","130":"\u201A","131":"\u0192","132":"\u201E","133":"\u2026","134":"\u2020","135":"\u2021","136":"\u02C6","137":"\u2030","138":"\u0160","139":"\u2039","140":"\u0152","142":"\u017D","145":"\u2018","146":"\u2019","147":"\u201C","148":"\u201D","149":"\u2022","150":"\u2013","151":"\u2014","152":"\u02DC","153":"\u2122","154":"\u0161","155":"\u203A","156":"\u0153","158":"\u017E","159":"\u0178"}});var Ne=C((vv,su)=>{"use strict";su.exports=Wf;function Wf(e){var r=typeof e=="string"?e.charCodeAt(0):e;return r>=48&&r<=57}});var lu=C((Ev,cu)=>{"use strict";cu.exports=Kf;function Kf(e){var r=typeof e=="string"?e.charCodeAt(0):e;return r>=97&&r<=102||r>=65&&r<=70||r>=48&&r<=57}});var Ve=C((Cv,fu)=>{"use strict";fu.exports=Jf;function Jf(e){var r=typeof e=="string"?e.charCodeAt(0):e;return r>=97&&r<=122||r>=65&&r<=90}});var pu=C((bv,Du)=>{"use strict";var Xf=Ve(),Qf=Ne();Du.exports=Zf;function Zf(e){return Xf(e)||Qf(e)}});var du=C((yv,eD)=>{eD.exports={AEli:"\xC6",AElig:"\xC6",AM:"&",AMP:"&",Aacut:"\xC1",Aacute:"\xC1",Abreve:"\u0102",Acir:"\xC2",Acirc:"\xC2",Acy:"\u0410",Afr:"\u{1D504}",Agrav:"\xC0",Agrave:"\xC0",Alpha:"\u0391",Amacr:"\u0100",And:"\u2A53",Aogon:"\u0104",Aopf:"\u{1D538}",ApplyFunction:"\u2061",Arin:"\xC5",Aring:"\xC5",Ascr:"\u{1D49C}",Assign:"\u2254",Atild:"\xC3",Atilde:"\xC3",Aum:"\xC4",Auml:"\xC4",Backslash:"\u2216",Barv:"\u2AE7",Barwed:"\u2306",Bcy:"\u0411",Because:"\u2235",Bernoullis:"\u212C",Beta:"\u0392",Bfr:"\u{1D505}",Bopf:"\u{1D539}",Breve:"\u02D8",Bscr:"\u212C",Bumpeq:"\u224E",CHcy:"\u0427",COP:"\xA9",COPY:"\xA9",Cacute:"\u0106",Cap:"\u22D2",CapitalDifferentialD:"\u2145",Cayleys:"\u212D",Ccaron:"\u010C",Ccedi:"\xC7",Ccedil:"\xC7",Ccirc:"\u0108",Cconint:"\u2230",Cdot:"\u010A",Cedilla:"\xB8",CenterDot:"\xB7",Cfr:"\u212D",Chi:"\u03A7",CircleDot:"\u2299",CircleMinus:"\u2296",CirclePlus:"\u2295",CircleTimes:"\u2297",ClockwiseContourIntegral:"\u2232",CloseCurlyDoubleQuote:"\u201D",CloseCurlyQuote:"\u2019",Colon:"\u2237",Colone:"\u2A74",Congruent:"\u2261",Conint:"\u222F",ContourIntegral:"\u222E",Copf:"\u2102",Coproduct:"\u2210",CounterClockwiseContourIntegral:"\u2233",Cross:"\u2A2F",Cscr:"\u{1D49E}",Cup:"\u22D3",CupCap:"\u224D",DD:"\u2145",DDotrahd:"\u2911",DJcy:"\u0402",DScy:"\u0405",DZcy:"\u040F",Dagger:"\u2021",Darr:"\u21A1",Dashv:"\u2AE4",Dcaron:"\u010E",Dcy:"\u0414",Del:"\u2207",Delta:"\u0394",Dfr:"\u{1D507}",DiacriticalAcute:"\xB4",DiacriticalDot:"\u02D9",DiacriticalDoubleAcute:"\u02DD",DiacriticalGrave:"`",DiacriticalTilde:"\u02DC",Diamond:"\u22C4",DifferentialD:"\u2146",Dopf:"\u{1D53B}",Dot:"\xA8",DotDot:"\u20DC",DotEqual:"\u2250",DoubleContourIntegral:"\u222F",DoubleDot:"\xA8",DoubleDownArrow:"\u21D3",DoubleLeftArrow:"\u21D0",DoubleLeftRightArrow:"\u21D4",DoubleLeftTee:"\u2AE4",DoubleLongLeftArrow:"\u27F8",DoubleLongLeftRightArrow:"\u27FA",DoubleLongRightArrow:"\u27F9",DoubleRightArrow:"\u21D2",DoubleRightTee:"\u22A8",DoubleUpArrow:"\u21D1",DoubleUpDownArrow:"\u21D5",DoubleVerticalBar:"\u2225",DownArrow:"\u2193",DownArrowBar:"\u2913",DownArrowUpArrow:"\u21F5",DownBreve:"\u0311",DownLeftRightVector:"\u2950",DownLeftTeeVector:"\u295E",DownLeftVector:"\u21BD",DownLeftVectorBar:"\u2956",DownRightTeeVector:"\u295F",DownRightVector:"\u21C1",DownRightVectorBar:"\u2957",DownTee:"\u22A4",DownTeeArrow:"\u21A7",Downarrow:"\u21D3",Dscr:"\u{1D49F}",Dstrok:"\u0110",ENG:"\u014A",ET:"\xD0",ETH:"\xD0",Eacut:"\xC9",Eacute:"\xC9",Ecaron:"\u011A",Ecir:"\xCA",Ecirc:"\xCA",Ecy:"\u042D",Edot:"\u0116",Efr:"\u{1D508}",Egrav:"\xC8",Egrave:"\xC8",Element:"\u2208",Emacr:"\u0112",EmptySmallSquare:"\u25FB",EmptyVerySmallSquare:"\u25AB",Eogon:"\u0118",Eopf:"\u{1D53C}",Epsilon:"\u0395",Equal:"\u2A75",EqualTilde:"\u2242",Equilibrium:"\u21CC",Escr:"\u2130",Esim:"\u2A73",Eta:"\u0397",Eum:"\xCB",Euml:"\xCB",Exists:"\u2203",ExponentialE:"\u2147",Fcy:"\u0424",Ffr:"\u{1D509}",FilledSmallSquare:"\u25FC",FilledVerySmallSquare:"\u25AA",Fopf:"\u{1D53D}",ForAll:"\u2200",Fouriertrf:"\u2131",Fscr:"\u2131",GJcy:"\u0403",G:">",GT:">",Gamma:"\u0393",Gammad:"\u03DC",Gbreve:"\u011E",Gcedil:"\u0122",Gcirc:"\u011C",Gcy:"\u0413",Gdot:"\u0120",Gfr:"\u{1D50A}",Gg:"\u22D9",Gopf:"\u{1D53E}",GreaterEqual:"\u2265",GreaterEqualLess:"\u22DB",GreaterFullEqual:"\u2267",GreaterGreater:"\u2AA2",GreaterLess:"\u2277",GreaterSlantEqual:"\u2A7E",GreaterTilde:"\u2273",Gscr:"\u{1D4A2}",Gt:"\u226B",HARDcy:"\u042A",Hacek:"\u02C7",Hat:"^",Hcirc:"\u0124",Hfr:"\u210C",HilbertSpace:"\u210B",Hopf:"\u210D",HorizontalLine:"\u2500",Hscr:"\u210B",Hstrok:"\u0126",HumpDownHump:"\u224E",HumpEqual:"\u224F",IEcy:"\u0415",IJlig:"\u0132",IOcy:"\u0401",Iacut:"\xCD",Iacute:"\xCD",Icir:"\xCE",Icirc:"\xCE",Icy:"\u0418",Idot:"\u0130",Ifr:"\u2111",Igrav:"\xCC",Igrave:"\xCC",Im:"\u2111",Imacr:"\u012A",ImaginaryI:"\u2148",Implies:"\u21D2",Int:"\u222C",Integral:"\u222B",Intersection:"\u22C2",InvisibleComma:"\u2063",InvisibleTimes:"\u2062",Iogon:"\u012E",Iopf:"\u{1D540}",Iota:"\u0399",Iscr:"\u2110",Itilde:"\u0128",Iukcy:"\u0406",Ium:"\xCF",Iuml:"\xCF",Jcirc:"\u0134",Jcy:"\u0419",Jfr:"\u{1D50D}",Jopf:"\u{1D541}",Jscr:"\u{1D4A5}",Jsercy:"\u0408",Jukcy:"\u0404",KHcy:"\u0425",KJcy:"\u040C",Kappa:"\u039A",Kcedil:"\u0136",Kcy:"\u041A",Kfr:"\u{1D50E}",Kopf:"\u{1D542}",Kscr:"\u{1D4A6}",LJcy:"\u0409",L:"<",LT:"<",Lacute:"\u0139",Lambda:"\u039B",Lang:"\u27EA",Laplacetrf:"\u2112",Larr:"\u219E",Lcaron:"\u013D",Lcedil:"\u013B",Lcy:"\u041B",LeftAngleBracket:"\u27E8",LeftArrow:"\u2190",LeftArrowBar:"\u21E4",LeftArrowRightArrow:"\u21C6",LeftCeiling:"\u2308",LeftDoubleBracket:"\u27E6",LeftDownTeeVector:"\u2961",LeftDownVector:"\u21C3",LeftDownVectorBar:"\u2959",LeftFloor:"\u230A",LeftRightArrow:"\u2194",LeftRightVector:"\u294E",LeftTee:"\u22A3",LeftTeeArrow:"\u21A4",LeftTeeVector:"\u295A",LeftTriangle:"\u22B2",LeftTriangleBar:"\u29CF",LeftTriangleEqual:"\u22B4",LeftUpDownVector:"\u2951",LeftUpTeeVector:"\u2960",LeftUpVector:"\u21BF",LeftUpVectorBar:"\u2958",LeftVector:"\u21BC",LeftVectorBar:"\u2952",Leftarrow:"\u21D0",Leftrightarrow:"\u21D4",LessEqualGreater:"\u22DA",LessFullEqual:"\u2266",LessGreater:"\u2276",LessLess:"\u2AA1",LessSlantEqual:"\u2A7D",LessTilde:"\u2272",Lfr:"\u{1D50F}",Ll:"\u22D8",Lleftarrow:"\u21DA",Lmidot:"\u013F",LongLeftArrow:"\u27F5",LongLeftRightArrow:"\u27F7",LongRightArrow:"\u27F6",Longleftarrow:"\u27F8",Longleftrightarrow:"\u27FA",Longrightarrow:"\u27F9",Lopf:"\u{1D543}",LowerLeftArrow:"\u2199",LowerRightArrow:"\u2198",Lscr:"\u2112",Lsh:"\u21B0",Lstrok:"\u0141",Lt:"\u226A",Map:"\u2905",Mcy:"\u041C",MediumSpace:"\u205F",Mellintrf:"\u2133",Mfr:"\u{1D510}",MinusPlus:"\u2213",Mopf:"\u{1D544}",Mscr:"\u2133",Mu:"\u039C",NJcy:"\u040A",Nacute:"\u0143",Ncaron:"\u0147",Ncedil:"\u0145",Ncy:"\u041D",NegativeMediumSpace:"\u200B",NegativeThickSpace:"\u200B",NegativeThinSpace:"\u200B",NegativeVeryThinSpace:"\u200B",NestedGreaterGreater:"\u226B",NestedLessLess:"\u226A",NewLine:`
-`,Nfr:"\u{1D511}",NoBreak:"\u2060",NonBreakingSpace:"\xA0",Nopf:"\u2115",Not:"\u2AEC",NotCongruent:"\u2262",NotCupCap:"\u226D",NotDoubleVerticalBar:"\u2226",NotElement:"\u2209",NotEqual:"\u2260",NotEqualTilde:"\u2242\u0338",NotExists:"\u2204",NotGreater:"\u226F",NotGreaterEqual:"\u2271",NotGreaterFullEqual:"\u2267\u0338",NotGreaterGreater:"\u226B\u0338",NotGreaterLess:"\u2279",NotGreaterSlantEqual:"\u2A7E\u0338",NotGreaterTilde:"\u2275",NotHumpDownHump:"\u224E\u0338",NotHumpEqual:"\u224F\u0338",NotLeftTriangle:"\u22EA",NotLeftTriangleBar:"\u29CF\u0338",NotLeftTriangleEqual:"\u22EC",NotLess:"\u226E",NotLessEqual:"\u2270",NotLessGreater:"\u2278",NotLessLess:"\u226A\u0338",NotLessSlantEqual:"\u2A7D\u0338",NotLessTilde:"\u2274",NotNestedGreaterGreater:"\u2AA2\u0338",NotNestedLessLess:"\u2AA1\u0338",NotPrecedes:"\u2280",NotPrecedesEqual:"\u2AAF\u0338",NotPrecedesSlantEqual:"\u22E0",NotReverseElement:"\u220C",NotRightTriangle:"\u22EB",NotRightTriangleBar:"\u29D0\u0338",NotRightTriangleEqual:"\u22ED",NotSquareSubset:"\u228F\u0338",NotSquareSubsetEqual:"\u22E2",NotSquareSuperset:"\u2290\u0338",NotSquareSupersetEqual:"\u22E3",NotSubset:"\u2282\u20D2",NotSubsetEqual:"\u2288",NotSucceeds:"\u2281",NotSucceedsEqual:"\u2AB0\u0338",NotSucceedsSlantEqual:"\u22E1",NotSucceedsTilde:"\u227F\u0338",NotSuperset:"\u2283\u20D2",NotSupersetEqual:"\u2289",NotTilde:"\u2241",NotTildeEqual:"\u2244",NotTildeFullEqual:"\u2247",NotTildeTilde:"\u2249",NotVerticalBar:"\u2224",Nscr:"\u{1D4A9}",Ntild:"\xD1",Ntilde:"\xD1",Nu:"\u039D",OElig:"\u0152",Oacut:"\xD3",Oacute:"\xD3",Ocir:"\xD4",Ocirc:"\xD4",Ocy:"\u041E",Odblac:"\u0150",Ofr:"\u{1D512}",Ograv:"\xD2",Ograve:"\xD2",Omacr:"\u014C",Omega:"\u03A9",Omicron:"\u039F",Oopf:"\u{1D546}",OpenCurlyDoubleQuote:"\u201C",OpenCurlyQuote:"\u2018",Or:"\u2A54",Oscr:"\u{1D4AA}",Oslas:"\xD8",Oslash:"\xD8",Otild:"\xD5",Otilde:"\xD5",Otimes:"\u2A37",Oum:"\xD6",Ouml:"\xD6",OverBar:"\u203E",OverBrace:"\u23DE",OverBracket:"\u23B4",OverParenthesis:"\u23DC",PartialD:"\u2202",Pcy:"\u041F",Pfr:"\u{1D513}",Phi:"\u03A6",Pi:"\u03A0",PlusMinus:"\xB1",Poincareplane:"\u210C",Popf:"\u2119",Pr:"\u2ABB",Precedes:"\u227A",PrecedesEqual:"\u2AAF",PrecedesSlantEqual:"\u227C",PrecedesTilde:"\u227E",Prime:"\u2033",Product:"\u220F",Proportion:"\u2237",Proportional:"\u221D",Pscr:"\u{1D4AB}",Psi:"\u03A8",QUO:'"',QUOT:'"',Qfr:"\u{1D514}",Qopf:"\u211A",Qscr:"\u{1D4AC}",RBarr:"\u2910",RE:"\xAE",REG:"\xAE",Racute:"\u0154",Rang:"\u27EB",Rarr:"\u21A0",Rarrtl:"\u2916",Rcaron:"\u0158",Rcedil:"\u0156",Rcy:"\u0420",Re:"\u211C",ReverseElement:"\u220B",ReverseEquilibrium:"\u21CB",ReverseUpEquilibrium:"\u296F",Rfr:"\u211C",Rho:"\u03A1",RightAngleBracket:"\u27E9",RightArrow:"\u2192",RightArrowBar:"\u21E5",RightArrowLeftArrow:"\u21C4",RightCeiling:"\u2309",RightDoubleBracket:"\u27E7",RightDownTeeVector:"\u295D",RightDownVector:"\u21C2",RightDownVectorBar:"\u2955",RightFloor:"\u230B",RightTee:"\u22A2",RightTeeArrow:"\u21A6",RightTeeVector:"\u295B",RightTriangle:"\u22B3",RightTriangleBar:"\u29D0",RightTriangleEqual:"\u22B5",RightUpDownVector:"\u294F",RightUpTeeVector:"\u295C",RightUpVector:"\u21BE",RightUpVectorBar:"\u2954",RightVector:"\u21C0",RightVectorBar:"\u2953",Rightarrow:"\u21D2",Ropf:"\u211D",RoundImplies:"\u2970",Rrightarrow:"\u21DB",Rscr:"\u211B",Rsh:"\u21B1",RuleDelayed:"\u29F4",SHCHcy:"\u0429",SHcy:"\u0428",SOFTcy:"\u042C",Sacute:"\u015A",Sc:"\u2ABC",Scaron:"\u0160",Scedil:"\u015E",Scirc:"\u015C",Scy:"\u0421",Sfr:"\u{1D516}",ShortDownArrow:"\u2193",ShortLeftArrow:"\u2190",ShortRightArrow:"\u2192",ShortUpArrow:"\u2191",Sigma:"\u03A3",SmallCircle:"\u2218",Sopf:"\u{1D54A}",Sqrt:"\u221A",Square:"\u25A1",SquareIntersection:"\u2293",SquareSubset:"\u228F",SquareSubsetEqual:"\u2291",SquareSuperset:"\u2290",SquareSupersetEqual:"\u2292",SquareUnion:"\u2294",Sscr:"\u{1D4AE}",Star:"\u22C6",Sub:"\u22D0",Subset:"\u22D0",SubsetEqual:"\u2286",Succeeds:"\u227B",SucceedsEqual:"\u2AB0",SucceedsSlantEqual:"\u227D",SucceedsTilde:"\u227F",SuchThat:"\u220B",Sum:"\u2211",Sup:"\u22D1",Superset:"\u2283",SupersetEqual:"\u2287",Supset:"\u22D1",THOR:"\xDE",THORN:"\xDE",TRADE:"\u2122",TSHcy:"\u040B",TScy:"\u0426",Tab:"	",Tau:"\u03A4",Tcaron:"\u0164",Tcedil:"\u0162",Tcy:"\u0422",Tfr:"\u{1D517}",Therefore:"\u2234",Theta:"\u0398",ThickSpace:"\u205F\u200A",ThinSpace:"\u2009",Tilde:"\u223C",TildeEqual:"\u2243",TildeFullEqual:"\u2245",TildeTilde:"\u2248",Topf:"\u{1D54B}",TripleDot:"\u20DB",Tscr:"\u{1D4AF}",Tstrok:"\u0166",Uacut:"\xDA",Uacute:"\xDA",Uarr:"\u219F",Uarrocir:"\u2949",Ubrcy:"\u040E",Ubreve:"\u016C",Ucir:"\xDB",Ucirc:"\xDB",Ucy:"\u0423",Udblac:"\u0170",Ufr:"\u{1D518}",Ugrav:"\xD9",Ugrave:"\xD9",Umacr:"\u016A",UnderBar:"_",UnderBrace:"\u23DF",UnderBracket:"\u23B5",UnderParenthesis:"\u23DD",Union:"\u22C3",UnionPlus:"\u228E",Uogon:"\u0172",Uopf:"\u{1D54C}",UpArrow:"\u2191",UpArrowBar:"\u2912",UpArrowDownArrow:"\u21C5",UpDownArrow:"\u2195",UpEquilibrium:"\u296E",UpTee:"\u22A5",UpTeeArrow:"\u21A5",Uparrow:"\u21D1",Updownarrow:"\u21D5",UpperLeftArrow:"\u2196",UpperRightArrow:"\u2197",Upsi:"\u03D2",Upsilon:"\u03A5",Uring:"\u016E",Uscr:"\u{1D4B0}",Utilde:"\u0168",Uum:"\xDC",Uuml:"\xDC",VDash:"\u22AB",Vbar:"\u2AEB",Vcy:"\u0412",Vdash:"\u22A9",Vdashl:"\u2AE6",Vee:"\u22C1",Verbar:"\u2016",Vert:"\u2016",VerticalBar:"\u2223",VerticalLine:"|",VerticalSeparator:"\u2758",VerticalTilde:"\u2240",VeryThinSpace:"\u200A",Vfr:"\u{1D519}",Vopf:"\u{1D54D}",Vscr:"\u{1D4B1}",Vvdash:"\u22AA",Wcirc:"\u0174",Wedge:"\u22C0",Wfr:"\u{1D51A}",Wopf:"\u{1D54E}",Wscr:"\u{1D4B2}",Xfr:"\u{1D51B}",Xi:"\u039E",Xopf:"\u{1D54F}",Xscr:"\u{1D4B3}",YAcy:"\u042F",YIcy:"\u0407",YUcy:"\u042E",Yacut:"\xDD",Yacute:"\xDD",Ycirc:"\u0176",Ycy:"\u042B",Yfr:"\u{1D51C}",Yopf:"\u{1D550}",Yscr:"\u{1D4B4}",Yuml:"\u0178",ZHcy:"\u0416",Zacute:"\u0179",Zcaron:"\u017D",Zcy:"\u0417",Zdot:"\u017B",ZeroWidthSpace:"\u200B",Zeta:"\u0396",Zfr:"\u2128",Zopf:"\u2124",Zscr:"\u{1D4B5}",aacut:"\xE1",aacute:"\xE1",abreve:"\u0103",ac:"\u223E",acE:"\u223E\u0333",acd:"\u223F",acir:"\xE2",acirc:"\xE2",acut:"\xB4",acute:"\xB4",acy:"\u0430",aeli:"\xE6",aelig:"\xE6",af:"\u2061",afr:"\u{1D51E}",agrav:"\xE0",agrave:"\xE0",alefsym:"\u2135",aleph:"\u2135",alpha:"\u03B1",amacr:"\u0101",amalg:"\u2A3F",am:"&",amp:"&",and:"\u2227",andand:"\u2A55",andd:"\u2A5C",andslope:"\u2A58",andv:"\u2A5A",ang:"\u2220",ange:"\u29A4",angle:"\u2220",angmsd:"\u2221",angmsdaa:"\u29A8",angmsdab:"\u29A9",angmsdac:"\u29AA",angmsdad:"\u29AB",angmsdae:"\u29AC",angmsdaf:"\u29AD",angmsdag:"\u29AE",angmsdah:"\u29AF",angrt:"\u221F",angrtvb:"\u22BE",angrtvbd:"\u299D",angsph:"\u2222",angst:"\xC5",angzarr:"\u237C",aogon:"\u0105",aopf:"\u{1D552}",ap:"\u2248",apE:"\u2A70",apacir:"\u2A6F",ape:"\u224A",apid:"\u224B",apos:"'",approx:"\u2248",approxeq:"\u224A",arin:"\xE5",aring:"\xE5",ascr:"\u{1D4B6}",ast:"*",asymp:"\u2248",asympeq:"\u224D",atild:"\xE3",atilde:"\xE3",aum:"\xE4",auml:"\xE4",awconint:"\u2233",awint:"\u2A11",bNot:"\u2AED",backcong:"\u224C",backepsilon:"\u03F6",backprime:"\u2035",backsim:"\u223D",backsimeq:"\u22CD",barvee:"\u22BD",barwed:"\u2305",barwedge:"\u2305",bbrk:"\u23B5",bbrktbrk:"\u23B6",bcong:"\u224C",bcy:"\u0431",bdquo:"\u201E",becaus:"\u2235",because:"\u2235",bemptyv:"\u29B0",bepsi:"\u03F6",bernou:"\u212C",beta:"\u03B2",beth:"\u2136",between:"\u226C",bfr:"\u{1D51F}",bigcap:"\u22C2",bigcirc:"\u25EF",bigcup:"\u22C3",bigodot:"\u2A00",bigoplus:"\u2A01",bigotimes:"\u2A02",bigsqcup:"\u2A06",bigstar:"\u2605",bigtriangledown:"\u25BD",bigtriangleup:"\u25B3",biguplus:"\u2A04",bigvee:"\u22C1",bigwedge:"\u22C0",bkarow:"\u290D",blacklozenge:"\u29EB",blacksquare:"\u25AA",blacktriangle:"\u25B4",blacktriangledown:"\u25BE",blacktriangleleft:"\u25C2",blacktriangleright:"\u25B8",blank:"\u2423",blk12:"\u2592",blk14:"\u2591",blk34:"\u2593",block:"\u2588",bne:"=\u20E5",bnequiv:"\u2261\u20E5",bnot:"\u2310",bopf:"\u{1D553}",bot:"\u22A5",bottom:"\u22A5",bowtie:"\u22C8",boxDL:"\u2557",boxDR:"\u2554",boxDl:"\u2556",boxDr:"\u2553",boxH:"\u2550",boxHD:"\u2566",boxHU:"\u2569",boxHd:"\u2564",boxHu:"\u2567",boxUL:"\u255D",boxUR:"\u255A",boxUl:"\u255C",boxUr:"\u2559",boxV:"\u2551",boxVH:"\u256C",boxVL:"\u2563",boxVR:"\u2560",boxVh:"\u256B",boxVl:"\u2562",boxVr:"\u255F",boxbox:"\u29C9",boxdL:"\u2555",boxdR:"\u2552",boxdl:"\u2510",boxdr:"\u250C",boxh:"\u2500",boxhD:"\u2565",boxhU:"\u2568",boxhd:"\u252C",boxhu:"\u2534",boxminus:"\u229F",boxplus:"\u229E",boxtimes:"\u22A0",boxuL:"\u255B",boxuR:"\u2558",boxul:"\u2518",boxur:"\u2514",boxv:"\u2502",boxvH:"\u256A",boxvL:"\u2561",boxvR:"\u255E",boxvh:"\u253C",boxvl:"\u2524",boxvr:"\u251C",bprime:"\u2035",breve:"\u02D8",brvba:"\xA6",brvbar:"\xA6",bscr:"\u{1D4B7}",bsemi:"\u204F",bsim:"\u223D",bsime:"\u22CD",bsol:"\\",bsolb:"\u29C5",bsolhsub:"\u27C8",bull:"\u2022",bullet:"\u2022",bump:"\u224E",bumpE:"\u2AAE",bumpe:"\u224F",bumpeq:"\u224F",cacute:"\u0107",cap:"\u2229",capand:"\u2A44",capbrcup:"\u2A49",capcap:"\u2A4B",capcup:"\u2A47",capdot:"\u2A40",caps:"\u2229\uFE00",caret:"\u2041",caron:"\u02C7",ccaps:"\u2A4D",ccaron:"\u010D",ccedi:"\xE7",ccedil:"\xE7",ccirc:"\u0109",ccups:"\u2A4C",ccupssm:"\u2A50",cdot:"\u010B",cedi:"\xB8",cedil:"\xB8",cemptyv:"\u29B2",cen:"\xA2",cent:"\xA2",centerdot:"\xB7",cfr:"\u{1D520}",chcy:"\u0447",check:"\u2713",checkmark:"\u2713",chi:"\u03C7",cir:"\u25CB",cirE:"\u29C3",circ:"\u02C6",circeq:"\u2257",circlearrowleft:"\u21BA",circlearrowright:"\u21BB",circledR:"\xAE",circledS:"\u24C8",circledast:"\u229B",circledcirc:"\u229A",circleddash:"\u229D",cire:"\u2257",cirfnint:"\u2A10",cirmid:"\u2AEF",cirscir:"\u29C2",clubs:"\u2663",clubsuit:"\u2663",colon:":",colone:"\u2254",coloneq:"\u2254",comma:",",commat:"@",comp:"\u2201",compfn:"\u2218",complement:"\u2201",complexes:"\u2102",cong:"\u2245",congdot:"\u2A6D",conint:"\u222E",copf:"\u{1D554}",coprod:"\u2210",cop:"\xA9",copy:"\xA9",copysr:"\u2117",crarr:"\u21B5",cross:"\u2717",cscr:"\u{1D4B8}",csub:"\u2ACF",csube:"\u2AD1",csup:"\u2AD0",csupe:"\u2AD2",ctdot:"\u22EF",cudarrl:"\u2938",cudarrr:"\u2935",cuepr:"\u22DE",cuesc:"\u22DF",cularr:"\u21B6",cularrp:"\u293D",cup:"\u222A",cupbrcap:"\u2A48",cupcap:"\u2A46",cupcup:"\u2A4A",cupdot:"\u228D",cupor:"\u2A45",cups:"\u222A\uFE00",curarr:"\u21B7",curarrm:"\u293C",curlyeqprec:"\u22DE",curlyeqsucc:"\u22DF",curlyvee:"\u22CE",curlywedge:"\u22CF",curre:"\xA4",curren:"\xA4",curvearrowleft:"\u21B6",curvearrowright:"\u21B7",cuvee:"\u22CE",cuwed:"\u22CF",cwconint:"\u2232",cwint:"\u2231",cylcty:"\u232D",dArr:"\u21D3",dHar:"\u2965",dagger:"\u2020",daleth:"\u2138",darr:"\u2193",dash:"\u2010",dashv:"\u22A3",dbkarow:"\u290F",dblac:"\u02DD",dcaron:"\u010F",dcy:"\u0434",dd:"\u2146",ddagger:"\u2021",ddarr:"\u21CA",ddotseq:"\u2A77",de:"\xB0",deg:"\xB0",delta:"\u03B4",demptyv:"\u29B1",dfisht:"\u297F",dfr:"\u{1D521}",dharl:"\u21C3",dharr:"\u21C2",diam:"\u22C4",diamond:"\u22C4",diamondsuit:"\u2666",diams:"\u2666",die:"\xA8",digamma:"\u03DD",disin:"\u22F2",div:"\xF7",divid:"\xF7",divide:"\xF7",divideontimes:"\u22C7",divonx:"\u22C7",djcy:"\u0452",dlcorn:"\u231E",dlcrop:"\u230D",dollar:"$",dopf:"\u{1D555}",dot:"\u02D9",doteq:"\u2250",doteqdot:"\u2251",dotminus:"\u2238",dotplus:"\u2214",dotsquare:"\u22A1",doublebarwedge:"\u2306",downarrow:"\u2193",downdownarrows:"\u21CA",downharpoonleft:"\u21C3",downharpoonright:"\u21C2",drbkarow:"\u2910",drcorn:"\u231F",drcrop:"\u230C",dscr:"\u{1D4B9}",dscy:"\u0455",dsol:"\u29F6",dstrok:"\u0111",dtdot:"\u22F1",dtri:"\u25BF",dtrif:"\u25BE",duarr:"\u21F5",duhar:"\u296F",dwangle:"\u29A6",dzcy:"\u045F",dzigrarr:"\u27FF",eDDot:"\u2A77",eDot:"\u2251",eacut:"\xE9",eacute:"\xE9",easter:"\u2A6E",ecaron:"\u011B",ecir:"\xEA",ecirc:"\xEA",ecolon:"\u2255",ecy:"\u044D",edot:"\u0117",ee:"\u2147",efDot:"\u2252",efr:"\u{1D522}",eg:"\u2A9A",egrav:"\xE8",egrave:"\xE8",egs:"\u2A96",egsdot:"\u2A98",el:"\u2A99",elinters:"\u23E7",ell:"\u2113",els:"\u2A95",elsdot:"\u2A97",emacr:"\u0113",empty:"\u2205",emptyset:"\u2205",emptyv:"\u2205",emsp13:"\u2004",emsp14:"\u2005",emsp:"\u2003",eng:"\u014B",ensp:"\u2002",eogon:"\u0119",eopf:"\u{1D556}",epar:"\u22D5",eparsl:"\u29E3",eplus:"\u2A71",epsi:"\u03B5",epsilon:"\u03B5",epsiv:"\u03F5",eqcirc:"\u2256",eqcolon:"\u2255",eqsim:"\u2242",eqslantgtr:"\u2A96",eqslantless:"\u2A95",equals:"=",equest:"\u225F",equiv:"\u2261",equivDD:"\u2A78",eqvparsl:"\u29E5",erDot:"\u2253",erarr:"\u2971",escr:"\u212F",esdot:"\u2250",esim:"\u2242",eta:"\u03B7",et:"\xF0",eth:"\xF0",eum:"\xEB",euml:"\xEB",euro:"\u20AC",excl:"!",exist:"\u2203",expectation:"\u2130",exponentiale:"\u2147",fallingdotseq:"\u2252",fcy:"\u0444",female:"\u2640",ffilig:"\uFB03",fflig:"\uFB00",ffllig:"\uFB04",ffr:"\u{1D523}",filig:"\uFB01",fjlig:"fj",flat:"\u266D",fllig:"\uFB02",fltns:"\u25B1",fnof:"\u0192",fopf:"\u{1D557}",forall:"\u2200",fork:"\u22D4",forkv:"\u2AD9",fpartint:"\u2A0D",frac1:"\xBC",frac12:"\xBD",frac13:"\u2153",frac14:"\xBC",frac15:"\u2155",frac16:"\u2159",frac18:"\u215B",frac23:"\u2154",frac25:"\u2156",frac3:"\xBE",frac34:"\xBE",frac35:"\u2157",frac38:"\u215C",frac45:"\u2158",frac56:"\u215A",frac58:"\u215D",frac78:"\u215E",frasl:"\u2044",frown:"\u2322",fscr:"\u{1D4BB}",gE:"\u2267",gEl:"\u2A8C",gacute:"\u01F5",gamma:"\u03B3",gammad:"\u03DD",gap:"\u2A86",gbreve:"\u011F",gcirc:"\u011D",gcy:"\u0433",gdot:"\u0121",ge:"\u2265",gel:"\u22DB",geq:"\u2265",geqq:"\u2267",geqslant:"\u2A7E",ges:"\u2A7E",gescc:"\u2AA9",gesdot:"\u2A80",gesdoto:"\u2A82",gesdotol:"\u2A84",gesl:"\u22DB\uFE00",gesles:"\u2A94",gfr:"\u{1D524}",gg:"\u226B",ggg:"\u22D9",gimel:"\u2137",gjcy:"\u0453",gl:"\u2277",glE:"\u2A92",gla:"\u2AA5",glj:"\u2AA4",gnE:"\u2269",gnap:"\u2A8A",gnapprox:"\u2A8A",gne:"\u2A88",gneq:"\u2A88",gneqq:"\u2269",gnsim:"\u22E7",gopf:"\u{1D558}",grave:"`",gscr:"\u210A",gsim:"\u2273",gsime:"\u2A8E",gsiml:"\u2A90",g:">",gt:">",gtcc:"\u2AA7",gtcir:"\u2A7A",gtdot:"\u22D7",gtlPar:"\u2995",gtquest:"\u2A7C",gtrapprox:"\u2A86",gtrarr:"\u2978",gtrdot:"\u22D7",gtreqless:"\u22DB",gtreqqless:"\u2A8C",gtrless:"\u2277",gtrsim:"\u2273",gvertneqq:"\u2269\uFE00",gvnE:"\u2269\uFE00",hArr:"\u21D4",hairsp:"\u200A",half:"\xBD",hamilt:"\u210B",hardcy:"\u044A",harr:"\u2194",harrcir:"\u2948",harrw:"\u21AD",hbar:"\u210F",hcirc:"\u0125",hearts:"\u2665",heartsuit:"\u2665",hellip:"\u2026",hercon:"\u22B9",hfr:"\u{1D525}",hksearow:"\u2925",hkswarow:"\u2926",hoarr:"\u21FF",homtht:"\u223B",hookleftarrow:"\u21A9",hookrightarrow:"\u21AA",hopf:"\u{1D559}",horbar:"\u2015",hscr:"\u{1D4BD}",hslash:"\u210F",hstrok:"\u0127",hybull:"\u2043",hyphen:"\u2010",iacut:"\xED",iacute:"\xED",ic:"\u2063",icir:"\xEE",icirc:"\xEE",icy:"\u0438",iecy:"\u0435",iexc:"\xA1",iexcl:"\xA1",iff:"\u21D4",ifr:"\u{1D526}",igrav:"\xEC",igrave:"\xEC",ii:"\u2148",iiiint:"\u2A0C",iiint:"\u222D",iinfin:"\u29DC",iiota:"\u2129",ijlig:"\u0133",imacr:"\u012B",image:"\u2111",imagline:"\u2110",imagpart:"\u2111",imath:"\u0131",imof:"\u22B7",imped:"\u01B5",in:"\u2208",incare:"\u2105",infin:"\u221E",infintie:"\u29DD",inodot:"\u0131",int:"\u222B",intcal:"\u22BA",integers:"\u2124",intercal:"\u22BA",intlarhk:"\u2A17",intprod:"\u2A3C",iocy:"\u0451",iogon:"\u012F",iopf:"\u{1D55A}",iota:"\u03B9",iprod:"\u2A3C",iques:"\xBF",iquest:"\xBF",iscr:"\u{1D4BE}",isin:"\u2208",isinE:"\u22F9",isindot:"\u22F5",isins:"\u22F4",isinsv:"\u22F3",isinv:"\u2208",it:"\u2062",itilde:"\u0129",iukcy:"\u0456",ium:"\xEF",iuml:"\xEF",jcirc:"\u0135",jcy:"\u0439",jfr:"\u{1D527}",jmath:"\u0237",jopf:"\u{1D55B}",jscr:"\u{1D4BF}",jsercy:"\u0458",jukcy:"\u0454",kappa:"\u03BA",kappav:"\u03F0",kcedil:"\u0137",kcy:"\u043A",kfr:"\u{1D528}",kgreen:"\u0138",khcy:"\u0445",kjcy:"\u045C",kopf:"\u{1D55C}",kscr:"\u{1D4C0}",lAarr:"\u21DA",lArr:"\u21D0",lAtail:"\u291B",lBarr:"\u290E",lE:"\u2266",lEg:"\u2A8B",lHar:"\u2962",lacute:"\u013A",laemptyv:"\u29B4",lagran:"\u2112",lambda:"\u03BB",lang:"\u27E8",langd:"\u2991",langle:"\u27E8",lap:"\u2A85",laqu:"\xAB",laquo:"\xAB",larr:"\u2190",larrb:"\u21E4",larrbfs:"\u291F",larrfs:"\u291D",larrhk:"\u21A9",larrlp:"\u21AB",larrpl:"\u2939",larrsim:"\u2973",larrtl:"\u21A2",lat:"\u2AAB",latail:"\u2919",late:"\u2AAD",lates:"\u2AAD\uFE00",lbarr:"\u290C",lbbrk:"\u2772",lbrace:"{",lbrack:"[",lbrke:"\u298B",lbrksld:"\u298F",lbrkslu:"\u298D",lcaron:"\u013E",lcedil:"\u013C",lceil:"\u2308",lcub:"{",lcy:"\u043B",ldca:"\u2936",ldquo:"\u201C",ldquor:"\u201E",ldrdhar:"\u2967",ldrushar:"\u294B",ldsh:"\u21B2",le:"\u2264",leftarrow:"\u2190",leftarrowtail:"\u21A2",leftharpoondown:"\u21BD",leftharpoonup:"\u21BC",leftleftarrows:"\u21C7",leftrightarrow:"\u2194",leftrightarrows:"\u21C6",leftrightharpoons:"\u21CB",leftrightsquigarrow:"\u21AD",leftthreetimes:"\u22CB",leg:"\u22DA",leq:"\u2264",leqq:"\u2266",leqslant:"\u2A7D",les:"\u2A7D",lescc:"\u2AA8",lesdot:"\u2A7F",lesdoto:"\u2A81",lesdotor:"\u2A83",lesg:"\u22DA\uFE00",lesges:"\u2A93",lessapprox:"\u2A85",lessdot:"\u22D6",lesseqgtr:"\u22DA",lesseqqgtr:"\u2A8B",lessgtr:"\u2276",lesssim:"\u2272",lfisht:"\u297C",lfloor:"\u230A",lfr:"\u{1D529}",lg:"\u2276",lgE:"\u2A91",lhard:"\u21BD",lharu:"\u21BC",lharul:"\u296A",lhblk:"\u2584",ljcy:"\u0459",ll:"\u226A",llarr:"\u21C7",llcorner:"\u231E",llhard:"\u296B",lltri:"\u25FA",lmidot:"\u0140",lmoust:"\u23B0",lmoustache:"\u23B0",lnE:"\u2268",lnap:"\u2A89",lnapprox:"\u2A89",lne:"\u2A87",lneq:"\u2A87",lneqq:"\u2268",lnsim:"\u22E6",loang:"\u27EC",loarr:"\u21FD",lobrk:"\u27E6",longleftarrow:"\u27F5",longleftrightarrow:"\u27F7",longmapsto:"\u27FC",longrightarrow:"\u27F6",looparrowleft:"\u21AB",looparrowright:"\u21AC",lopar:"\u2985",lopf:"\u{1D55D}",loplus:"\u2A2D",lotimes:"\u2A34",lowast:"\u2217",lowbar:"_",loz:"\u25CA",lozenge:"\u25CA",lozf:"\u29EB",lpar:"(",lparlt:"\u2993",lrarr:"\u21C6",lrcorner:"\u231F",lrhar:"\u21CB",lrhard:"\u296D",lrm:"\u200E",lrtri:"\u22BF",lsaquo:"\u2039",lscr:"\u{1D4C1}",lsh:"\u21B0",lsim:"\u2272",lsime:"\u2A8D",lsimg:"\u2A8F",lsqb:"[",lsquo:"\u2018",lsquor:"\u201A",lstrok:"\u0142",l:"<",lt:"<",ltcc:"\u2AA6",ltcir:"\u2A79",ltdot:"\u22D6",lthree:"\u22CB",ltimes:"\u22C9",ltlarr:"\u2976",ltquest:"\u2A7B",ltrPar:"\u2996",ltri:"\u25C3",ltrie:"\u22B4",ltrif:"\u25C2",lurdshar:"\u294A",luruhar:"\u2966",lvertneqq:"\u2268\uFE00",lvnE:"\u2268\uFE00",mDDot:"\u223A",mac:"\xAF",macr:"\xAF",male:"\u2642",malt:"\u2720",maltese:"\u2720",map:"\u21A6",mapsto:"\u21A6",mapstodown:"\u21A7",mapstoleft:"\u21A4",mapstoup:"\u21A5",marker:"\u25AE",mcomma:"\u2A29",mcy:"\u043C",mdash:"\u2014",measuredangle:"\u2221",mfr:"\u{1D52A}",mho:"\u2127",micr:"\xB5",micro:"\xB5",mid:"\u2223",midast:"*",midcir:"\u2AF0",middo:"\xB7",middot:"\xB7",minus:"\u2212",minusb:"\u229F",minusd:"\u2238",minusdu:"\u2A2A",mlcp:"\u2ADB",mldr:"\u2026",mnplus:"\u2213",models:"\u22A7",mopf:"\u{1D55E}",mp:"\u2213",mscr:"\u{1D4C2}",mstpos:"\u223E",mu:"\u03BC",multimap:"\u22B8",mumap:"\u22B8",nGg:"\u22D9\u0338",nGt:"\u226B\u20D2",nGtv:"\u226B\u0338",nLeftarrow:"\u21CD",nLeftrightarrow:"\u21CE",nLl:"\u22D8\u0338",nLt:"\u226A\u20D2",nLtv:"\u226A\u0338",nRightarrow:"\u21CF",nVDash:"\u22AF",nVdash:"\u22AE",nabla:"\u2207",nacute:"\u0144",nang:"\u2220\u20D2",nap:"\u2249",napE:"\u2A70\u0338",napid:"\u224B\u0338",napos:"\u0149",napprox:"\u2249",natur:"\u266E",natural:"\u266E",naturals:"\u2115",nbs:"\xA0",nbsp:"\xA0",nbump:"\u224E\u0338",nbumpe:"\u224F\u0338",ncap:"\u2A43",ncaron:"\u0148",ncedil:"\u0146",ncong:"\u2247",ncongdot:"\u2A6D\u0338",ncup:"\u2A42",ncy:"\u043D",ndash:"\u2013",ne:"\u2260",neArr:"\u21D7",nearhk:"\u2924",nearr:"\u2197",nearrow:"\u2197",nedot:"\u2250\u0338",nequiv:"\u2262",nesear:"\u2928",nesim:"\u2242\u0338",nexist:"\u2204",nexists:"\u2204",nfr:"\u{1D52B}",ngE:"\u2267\u0338",nge:"\u2271",ngeq:"\u2271",ngeqq:"\u2267\u0338",ngeqslant:"\u2A7E\u0338",nges:"\u2A7E\u0338",ngsim:"\u2275",ngt:"\u226F",ngtr:"\u226F",nhArr:"\u21CE",nharr:"\u21AE",nhpar:"\u2AF2",ni:"\u220B",nis:"\u22FC",nisd:"\u22FA",niv:"\u220B",njcy:"\u045A",nlArr:"\u21CD",nlE:"\u2266\u0338",nlarr:"\u219A",nldr:"\u2025",nle:"\u2270",nleftarrow:"\u219A",nleftrightarrow:"\u21AE",nleq:"\u2270",nleqq:"\u2266\u0338",nleqslant:"\u2A7D\u0338",nles:"\u2A7D\u0338",nless:"\u226E",nlsim:"\u2274",nlt:"\u226E",nltri:"\u22EA",nltrie:"\u22EC",nmid:"\u2224",nopf:"\u{1D55F}",no:"\xAC",not:"\xAC",notin:"\u2209",notinE:"\u22F9\u0338",notindot:"\u22F5\u0338",notinva:"\u2209",notinvb:"\u22F7",notinvc:"\u22F6",notni:"\u220C",notniva:"\u220C",notnivb:"\u22FE",notnivc:"\u22FD",npar:"\u2226",nparallel:"\u2226",nparsl:"\u2AFD\u20E5",npart:"\u2202\u0338",npolint:"\u2A14",npr:"\u2280",nprcue:"\u22E0",npre:"\u2AAF\u0338",nprec:"\u2280",npreceq:"\u2AAF\u0338",nrArr:"\u21CF",nrarr:"\u219B",nrarrc:"\u2933\u0338",nrarrw:"\u219D\u0338",nrightarrow:"\u219B",nrtri:"\u22EB",nrtrie:"\u22ED",nsc:"\u2281",nsccue:"\u22E1",nsce:"\u2AB0\u0338",nscr:"\u{1D4C3}",nshortmid:"\u2224",nshortparallel:"\u2226",nsim:"\u2241",nsime:"\u2244",nsimeq:"\u2244",nsmid:"\u2224",nspar:"\u2226",nsqsube:"\u22E2",nsqsupe:"\u22E3",nsub:"\u2284",nsubE:"\u2AC5\u0338",nsube:"\u2288",nsubset:"\u2282\u20D2",nsubseteq:"\u2288",nsubseteqq:"\u2AC5\u0338",nsucc:"\u2281",nsucceq:"\u2AB0\u0338",nsup:"\u2285",nsupE:"\u2AC6\u0338",nsupe:"\u2289",nsupset:"\u2283\u20D2",nsupseteq:"\u2289",nsupseteqq:"\u2AC6\u0338",ntgl:"\u2279",ntild:"\xF1",ntilde:"\xF1",ntlg:"\u2278",ntriangleleft:"\u22EA",ntrianglelefteq:"\u22EC",ntriangleright:"\u22EB",ntrianglerighteq:"\u22ED",nu:"\u03BD",num:"#",numero:"\u2116",numsp:"\u2007",nvDash:"\u22AD",nvHarr:"\u2904",nvap:"\u224D\u20D2",nvdash:"\u22AC",nvge:"\u2265\u20D2",nvgt:">\u20D2",nvinfin:"\u29DE",nvlArr:"\u2902",nvle:"\u2264\u20D2",nvlt:"<\u20D2",nvltrie:"\u22B4\u20D2",nvrArr:"\u2903",nvrtrie:"\u22B5\u20D2",nvsim:"\u223C\u20D2",nwArr:"\u21D6",nwarhk:"\u2923",nwarr:"\u2196",nwarrow:"\u2196",nwnear:"\u2927",oS:"\u24C8",oacut:"\xF3",oacute:"\xF3",oast:"\u229B",ocir:"\xF4",ocirc:"\xF4",ocy:"\u043E",odash:"\u229D",odblac:"\u0151",odiv:"\u2A38",odot:"\u2299",odsold:"\u29BC",oelig:"\u0153",ofcir:"\u29BF",ofr:"\u{1D52C}",ogon:"\u02DB",ograv:"\xF2",ograve:"\xF2",ogt:"\u29C1",ohbar:"\u29B5",ohm:"\u03A9",oint:"\u222E",olarr:"\u21BA",olcir:"\u29BE",olcross:"\u29BB",oline:"\u203E",olt:"\u29C0",omacr:"\u014D",omega:"\u03C9",omicron:"\u03BF",omid:"\u29B6",ominus:"\u2296",oopf:"\u{1D560}",opar:"\u29B7",operp:"\u29B9",oplus:"\u2295",or:"\u2228",orarr:"\u21BB",ord:"\xBA",order:"\u2134",orderof:"\u2134",ordf:"\xAA",ordm:"\xBA",origof:"\u22B6",oror:"\u2A56",orslope:"\u2A57",orv:"\u2A5B",oscr:"\u2134",oslas:"\xF8",oslash:"\xF8",osol:"\u2298",otild:"\xF5",otilde:"\xF5",otimes:"\u2297",otimesas:"\u2A36",oum:"\xF6",ouml:"\xF6",ovbar:"\u233D",par:"\xB6",para:"\xB6",parallel:"\u2225",parsim:"\u2AF3",parsl:"\u2AFD",part:"\u2202",pcy:"\u043F",percnt:"%",period:".",permil:"\u2030",perp:"\u22A5",pertenk:"\u2031",pfr:"\u{1D52D}",phi:"\u03C6",phiv:"\u03D5",phmmat:"\u2133",phone:"\u260E",pi:"\u03C0",pitchfork:"\u22D4",piv:"\u03D6",planck:"\u210F",planckh:"\u210E",plankv:"\u210F",plus:"+",plusacir:"\u2A23",plusb:"\u229E",pluscir:"\u2A22",plusdo:"\u2214",plusdu:"\u2A25",pluse:"\u2A72",plusm:"\xB1",plusmn:"\xB1",plussim:"\u2A26",plustwo:"\u2A27",pm:"\xB1",pointint:"\u2A15",popf:"\u{1D561}",poun:"\xA3",pound:"\xA3",pr:"\u227A",prE:"\u2AB3",prap:"\u2AB7",prcue:"\u227C",pre:"\u2AAF",prec:"\u227A",precapprox:"\u2AB7",preccurlyeq:"\u227C",preceq:"\u2AAF",precnapprox:"\u2AB9",precneqq:"\u2AB5",precnsim:"\u22E8",precsim:"\u227E",prime:"\u2032",primes:"\u2119",prnE:"\u2AB5",prnap:"\u2AB9",prnsim:"\u22E8",prod:"\u220F",profalar:"\u232E",profline:"\u2312",profsurf:"\u2313",prop:"\u221D",propto:"\u221D",prsim:"\u227E",prurel:"\u22B0",pscr:"\u{1D4C5}",psi:"\u03C8",puncsp:"\u2008",qfr:"\u{1D52E}",qint:"\u2A0C",qopf:"\u{1D562}",qprime:"\u2057",qscr:"\u{1D4C6}",quaternions:"\u210D",quatint:"\u2A16",quest:"?",questeq:"\u225F",quo:'"',quot:'"',rAarr:"\u21DB",rArr:"\u21D2",rAtail:"\u291C",rBarr:"\u290F",rHar:"\u2964",race:"\u223D\u0331",racute:"\u0155",radic:"\u221A",raemptyv:"\u29B3",rang:"\u27E9",rangd:"\u2992",range:"\u29A5",rangle:"\u27E9",raqu:"\xBB",raquo:"\xBB",rarr:"\u2192",rarrap:"\u2975",rarrb:"\u21E5",rarrbfs:"\u2920",rarrc:"\u2933",rarrfs:"\u291E",rarrhk:"\u21AA",rarrlp:"\u21AC",rarrpl:"\u2945",rarrsim:"\u2974",rarrtl:"\u21A3",rarrw:"\u219D",ratail:"\u291A",ratio:"\u2236",rationals:"\u211A",rbarr:"\u290D",rbbrk:"\u2773",rbrace:"}",rbrack:"]",rbrke:"\u298C",rbrksld:"\u298E",rbrkslu:"\u2990",rcaron:"\u0159",rcedil:"\u0157",rceil:"\u2309",rcub:"}",rcy:"\u0440",rdca:"\u2937",rdldhar:"\u2969",rdquo:"\u201D",rdquor:"\u201D",rdsh:"\u21B3",real:"\u211C",realine:"\u211B",realpart:"\u211C",reals:"\u211D",rect:"\u25AD",re:"\xAE",reg:"\xAE",rfisht:"\u297D",rfloor:"\u230B",rfr:"\u{1D52F}",rhard:"\u21C1",rharu:"\u21C0",rharul:"\u296C",rho:"\u03C1",rhov:"\u03F1",rightarrow:"\u2192",rightarrowtail:"\u21A3",rightharpoondown:"\u21C1",rightharpoonup:"\u21C0",rightleftarrows:"\u21C4",rightleftharpoons:"\u21CC",rightrightarrows:"\u21C9",rightsquigarrow:"\u219D",rightthreetimes:"\u22CC",ring:"\u02DA",risingdotseq:"\u2253",rlarr:"\u21C4",rlhar:"\u21CC",rlm:"\u200F",rmoust:"\u23B1",rmoustache:"\u23B1",rnmid:"\u2AEE",roang:"\u27ED",roarr:"\u21FE",robrk:"\u27E7",ropar:"\u2986",ropf:"\u{1D563}",roplus:"\u2A2E",rotimes:"\u2A35",rpar:")",rpargt:"\u2994",rppolint:"\u2A12",rrarr:"\u21C9",rsaquo:"\u203A",rscr:"\u{1D4C7}",rsh:"\u21B1",rsqb:"]",rsquo:"\u2019",rsquor:"\u2019",rthree:"\u22CC",rtimes:"\u22CA",rtri:"\u25B9",rtrie:"\u22B5",rtrif:"\u25B8",rtriltri:"\u29CE",ruluhar:"\u2968",rx:"\u211E",sacute:"\u015B",sbquo:"\u201A",sc:"\u227B",scE:"\u2AB4",scap:"\u2AB8",scaron:"\u0161",sccue:"\u227D",sce:"\u2AB0",scedil:"\u015F",scirc:"\u015D",scnE:"\u2AB6",scnap:"\u2ABA",scnsim:"\u22E9",scpolint:"\u2A13",scsim:"\u227F",scy:"\u0441",sdot:"\u22C5",sdotb:"\u22A1",sdote:"\u2A66",seArr:"\u21D8",searhk:"\u2925",searr:"\u2198",searrow:"\u2198",sec:"\xA7",sect:"\xA7",semi:";",seswar:"\u2929",setminus:"\u2216",setmn:"\u2216",sext:"\u2736",sfr:"\u{1D530}",sfrown:"\u2322",sharp:"\u266F",shchcy:"\u0449",shcy:"\u0448",shortmid:"\u2223",shortparallel:"\u2225",sh:"\xAD",shy:"\xAD",sigma:"\u03C3",sigmaf:"\u03C2",sigmav:"\u03C2",sim:"\u223C",simdot:"\u2A6A",sime:"\u2243",simeq:"\u2243",simg:"\u2A9E",simgE:"\u2AA0",siml:"\u2A9D",simlE:"\u2A9F",simne:"\u2246",simplus:"\u2A24",simrarr:"\u2972",slarr:"\u2190",smallsetminus:"\u2216",smashp:"\u2A33",smeparsl:"\u29E4",smid:"\u2223",smile:"\u2323",smt:"\u2AAA",smte:"\u2AAC",smtes:"\u2AAC\uFE00",softcy:"\u044C",sol:"/",solb:"\u29C4",solbar:"\u233F",sopf:"\u{1D564}",spades:"\u2660",spadesuit:"\u2660",spar:"\u2225",sqcap:"\u2293",sqcaps:"\u2293\uFE00",sqcup:"\u2294",sqcups:"\u2294\uFE00",sqsub:"\u228F",sqsube:"\u2291",sqsubset:"\u228F",sqsubseteq:"\u2291",sqsup:"\u2290",sqsupe:"\u2292",sqsupset:"\u2290",sqsupseteq:"\u2292",squ:"\u25A1",square:"\u25A1",squarf:"\u25AA",squf:"\u25AA",srarr:"\u2192",sscr:"\u{1D4C8}",ssetmn:"\u2216",ssmile:"\u2323",sstarf:"\u22C6",star:"\u2606",starf:"\u2605",straightepsilon:"\u03F5",straightphi:"\u03D5",strns:"\xAF",sub:"\u2282",subE:"\u2AC5",subdot:"\u2ABD",sube:"\u2286",subedot:"\u2AC3",submult:"\u2AC1",subnE:"\u2ACB",subne:"\u228A",subplus:"\u2ABF",subrarr:"\u2979",subset:"\u2282",subseteq:"\u2286",subseteqq:"\u2AC5",subsetneq:"\u228A",subsetneqq:"\u2ACB",subsim:"\u2AC7",subsub:"\u2AD5",subsup:"\u2AD3",succ:"\u227B",succapprox:"\u2AB8",succcurlyeq:"\u227D",succeq:"\u2AB0",succnapprox:"\u2ABA",succneqq:"\u2AB6",succnsim:"\u22E9",succsim:"\u227F",sum:"\u2211",sung:"\u266A",sup:"\u2283",sup1:"\xB9",sup2:"\xB2",sup3:"\xB3",supE:"\u2AC6",supdot:"\u2ABE",supdsub:"\u2AD8",supe:"\u2287",supedot:"\u2AC4",suphsol:"\u27C9",suphsub:"\u2AD7",suplarr:"\u297B",supmult:"\u2AC2",supnE:"\u2ACC",supne:"\u228B",supplus:"\u2AC0",supset:"\u2283",supseteq:"\u2287",supseteqq:"\u2AC6",supsetneq:"\u228B",supsetneqq:"\u2ACC",supsim:"\u2AC8",supsub:"\u2AD4",supsup:"\u2AD6",swArr:"\u21D9",swarhk:"\u2926",swarr:"\u2199",swarrow:"\u2199",swnwar:"\u292A",szli:"\xDF",szlig:"\xDF",target:"\u2316",tau:"\u03C4",tbrk:"\u23B4",tcaron:"\u0165",tcedil:"\u0163",tcy:"\u0442",tdot:"\u20DB",telrec:"\u2315",tfr:"\u{1D531}",there4:"\u2234",therefore:"\u2234",theta:"\u03B8",thetasym:"\u03D1",thetav:"\u03D1",thickapprox:"\u2248",thicksim:"\u223C",thinsp:"\u2009",thkap:"\u2248",thksim:"\u223C",thor:"\xFE",thorn:"\xFE",tilde:"\u02DC",time:"\xD7",times:"\xD7",timesb:"\u22A0",timesbar:"\u2A31",timesd:"\u2A30",tint:"\u222D",toea:"\u2928",top:"\u22A4",topbot:"\u2336",topcir:"\u2AF1",topf:"\u{1D565}",topfork:"\u2ADA",tosa:"\u2929",tprime:"\u2034",trade:"\u2122",triangle:"\u25B5",triangledown:"\u25BF",triangleleft:"\u25C3",trianglelefteq:"\u22B4",triangleq:"\u225C",triangleright:"\u25B9",trianglerighteq:"\u22B5",tridot:"\u25EC",trie:"\u225C",triminus:"\u2A3A",triplus:"\u2A39",trisb:"\u29CD",tritime:"\u2A3B",trpezium:"\u23E2",tscr:"\u{1D4C9}",tscy:"\u0446",tshcy:"\u045B",tstrok:"\u0167",twixt:"\u226C",twoheadleftarrow:"\u219E",twoheadrightarrow:"\u21A0",uArr:"\u21D1",uHar:"\u2963",uacut:"\xFA",uacute:"\xFA",uarr:"\u2191",ubrcy:"\u045E",ubreve:"\u016D",ucir:"\xFB",ucirc:"\xFB",ucy:"\u0443",udarr:"\u21C5",udblac:"\u0171",udhar:"\u296E",ufisht:"\u297E",ufr:"\u{1D532}",ugrav:"\xF9",ugrave:"\xF9",uharl:"\u21BF",uharr:"\u21BE",uhblk:"\u2580",ulcorn:"\u231C",ulcorner:"\u231C",ulcrop:"\u230F",ultri:"\u25F8",umacr:"\u016B",um:"\xA8",uml:"\xA8",uogon:"\u0173",uopf:"\u{1D566}",uparrow:"\u2191",updownarrow:"\u2195",upharpoonleft:"\u21BF",upharpoonright:"\u21BE",uplus:"\u228E",upsi:"\u03C5",upsih:"\u03D2",upsilon:"\u03C5",upuparrows:"\u21C8",urcorn:"\u231D",urcorner:"\u231D",urcrop:"\u230E",uring:"\u016F",urtri:"\u25F9",uscr:"\u{1D4CA}",utdot:"\u22F0",utilde:"\u0169",utri:"\u25B5",utrif:"\u25B4",uuarr:"\u21C8",uum:"\xFC",uuml:"\xFC",uwangle:"\u29A7",vArr:"\u21D5",vBar:"\u2AE8",vBarv:"\u2AE9",vDash:"\u22A8",vangrt:"\u299C",varepsilon:"\u03F5",varkappa:"\u03F0",varnothing:"\u2205",varphi:"\u03D5",varpi:"\u03D6",varpropto:"\u221D",varr:"\u2195",varrho:"\u03F1",varsigma:"\u03C2",varsubsetneq:"\u228A\uFE00",varsubsetneqq:"\u2ACB\uFE00",varsupsetneq:"\u228B\uFE00",varsupsetneqq:"\u2ACC\uFE00",vartheta:"\u03D1",vartriangleleft:"\u22B2",vartriangleright:"\u22B3",vcy:"\u0432",vdash:"\u22A2",vee:"\u2228",veebar:"\u22BB",veeeq:"\u225A",vellip:"\u22EE",verbar:"|",vert:"|",vfr:"\u{1D533}",vltri:"\u22B2",vnsub:"\u2282\u20D2",vnsup:"\u2283\u20D2",vopf:"\u{1D567}",vprop:"\u221D",vrtri:"\u22B3",vscr:"\u{1D4CB}",vsubnE:"\u2ACB\uFE00",vsubne:"\u228A\uFE00",vsupnE:"\u2ACC\uFE00",vsupne:"\u228B\uFE00",vzigzag:"\u299A",wcirc:"\u0175",wedbar:"\u2A5F",wedge:"\u2227",wedgeq:"\u2259",weierp:"\u2118",wfr:"\u{1D534}",wopf:"\u{1D568}",wp:"\u2118",wr:"\u2240",wreath:"\u2240",wscr:"\u{1D4CC}",xcap:"\u22C2",xcirc:"\u25EF",xcup:"\u22C3",xdtri:"\u25BD",xfr:"\u{1D535}",xhArr:"\u27FA",xharr:"\u27F7",xi:"\u03BE",xlArr:"\u27F8",xlarr:"\u27F5",xmap:"\u27FC",xnis:"\u22FB",xodot:"\u2A00",xopf:"\u{1D569}",xoplus:"\u2A01",xotime:"\u2A02",xrArr:"\u27F9",xrarr:"\u27F6",xscr:"\u{1D4CD}",xsqcup:"\u2A06",xuplus:"\u2A04",xutri:"\u25B3",xvee:"\u22C1",xwedge:"\u22C0",yacut:"\xFD",yacute:"\xFD",yacy:"\u044F",ycirc:"\u0177",ycy:"\u044B",ye:"\xA5",yen:"\xA5",yfr:"\u{1D536}",yicy:"\u0457",yopf:"\u{1D56A}",yscr:"\u{1D4CE}",yucy:"\u044E",yum:"\xFF",yuml:"\xFF",zacute:"\u017A",zcaron:"\u017E",zcy:"\u0437",zdot:"\u017C",zeetrf:"\u2128",zeta:"\u03B6",zfr:"\u{1D537}",zhcy:"\u0436",zigrarr:"\u21DD",zopf:"\u{1D56B}",zscr:"\u{1D4CF}",zwj:"\u200D",zwnj:"\u200C"}});var Fu=C((Av,mu)=>{"use strict";var hu=du();mu.exports=tD;var rD={}.hasOwnProperty;function tD(e){return rD.call(hu,e)?hu[e]:!1}});var pr=C((xv,Tu)=>{"use strict";var gu=au(),vu=ou(),nD=Ne(),iD=lu(),yu=pu(),uD=Fu();Tu.exports=gD;var aD={}.hasOwnProperty,je=String.fromCharCode,oD=Function.prototype,Eu={warning:null,reference:null,text:null,warningContext:null,referenceContext:null,textContext:null,position:{},additional:null,attribute:!1,nonTerminated:!0},sD=9,Cu=10,cD=12,lD=32,bu=38,fD=59,DD=60,pD=61,dD=35,hD=88,mD=120,FD=65533,$e="named",Ot="hexadecimal",Pt="decimal",Lt={};Lt[Ot]=16;Lt[Pt]=10;var Yr={};Yr[$e]=yu;Yr[Pt]=nD;Yr[Ot]=iD;var Au=1,xu=2,wu=3,ku=4,Bu=5,St=6,qu=7,Ae={};Ae[Au]="Named character references must be terminated by a semicolon";Ae[xu]="Numeric character references must be terminated by a semicolon";Ae[wu]="Named character references cannot be empty";Ae[ku]="Numeric character references cannot be empty";Ae[Bu]="Named character references must be known";Ae[St]="Numeric character references cannot be disallowed";Ae[qu]="Numeric character references cannot be outside the permissible Unicode range";function gD(e,r){var t={},n,a;r||(r={});for(a in Eu)n=r[a],t[a]=n??Eu[a];return(t.position.indent||t.position.start)&&(t.indent=t.position.indent||[],t.position=t.position.start),vD(e,t)}function vD(e,r){var t=r.additional,n=r.nonTerminated,a=r.text,u=r.reference,i=r.warning,o=r.textContext,s=r.referenceContext,l=r.warningContext,c=r.position,f=r.indent||[],D=e.length,h=0,p=-1,d=c.column||1,m=c.line||1,F="",y=[],E,B,b,g,A,x,v,w,k,q,T,R,O,S,_,P,ke,j,I;for(typeof t=="string"&&(t=t.charCodeAt(0)),P=Z(),w=i?Q:oD,h--,D++;++h<D;)if(A===Cu&&(d=f[p]||1),A=e.charCodeAt(h),A===bu){if(v=e.charCodeAt(h+1),v===sD||v===Cu||v===cD||v===lD||v===bu||v===DD||v!==v||t&&v===t){F+=je(A),d++;continue}for(O=h+1,R=O,I=O,v===dD?(I=++R,v=e.charCodeAt(I),v===hD||v===mD?(S=Ot,I=++R):S=Pt):S=$e,E="",T="",g="",_=Yr[S],I--;++I<D&&(v=e.charCodeAt(I),!!_(v));)g+=je(v),S===$e&&aD.call(gu,g)&&(E=g,T=gu[g]);b=e.charCodeAt(I)===fD,b&&(I++,B=S===$e?uD(g):!1,B&&(E=g,T=B)),j=1+I-O,!b&&!n||(g?S===$e?(b&&!T?w(Bu,1):(E!==g&&(I=R+E.length,j=1+I-R,b=!1),b||(k=E?Au:wu,r.attribute?(v=e.charCodeAt(I),v===pD?(w(k,j),T=null):yu(v)?T=null:w(k,j)):w(k,j))),x=T):(b||w(xu,j),x=parseInt(g,Lt[S]),ED(x)?(w(qu,j),x=je(FD)):x in vu?(w(St,j),x=vu[x]):(q="",CD(x)&&w(St,j),x>65535&&(x-=65536,q+=je(x>>>10|55296),x=56320|x&1023),x=q+je(x))):S!==$e&&w(ku,j)),x?(me(),P=Z(),h=I-1,d+=I-O+1,y.push(x),ke=Z(),ke.offset++,u&&u.call(s,x,{start:P,end:ke},e.slice(O-1,I)),P=ke):(g=e.slice(O-1,I),F+=g,d+=g.length,h=I-1)}else A===10&&(m++,p++,d=0),A===A?(F+=je(A),d++):me();return y.join("");function Z(){return{line:m,column:d,offset:h+(c.offset||0)}}function Q(Fe,z){var lt=Z();lt.column+=z,lt.offset+=z,i.call(l,Ae[Fe],lt,Fe)}function me(){F&&(y.push(F),a&&a.call(o,F,{start:P,end:Z()}),F="")}}function ED(e){return e>=55296&&e<=57343||e>1114111}function CD(e){return e>=1&&e<=8||e===11||e>=13&&e<=31||e>=127&&e<=159||e>=64976&&e<=65007||(e&65535)===65535||(e&65535)===65534}});var Ou=C((wv,Su)=>{"use strict";var bD=Ie(),_u=pr();Su.exports=yD;function yD(e){return t.raw=n,t;function r(u){for(var i=e.offset,o=u.line,s=[];++o&&o in i;)s.push((i[o]||0)+1);return{start:u,indent:s}}function t(u,i,o){_u(u,{position:r(i),warning:a,text:o,reference:o,textContext:e,referenceContext:e})}function n(u,i,o){return _u(u,bD(o,{position:r(i),warning:a}))}function a(u,i,o){o!==3&&e.file.message(u,i)}}});var Iu=C((kv,Lu)=>{"use strict";Lu.exports=AD;function AD(e){return r;function r(t,n){var a=this,u=a.offset,i=[],o=a[e+"Methods"],s=a[e+"Tokenizers"],l=n.line,c=n.column,f,D,h,p,d,m;if(!t)return i;for(x.now=E,x.file=a.file,F("");t;){for(f=-1,D=o.length,d=!1;++f<D&&(p=o[f],h=s[p],!(h&&(!h.onlyAtStart||a.atStart)&&(!h.notInList||!a.inList)&&(!h.notInBlock||!a.inBlock)&&(!h.notInLink||!a.inLink)&&(m=t.length,h.apply(a,[x,t]),d=m!==t.length,d))););d||a.file.fail(new Error("Infinite loop"),x.now())}return a.eof=E(),i;function F(v){for(var w=-1,k=v.indexOf(`
-`);k!==-1;)l++,w=k,k=v.indexOf(`
-`,k+1);w===-1?c+=v.length:c=v.length-w,l in u&&(w!==-1?c+=u[l]:c<=u[l]&&(c=u[l]+1))}function y(){var v=[],w=l+1;return function(){for(var k=l+1;w<k;)v.push((u[w]||0)+1),w++;return v}}function E(){var v={line:l,column:c};return v.offset=a.toOffset(v),v}function B(v){this.start=v,this.end=E()}function b(v){t.slice(0,v.length)!==v&&a.file.fail(new Error("Incorrectly eaten value: please report this warning on https://git.io/vg5Ft"),E())}function g(){var v=E();return w;function w(k,q){var T=k.position,R=T?T.start:v,O=[],S=T&&T.end.line,_=v.line;if(k.position=new B(R),T&&q&&T.indent){if(O=T.indent,S<_){for(;++S<_;)O.push((u[S]||0)+1);O.push(v.column)}q=O.concat(q)}return k.position.indent=q||[],k}}function A(v,w){var k=w?w.children:i,q=k[k.length-1],T;return q&&v.type===q.type&&(v.type==="text"||v.type==="blockquote")&&Pu(q)&&Pu(v)&&(T=v.type==="text"?xD:wD,v=T.call(a,q,v)),v!==q&&k.push(v),a.atStart&&i.length!==0&&a.exitStart(),v}function x(v){var w=y(),k=g(),q=E();return b(v),T.reset=R,R.test=O,T.test=O,t=t.slice(v.length),F(v),w=w(),T;function T(S,_){return k(A(k(S),_),w)}function R(){var S=T.apply(null,arguments);return l=q.line,c=q.column,t=v+t,S}function O(){var S=k({});return l=q.line,c=q.column,t=v+t,S.position}}}}function Pu(e){var r,t;return e.type!=="text"||!e.position?!0:(r=e.position.start,t=e.position.end,r.line!==t.line||t.column-r.column===e.value.length)}function xD(e,r){return e.value+=r.value,e}function wD(e,r){return this.options.commonmark||this.options.gfm?r:(e.children=e.children.concat(r.children),e)}});var Uu=C((Bv,Ru)=>{"use strict";Ru.exports=Gr;var It=["\\","`","*","{","}","[","]","(",")","#","+","-",".","!","_",">"],Nt=It.concat(["~","|"]),Nu=Nt.concat([`
-`,'"',"$","%","&","'",",","/",":",";","<","=","?","@","^"]);Gr.default=It;Gr.gfm=Nt;Gr.commonmark=Nu;function Gr(e){var r=e||{};return r.commonmark?Nu:r.gfm?Nt:It}});var Mu=C((qv,zu)=>{"use strict";zu.exports=["address","article","aside","base","basefont","blockquote","body","caption","center","col","colgroup","dd","details","dialog","dir","div","dl","dt","fieldset","figcaption","figure","footer","form","frame","frameset","h1","h2","h3","h4","h5","h6","head","header","hgroup","hr","html","iframe","legend","li","link","main","menu","menuitem","meta","nav","noframes","ol","optgroup","option","p","param","pre","section","source","title","summary","table","tbody","td","tfoot","th","thead","title","tr","track","ul"]});var Rt=C((Tv,Yu)=>{"use strict";Yu.exports={position:!0,gfm:!0,commonmark:!1,pedantic:!1,blocks:Mu()}});var Vu=C((_v,Gu)=>{"use strict";var kD=Ie(),BD=Uu(),qD=Rt();Gu.exports=TD;function TD(e){var r=this,t=r.options,n,a;if(e==null)e={};else if(typeof e=="object")e=kD(e);else throw new Error("Invalid value `"+e+"` for setting `options`");for(n in qD){if(a=e[n],a==null&&(a=t[n]),n!=="blocks"&&typeof a!="boolean"||n==="blocks"&&typeof a!="object")throw new Error("Invalid value `"+a+"` for setting `options."+n+"`");e[n]=a}return r.options=e,r.escape=BD(e),r}});var Hu=C((Sv,$u)=>{"use strict";$u.exports=ju;function ju(e){if(e==null)return PD;if(typeof e=="string")return OD(e);if(typeof e=="object")return"length"in e?SD(e):_D(e);if(typeof e=="function")return e;throw new Error("Expected function, string, or object as test")}function _D(e){return r;function r(t){var n;for(n in e)if(t[n]!==e[n])return!1;return!0}}function SD(e){for(var r=[],t=-1;++t<e.length;)r[t]=ju(e[t]);return n;function n(){for(var a=-1;++a<r.length;)if(r[a].apply(this,arguments))return!0;return!1}}function OD(e){return r;function r(t){return!!(t&&t.type===e)}}function PD(){return!0}});var Ku=C((Ov,Wu)=>{Wu.exports=LD;function LD(e){return e}});var Zu=C((Pv,Qu)=>{"use strict";Qu.exports=Vr;var ID=Hu(),ND=Ku(),Ju=!0,Xu="skip",Ut=!1;Vr.CONTINUE=Ju;Vr.SKIP=Xu;Vr.EXIT=Ut;function Vr(e,r,t,n){var a,u;typeof r=="function"&&typeof t!="function"&&(n=t,t=r,r=null),u=ID(r),a=n?-1:1,i(e,null,[])();function i(o,s,l){var c=typeof o=="object"&&o!==null?o:{},f;return typeof c.type=="string"&&(f=typeof c.tagName=="string"?c.tagName:typeof c.name=="string"?c.name:void 0,D.displayName="node ("+ND(c.type+(f?"<"+f+">":""))+")"),D;function D(){var h=l.concat(o),p=[],d,m;if((!r||u(o,s,l[l.length-1]||null))&&(p=RD(t(o,l)),p[0]===Ut))return p;if(o.children&&p[0]!==Xu)for(m=(n?o.children.length:-1)+a;m>-1&&m<o.children.length;){if(d=i(o.children[m],m,h)(),d[0]===Ut)return d;m=typeof d[1]=="number"?d[1]:m+a}return p}}}function RD(e){return e!==null&&typeof e=="object"&&"length"in e?e:typeof e=="number"?[Ju,e]:[e]}});var ra=C((Lv,ea)=>{"use strict";ea.exports=$r;var jr=Zu(),UD=jr.CONTINUE,zD=jr.SKIP,MD=jr.EXIT;$r.CONTINUE=UD;$r.SKIP=zD;$r.EXIT=MD;function $r(e,r,t,n){typeof r=="function"&&typeof t!="function"&&(n=t,t=r,r=null),jr(e,r,a,n);function a(u,i){var o=i[i.length-1],s=o?o.children.indexOf(u):null;return t(u,s,o)}}});var na=C((Iv,ta)=>{"use strict";var YD=ra();ta.exports=GD;function GD(e,r){return YD(e,r?VD:jD),e}function VD(e){delete e.position}function jD(e){e.position=void 0}});var aa=C((Nv,ua)=>{"use strict";var ia=Ie(),$D=na();ua.exports=KD;var HD=`
-`,WD=/\r\n|\r/g;function KD(){var e=this,r=String(e.file),t={line:1,column:1,offset:0},n=ia(t),a;return r=r.replace(WD,HD),r.charCodeAt(0)===65279&&(r=r.slice(1),n.column++,n.offset++),a={type:"root",children:e.tokenizeBlock(r,n),position:{start:t,end:e.eof||ia(t)}},e.options.position||$D(a,!0),a}});var sa=C((Rv,oa)=>{"use strict";var JD=/^[ \t]*(\n|$)/;oa.exports=XD;function XD(e,r,t){for(var n,a="",u=0,i=r.length;u<i&&(n=JD.exec(r.slice(u)),n!=null);)u+=n[0].length,a+=n[0];if(a!==""){if(t)return!0;e(a)}}});var Hr=C((Uv,ca)=>{"use strict";var pe="",zt;ca.exports=QD;function QD(e,r){if(typeof e!="string")throw new TypeError("expected a string");if(r===1)return e;if(r===2)return e+e;var t=e.length*r;if(zt!==e||typeof zt>"u")zt=e,pe="";else if(pe.length>=t)return pe.substr(0,t);for(;t>pe.length&&r>1;)r&1&&(pe+=e),r>>=1,e+=e;return pe+=e,pe=pe.substr(0,t),pe}});var Mt=C((zv,la)=>{"use strict";la.exports=ZD;function ZD(e){return String(e).replace(/\n+$/,"")}});var pa=C((Mv,Da)=>{"use strict";var ep=Hr(),rp=Mt();Da.exports=ip;var Yt=`
-`,fa="	",Gt=" ",tp=4,np=ep(Gt,tp);function ip(e,r,t){for(var n=-1,a=r.length,u="",i="",o="",s="",l,c,f;++n<a;)if(l=r.charAt(n),f)if(f=!1,u+=o,i+=s,o="",s="",l===Yt)o=l,s=l;else for(u+=l,i+=l;++n<a;){if(l=r.charAt(n),!l||l===Yt){s=l,o=l;break}u+=l,i+=l}else if(l===Gt&&r.charAt(n+1)===l&&r.charAt(n+2)===l&&r.charAt(n+3)===l)o+=np,n+=3,f=!0;else if(l===fa)o+=l,f=!0;else{for(c="";l===fa||l===Gt;)c+=l,l=r.charAt(++n);if(l!==Yt)break;o+=c+l,s+=l}if(i)return t?!0:e(u)({type:"code",lang:null,meta:null,value:rp(i)})}});var ma=C((Yv,ha)=>{"use strict";ha.exports=sp;var Wr=`
-`,dr="	",He=" ",up="~",da="`",ap=3,op=4;function sp(e,r,t){var n=this,a=n.options.gfm,u=r.length+1,i=0,o="",s,l,c,f,D,h,p,d,m,F,y,E,B;if(a){for(;i<u&&(c=r.charAt(i),!(c!==He&&c!==dr));)o+=c,i++;if(E=i,c=r.charAt(i),!(c!==up&&c!==da)){for(i++,l=c,s=1,o+=c;i<u&&(c=r.charAt(i),c===l);)o+=c,s++,i++;if(!(s<ap)){for(;i<u&&(c=r.charAt(i),!(c!==He&&c!==dr));)o+=c,i++;for(f="",p="";i<u&&(c=r.charAt(i),!(c===Wr||l===da&&c===l));)c===He||c===dr?p+=c:(f+=p+c,p=""),i++;if(c=r.charAt(i),!(c&&c!==Wr)){if(t)return!0;B=e.now(),B.column+=o.length,B.offset+=o.length,o+=f,f=n.decode.raw(n.unescape(f),B),p&&(o+=p),p="",F="",y="",d="",m="";for(var b=!0;i<u;){if(c=r.charAt(i),d+=F,m+=y,F="",y="",c!==Wr){d+=c,y+=c,i++;continue}for(b?(o+=c,b=!1):(F+=c,y+=c),p="",i++;i<u&&(c=r.charAt(i),c===He);)p+=c,i++;if(F+=p,y+=p.slice(E),!(p.length>=op)){for(p="";i<u&&(c=r.charAt(i),c===l);)p+=c,i++;if(F+=p,y+=p,!(p.length<s)){for(p="";i<u&&(c=r.charAt(i),!(c!==He&&c!==dr));)F+=c,y+=c,i++;if(!c||c===Wr)break}}}for(o+=d+F,i=-1,u=f.length;++i<u;)if(c=f.charAt(i),c===He||c===dr)D||(D=f.slice(0,i));else if(D){h=f.slice(i);break}return e(o)({type:"code",lang:D||f||null,meta:h||null,value:m})}}}}}});var Re=C((We,Fa)=>{We=Fa.exports=cp;function cp(e){return e.trim?e.trim():We.right(We.left(e))}We.left=function(e){return e.trimLeft?e.trimLeft():e.replace(/^\s\s*/,"")};We.right=function(e){if(e.trimRight)return e.trimRight();for(var r=/\s/,t=e.length;r.test(e.charAt(--t)););return e.slice(0,t+1)}});var Kr=C((Gv,ga)=>{"use strict";ga.exports=lp;function lp(e,r,t,n){for(var a=e.length,u=-1,i,o;++u<a;)if(i=e[u],o=i[1]||{},!(o.pedantic!==void 0&&o.pedantic!==t.options.pedantic)&&!(o.commonmark!==void 0&&o.commonmark!==t.options.commonmark)&&r[i[0]].apply(t,n))return!0;return!1}});var ba=C((Vv,Ca)=>{"use strict";var fp=Re(),Dp=Kr();Ca.exports=pp;var Vt=`
-`,va="	",jt=" ",Ea=">";function pp(e,r,t){for(var n=this,a=n.offset,u=n.blockTokenizers,i=n.interruptBlockquote,o=e.now(),s=o.line,l=r.length,c=[],f=[],D=[],h,p=0,d,m,F,y,E,B,b,g;p<l&&(d=r.charAt(p),!(d!==jt&&d!==va));)p++;if(r.charAt(p)===Ea){if(t)return!0;for(p=0;p<l;){for(F=r.indexOf(Vt,p),B=p,b=!1,F===-1&&(F=l);p<l&&(d=r.charAt(p),!(d!==jt&&d!==va));)p++;if(r.charAt(p)===Ea?(p++,b=!0,r.charAt(p)===jt&&p++):p=B,y=r.slice(p,F),!b&&!fp(y)){p=B;break}if(!b&&(m=r.slice(p),Dp(i,u,n,[e,m,!0])))break;E=B===p?y:r.slice(B,F),D.push(p-B),c.push(E),f.push(y),p=F+1}for(p=-1,l=D.length,h=e(c.join(Vt));++p<l;)a[s]=(a[s]||0)+D[p],s++;return g=n.enterBlock(),f=n.tokenizeBlock(f.join(Vt),o),g(),h({type:"blockquote",children:f})}}});var xa=C((jv,Aa)=>{"use strict";Aa.exports=hp;var ya=`
-`,hr="	",mr=" ",Fr="#",dp=6;function hp(e,r,t){for(var n=this,a=n.options.pedantic,u=r.length+1,i=-1,o=e.now(),s="",l="",c,f,D;++i<u;){if(c=r.charAt(i),c!==mr&&c!==hr){i--;break}s+=c}for(D=0;++i<=u;){if(c=r.charAt(i),c!==Fr){i--;break}s+=c,D++}if(!(D>dp)&&!(!D||!a&&r.charAt(i+1)===Fr)){for(u=r.length+1,f="";++i<u;){if(c=r.charAt(i),c!==mr&&c!==hr){i--;break}f+=c}if(!(!a&&f.length===0&&c&&c!==ya)){if(t)return!0;for(s+=f,f="",l="";++i<u&&(c=r.charAt(i),!(!c||c===ya));){if(c!==mr&&c!==hr&&c!==Fr){l+=f+c,f="";continue}for(;c===mr||c===hr;)f+=c,c=r.charAt(++i);if(!a&&l&&!f&&c===Fr){l+=c;continue}for(;c===Fr;)f+=c,c=r.charAt(++i);for(;c===mr||c===hr;)f+=c,c=r.charAt(++i);i--}return o.column+=s.length,o.offset+=s.length,s+=l+f,e(s)({type:"heading",depth:D,children:n.tokenizeInline(l,o)})}}}});var Ba=C(($v,ka)=>{"use strict";ka.exports=bp;var mp="	",Fp=`
-`,wa=" ",gp="*",vp="-",Ep="_",Cp=3;function bp(e,r,t){for(var n=-1,a=r.length+1,u="",i,o,s,l;++n<a&&(i=r.charAt(n),!(i!==mp&&i!==wa));)u+=i;if(!(i!==gp&&i!==vp&&i!==Ep))for(o=i,u+=i,s=1,l="";++n<a;)if(i=r.charAt(n),i===o)s++,u+=l+o,l="";else if(i===wa)l+=i;else return s>=Cp&&(!i||i===Fp)?(u+=l,t?!0:e(u)({type:"thematicBreak"})):void 0}});var $t=C((Hv,Ta)=>{"use strict";Ta.exports=wp;var qa="	",yp=" ",Ap=1,xp=4;function wp(e){for(var r=0,t=0,n=e.charAt(r),a={},u,i=0;n===qa||n===yp;){for(u=n===qa?xp:Ap,t+=u,u>1&&(t=Math.floor(t/u)*u);i<t;)a[++i]=r;n=e.charAt(++r)}return{indent:t,stops:a}}});var Oa=C((Wv,Sa)=>{"use strict";var kp=Re(),Bp=Hr(),qp=$t();Sa.exports=Sp;var _a=`
-`,Tp=" ",_p="!";function Sp(e,r){var t=e.split(_a),n=t.length+1,a=1/0,u=[],i,o,s;for(t.unshift(Bp(Tp,r)+_p);n--;)if(o=qp(t[n]),u[n]=o.stops,kp(t[n]).length!==0)if(o.indent)o.indent>0&&o.indent<a&&(a=o.indent);else{a=1/0;break}if(a!==1/0)for(n=t.length;n--;){for(s=u[n],i=a;i&&!(i in s);)i--;t[n]=t[n].slice(s[i]+1)}return t.shift(),t.join(_a)}});var Ua=C((Kv,Ra)=>{"use strict";var Op=Re(),Pp=Hr(),Pa=Ne(),Lp=$t(),Ip=Oa(),Np=Kr();Ra.exports=jp;var Ht="*",Rp="_",La="+",Wt="-",Ia=".",de=" ",ie=`
-`,Jr="	",Na=")",Up="x",xe=4,zp=/\n\n(?!\s*$)/,Mp=/^\[([ X\tx])][ \t]/,Yp=/^([ \t]*)([*+-]|\d+[.)])( {1,4}(?! )| |\t|$|(?=\n))([^\n]*)/,Gp=/^([ \t]*)([*+-]|\d+[.)])([ \t]+)/,Vp=/^( {1,4}|\t)?/gm;function jp(e,r,t){for(var n=this,a=n.options.commonmark,u=n.options.pedantic,i=n.blockTokenizers,o=n.interruptList,s=0,l=r.length,c=null,f,D,h,p,d,m,F,y,E,B,b,g,A,x,v,w,k,q,T,R=!1,O,S,_,P;s<l&&(p=r.charAt(s),!(p!==Jr&&p!==de));)s++;if(p=r.charAt(s),p===Ht||p===La||p===Wt)d=p,h=!1;else{for(h=!0,D="";s<l&&(p=r.charAt(s),!!Pa(p));)D+=p,s++;if(p=r.charAt(s),!D||!(p===Ia||a&&p===Na)||t&&D!=="1")return;c=parseInt(D,10),d=p}if(p=r.charAt(++s),!(p!==de&&p!==Jr&&(u||p!==ie&&p!==""))){if(t)return!0;for(s=0,x=[],v=[],w=[];s<l;){for(m=r.indexOf(ie,s),F=s,y=!1,P=!1,m===-1&&(m=l),f=0;s<l;){if(p=r.charAt(s),p===Jr)f+=xe-f%xe;else if(p===de)f++;else break;s++}if(k&&f>=k.indent&&(P=!0),p=r.charAt(s),E=null,!P){if(p===Ht||p===La||p===Wt)E=p,s++,f++;else{for(D="";s<l&&(p=r.charAt(s),!!Pa(p));)D+=p,s++;p=r.charAt(s),s++,D&&(p===Ia||a&&p===Na)&&(E=p,f+=D.length+1)}if(E)if(p=r.charAt(s),p===Jr)f+=xe-f%xe,s++;else if(p===de){for(_=s+xe;s<_&&r.charAt(s)===de;)s++,f++;s===_&&r.charAt(s)===de&&(s-=xe-1,f-=xe-1)}else p!==ie&&p!==""&&(E=null)}if(E){if(!u&&d!==E)break;y=!0}else!a&&!P&&r.charAt(F)===de?P=!0:a&&k&&(P=f>=k.indent||f>xe),y=!1,s=F;if(b=r.slice(F,m),B=F===s?b:r.slice(s,m),(E===Ht||E===Rp||E===Wt)&&i.thematicBreak.call(n,e,b,!0))break;if(g=A,A=!y&&!Op(B).length,P&&k)k.value=k.value.concat(w,b),v=v.concat(w,b),w=[];else if(y)w.length!==0&&(R=!0,k.value.push(""),k.trail=w.concat()),k={value:[b],indent:f,trail:[]},x.push(k),v=v.concat(w,b),w=[];else if(A){if(g&&!a)break;w.push(b)}else{if(g||Np(o,i,n,[e,b,!0]))break;k.value=k.value.concat(w,b),v=v.concat(w,b),w=[]}s=m+1}for(O=e(v.join(ie)).reset({type:"list",ordered:h,start:c,spread:R,children:[]}),q=n.enterList(),T=n.enterBlock(),s=-1,l=x.length;++s<l;)k=x[s].value.join(ie),S=e.now(),e(k)($p(n,k,S),O),k=x[s].trail.join(ie),s!==l-1&&(k+=ie),e(k);return q(),T(),O}}function $p(e,r,t){var n=e.offset,a=e.options.pedantic?Hp:Wp,u=null,i,o;return r=a.apply(null,arguments),e.options.gfm&&(i=r.match(Mp),i&&(o=i[0].length,u=i[1].toLowerCase()===Up,n[t.line]+=o,r=r.slice(o))),{type:"listItem",spread:zp.test(r),checked:u,children:e.tokenizeBlock(r,t)}}function Hp(e,r,t){var n=e.offset,a=t.line;return r=r.replace(Gp,u),a=t.line,r.replace(Vp,u);function u(i){return n[a]=(n[a]||0)+i.length,a++,""}}function Wp(e,r,t){var n=e.offset,a=t.line,u,i,o,s,l,c,f;for(r=r.replace(Yp,D),s=r.split(ie),l=Ip(r,Lp(u).indent).split(ie),l[0]=o,n[a]=(n[a]||0)+i.length,a++,c=0,f=s.length;++c<f;)n[a]=(n[a]||0)+s[c].length-l[c].length,a++;return l.join(ie);function D(h,p,d,m,F){return i=p+d+m,o=F,Number(d)<10&&i.length%2===1&&(d=de+d),u=p+Pp(de,d.length)+m,u+o}}});var Ga=C((Jv,Ya)=>{"use strict";Ya.exports=ed;var Kt=`
-`,Kp="	",za=" ",Ma="=",Jp="-",Xp=3,Qp=1,Zp=2;function ed(e,r,t){for(var n=this,a=e.now(),u=r.length,i=-1,o="",s,l,c,f,D;++i<u;){if(c=r.charAt(i),c!==za||i>=Xp){i--;break}o+=c}for(s="",l="";++i<u;){if(c=r.charAt(i),c===Kt){i--;break}c===za||c===Kp?l+=c:(s+=l+c,l="")}if(a.column+=o.length,a.offset+=o.length,o+=s+l,c=r.charAt(++i),f=r.charAt(++i),!(c!==Kt||f!==Ma&&f!==Jp)){for(o+=c,l=f,D=f===Ma?Qp:Zp;++i<u;){if(c=r.charAt(i),c!==f){if(c!==Kt)return;i--;break}l+=c}return t?!0:e(o+l)({type:"heading",depth:D,children:n.tokenizeInline(s,a)})}}});var Xt=C(Jt=>{"use strict";var rd="[a-zA-Z_:][a-zA-Z0-9:._-]*",td="[^\"'=<>`\\u0000-\\u0020]+",nd="'[^']*'",id='"[^"]*"',ud="(?:"+td+"|"+nd+"|"+id+")",ad="(?:\\s+"+rd+"(?:\\s*=\\s*"+ud+")?)",Va="<[A-Za-z][A-Za-z0-9\\-]*"+ad+"*\\s*\\/?>",ja="<\\/[A-Za-z][A-Za-z0-9\\-]*\\s*>",od="<!---->|<!--(?:-?[^>-])(?:-?[^-])*-->",sd="<[?].*?[?]>",cd="<![A-Za-z]+\\s+[^>]*>",ld="<!\\[CDATA\\[[\\s\\S]*?\\]\\]>";Jt.openCloseTag=new RegExp("^(?:"+Va+"|"+ja+")");Jt.tag=new RegExp("^(?:"+Va+"|"+ja+"|"+od+"|"+sd+"|"+cd+"|"+ld+")")});var Ka=C((Qv,Wa)=>{"use strict";var fd=Xt().openCloseTag;Wa.exports=wd;var Dd="	",pd=" ",$a=`
-`,dd="<",hd=/^<(script|pre|style)(?=(\s|>|$))/i,md=/<\/(script|pre|style)>/i,Fd=/^<!--/,gd=/-->/,vd=/^<\?/,Ed=/\?>/,Cd=/^<![A-Za-z]/,bd=/>/,yd=/^<!\[CDATA\[/,Ad=/]]>/,Ha=/^$/,xd=new RegExp(fd.source+"\\s*$");function wd(e,r,t){for(var n=this,a=n.options.blocks.join("|"),u=new RegExp("^</?("+a+")(?=(\\s|/?>|$))","i"),i=r.length,o=0,s,l,c,f,D,h,p,d=[[hd,md,!0],[Fd,gd,!0],[vd,Ed,!0],[Cd,bd,!0],[yd,Ad,!0],[u,Ha,!0],[xd,Ha,!1]];o<i&&(f=r.charAt(o),!(f!==Dd&&f!==pd));)o++;if(r.charAt(o)===dd){for(s=r.indexOf($a,o+1),s=s===-1?i:s,l=r.slice(o,s),c=-1,D=d.length;++c<D;)if(d[c][0].test(l)){h=d[c];break}if(h){if(t)return h[2];if(o=s,!h[1].test(l))for(;o<i;){if(s=r.indexOf($a,o+1),s=s===-1?i:s,l=r.slice(o+1,s),h[1].test(l)){l&&(o=s);break}o=s}return p=r.slice(0,o),e(p)({type:"html",value:p})}}}});var ue=C((Zv,Ja)=>{"use strict";Ja.exports=qd;var kd=String.fromCharCode,Bd=/\s/;function qd(e){return Bd.test(typeof e=="number"?kd(e):e.charAt(0))}});var Qt=C((eE,Xa)=>{"use strict";var Td=xr();Xa.exports=_d;function _d(e){return Td(e).toLowerCase()}});var io=C((rE,no)=>{"use strict";var Sd=ue(),Od=Qt();no.exports=Nd;var Qa='"',Za="'",Pd="\\",Ke=`
-`,Xr="	",Qr=" ",en="[",gr="]",Ld="(",Id=")",eo=":",ro="<",to=">";function Nd(e,r,t){for(var n=this,a=n.options.commonmark,u=0,i=r.length,o="",s,l,c,f,D,h,p,d;u<i&&(f=r.charAt(u),!(f!==Qr&&f!==Xr));)o+=f,u++;if(f=r.charAt(u),f===en){for(u++,o+=f,c="";u<i&&(f=r.charAt(u),f!==gr);)f===Pd&&(c+=f,u++,f=r.charAt(u)),c+=f,u++;if(!(!c||r.charAt(u)!==gr||r.charAt(u+1)!==eo)){for(h=c,o+=c+gr+eo,u=o.length,c="";u<i&&(f=r.charAt(u),!(f!==Xr&&f!==Qr&&f!==Ke));)o+=f,u++;if(f=r.charAt(u),c="",s=o,f===ro){for(u++;u<i&&(f=r.charAt(u),!!Zt(f));)c+=f,u++;if(f=r.charAt(u),f===Zt.delimiter)o+=ro+c+f,u++;else{if(a)return;u-=c.length+1,c=""}}if(!c){for(;u<i&&(f=r.charAt(u),!!Rd(f));)c+=f,u++;o+=c}if(c){for(p=c,c="";u<i&&(f=r.charAt(u),!(f!==Xr&&f!==Qr&&f!==Ke));)c+=f,u++;if(f=r.charAt(u),D=null,f===Qa?D=Qa:f===Za?D=Za:f===Ld&&(D=Id),!D)c="",u=o.length;else if(c){for(o+=c+f,u=o.length,c="";u<i&&(f=r.charAt(u),f!==D);){if(f===Ke){if(u++,f=r.charAt(u),f===Ke||f===D)return;c+=Ke}c+=f,u++}if(f=r.charAt(u),f!==D)return;l=o,o+=c+f,u++,d=c,c=""}else return;for(;u<i&&(f=r.charAt(u),!(f!==Xr&&f!==Qr));)o+=f,u++;if(f=r.charAt(u),!f||f===Ke)return t?!0:(s=e(s).test().end,p=n.decode.raw(n.unescape(p),s,{nonTerminated:!1}),d&&(l=e(l).test().end,d=n.decode.raw(n.unescape(d),l)),e(o)({type:"definition",identifier:Od(h),label:h,title:d||null,url:p}))}}}}function Zt(e){return e!==to&&e!==en&&e!==gr}Zt.delimiter=to;function Rd(e){return e!==en&&e!==gr&&!Sd(e)}});var oo=C((tE,ao)=>{"use strict";var Ud=ue();ao.exports=Kd;var zd="	",Zr=`
-`,Md=" ",Yd="-",Gd=":",Vd="\\",rn="|",jd=1,$d=2,uo="left",Hd="center",Wd="right";function Kd(e,r,t){var n=this,a,u,i,o,s,l,c,f,D,h,p,d,m,F,y,E,B,b,g,A,x,v;if(n.options.gfm){for(a=0,E=0,l=r.length+1,c=[];a<l;){if(A=r.indexOf(Zr,a),x=r.indexOf(rn,a+1),A===-1&&(A=r.length),x===-1||x>A){if(E<$d)return;break}c.push(r.slice(a,A)),E++,a=A+1}for(o=c.join(Zr),u=c.splice(1,1)[0]||[],a=0,l=u.length,E--,i=!1,p=[];a<l;){if(D=u.charAt(a),D===rn){if(h=null,i===!1){if(v===!1)return}else p.push(i),i=!1;v=!1}else if(D===Yd)h=!0,i=i||null;else if(D===Gd)i===uo?i=Hd:h&&i===null?i=Wd:i=uo;else if(!Ud(D))return;a++}if(i!==!1&&p.push(i),!(p.length<jd)){if(t)return!0;for(y=-1,b=[],g=e(o).reset({type:"table",align:p,children:b});++y<E;){for(B=c[y],s={type:"tableRow",children:[]},y&&e(Zr),e(B).reset(s,g),l=B.length+1,a=0,f="",d="",m=!0;a<l;){if(D=B.charAt(a),D===zd||D===Md){d?f+=D:e(D),a++;continue}D===""||D===rn?m?e(D):((d||D)&&!m&&(o=d,f.length>1&&(D?(o+=f.slice(0,-1),f=f.charAt(f.length-1)):(o+=f,f="")),F=e.now(),e(o)({type:"tableCell",children:n.tokenizeInline(d,F)},s)),e(f+D),f="",d=""):(f&&(d+=f,f=""),d+=D,D===Vd&&a!==l-2&&(d+=B.charAt(a+1),a++)),m=!1,a++}y||e(Zr+u)}return g}}}});var lo=C((nE,co)=>{"use strict";var Jd=Re(),Xd=Mt(),Qd=Kr();co.exports=rh;var Zd="	",vr=`
-`,eh=" ",so=4;function rh(e,r,t){for(var n=this,a=n.options,u=a.commonmark,i=n.blockTokenizers,o=n.interruptParagraph,s=r.indexOf(vr),l=r.length,c,f,D,h,p;s<l;){if(s===-1){s=l;break}if(r.charAt(s+1)===vr)break;if(u){for(h=0,c=s+1;c<l;){if(D=r.charAt(c),D===Zd){h=so;break}else if(D===eh)h++;else break;c++}if(h>=so&&D!==vr){s=r.indexOf(vr,s+1);continue}}if(f=r.slice(s+1),Qd(o,i,n,[e,f,!0]))break;if(c=s,s=r.indexOf(vr,s+1),s!==-1&&Jd(r.slice(c,s))===""){s=c;break}}return f=r.slice(0,s),t?!0:(p=e.now(),f=Xd(f),e(f)({type:"paragraph",children:n.tokenizeInline(f,p)}))}});var Do=C((iE,fo)=>{"use strict";fo.exports=th;function th(e,r){return e.indexOf("\\",r)}});var Fo=C((uE,mo)=>{"use strict";var nh=Do();mo.exports=ho;ho.locator=nh;var ih=`
-`,po="\\";function ho(e,r,t){var n=this,a,u;if(r.charAt(0)===po&&(a=r.charAt(1),n.escape.indexOf(a)!==-1))return t?!0:(a===ih?u={type:"break"}:u={type:"text",value:a},e(po+a)(u))}});var tn=C((aE,go)=>{"use strict";go.exports=uh;function uh(e,r){return e.indexOf("<",r)}});var yo=C((oE,bo)=>{"use strict";var vo=ue(),ah=pr(),oh=tn();bo.exports=on;on.locator=oh;on.notInLink=!0;var Eo="<",nn=">",Co="@",un="/",an="mailto:",et=an.length;function on(e,r,t){var n=this,a="",u=r.length,i=0,o="",s=!1,l="",c,f,D,h,p;if(r.charAt(0)===Eo){for(i++,a=Eo;i<u&&(c=r.charAt(i),!(vo(c)||c===nn||c===Co||c===":"&&r.charAt(i+1)===un));)o+=c,i++;if(o){if(l+=o,o="",c=r.charAt(i),l+=c,i++,c===Co)s=!0;else{if(c!==":"||r.charAt(i+1)!==un)return;l+=un,i++}for(;i<u&&(c=r.charAt(i),!(vo(c)||c===nn));)o+=c,i++;if(c=r.charAt(i),!(!o||c!==nn))return t?!0:(l+=o,D=l,a+=l+c,f=e.now(),f.column++,f.offset++,s&&(l.slice(0,et).toLowerCase()===an?(D=D.slice(et),f.column+=et,f.offset+=et):l=an+l),h=n.inlineTokenizers,n.inlineTokenizers={text:h.text},p=n.enterLink(),D=n.tokenizeInline(D,f),n.inlineTokenizers=h,p(),e(a)({type:"link",title:null,url:ah(l,{nonTerminated:!1}),children:D}))}}}});var xo=C((sE,Ao)=>{"use strict";Ao.exports=sh;function sh(e,r){var t=String(e),n=0,a;if(typeof r!="string")throw new Error("Expected character");for(a=t.indexOf(r);a!==-1;)n++,a=t.indexOf(r,a+r.length);return n}});var Bo=C((cE,ko)=>{"use strict";ko.exports=ch;var wo=["www.","http://","https://"];function ch(e,r){var t=-1,n,a,u;if(!this.options.gfm)return t;for(a=wo.length,n=-1;++n<a;)u=e.indexOf(wo[n],r),u!==-1&&(t===-1||u<t)&&(t=u);return t}});var Oo=C((lE,So)=>{"use strict";var qo=xo(),lh=pr(),fh=Ne(),sn=Ve(),Dh=ue(),ph=Bo();So.exports=ln;ln.locator=ph;ln.notInLink=!0;var dh=33,hh=38,mh=41,Fh=42,gh=44,vh=45,cn=46,Eh=58,Ch=59,bh=63,yh=60,To=95,Ah=126,xh="(",_o=")";function ln(e,r,t){var n=this,a=n.options.gfm,u=n.inlineTokenizers,i=r.length,o=-1,s=!1,l,c,f,D,h,p,d,m,F,y,E,B,b,g;if(a){if(r.slice(0,4)==="www.")s=!0,D=4;else if(r.slice(0,7).toLowerCase()==="http://")D=7;else if(r.slice(0,8).toLowerCase()==="https://")D=8;else return;for(o=D-1,f=D,l=[];D<i;){if(d=r.charCodeAt(D),d===cn){if(o===D-1)break;l.push(D),o=D,D++;continue}if(fh(d)||sn(d)||d===vh||d===To){D++;continue}break}if(d===cn&&(l.pop(),D--),l[0]!==void 0&&(c=l.length<2?f:l[l.length-2]+1,r.slice(c,D).indexOf("_")===-1)){if(t)return!0;for(m=D,h=D;D<i&&(d=r.charCodeAt(D),!(Dh(d)||d===yh));)D++,d===dh||d===Fh||d===gh||d===cn||d===Eh||d===bh||d===To||d===Ah||(m=D);if(D=m,r.charCodeAt(D-1)===mh)for(p=r.slice(h,D),F=qo(p,xh),y=qo(p,_o);y>F;)D=h+p.lastIndexOf(_o),p=r.slice(h,D),y--;if(r.charCodeAt(D-1)===Ch&&(D--,sn(r.charCodeAt(D-1)))){for(m=D-2;sn(r.charCodeAt(m));)m--;r.charCodeAt(m)===hh&&(D=m)}return E=r.slice(0,D),b=lh(E,{nonTerminated:!1}),s&&(b="http://"+b),g=n.enterLink(),n.inlineTokenizers={text:u.text},B=n.tokenizeInline(E,e.now()),n.inlineTokenizers=u,g(),e(E)({type:"link",title:null,url:b,children:B})}}}});var No=C((fE,Io)=>{"use strict";var wh=Ne(),kh=Ve(),Bh=43,qh=45,Th=46,_h=95;Io.exports=Lo;function Lo(e,r){var t=this,n,a;if(!this.options.gfm||(n=e.indexOf("@",r),n===-1))return-1;if(a=n,a===r||!Po(e.charCodeAt(a-1)))return Lo.call(t,e,n+1);for(;a>r&&Po(e.charCodeAt(a-1));)a--;return a}function Po(e){return wh(e)||kh(e)||e===Bh||e===qh||e===Th||e===_h}});var Mo=C((DE,zo)=>{"use strict";var Sh=pr(),Ro=Ne(),Uo=Ve(),Oh=No();zo.exports=pn;pn.locator=Oh;pn.notInLink=!0;var Ph=43,fn=45,rt=46,Lh=64,Dn=95;function pn(e,r,t){var n=this,a=n.options.gfm,u=n.inlineTokenizers,i=0,o=r.length,s=-1,l,c,f,D;if(a){for(l=r.charCodeAt(i);Ro(l)||Uo(l)||l===Ph||l===fn||l===rt||l===Dn;)l=r.charCodeAt(++i);if(i!==0&&l===Lh){for(i++;i<o;){if(l=r.charCodeAt(i),Ro(l)||Uo(l)||l===fn||l===rt||l===Dn){i++,s===-1&&l===rt&&(s=i);continue}break}if(!(s===-1||s===i||l===fn||l===Dn))return l===rt&&i--,c=r.slice(0,i),t?!0:(D=n.enterLink(),n.inlineTokenizers={text:u.text},f=n.tokenizeInline(c,e.now()),n.inlineTokenizers=u,D(),e(c)({type:"link",title:null,url:"mailto:"+Sh(c,{nonTerminated:!1}),children:f}))}}}});var Vo=C((pE,Go)=>{"use strict";var Ih=Ve(),Nh=tn(),Rh=Xt().tag;Go.exports=Yo;Yo.locator=Nh;var Uh="<",zh="?",Mh="!",Yh="/",Gh=/^<a /i,Vh=/^<\/a>/i;function Yo(e,r,t){var n=this,a=r.length,u,i;if(!(r.charAt(0)!==Uh||a<3)&&(u=r.charAt(1),!(!Ih(u)&&u!==zh&&u!==Mh&&u!==Yh)&&(i=r.match(Rh),!!i)))return t?!0:(i=i[0],!n.inLink&&Gh.test(i)?n.inLink=!0:n.inLink&&Vh.test(i)&&(n.inLink=!1),e(i)({type:"html",value:i}))}});var dn=C((dE,jo)=>{"use strict";jo.exports=jh;function jh(e,r){var t=e.indexOf("[",r),n=e.indexOf("![",r);return n===-1||t<n?t:n}});var Qo=C((hE,Xo)=>{"use strict";var Er=ue(),$h=dn();Xo.exports=Jo;Jo.locator=$h;var Hh=`
-`,Wh="!",$o='"',Ho="'",Je="(",Cr=")",hn="<",mn=">",Wo="[",br="\\",Kh="]",Ko="`";function Jo(e,r,t){var n=this,a="",u=0,i=r.charAt(0),o=n.options.pedantic,s=n.options.commonmark,l=n.options.gfm,c,f,D,h,p,d,m,F,y,E,B,b,g,A,x,v,w,k;if(i===Wh&&(F=!0,a=i,i=r.charAt(++u)),i===Wo&&!(!F&&n.inLink)){for(a+=i,A="",u++,B=r.length,v=e.now(),g=0,v.column+=u,v.offset+=u;u<B;){if(i=r.charAt(u),d=i,i===Ko){for(f=1;r.charAt(u+1)===Ko;)d+=i,u++,f++;D?f>=D&&(D=0):D=f}else if(i===br)u++,d+=r.charAt(u);else if((!D||l)&&i===Wo)g++;else if((!D||l)&&i===Kh)if(g)g--;else{if(r.charAt(u+1)!==Je)return;d+=Je,c=!0,u++;break}A+=d,d="",u++}if(c){for(y=A,a+=A+d,u++;u<B&&(i=r.charAt(u),!!Er(i));)a+=i,u++;if(i=r.charAt(u),A="",h=a,i===hn){for(u++,h+=hn;u<B&&(i=r.charAt(u),i!==mn);){if(s&&i===Hh)return;A+=i,u++}if(r.charAt(u)!==mn)return;a+=hn+A+mn,x=A,u++}else{for(i=null,d="";u<B&&(i=r.charAt(u),!(d&&(i===$o||i===Ho||s&&i===Je)));){if(Er(i)){if(!o)break;d+=i}else{if(i===Je)g++;else if(i===Cr){if(g===0)break;g--}A+=d,d="",i===br&&(A+=br,i=r.charAt(++u)),A+=i}u++}a+=A,x=A,u=a.length}for(A="";u<B&&(i=r.charAt(u),!!Er(i));)A+=i,u++;if(i=r.charAt(u),a+=A,A&&(i===$o||i===Ho||s&&i===Je))if(u++,a+=i,A="",E=i===Je?Cr:i,p=a,s){for(;u<B&&(i=r.charAt(u),i!==E);)i===br&&(A+=br,i=r.charAt(++u)),u++,A+=i;if(i=r.charAt(u),i!==E)return;for(b=A,a+=A+i,u++;u<B&&(i=r.charAt(u),!!Er(i));)a+=i,u++}else for(d="";u<B;){if(i=r.charAt(u),i===E)m&&(A+=E+d,d=""),m=!0;else if(!m)A+=i;else if(i===Cr){a+=A+E+d,b=A;break}else Er(i)?d+=i:(A+=E+d+i,d="",m=!1);u++}if(r.charAt(u)===Cr)return t?!0:(a+=Cr,x=n.decode.raw(n.unescape(x),e(h).test().end,{nonTerminated:!1}),b&&(p=e(p).test().end,b=n.decode.raw(n.unescape(b),p)),k={type:F?"image":"link",title:b||null,url:x},F?k.alt=n.decode.raw(n.unescape(y),v)||null:(w=n.enterLink(),k.children=n.tokenizeInline(y,v),w()),e(a)(k))}}}});var rs=C((mE,es)=>{"use strict";var Jh=ue(),Xh=dn(),Qh=Qt();es.exports=Zo;Zo.locator=Xh;var Fn="link",Zh="image",e0="shortcut",r0="collapsed",gn="full",t0="!",tt="[",nt="\\",it="]";function Zo(e,r,t){var n=this,a=n.options.commonmark,u=r.charAt(0),i=0,o=r.length,s="",l="",c=Fn,f=e0,D,h,p,d,m,F,y,E;if(u===t0&&(c=Zh,l=u,u=r.charAt(++i)),u===tt){for(i++,l+=u,F="",E=0;i<o;){if(u=r.charAt(i),u===tt)y=!0,E++;else if(u===it){if(!E)break;E--}u===nt&&(F+=nt,u=r.charAt(++i)),F+=u,i++}if(s=F,D=F,u=r.charAt(i),u===it){if(i++,s+=u,F="",!a)for(;i<o&&(u=r.charAt(i),!!Jh(u));)F+=u,i++;if(u=r.charAt(i),u===tt){for(h="",F+=u,i++;i<o&&(u=r.charAt(i),!(u===tt||u===it));)u===nt&&(h+=nt,u=r.charAt(++i)),h+=u,i++;u=r.charAt(i),u===it?(f=h?gn:r0,F+=h+u,i++):h="",s+=F,F=""}else{if(!D)return;h=D}if(!(f!==gn&&y))return s=l+s,c===Fn&&n.inLink?null:t?!0:(p=e.now(),p.column+=l.length,p.offset+=l.length,h=f===gn?h:D,d={type:c+"Reference",identifier:Qh(h),label:h,referenceType:f},c===Fn?(m=n.enterLink(),d.children=n.tokenizeInline(D,p),m()):d.alt=n.decode.raw(n.unescape(D),p)||null,e(s)(d))}}}});var ns=C((FE,ts)=>{"use strict";ts.exports=n0;function n0(e,r){var t=e.indexOf("**",r),n=e.indexOf("__",r);return n===-1?t:t===-1||n<t?n:t}});var os=C((gE,as)=>{"use strict";var i0=Re(),is=ue(),u0=ns();as.exports=us;us.locator=u0;var a0="\\",o0="*",s0="_";function us(e,r,t){var n=this,a=0,u=r.charAt(a),i,o,s,l,c,f,D;if(!(u!==o0&&u!==s0||r.charAt(++a)!==u)&&(o=n.options.pedantic,s=u,c=s+s,f=r.length,a++,l="",u="",!(o&&is(r.charAt(a)))))for(;a<f;){if(D=u,u=r.charAt(a),u===s&&r.charAt(a+1)===s&&(!o||!is(D))&&(u=r.charAt(a+2),u!==s))return i0(l)?t?!0:(i=e.now(),i.column+=2,i.offset+=2,e(c+l+c)({type:"strong",children:n.tokenizeInline(l,i)})):void 0;!o&&u===a0&&(l+=u,u=r.charAt(++a)),l+=u,a++}}});var cs=C((vE,ss)=>{"use strict";ss.exports=f0;var c0=String.fromCharCode,l0=/\w/;function f0(e){return l0.test(typeof e=="number"?c0(e):e.charAt(0))}});var fs=C((EE,ls)=>{"use strict";ls.exports=D0;function D0(e,r){var t=e.indexOf("*",r),n=e.indexOf("_",r);return n===-1?t:t===-1||n<t?n:t}});var ms=C((CE,hs)=>{"use strict";var p0=Re(),d0=cs(),Ds=ue(),h0=fs();hs.exports=ds;ds.locator=h0;var m0="*",ps="_",F0="\\";function ds(e,r,t){var n=this,a=0,u=r.charAt(a),i,o,s,l,c,f,D;if(!(u!==m0&&u!==ps)&&(o=n.options.pedantic,c=u,s=u,f=r.length,a++,l="",u="",!(o&&Ds(r.charAt(a)))))for(;a<f;){if(D=u,u=r.charAt(a),u===s&&(!o||!Ds(D))){if(u=r.charAt(++a),u!==s){if(!p0(l)||D===s)return;if(!o&&s===ps&&d0(u)){l+=s;continue}return t?!0:(i=e.now(),i.column++,i.offset++,e(c+l+s)({type:"emphasis",children:n.tokenizeInline(l,i)}))}l+=s}!o&&u===F0&&(l+=u,u=r.charAt(++a)),l+=u,a++}}});var gs=C((bE,Fs)=>{"use strict";Fs.exports=g0;function g0(e,r){return e.indexOf("~~",r)}});var ys=C((yE,bs)=>{"use strict";var vs=ue(),v0=gs();bs.exports=Cs;Cs.locator=v0;var ut="~",Es="~~";function Cs(e,r,t){var n=this,a="",u="",i="",o="",s,l,c;if(!(!n.options.gfm||r.charAt(0)!==ut||r.charAt(1)!==ut||vs(r.charAt(2))))for(s=1,l=r.length,c=e.now(),c.column+=2,c.offset+=2;++s<l;){if(a=r.charAt(s),a===ut&&u===ut&&(!i||!vs(i)))return t?!0:e(Es+o+Es)({type:"delete",children:n.tokenizeInline(o,c)});o+=u,i=u,u=a}}});var xs=C((AE,As)=>{"use strict";As.exports=E0;function E0(e,r){return e.indexOf("`",r)}});var Bs=C((xE,ks)=>{"use strict";var C0=xs();ks.exports=ws;ws.locator=C0;var vn=10,En=32,Cn=96;function ws(e,r,t){for(var n=r.length,a=0,u,i,o,s,l,c;a<n&&r.charCodeAt(a)===Cn;)a++;if(!(a===0||a===n)){for(u=a,l=r.charCodeAt(a);a<n;){if(s=l,l=r.charCodeAt(a+1),s===Cn){if(i===void 0&&(i=a),o=a+1,l!==Cn&&o-i===u){c=!0;break}}else i!==void 0&&(i=void 0,o=void 0);a++}if(c){if(t)return!0;if(a=u,n=i,s=r.charCodeAt(a),l=r.charCodeAt(n-1),c=!1,n-a>2&&(s===En||s===vn)&&(l===En||l===vn)){for(a++,n--;a<n;){if(s=r.charCodeAt(a),s!==En&&s!==vn){c=!0;break}a++}c===!0&&(u++,i--)}return e(r.slice(0,o))({type:"inlineCode",value:r.slice(u,i)})}}}});var Ts=C((wE,qs)=>{"use strict";qs.exports=b0;function b0(e,r){for(var t=e.indexOf(`
-`,r);t>r&&e.charAt(t-1)===" ";)t--;return t}});var Os=C((kE,Ss)=>{"use strict";var y0=Ts();Ss.exports=_s;_s.locator=y0;var A0=" ",x0=`
-`,w0=2;function _s(e,r,t){for(var n=r.length,a=-1,u="",i;++a<n;){if(i=r.charAt(a),i===x0)return a<w0?void 0:t?!0:(u+=i,e(u)({type:"break"}));if(i!==A0)return;u+=i}}});var Ls=C((BE,Ps)=>{"use strict";Ps.exports=k0;function k0(e,r,t){var n=this,a,u,i,o,s,l,c,f,D,h;if(t)return!0;for(a=n.inlineMethods,o=a.length,u=n.inlineTokenizers,i=-1,D=r.length;++i<o;)f=a[i],!(f==="text"||!u[f])&&(c=u[f].locator,c||e.file.fail("Missing locator: `"+f+"`"),l=c.call(n,r,1),l!==-1&&l<D&&(D=l));s=r.slice(0,D),h=e.now(),n.decode(s,h,p);function p(d,m,F){e(F||d)({type:"text",value:d})}}});var Us=C((qE,Rs)=>{"use strict";var B0=Ie(),at=ru(),q0=nu(),T0=uu(),_0=Ou(),bn=Iu();Rs.exports=Is;function Is(e,r){this.file=r,this.offset={},this.options=B0(this.options),this.setOptions({}),this.inList=!1,this.inBlock=!1,this.inLink=!1,this.atStart=!0,this.toOffset=q0(r).toOffset,this.unescape=T0(this,"escape"),this.decode=_0(this)}var U=Is.prototype;U.setOptions=Vu();U.parse=aa();U.options=Rt();U.exitStart=at("atStart",!0);U.enterList=at("inList",!1);U.enterLink=at("inLink",!1);U.enterBlock=at("inBlock",!1);U.interruptParagraph=[["thematicBreak"],["list"],["atxHeading"],["fencedCode"],["blockquote"],["html"],["setextHeading",{commonmark:!1}],["definition",{commonmark:!1}]];U.interruptList=[["atxHeading",{pedantic:!1}],["fencedCode",{pedantic:!1}],["thematicBreak",{pedantic:!1}],["definition",{commonmark:!1}]];U.interruptBlockquote=[["indentedCode",{commonmark:!0}],["fencedCode",{commonmark:!0}],["atxHeading",{commonmark:!0}],["setextHeading",{commonmark:!0}],["thematicBreak",{commonmark:!0}],["html",{commonmark:!0}],["list",{commonmark:!0}],["definition",{commonmark:!1}]];U.blockTokenizers={blankLine:sa(),indentedCode:pa(),fencedCode:ma(),blockquote:ba(),atxHeading:xa(),thematicBreak:Ba(),list:Ua(),setextHeading:Ga(),html:Ka(),definition:io(),table:oo(),paragraph:lo()};U.inlineTokenizers={escape:Fo(),autoLink:yo(),url:Oo(),email:Mo(),html:Vo(),link:Qo(),reference:rs(),strong:os(),emphasis:ms(),deletion:ys(),code:Bs(),break:Os(),text:Ls()};U.blockMethods=Ns(U.blockTokenizers);U.inlineMethods=Ns(U.inlineTokenizers);U.tokenizeBlock=bn("block");U.tokenizeInline=bn("inline");U.tokenizeFactory=bn;function Ns(e){var r=[],t;for(t in e)r.push(t);return r}});var Gs=C((TE,Ys)=>{"use strict";var S0=Zi(),O0=Ie(),zs=Us();Ys.exports=Ms;Ms.Parser=zs;function Ms(e){var r=this.data("settings"),t=S0(zs);t.prototype.options=O0(t.prototype.options,r,e),this.Parser=t}});var js=C((_E,Vs)=>{"use strict";Vs.exports=P0;function P0(e){if(e)throw e}});var yn=C((SE,$s)=>{$s.exports=function(r){return r!=null&&r.constructor!=null&&typeof r.constructor.isBuffer=="function"&&r.constructor.isBuffer(r)}});var rc=C((OE,ec)=>{"use strict";var ot=Object.prototype.hasOwnProperty,Zs=Object.prototype.toString,Hs=Object.defineProperty,Ws=Object.getOwnPropertyDescriptor,Ks=function(r){return typeof Array.isArray=="function"?Array.isArray(r):Zs.call(r)==="[object Array]"},Js=function(r){if(!r||Zs.call(r)!=="[object Object]")return!1;var t=ot.call(r,"constructor"),n=r.constructor&&r.constructor.prototype&&ot.call(r.constructor.prototype,"isPrototypeOf");if(r.constructor&&!t&&!n)return!1;var a;for(a in r);return typeof a>"u"||ot.call(r,a)},Xs=function(r,t){Hs&&t.name==="__proto__"?Hs(r,t.name,{enumerable:!0,configurable:!0,value:t.newValue,writable:!0}):r[t.name]=t.newValue},Qs=function(r,t){if(t==="__proto__")if(ot.call(r,t)){if(Ws)return Ws(r,t).value}else return;return r[t]};ec.exports=function e(){var r,t,n,a,u,i,o=arguments[0],s=1,l=arguments.length,c=!1;for(typeof o=="boolean"&&(c=o,o=arguments[1]||{},s=2),(o==null||typeof o!="object"&&typeof o!="function")&&(o={});s<l;++s)if(r=arguments[s],r!=null)for(t in r)n=Qs(o,t),a=Qs(r,t),o!==a&&(c&&a&&(Js(a)||(u=Ks(a)))?(u?(u=!1,i=n&&Ks(n)?n:[]):i=n&&Js(n)?n:{},Xs(o,{name:t,newValue:e(c,i,a)})):typeof a<"u"&&Xs(o,{name:t,newValue:a}));return o}});var nc=C((PE,tc)=>{"use strict";tc.exports=e=>{if(Object.prototype.toString.call(e)!=="[object Object]")return!1;let r=Object.getPrototypeOf(e);return r===null||r===Object.prototype}});var uc=C((LE,ic)=>{"use strict";var L0=[].slice;ic.exports=I0;function I0(e,r){var t;return n;function n(){var i=L0.call(arguments,0),o=e.length>i.length,s;o&&i.push(a);try{s=e.apply(null,i)}catch(l){if(o&&t)throw l;return a(l)}o||(s&&typeof s.then=="function"?s.then(u,a):s instanceof Error?a(s):u(s))}function a(){t||(t=!0,r.apply(null,arguments))}function u(i){a(null,i)}}});var lc=C((IE,cc)=>{"use strict";var oc=uc();cc.exports=sc;sc.wrap=oc;var ac=[].slice;function sc(){var e=[],r={};return r.run=t,r.use=n,r;function t(){var a=-1,u=ac.call(arguments,0,-1),i=arguments[arguments.length-1];if(typeof i!="function")throw new Error("Expected function as last argument, not "+i);o.apply(null,[null].concat(u));function o(s){var l=e[++a],c=ac.call(arguments,0),f=c.slice(1),D=u.length,h=-1;if(s){i(s);return}for(;++h<D;)(f[h]===null||f[h]===void 0)&&(f[h]=u[h]);u=f,l?oc(l,o).apply(null,u):i.apply(null,[null].concat(u))}}function n(a){if(typeof a!="function")throw new Error("Expected `fn` to be a function, not "+a);return e.push(a),r}}});var dc=C((NE,pc)=>{"use strict";var Xe={}.hasOwnProperty;pc.exports=N0;function N0(e){return!e||typeof e!="object"?"":Xe.call(e,"position")||Xe.call(e,"type")?fc(e.position):Xe.call(e,"start")||Xe.call(e,"end")?fc(e):Xe.call(e,"line")||Xe.call(e,"column")?An(e):""}function An(e){return(!e||typeof e!="object")&&(e={}),Dc(e.line)+":"+Dc(e.column)}function fc(e){return(!e||typeof e!="object")&&(e={}),An(e.start)+"-"+An(e.end)}function Dc(e){return e&&typeof e=="number"?e:1}});var Fc=C((RE,mc)=>{"use strict";var R0=dc();mc.exports=xn;function hc(){}hc.prototype=Error.prototype;xn.prototype=new hc;var we=xn.prototype;we.file="";we.name="";we.reason="";we.message="";we.stack="";we.fatal=null;we.column=null;we.line=null;function xn(e,r,t){var n,a,u;typeof r=="string"&&(t=r,r=null),n=U0(t),a=R0(r)||"1:1",u={start:{line:null,column:null},end:{line:null,column:null}},r&&r.position&&(r=r.position),r&&(r.start?(u=r,r=r.start):u.start=r),e.stack&&(this.stack=e.stack,e=e.message),this.message=e,this.name=a,this.reason=e,this.line=r?r.line:null,this.column=r?r.column:null,this.location=u,this.source=n[0],this.ruleId=n[1]}function U0(e){var r=[null,null],t;return typeof e=="string"&&(t=e.indexOf(":"),t===-1?r[1]=e:(r[0]=e.slice(0,t),r[1]=e.slice(t+1))),r}});var gc=C(Qe=>{"use strict";Qe.basename=z0;Qe.dirname=M0;Qe.extname=Y0;Qe.join=G0;Qe.sep="/";function z0(e,r){var t=0,n=-1,a,u,i,o;if(r!==void 0&&typeof r!="string")throw new TypeError('"ext" argument must be a string');if(yr(e),a=e.length,r===void 0||!r.length||r.length>e.length){for(;a--;)if(e.charCodeAt(a)===47){if(i){t=a+1;break}}else n<0&&(i=!0,n=a+1);return n<0?"":e.slice(t,n)}if(r===e)return"";for(u=-1,o=r.length-1;a--;)if(e.charCodeAt(a)===47){if(i){t=a+1;break}}else u<0&&(i=!0,u=a+1),o>-1&&(e.charCodeAt(a)===r.charCodeAt(o--)?o<0&&(n=a):(o=-1,n=u));return t===n?n=u:n<0&&(n=e.length),e.slice(t,n)}function M0(e){var r,t,n;if(yr(e),!e.length)return".";for(r=-1,n=e.length;--n;)if(e.charCodeAt(n)===47){if(t){r=n;break}}else t||(t=!0);return r<0?e.charCodeAt(0)===47?"/":".":r===1&&e.charCodeAt(0)===47?"//":e.slice(0,r)}function Y0(e){var r=-1,t=0,n=-1,a=0,u,i,o;for(yr(e),o=e.length;o--;){if(i=e.charCodeAt(o),i===47){if(u){t=o+1;break}continue}n<0&&(u=!0,n=o+1),i===46?r<0?r=o:a!==1&&(a=1):r>-1&&(a=-1)}return r<0||n<0||a===0||a===1&&r===n-1&&r===t+1?"":e.slice(r,n)}function G0(){for(var e=-1,r;++e<arguments.length;)yr(arguments[e]),arguments[e]&&(r=r===void 0?arguments[e]:r+"/"+arguments[e]);return r===void 0?".":V0(r)}function V0(e){var r,t;return yr(e),r=e.charCodeAt(0)===47,t=j0(e,!r),!t.length&&!r&&(t="."),t.length&&e.charCodeAt(e.length-1)===47&&(t+="/"),r?"/"+t:t}function j0(e,r){for(var t="",n=0,a=-1,u=0,i=-1,o,s;++i<=e.length;){if(i<e.length)o=e.charCodeAt(i);else{if(o===47)break;o=47}if(o===47){if(!(a===i-1||u===1))if(a!==i-1&&u===2){if(t.length<2||n!==2||t.charCodeAt(t.length-1)!==46||t.charCodeAt(t.length-2)!==46){if(t.length>2){if(s=t.lastIndexOf("/"),s!==t.length-1){s<0?(t="",n=0):(t=t.slice(0,s),n=t.length-1-t.lastIndexOf("/")),a=i,u=0;continue}}else if(t.length){t="",n=0,a=i,u=0;continue}}r&&(t=t.length?t+"/..":"..",n=2)}else t.length?t+="/"+e.slice(a+1,i):t=e.slice(a+1,i),n=i-a-1;a=i,u=0}else o===46&&u>-1?u++:u=-1}return t}function yr(e){if(typeof e!="string")throw new TypeError("Path must be a string. Received "+JSON.stringify(e))}});var Ec=C(vc=>{"use strict";vc.cwd=$0;function $0(){return"/"}});var yc=C((ME,bc)=>{"use strict";var ae=gc(),H0=Ec(),W0=yn();bc.exports=he;var K0={}.hasOwnProperty,wn=["history","path","basename","stem","extname","dirname"];he.prototype.toString=am;Object.defineProperty(he.prototype,"path",{get:J0,set:X0});Object.defineProperty(he.prototype,"dirname",{get:Q0,set:Z0});Object.defineProperty(he.prototype,"basename",{get:em,set:rm});Object.defineProperty(he.prototype,"extname",{get:tm,set:nm});Object.defineProperty(he.prototype,"stem",{get:im,set:um});function he(e){var r,t;if(!e)e={};else if(typeof e=="string"||W0(e))e={contents:e};else if("message"in e&&"messages"in e)return e;if(!(this instanceof he))return new he(e);for(this.data={},this.messages=[],this.history=[],this.cwd=H0.cwd(),t=-1;++t<wn.length;)r=wn[t],K0.call(e,r)&&(this[r]=e[r]);for(r in e)wn.indexOf(r)<0&&(this[r]=e[r])}function J0(){return this.history[this.history.length-1]}function X0(e){Bn(e,"path"),this.path!==e&&this.history.push(e)}function Q0(){return typeof this.path=="string"?ae.dirname(this.path):void 0}function Z0(e){Cc(this.path,"dirname"),this.path=ae.join(e||"",this.basename)}function em(){return typeof this.path=="string"?ae.basename(this.path):void 0}function rm(e){Bn(e,"basename"),kn(e,"basename"),this.path=ae.join(this.dirname||"",e)}function tm(){return typeof this.path=="string"?ae.extname(this.path):void 0}function nm(e){if(kn(e,"extname"),Cc(this.path,"extname"),e){if(e.charCodeAt(0)!==46)throw new Error("`extname` must start with `.`");if(e.indexOf(".",1)>-1)throw new Error("`extname` cannot contain multiple dots")}this.path=ae.join(this.dirname,this.stem+(e||""))}function im(){return typeof this.path=="string"?ae.basename(this.path,this.extname):void 0}function um(e){Bn(e,"stem"),kn(e,"stem"),this.path=ae.join(this.dirname||"",e+(this.extname||""))}function am(e){return(this.contents||"").toString(e)}function kn(e,r){if(e&&e.indexOf(ae.sep)>-1)throw new Error("`"+r+"` cannot be a path: did not expect `"+ae.sep+"`")}function Bn(e,r){if(!e)throw new Error("`"+r+"` cannot be empty")}function Cc(e,r){if(!e)throw new Error("Setting `"+r+"` requires `path` to be set too")}});var xc=C((YE,Ac)=>{"use strict";var om=Fc(),st=yc();Ac.exports=st;st.prototype.message=sm;st.prototype.info=lm;st.prototype.fail=cm;function sm(e,r,t){var n=new om(e,r,t);return this.path&&(n.name=this.path+":"+n.name,n.file=this.path),n.fatal=!1,this.messages.push(n),n}function cm(){var e=this.message.apply(this,arguments);throw e.fatal=!0,e}function lm(){var e=this.message.apply(this,arguments);return e.fatal=null,e}});var kc=C((GE,wc)=>{"use strict";wc.exports=xc()});var Ic=C((VE,Lc)=>{"use strict";var Bc=js(),fm=yn(),ct=rc(),qc=nc(),Oc=lc(),Ar=kc();Lc.exports=Pc().freeze();var Dm=[].slice,pm={}.hasOwnProperty,dm=Oc().use(hm).use(mm).use(Fm);function hm(e,r){r.tree=e.parse(r.file)}function mm(e,r,t){e.run(r.tree,r.file,n);function n(a,u,i){a?t(a):(r.tree=u,r.file=i,t())}}function Fm(e,r){var t=e.stringify(r.tree,r.file);t==null||(typeof t=="string"||fm(t)?("value"in r.file&&(r.file.value=t),r.file.contents=t):r.file.result=t)}function Pc(){var e=[],r=Oc(),t={},n=-1,a;return u.data=o,u.freeze=i,u.attachers=e,u.use=s,u.parse=c,u.stringify=h,u.run=f,u.runSync=D,u.process=p,u.processSync=d,u;function u(){for(var m=Pc(),F=-1;++F<e.length;)m.use.apply(null,e[F]);return m.data(ct(!0,{},t)),m}function i(){var m,F;if(a)return u;for(;++n<e.length;)m=e[n],m[1]!==!1&&(m[1]===!0&&(m[1]=void 0),F=m[0].apply(u,m.slice(1)),typeof F=="function"&&r.use(F));return a=!0,n=1/0,u}function o(m,F){return typeof m=="string"?arguments.length===2?(_n("data",a),t[m]=F,u):pm.call(t,m)&&t[m]||null:m?(_n("data",a),t=m,u):t}function s(m){var F;if(_n("use",a),m!=null)if(typeof m=="function")b.apply(null,arguments);else if(typeof m=="object")"length"in m?B(m):y(m);else throw new Error("Expected usable value, not `"+m+"`");return F&&(t.settings=ct(t.settings||{},F)),u;function y(g){B(g.plugins),g.settings&&(F=ct(F||{},g.settings))}function E(g){if(typeof g=="function")b(g);else if(typeof g=="object")"length"in g?b.apply(null,g):y(g);else throw new Error("Expected usable value, not `"+g+"`")}function B(g){var A=-1;if(g!=null)if(typeof g=="object"&&"length"in g)for(;++A<g.length;)E(g[A]);else throw new Error("Expected a list of plugins, not `"+g+"`")}function b(g,A){var x=l(g);x?(qc(x[1])&&qc(A)&&(A=ct(!0,x[1],A)),x[1]=A):e.push(Dm.call(arguments))}}function l(m){for(var F=-1;++F<e.length;)if(e[F][0]===m)return e[F]}function c(m){var F=Ar(m),y;return i(),y=u.Parser,qn("parse",y),Tc(y,"parse")?new y(String(F),F).parse():y(String(F),F)}function f(m,F,y){if(_c(m),i(),!y&&typeof F=="function"&&(y=F,F=null),!y)return new Promise(E);E(null,y);function E(B,b){r.run(m,Ar(F),g);function g(A,x,v){x=x||m,A?b(A):B?B(x):y(null,x,v)}}}function D(m,F){var y,E;return f(m,F,B),Sc("runSync","run",E),y;function B(b,g){E=!0,y=g,Bc(b)}}function h(m,F){var y=Ar(F),E;return i(),E=u.Compiler,Tn("stringify",E),_c(m),Tc(E,"compile")?new E(m,y).compile():E(m,y)}function p(m,F){if(i(),qn("process",u.Parser),Tn("process",u.Compiler),!F)return new Promise(y);y(null,F);function y(E,B){var b=Ar(m);dm.run(u,{file:b},g);function g(A){A?B(A):E?E(b):F(null,b)}}}function d(m){var F,y;return i(),qn("processSync",u.Parser),Tn("processSync",u.Compiler),F=Ar(m),p(F,E),Sc("processSync","process",y),F;function E(B){y=!0,Bc(B)}}}function Tc(e,r){return typeof e=="function"&&e.prototype&&(gm(e.prototype)||r in e.prototype)}function gm(e){var r;for(r in e)return!0;return!1}function qn(e,r){if(typeof r!="function")throw new Error("Cannot `"+e+"` without `Parser`")}function Tn(e,r){if(typeof r!="function")throw new Error("Cannot `"+e+"` without `Compiler`")}function _n(e,r){if(r)throw new Error("Cannot invoke `"+e+"` on a frozen processor.\nCreate a new processor first, by invoking it: use `processor()` instead of `processor`.")}function _c(e){if(!e||typeof e.type!="string")throw new Error("Expected node, got `"+e+"`")}function Sc(e,r,t){if(!t)throw new Error("`"+e+"` finished async. Use `"+r+"` instead")}});var Pn={};Ln(Pn,{languages:()=>_i,options:()=>Si,parsers:()=>On,printers:()=>qm});var al=(e,r,t,n)=>{if(!(e&&r==null))return r.replaceAll?r.replaceAll(t,n):t.global?r.replace(t,n):r.split(t).join(n)},N=al;var ol=(e,r,t)=>{if(!(e&&r==null))return Array.isArray(r)||typeof r=="string"?r[t<0?r.length+t:t]:r.at(t)},M=ol;var qi=Ue(xr(),1);function Be(e){if(typeof e!="string")throw new TypeError("Expected a string");return e.replace(/[|\\{}()[\]^$+*?.]/g,"\\$&").replace(/-/g,"\\x2d")}var $="string",H="array",ge="cursor",ee="indent",re="align",oe="trim",K="group",J="fill",X="if-break",se="indent-if-break",ce="line-suffix",le="line-suffix-boundary",W="line",fe="label",te="break-parent",wr=new Set([ge,ee,re,oe,K,J,X,se,ce,le,W,fe,te]);function cl(e){if(typeof e=="string")return $;if(Array.isArray(e))return H;if(!e)return;let{type:r}=e;if(wr.has(r))return r}var Y=cl;var ll=e=>new Intl.ListFormat("en-US",{type:"disjunction"}).format(e);function fl(e){let r=e===null?"null":typeof e;if(r!=="string"&&r!=="object")return`Unexpected doc '${r}', 
-Expected it to be 'string' or 'object'.`;if(Y(e))throw new Error("doc is valid.");let t=Object.prototype.toString.call(e);if(t!=="[object Object]")return`Unexpected doc '${t}'.`;let n=ll([...wr].map(a=>`'${a}'`));return`Unexpected doc.type '${e.type}'.
-Expected it to be ${n}.`}var Dt=class extends Error{name="InvalidDocError";constructor(r){super(fl(r)),this.doc=r}},qe=Dt;var Nn={};function Dl(e,r,t,n){let a=[e];for(;a.length>0;){let u=a.pop();if(u===Nn){t(a.pop());continue}t&&a.push(u,Nn);let i=Y(u);if(!i)throw new qe(u);if((r==null?void 0:r(u))!==!1)switch(i){case H:case J:{let o=i===H?u:u.parts;for(let s=o.length,l=s-1;l>=0;--l)a.push(o[l]);break}case X:a.push(u.flatContents,u.breakContents);break;case K:if(n&&u.expandedStates)for(let o=u.expandedStates.length,s=o-1;s>=0;--s)a.push(u.expandedStates[s]);else a.push(u.contents);break;case re:case ee:case se:case fe:case ce:a.push(u.contents);break;case $:case ge:case oe:case le:case W:case te:break;default:throw new qe(u)}}}var Rn=Dl;var Un=()=>{},Te=Un,kr=Un;function Ze(e){return Te(e),{type:ee,contents:e}}function ve(e,r){return Te(r),{type:re,contents:r,n:e}}function ze(e,r={}){return Te(e),kr(r.expandedStates,!0),{type:K,id:r.id,contents:e,break:!!r.shouldBreak,expandedStates:r.expandedStates}}function _e(e){return ve({type:"root"},e)}function Ee(e){return kr(e),{type:J,parts:e}}function zn(e,r="",t={}){return Te(e),r!==""&&Te(r),{type:X,breakContents:e,flatContents:r,groupId:t.groupId}}var er={type:te};var rr={type:W,hard:!0},pl={type:W,hard:!0,literal:!0},Br={type:W},qr={type:W,soft:!0},L=[rr,er],tr=[pl,er];function Tr(e,r){Te(e),kr(r);let t=[];for(let n=0;n<r.length;n++)n!==0&&t.push(e),t.push(r[n]);return t}function dl(e,r){if(typeof e=="string")return r(e);let t=new Map;return n(e);function n(u){if(t.has(u))return t.get(u);let i=a(u);return t.set(u,i),i}function a(u){switch(Y(u)){case H:return r(u.map(n));case J:return r({...u,parts:u.parts.map(n)});case X:return r({...u,breakContents:n(u.breakContents),flatContents:n(u.flatContents)});case K:{let{expandedStates:i,contents:o}=u;return i?(i=i.map(n),o=i[0]):o=n(o),r({...u,contents:o,expandedStates:i})}case re:case ee:case se:case fe:case ce:return r({...u,contents:n(u.contents)});case $:case ge:case oe:case le:case W:case te:return r(u);default:throw new qe(u)}}}function Mn(e){if(e.length>0){let r=M(!1,e,-1);!r.expandedStates&&!r.break&&(r.break="propagated")}return null}function Yn(e){let r=new Set,t=[];function n(u){if(u.type===te&&Mn(t),u.type===K){if(t.push(u),r.has(u))return!1;r.add(u)}}function a(u){u.type===K&&t.pop().break&&Mn(t)}Rn(e,n,a,!0)}function Ce(e,r=tr){return dl(e,t=>typeof t=="string"?Tr(r,t.split(`
-`)):t)}function hl(e,r){let t=e.match(new RegExp(`(${Be(r)})+`,"gu"));return t===null?0:t.reduce((n,a)=>Math.max(n,a.length/r.length),0)}var _r=hl;function ml(e,r){let t=e.match(new RegExp(`(${Be(r)})+`,"gu"));if(t===null)return 0;let n=new Map,a=0;for(let u of t){let i=u.length/r.length;n.set(i,!0),i>a&&(a=i)}for(let u=1;u<a;u++)if(!n.get(u))return u;return a+1}var Gn=ml;var Sr="'",Vn='"';function Fl(e,r){let t=r===!0||r===Sr?Sr:Vn,n=t===Sr?Vn:Sr,a=0,u=0;for(let i of e)i===t?a++:i===n&&u++;return a>u?n:t}var jn=Fl;var pt=class extends Error{name="UnexpectedNodeError";constructor(r,t,n="type"){super(`Unexpected ${t} node ${n}: ${JSON.stringify(r[n])}.`),this.node=r}},$n=pt;var Xn=Ue(xr(),1);function gl(e){return(e==null?void 0:e.type)==="front-matter"}var Hn=gl;var nr=3;function vl(e){let r=e.slice(0,nr);if(r!=="---"&&r!=="+++")return;let t=e.indexOf(`
-`,nr);if(t===-1)return;let n=e.slice(nr,t).trim(),a=e.indexOf(`
-${r}`,t),u=n;if(u||(u=r==="+++"?"toml":"yaml"),a===-1&&r==="---"&&u==="yaml"&&(a=e.indexOf(`
-...`,t)),a===-1)return;let i=a+1+nr,o=e.charAt(i+1);if(!/\s?/u.test(o))return;let s=e.slice(0,i);return{type:"front-matter",language:u,explicitLanguage:n,value:e.slice(t+1,a),startDelimiter:r,endDelimiter:s.slice(-nr),raw:s}}function El(e){let r=vl(e);if(!r)return{content:e};let{raw:t}=r;return{frontMatter:r,content:N(!1,t,/[^\n]/gu," ")+e.slice(t.length)}}var ir=El;var Wn=["format","prettier"];function dt(e){let r=`@(${Wn.join("|")})`,t=new RegExp([`<!--\\s*${r}\\s*-->`,`\\{\\s*\\/\\*\\s*${r}\\s*\\*\\/\\s*\\}`,`<!--.*\r?
-[\\s\\S]*(^|
-)[^\\S
-]*${r}[^\\S
-]*($|
-)[\\s\\S]*
-.*-->`].join("|"),"mu"),n=e.match(t);return(n==null?void 0:n.index)===0}var Kn=e=>dt(ir(e).content.trimStart()),Jn=e=>{let r=ir(e),t=`<!-- @${Wn[0]} -->`;return r.frontMatter?`${r.frontMatter.raw}
+$$`}}});var Du=x((ZC,fu)=>{var gD=uu(),ED=lu();fu.exports=CD;function CD(e){var r=e||{};ED.call(this,r),gD.call(this,r)}});var Ie=x((ev,pu)=>{pu.exports=AD;var vD=Object.prototype.hasOwnProperty;function AD(){for(var e={},r=0;r<arguments.length;r++){var t=arguments[r];for(var n in t)vD.call(t,n)&&(e[n]=t[n])}return e}});var hu=x((rv,Yt)=>{typeof Object.create=="function"?Yt.exports=function(r,t){t&&(r.super_=t,r.prototype=Object.create(t.prototype,{constructor:{value:r,enumerable:!1,writable:!0,configurable:!0}}))}:Yt.exports=function(r,t){if(t){r.super_=t;var n=function(){};n.prototype=t.prototype,r.prototype=new n,r.prototype.constructor=r}}});var Fu=x((tv,mu)=>{"use strict";var bD=Ie(),du=hu();mu.exports=xD;function xD(e){var r,t,n;du(u,e),du(i,u),r=u.prototype;for(t in r)n=r[t],n&&typeof n=="object"&&(r[t]="concat"in n?n.concat():bD(n));return u;function i(a){return e.apply(this,a)}function u(){return this instanceof u?e.apply(this,arguments):new i(arguments)}}});var Eu=x((nv,gu)=>{"use strict";gu.exports=yD;function yD(e,r,t){return n;function n(){var i=t||this,u=i[e];return i[e]=!r,a;function a(){i[e]=u}}}});var vu=x((iv,Cu)=>{"use strict";Cu.exports=wD;function wD(e){for(var r=String(e),t=[],n=/\r?\n|\r/g;n.exec(r);)t.push(n.lastIndex);return t.push(r.length+1),{toPoint:i,toPosition:i,toOffset:u};function i(a){var o=-1;if(a>-1&&a<t[t.length-1]){for(;++o<t.length;)if(t[o]>a)return{line:o+1,column:a-(t[o-1]||0)+1,offset:a}}return{}}function u(a){var o=a&&a.line,s=a&&a.column,l;return!isNaN(o)&&!isNaN(s)&&o-1 in t&&(l=(t[o-2]||0)+s-1||0),l>-1&&l<t[t.length-1]?l:-1}}});var bu=x((uv,Au)=>{"use strict";Au.exports=kD;var Gt="\\";function kD(e,r){return t;function t(n){for(var i=0,u=n.indexOf(Gt),a=e[r],o=[],s;u!==-1;)o.push(n.slice(i,u)),i=u+1,s=n.charAt(i),(!s||a.indexOf(s)===-1)&&o.push(Gt),u=n.indexOf(Gt,i+1);return o.push(n.slice(i)),o.join("")}}});var xu=x((av,TD)=>{TD.exports={AElig:"\xC6",AMP:"&",Aacute:"\xC1",Acirc:"\xC2",Agrave:"\xC0",Aring:"\xC5",Atilde:"\xC3",Auml:"\xC4",COPY:"\xA9",Ccedil:"\xC7",ETH:"\xD0",Eacute:"\xC9",Ecirc:"\xCA",Egrave:"\xC8",Euml:"\xCB",GT:">",Iacute:"\xCD",Icirc:"\xCE",Igrave:"\xCC",Iuml:"\xCF",LT:"<",Ntilde:"\xD1",Oacute:"\xD3",Ocirc:"\xD4",Ograve:"\xD2",Oslash:"\xD8",Otilde:"\xD5",Ouml:"\xD6",QUOT:'"',REG:"\xAE",THORN:"\xDE",Uacute:"\xDA",Ucirc:"\xDB",Ugrave:"\xD9",Uuml:"\xDC",Yacute:"\xDD",aacute:"\xE1",acirc:"\xE2",acute:"\xB4",aelig:"\xE6",agrave:"\xE0",amp:"&",aring:"\xE5",atilde:"\xE3",auml:"\xE4",brvbar:"\xA6",ccedil:"\xE7",cedil:"\xB8",cent:"\xA2",copy:"\xA9",curren:"\xA4",deg:"\xB0",divide:"\xF7",eacute:"\xE9",ecirc:"\xEA",egrave:"\xE8",eth:"\xF0",euml:"\xEB",frac12:"\xBD",frac14:"\xBC",frac34:"\xBE",gt:">",iacute:"\xED",icirc:"\xEE",iexcl:"\xA1",igrave:"\xEC",iquest:"\xBF",iuml:"\xEF",laquo:"\xAB",lt:"<",macr:"\xAF",micro:"\xB5",middot:"\xB7",nbsp:"\xA0",not:"\xAC",ntilde:"\xF1",oacute:"\xF3",ocirc:"\xF4",ograve:"\xF2",ordf:"\xAA",ordm:"\xBA",oslash:"\xF8",otilde:"\xF5",ouml:"\xF6",para:"\xB6",plusmn:"\xB1",pound:"\xA3",quot:'"',raquo:"\xBB",reg:"\xAE",sect:"\xA7",shy:"\xAD",sup1:"\xB9",sup2:"\xB2",sup3:"\xB3",szlig:"\xDF",thorn:"\xFE",times:"\xD7",uacute:"\xFA",ucirc:"\xFB",ugrave:"\xF9",uml:"\xA8",uuml:"\xFC",yacute:"\xFD",yen:"\xA5",yuml:"\xFF"}});var yu=x((ov,BD)=>{BD.exports={"0":"\uFFFD","128":"\u20AC","130":"\u201A","131":"\u0192","132":"\u201E","133":"\u2026","134":"\u2020","135":"\u2021","136":"\u02C6","137":"\u2030","138":"\u0160","139":"\u2039","140":"\u0152","142":"\u017D","145":"\u2018","146":"\u2019","147":"\u201C","148":"\u201D","149":"\u2022","150":"\u2013","151":"\u2014","152":"\u02DC","153":"\u2122","154":"\u0161","155":"\u203A","156":"\u0153","158":"\u017E","159":"\u0178"}});var Se=x((sv,wu)=>{"use strict";wu.exports=_D;function _D(e){var r=typeof e=="string"?e.charCodeAt(0):e;return r>=48&&r<=57}});var Tu=x((cv,ku)=>{"use strict";ku.exports=OD;function OD(e){var r=typeof e=="string"?e.charCodeAt(0):e;return r>=97&&r<=102||r>=65&&r<=70||r>=48&&r<=57}});var $e=x((lv,Bu)=>{"use strict";Bu.exports=qD;function qD(e){var r=typeof e=="string"?e.charCodeAt(0):e;return r>=97&&r<=122||r>=65&&r<=90}});var Ou=x((fv,_u)=>{"use strict";var ND=$e(),PD=Se();_u.exports=ID;function ID(e){return ND(e)||PD(e)}});var qu=x((Dv,SD)=>{SD.exports={AEli:"\xC6",AElig:"\xC6",AM:"&",AMP:"&",Aacut:"\xC1",Aacute:"\xC1",Abreve:"\u0102",Acir:"\xC2",Acirc:"\xC2",Acy:"\u0410",Afr:"\u{1D504}",Agrav:"\xC0",Agrave:"\xC0",Alpha:"\u0391",Amacr:"\u0100",And:"\u2A53",Aogon:"\u0104",Aopf:"\u{1D538}",ApplyFunction:"\u2061",Arin:"\xC5",Aring:"\xC5",Ascr:"\u{1D49C}",Assign:"\u2254",Atild:"\xC3",Atilde:"\xC3",Aum:"\xC4",Auml:"\xC4",Backslash:"\u2216",Barv:"\u2AE7",Barwed:"\u2306",Bcy:"\u0411",Because:"\u2235",Bernoullis:"\u212C",Beta:"\u0392",Bfr:"\u{1D505}",Bopf:"\u{1D539}",Breve:"\u02D8",Bscr:"\u212C",Bumpeq:"\u224E",CHcy:"\u0427",COP:"\xA9",COPY:"\xA9",Cacute:"\u0106",Cap:"\u22D2",CapitalDifferentialD:"\u2145",Cayleys:"\u212D",Ccaron:"\u010C",Ccedi:"\xC7",Ccedil:"\xC7",Ccirc:"\u0108",Cconint:"\u2230",Cdot:"\u010A",Cedilla:"\xB8",CenterDot:"\xB7",Cfr:"\u212D",Chi:"\u03A7",CircleDot:"\u2299",CircleMinus:"\u2296",CirclePlus:"\u2295",CircleTimes:"\u2297",ClockwiseContourIntegral:"\u2232",CloseCurlyDoubleQuote:"\u201D",CloseCurlyQuote:"\u2019",Colon:"\u2237",Colone:"\u2A74",Congruent:"\u2261",Conint:"\u222F",ContourIntegral:"\u222E",Copf:"\u2102",Coproduct:"\u2210",CounterClockwiseContourIntegral:"\u2233",Cross:"\u2A2F",Cscr:"\u{1D49E}",Cup:"\u22D3",CupCap:"\u224D",DD:"\u2145",DDotrahd:"\u2911",DJcy:"\u0402",DScy:"\u0405",DZcy:"\u040F",Dagger:"\u2021",Darr:"\u21A1",Dashv:"\u2AE4",Dcaron:"\u010E",Dcy:"\u0414",Del:"\u2207",Delta:"\u0394",Dfr:"\u{1D507}",DiacriticalAcute:"\xB4",DiacriticalDot:"\u02D9",DiacriticalDoubleAcute:"\u02DD",DiacriticalGrave:"`",DiacriticalTilde:"\u02DC",Diamond:"\u22C4",DifferentialD:"\u2146",Dopf:"\u{1D53B}",Dot:"\xA8",DotDot:"\u20DC",DotEqual:"\u2250",DoubleContourIntegral:"\u222F",DoubleDot:"\xA8",DoubleDownArrow:"\u21D3",DoubleLeftArrow:"\u21D0",DoubleLeftRightArrow:"\u21D4",DoubleLeftTee:"\u2AE4",DoubleLongLeftArrow:"\u27F8",DoubleLongLeftRightArrow:"\u27FA",DoubleLongRightArrow:"\u27F9",DoubleRightArrow:"\u21D2",DoubleRightTee:"\u22A8",DoubleUpArrow:"\u21D1",DoubleUpDownArrow:"\u21D5",DoubleVerticalBar:"\u2225",DownArrow:"\u2193",DownArrowBar:"\u2913",DownArrowUpArrow:"\u21F5",DownBreve:"\u0311",DownLeftRightVector:"\u2950",DownLeftTeeVector:"\u295E",DownLeftVector:"\u21BD",DownLeftVectorBar:"\u2956",DownRightTeeVector:"\u295F",DownRightVector:"\u21C1",DownRightVectorBar:"\u2957",DownTee:"\u22A4",DownTeeArrow:"\u21A7",Downarrow:"\u21D3",Dscr:"\u{1D49F}",Dstrok:"\u0110",ENG:"\u014A",ET:"\xD0",ETH:"\xD0",Eacut:"\xC9",Eacute:"\xC9",Ecaron:"\u011A",Ecir:"\xCA",Ecirc:"\xCA",Ecy:"\u042D",Edot:"\u0116",Efr:"\u{1D508}",Egrav:"\xC8",Egrave:"\xC8",Element:"\u2208",Emacr:"\u0112",EmptySmallSquare:"\u25FB",EmptyVerySmallSquare:"\u25AB",Eogon:"\u0118",Eopf:"\u{1D53C}",Epsilon:"\u0395",Equal:"\u2A75",EqualTilde:"\u2242",Equilibrium:"\u21CC",Escr:"\u2130",Esim:"\u2A73",Eta:"\u0397",Eum:"\xCB",Euml:"\xCB",Exists:"\u2203",ExponentialE:"\u2147",Fcy:"\u0424",Ffr:"\u{1D509}",FilledSmallSquare:"\u25FC",FilledVerySmallSquare:"\u25AA",Fopf:"\u{1D53D}",ForAll:"\u2200",Fouriertrf:"\u2131",Fscr:"\u2131",GJcy:"\u0403",G:">",GT:">",Gamma:"\u0393",Gammad:"\u03DC",Gbreve:"\u011E",Gcedil:"\u0122",Gcirc:"\u011C",Gcy:"\u0413",Gdot:"\u0120",Gfr:"\u{1D50A}",Gg:"\u22D9",Gopf:"\u{1D53E}",GreaterEqual:"\u2265",GreaterEqualLess:"\u22DB",GreaterFullEqual:"\u2267",GreaterGreater:"\u2AA2",GreaterLess:"\u2277",GreaterSlantEqual:"\u2A7E",GreaterTilde:"\u2273",Gscr:"\u{1D4A2}",Gt:"\u226B",HARDcy:"\u042A",Hacek:"\u02C7",Hat:"^",Hcirc:"\u0124",Hfr:"\u210C",HilbertSpace:"\u210B",Hopf:"\u210D",HorizontalLine:"\u2500",Hscr:"\u210B",Hstrok:"\u0126",HumpDownHump:"\u224E",HumpEqual:"\u224F",IEcy:"\u0415",IJlig:"\u0132",IOcy:"\u0401",Iacut:"\xCD",Iacute:"\xCD",Icir:"\xCE",Icirc:"\xCE",Icy:"\u0418",Idot:"\u0130",Ifr:"\u2111",Igrav:"\xCC",Igrave:"\xCC",Im:"\u2111",Imacr:"\u012A",ImaginaryI:"\u2148",Implies:"\u21D2",Int:"\u222C",Integral:"\u222B",Intersection:"\u22C2",InvisibleComma:"\u2063",InvisibleTimes:"\u2062",Iogon:"\u012E",Iopf:"\u{1D540}",Iota:"\u0399",Iscr:"\u2110",Itilde:"\u0128",Iukcy:"\u0406",Ium:"\xCF",Iuml:"\xCF",Jcirc:"\u0134",Jcy:"\u0419",Jfr:"\u{1D50D}",Jopf:"\u{1D541}",Jscr:"\u{1D4A5}",Jsercy:"\u0408",Jukcy:"\u0404",KHcy:"\u0425",KJcy:"\u040C",Kappa:"\u039A",Kcedil:"\u0136",Kcy:"\u041A",Kfr:"\u{1D50E}",Kopf:"\u{1D542}",Kscr:"\u{1D4A6}",LJcy:"\u0409",L:"<",LT:"<",Lacute:"\u0139",Lambda:"\u039B",Lang:"\u27EA",Laplacetrf:"\u2112",Larr:"\u219E",Lcaron:"\u013D",Lcedil:"\u013B",Lcy:"\u041B",LeftAngleBracket:"\u27E8",LeftArrow:"\u2190",LeftArrowBar:"\u21E4",LeftArrowRightArrow:"\u21C6",LeftCeiling:"\u2308",LeftDoubleBracket:"\u27E6",LeftDownTeeVector:"\u2961",LeftDownVector:"\u21C3",LeftDownVectorBar:"\u2959",LeftFloor:"\u230A",LeftRightArrow:"\u2194",LeftRightVector:"\u294E",LeftTee:"\u22A3",LeftTeeArrow:"\u21A4",LeftTeeVector:"\u295A",LeftTriangle:"\u22B2",LeftTriangleBar:"\u29CF",LeftTriangleEqual:"\u22B4",LeftUpDownVector:"\u2951",LeftUpTeeVector:"\u2960",LeftUpVector:"\u21BF",LeftUpVectorBar:"\u2958",LeftVector:"\u21BC",LeftVectorBar:"\u2952",Leftarrow:"\u21D0",Leftrightarrow:"\u21D4",LessEqualGreater:"\u22DA",LessFullEqual:"\u2266",LessGreater:"\u2276",LessLess:"\u2AA1",LessSlantEqual:"\u2A7D",LessTilde:"\u2272",Lfr:"\u{1D50F}",Ll:"\u22D8",Lleftarrow:"\u21DA",Lmidot:"\u013F",LongLeftArrow:"\u27F5",LongLeftRightArrow:"\u27F7",LongRightArrow:"\u27F6",Longleftarrow:"\u27F8",Longleftrightarrow:"\u27FA",Longrightarrow:"\u27F9",Lopf:"\u{1D543}",LowerLeftArrow:"\u2199",LowerRightArrow:"\u2198",Lscr:"\u2112",Lsh:"\u21B0",Lstrok:"\u0141",Lt:"\u226A",Map:"\u2905",Mcy:"\u041C",MediumSpace:"\u205F",Mellintrf:"\u2133",Mfr:"\u{1D510}",MinusPlus:"\u2213",Mopf:"\u{1D544}",Mscr:"\u2133",Mu:"\u039C",NJcy:"\u040A",Nacute:"\u0143",Ncaron:"\u0147",Ncedil:"\u0145",Ncy:"\u041D",NegativeMediumSpace:"\u200B",NegativeThickSpace:"\u200B",NegativeThinSpace:"\u200B",NegativeVeryThinSpace:"\u200B",NestedGreaterGreater:"\u226B",NestedLessLess:"\u226A",NewLine:`
+`,Nfr:"\u{1D511}",NoBreak:"\u2060",NonBreakingSpace:"\xA0",Nopf:"\u2115",Not:"\u2AEC",NotCongruent:"\u2262",NotCupCap:"\u226D",NotDoubleVerticalBar:"\u2226",NotElement:"\u2209",NotEqual:"\u2260",NotEqualTilde:"\u2242\u0338",NotExists:"\u2204",NotGreater:"\u226F",NotGreaterEqual:"\u2271",NotGreaterFullEqual:"\u2267\u0338",NotGreaterGreater:"\u226B\u0338",NotGreaterLess:"\u2279",NotGreaterSlantEqual:"\u2A7E\u0338",NotGreaterTilde:"\u2275",NotHumpDownHump:"\u224E\u0338",NotHumpEqual:"\u224F\u0338",NotLeftTriangle:"\u22EA",NotLeftTriangleBar:"\u29CF\u0338",NotLeftTriangleEqual:"\u22EC",NotLess:"\u226E",NotLessEqual:"\u2270",NotLessGreater:"\u2278",NotLessLess:"\u226A\u0338",NotLessSlantEqual:"\u2A7D\u0338",NotLessTilde:"\u2274",NotNestedGreaterGreater:"\u2AA2\u0338",NotNestedLessLess:"\u2AA1\u0338",NotPrecedes:"\u2280",NotPrecedesEqual:"\u2AAF\u0338",NotPrecedesSlantEqual:"\u22E0",NotReverseElement:"\u220C",NotRightTriangle:"\u22EB",NotRightTriangleBar:"\u29D0\u0338",NotRightTriangleEqual:"\u22ED",NotSquareSubset:"\u228F\u0338",NotSquareSubsetEqual:"\u22E2",NotSquareSuperset:"\u2290\u0338",NotSquareSupersetEqual:"\u22E3",NotSubset:"\u2282\u20D2",NotSubsetEqual:"\u2288",NotSucceeds:"\u2281",NotSucceedsEqual:"\u2AB0\u0338",NotSucceedsSlantEqual:"\u22E1",NotSucceedsTilde:"\u227F\u0338",NotSuperset:"\u2283\u20D2",NotSupersetEqual:"\u2289",NotTilde:"\u2241",NotTildeEqual:"\u2244",NotTildeFullEqual:"\u2247",NotTildeTilde:"\u2249",NotVerticalBar:"\u2224",Nscr:"\u{1D4A9}",Ntild:"\xD1",Ntilde:"\xD1",Nu:"\u039D",OElig:"\u0152",Oacut:"\xD3",Oacute:"\xD3",Ocir:"\xD4",Ocirc:"\xD4",Ocy:"\u041E",Odblac:"\u0150",Ofr:"\u{1D512}",Ograv:"\xD2",Ograve:"\xD2",Omacr:"\u014C",Omega:"\u03A9",Omicron:"\u039F",Oopf:"\u{1D546}",OpenCurlyDoubleQuote:"\u201C",OpenCurlyQuote:"\u2018",Or:"\u2A54",Oscr:"\u{1D4AA}",Oslas:"\xD8",Oslash:"\xD8",Otild:"\xD5",Otilde:"\xD5",Otimes:"\u2A37",Oum:"\xD6",Ouml:"\xD6",OverBar:"\u203E",OverBrace:"\u23DE",OverBracket:"\u23B4",OverParenthesis:"\u23DC",PartialD:"\u2202",Pcy:"\u041F",Pfr:"\u{1D513}",Phi:"\u03A6",Pi:"\u03A0",PlusMinus:"\xB1",Poincareplane:"\u210C",Popf:"\u2119",Pr:"\u2ABB",Precedes:"\u227A",PrecedesEqual:"\u2AAF",PrecedesSlantEqual:"\u227C",PrecedesTilde:"\u227E",Prime:"\u2033",Product:"\u220F",Proportion:"\u2237",Proportional:"\u221D",Pscr:"\u{1D4AB}",Psi:"\u03A8",QUO:'"',QUOT:'"',Qfr:"\u{1D514}",Qopf:"\u211A",Qscr:"\u{1D4AC}",RBarr:"\u2910",RE:"\xAE",REG:"\xAE",Racute:"\u0154",Rang:"\u27EB",Rarr:"\u21A0",Rarrtl:"\u2916",Rcaron:"\u0158",Rcedil:"\u0156",Rcy:"\u0420",Re:"\u211C",ReverseElement:"\u220B",ReverseEquilibrium:"\u21CB",ReverseUpEquilibrium:"\u296F",Rfr:"\u211C",Rho:"\u03A1",RightAngleBracket:"\u27E9",RightArrow:"\u2192",RightArrowBar:"\u21E5",RightArrowLeftArrow:"\u21C4",RightCeiling:"\u2309",RightDoubleBracket:"\u27E7",RightDownTeeVector:"\u295D",RightDownVector:"\u21C2",RightDownVectorBar:"\u2955",RightFloor:"\u230B",RightTee:"\u22A2",RightTeeArrow:"\u21A6",RightTeeVector:"\u295B",RightTriangle:"\u22B3",RightTriangleBar:"\u29D0",RightTriangleEqual:"\u22B5",RightUpDownVector:"\u294F",RightUpTeeVector:"\u295C",RightUpVector:"\u21BE",RightUpVectorBar:"\u2954",RightVector:"\u21C0",RightVectorBar:"\u2953",Rightarrow:"\u21D2",Ropf:"\u211D",RoundImplies:"\u2970",Rrightarrow:"\u21DB",Rscr:"\u211B",Rsh:"\u21B1",RuleDelayed:"\u29F4",SHCHcy:"\u0429",SHcy:"\u0428",SOFTcy:"\u042C",Sacute:"\u015A",Sc:"\u2ABC",Scaron:"\u0160",Scedil:"\u015E",Scirc:"\u015C",Scy:"\u0421",Sfr:"\u{1D516}",ShortDownArrow:"\u2193",ShortLeftArrow:"\u2190",ShortRightArrow:"\u2192",ShortUpArrow:"\u2191",Sigma:"\u03A3",SmallCircle:"\u2218",Sopf:"\u{1D54A}",Sqrt:"\u221A",Square:"\u25A1",SquareIntersection:"\u2293",SquareSubset:"\u228F",SquareSubsetEqual:"\u2291",SquareSuperset:"\u2290",SquareSupersetEqual:"\u2292",SquareUnion:"\u2294",Sscr:"\u{1D4AE}",Star:"\u22C6",Sub:"\u22D0",Subset:"\u22D0",SubsetEqual:"\u2286",Succeeds:"\u227B",SucceedsEqual:"\u2AB0",SucceedsSlantEqual:"\u227D",SucceedsTilde:"\u227F",SuchThat:"\u220B",Sum:"\u2211",Sup:"\u22D1",Superset:"\u2283",SupersetEqual:"\u2287",Supset:"\u22D1",THOR:"\xDE",THORN:"\xDE",TRADE:"\u2122",TSHcy:"\u040B",TScy:"\u0426",Tab:"	",Tau:"\u03A4",Tcaron:"\u0164",Tcedil:"\u0162",Tcy:"\u0422",Tfr:"\u{1D517}",Therefore:"\u2234",Theta:"\u0398",ThickSpace:"\u205F\u200A",ThinSpace:"\u2009",Tilde:"\u223C",TildeEqual:"\u2243",TildeFullEqual:"\u2245",TildeTilde:"\u2248",Topf:"\u{1D54B}",TripleDot:"\u20DB",Tscr:"\u{1D4AF}",Tstrok:"\u0166",Uacut:"\xDA",Uacute:"\xDA",Uarr:"\u219F",Uarrocir:"\u2949",Ubrcy:"\u040E",Ubreve:"\u016C",Ucir:"\xDB",Ucirc:"\xDB",Ucy:"\u0423",Udblac:"\u0170",Ufr:"\u{1D518}",Ugrav:"\xD9",Ugrave:"\xD9",Umacr:"\u016A",UnderBar:"_",UnderBrace:"\u23DF",UnderBracket:"\u23B5",UnderParenthesis:"\u23DD",Union:"\u22C3",UnionPlus:"\u228E",Uogon:"\u0172",Uopf:"\u{1D54C}",UpArrow:"\u2191",UpArrowBar:"\u2912",UpArrowDownArrow:"\u21C5",UpDownArrow:"\u2195",UpEquilibrium:"\u296E",UpTee:"\u22A5",UpTeeArrow:"\u21A5",Uparrow:"\u21D1",Updownarrow:"\u21D5",UpperLeftArrow:"\u2196",UpperRightArrow:"\u2197",Upsi:"\u03D2",Upsilon:"\u03A5",Uring:"\u016E",Uscr:"\u{1D4B0}",Utilde:"\u0168",Uum:"\xDC",Uuml:"\xDC",VDash:"\u22AB",Vbar:"\u2AEB",Vcy:"\u0412",Vdash:"\u22A9",Vdashl:"\u2AE6",Vee:"\u22C1",Verbar:"\u2016",Vert:"\u2016",VerticalBar:"\u2223",VerticalLine:"|",VerticalSeparator:"\u2758",VerticalTilde:"\u2240",VeryThinSpace:"\u200A",Vfr:"\u{1D519}",Vopf:"\u{1D54D}",Vscr:"\u{1D4B1}",Vvdash:"\u22AA",Wcirc:"\u0174",Wedge:"\u22C0",Wfr:"\u{1D51A}",Wopf:"\u{1D54E}",Wscr:"\u{1D4B2}",Xfr:"\u{1D51B}",Xi:"\u039E",Xopf:"\u{1D54F}",Xscr:"\u{1D4B3}",YAcy:"\u042F",YIcy:"\u0407",YUcy:"\u042E",Yacut:"\xDD",Yacute:"\xDD",Ycirc:"\u0176",Ycy:"\u042B",Yfr:"\u{1D51C}",Yopf:"\u{1D550}",Yscr:"\u{1D4B4}",Yuml:"\u0178",ZHcy:"\u0416",Zacute:"\u0179",Zcaron:"\u017D",Zcy:"\u0417",Zdot:"\u017B",ZeroWidthSpace:"\u200B",Zeta:"\u0396",Zfr:"\u2128",Zopf:"\u2124",Zscr:"\u{1D4B5}",aacut:"\xE1",aacute:"\xE1",abreve:"\u0103",ac:"\u223E",acE:"\u223E\u0333",acd:"\u223F",acir:"\xE2",acirc:"\xE2",acut:"\xB4",acute:"\xB4",acy:"\u0430",aeli:"\xE6",aelig:"\xE6",af:"\u2061",afr:"\u{1D51E}",agrav:"\xE0",agrave:"\xE0",alefsym:"\u2135",aleph:"\u2135",alpha:"\u03B1",amacr:"\u0101",amalg:"\u2A3F",am:"&",amp:"&",and:"\u2227",andand:"\u2A55",andd:"\u2A5C",andslope:"\u2A58",andv:"\u2A5A",ang:"\u2220",ange:"\u29A4",angle:"\u2220",angmsd:"\u2221",angmsdaa:"\u29A8",angmsdab:"\u29A9",angmsdac:"\u29AA",angmsdad:"\u29AB",angmsdae:"\u29AC",angmsdaf:"\u29AD",angmsdag:"\u29AE",angmsdah:"\u29AF",angrt:"\u221F",angrtvb:"\u22BE",angrtvbd:"\u299D",angsph:"\u2222",angst:"\xC5",angzarr:"\u237C",aogon:"\u0105",aopf:"\u{1D552}",ap:"\u2248",apE:"\u2A70",apacir:"\u2A6F",ape:"\u224A",apid:"\u224B",apos:"'",approx:"\u2248",approxeq:"\u224A",arin:"\xE5",aring:"\xE5",ascr:"\u{1D4B6}",ast:"*",asymp:"\u2248",asympeq:"\u224D",atild:"\xE3",atilde:"\xE3",aum:"\xE4",auml:"\xE4",awconint:"\u2233",awint:"\u2A11",bNot:"\u2AED",backcong:"\u224C",backepsilon:"\u03F6",backprime:"\u2035",backsim:"\u223D",backsimeq:"\u22CD",barvee:"\u22BD",barwed:"\u2305",barwedge:"\u2305",bbrk:"\u23B5",bbrktbrk:"\u23B6",bcong:"\u224C",bcy:"\u0431",bdquo:"\u201E",becaus:"\u2235",because:"\u2235",bemptyv:"\u29B0",bepsi:"\u03F6",bernou:"\u212C",beta:"\u03B2",beth:"\u2136",between:"\u226C",bfr:"\u{1D51F}",bigcap:"\u22C2",bigcirc:"\u25EF",bigcup:"\u22C3",bigodot:"\u2A00",bigoplus:"\u2A01",bigotimes:"\u2A02",bigsqcup:"\u2A06",bigstar:"\u2605",bigtriangledown:"\u25BD",bigtriangleup:"\u25B3",biguplus:"\u2A04",bigvee:"\u22C1",bigwedge:"\u22C0",bkarow:"\u290D",blacklozenge:"\u29EB",blacksquare:"\u25AA",blacktriangle:"\u25B4",blacktriangledown:"\u25BE",blacktriangleleft:"\u25C2",blacktriangleright:"\u25B8",blank:"\u2423",blk12:"\u2592",blk14:"\u2591",blk34:"\u2593",block:"\u2588",bne:"=\u20E5",bnequiv:"\u2261\u20E5",bnot:"\u2310",bopf:"\u{1D553}",bot:"\u22A5",bottom:"\u22A5",bowtie:"\u22C8",boxDL:"\u2557",boxDR:"\u2554",boxDl:"\u2556",boxDr:"\u2553",boxH:"\u2550",boxHD:"\u2566",boxHU:"\u2569",boxHd:"\u2564",boxHu:"\u2567",boxUL:"\u255D",boxUR:"\u255A",boxUl:"\u255C",boxUr:"\u2559",boxV:"\u2551",boxVH:"\u256C",boxVL:"\u2563",boxVR:"\u2560",boxVh:"\u256B",boxVl:"\u2562",boxVr:"\u255F",boxbox:"\u29C9",boxdL:"\u2555",boxdR:"\u2552",boxdl:"\u2510",boxdr:"\u250C",boxh:"\u2500",boxhD:"\u2565",boxhU:"\u2568",boxhd:"\u252C",boxhu:"\u2534",boxminus:"\u229F",boxplus:"\u229E",boxtimes:"\u22A0",boxuL:"\u255B",boxuR:"\u2558",boxul:"\u2518",boxur:"\u2514",boxv:"\u2502",boxvH:"\u256A",boxvL:"\u2561",boxvR:"\u255E",boxvh:"\u253C",boxvl:"\u2524",boxvr:"\u251C",bprime:"\u2035",breve:"\u02D8",brvba:"\xA6",brvbar:"\xA6",bscr:"\u{1D4B7}",bsemi:"\u204F",bsim:"\u223D",bsime:"\u22CD",bsol:"\\",bsolb:"\u29C5",bsolhsub:"\u27C8",bull:"\u2022",bullet:"\u2022",bump:"\u224E",bumpE:"\u2AAE",bumpe:"\u224F",bumpeq:"\u224F",cacute:"\u0107",cap:"\u2229",capand:"\u2A44",capbrcup:"\u2A49",capcap:"\u2A4B",capcup:"\u2A47",capdot:"\u2A40",caps:"\u2229\uFE00",caret:"\u2041",caron:"\u02C7",ccaps:"\u2A4D",ccaron:"\u010D",ccedi:"\xE7",ccedil:"\xE7",ccirc:"\u0109",ccups:"\u2A4C",ccupssm:"\u2A50",cdot:"\u010B",cedi:"\xB8",cedil:"\xB8",cemptyv:"\u29B2",cen:"\xA2",cent:"\xA2",centerdot:"\xB7",cfr:"\u{1D520}",chcy:"\u0447",check:"\u2713",checkmark:"\u2713",chi:"\u03C7",cir:"\u25CB",cirE:"\u29C3",circ:"\u02C6",circeq:"\u2257",circlearrowleft:"\u21BA",circlearrowright:"\u21BB",circledR:"\xAE",circledS:"\u24C8",circledast:"\u229B",circledcirc:"\u229A",circleddash:"\u229D",cire:"\u2257",cirfnint:"\u2A10",cirmid:"\u2AEF",cirscir:"\u29C2",clubs:"\u2663",clubsuit:"\u2663",colon:":",colone:"\u2254",coloneq:"\u2254",comma:",",commat:"@",comp:"\u2201",compfn:"\u2218",complement:"\u2201",complexes:"\u2102",cong:"\u2245",congdot:"\u2A6D",conint:"\u222E",copf:"\u{1D554}",coprod:"\u2210",cop:"\xA9",copy:"\xA9",copysr:"\u2117",crarr:"\u21B5",cross:"\u2717",cscr:"\u{1D4B8}",csub:"\u2ACF",csube:"\u2AD1",csup:"\u2AD0",csupe:"\u2AD2",ctdot:"\u22EF",cudarrl:"\u2938",cudarrr:"\u2935",cuepr:"\u22DE",cuesc:"\u22DF",cularr:"\u21B6",cularrp:"\u293D",cup:"\u222A",cupbrcap:"\u2A48",cupcap:"\u2A46",cupcup:"\u2A4A",cupdot:"\u228D",cupor:"\u2A45",cups:"\u222A\uFE00",curarr:"\u21B7",curarrm:"\u293C",curlyeqprec:"\u22DE",curlyeqsucc:"\u22DF",curlyvee:"\u22CE",curlywedge:"\u22CF",curre:"\xA4",curren:"\xA4",curvearrowleft:"\u21B6",curvearrowright:"\u21B7",cuvee:"\u22CE",cuwed:"\u22CF",cwconint:"\u2232",cwint:"\u2231",cylcty:"\u232D",dArr:"\u21D3",dHar:"\u2965",dagger:"\u2020",daleth:"\u2138",darr:"\u2193",dash:"\u2010",dashv:"\u22A3",dbkarow:"\u290F",dblac:"\u02DD",dcaron:"\u010F",dcy:"\u0434",dd:"\u2146",ddagger:"\u2021",ddarr:"\u21CA",ddotseq:"\u2A77",de:"\xB0",deg:"\xB0",delta:"\u03B4",demptyv:"\u29B1",dfisht:"\u297F",dfr:"\u{1D521}",dharl:"\u21C3",dharr:"\u21C2",diam:"\u22C4",diamond:"\u22C4",diamondsuit:"\u2666",diams:"\u2666",die:"\xA8",digamma:"\u03DD",disin:"\u22F2",div:"\xF7",divid:"\xF7",divide:"\xF7",divideontimes:"\u22C7",divonx:"\u22C7",djcy:"\u0452",dlcorn:"\u231E",dlcrop:"\u230D",dollar:"$",dopf:"\u{1D555}",dot:"\u02D9",doteq:"\u2250",doteqdot:"\u2251",dotminus:"\u2238",dotplus:"\u2214",dotsquare:"\u22A1",doublebarwedge:"\u2306",downarrow:"\u2193",downdownarrows:"\u21CA",downharpoonleft:"\u21C3",downharpoonright:"\u21C2",drbkarow:"\u2910",drcorn:"\u231F",drcrop:"\u230C",dscr:"\u{1D4B9}",dscy:"\u0455",dsol:"\u29F6",dstrok:"\u0111",dtdot:"\u22F1",dtri:"\u25BF",dtrif:"\u25BE",duarr:"\u21F5",duhar:"\u296F",dwangle:"\u29A6",dzcy:"\u045F",dzigrarr:"\u27FF",eDDot:"\u2A77",eDot:"\u2251",eacut:"\xE9",eacute:"\xE9",easter:"\u2A6E",ecaron:"\u011B",ecir:"\xEA",ecirc:"\xEA",ecolon:"\u2255",ecy:"\u044D",edot:"\u0117",ee:"\u2147",efDot:"\u2252",efr:"\u{1D522}",eg:"\u2A9A",egrav:"\xE8",egrave:"\xE8",egs:"\u2A96",egsdot:"\u2A98",el:"\u2A99",elinters:"\u23E7",ell:"\u2113",els:"\u2A95",elsdot:"\u2A97",emacr:"\u0113",empty:"\u2205",emptyset:"\u2205",emptyv:"\u2205",emsp13:"\u2004",emsp14:"\u2005",emsp:"\u2003",eng:"\u014B",ensp:"\u2002",eogon:"\u0119",eopf:"\u{1D556}",epar:"\u22D5",eparsl:"\u29E3",eplus:"\u2A71",epsi:"\u03B5",epsilon:"\u03B5",epsiv:"\u03F5",eqcirc:"\u2256",eqcolon:"\u2255",eqsim:"\u2242",eqslantgtr:"\u2A96",eqslantless:"\u2A95",equals:"=",equest:"\u225F",equiv:"\u2261",equivDD:"\u2A78",eqvparsl:"\u29E5",erDot:"\u2253",erarr:"\u2971",escr:"\u212F",esdot:"\u2250",esim:"\u2242",eta:"\u03B7",et:"\xF0",eth:"\xF0",eum:"\xEB",euml:"\xEB",euro:"\u20AC",excl:"!",exist:"\u2203",expectation:"\u2130",exponentiale:"\u2147",fallingdotseq:"\u2252",fcy:"\u0444",female:"\u2640",ffilig:"\uFB03",fflig:"\uFB00",ffllig:"\uFB04",ffr:"\u{1D523}",filig:"\uFB01",fjlig:"fj",flat:"\u266D",fllig:"\uFB02",fltns:"\u25B1",fnof:"\u0192",fopf:"\u{1D557}",forall:"\u2200",fork:"\u22D4",forkv:"\u2AD9",fpartint:"\u2A0D",frac1:"\xBC",frac12:"\xBD",frac13:"\u2153",frac14:"\xBC",frac15:"\u2155",frac16:"\u2159",frac18:"\u215B",frac23:"\u2154",frac25:"\u2156",frac3:"\xBE",frac34:"\xBE",frac35:"\u2157",frac38:"\u215C",frac45:"\u2158",frac56:"\u215A",frac58:"\u215D",frac78:"\u215E",frasl:"\u2044",frown:"\u2322",fscr:"\u{1D4BB}",gE:"\u2267",gEl:"\u2A8C",gacute:"\u01F5",gamma:"\u03B3",gammad:"\u03DD",gap:"\u2A86",gbreve:"\u011F",gcirc:"\u011D",gcy:"\u0433",gdot:"\u0121",ge:"\u2265",gel:"\u22DB",geq:"\u2265",geqq:"\u2267",geqslant:"\u2A7E",ges:"\u2A7E",gescc:"\u2AA9",gesdot:"\u2A80",gesdoto:"\u2A82",gesdotol:"\u2A84",gesl:"\u22DB\uFE00",gesles:"\u2A94",gfr:"\u{1D524}",gg:"\u226B",ggg:"\u22D9",gimel:"\u2137",gjcy:"\u0453",gl:"\u2277",glE:"\u2A92",gla:"\u2AA5",glj:"\u2AA4",gnE:"\u2269",gnap:"\u2A8A",gnapprox:"\u2A8A",gne:"\u2A88",gneq:"\u2A88",gneqq:"\u2269",gnsim:"\u22E7",gopf:"\u{1D558}",grave:"`",gscr:"\u210A",gsim:"\u2273",gsime:"\u2A8E",gsiml:"\u2A90",g:">",gt:">",gtcc:"\u2AA7",gtcir:"\u2A7A",gtdot:"\u22D7",gtlPar:"\u2995",gtquest:"\u2A7C",gtrapprox:"\u2A86",gtrarr:"\u2978",gtrdot:"\u22D7",gtreqless:"\u22DB",gtreqqless:"\u2A8C",gtrless:"\u2277",gtrsim:"\u2273",gvertneqq:"\u2269\uFE00",gvnE:"\u2269\uFE00",hArr:"\u21D4",hairsp:"\u200A",half:"\xBD",hamilt:"\u210B",hardcy:"\u044A",harr:"\u2194",harrcir:"\u2948",harrw:"\u21AD",hbar:"\u210F",hcirc:"\u0125",hearts:"\u2665",heartsuit:"\u2665",hellip:"\u2026",hercon:"\u22B9",hfr:"\u{1D525}",hksearow:"\u2925",hkswarow:"\u2926",hoarr:"\u21FF",homtht:"\u223B",hookleftarrow:"\u21A9",hookrightarrow:"\u21AA",hopf:"\u{1D559}",horbar:"\u2015",hscr:"\u{1D4BD}",hslash:"\u210F",hstrok:"\u0127",hybull:"\u2043",hyphen:"\u2010",iacut:"\xED",iacute:"\xED",ic:"\u2063",icir:"\xEE",icirc:"\xEE",icy:"\u0438",iecy:"\u0435",iexc:"\xA1",iexcl:"\xA1",iff:"\u21D4",ifr:"\u{1D526}",igrav:"\xEC",igrave:"\xEC",ii:"\u2148",iiiint:"\u2A0C",iiint:"\u222D",iinfin:"\u29DC",iiota:"\u2129",ijlig:"\u0133",imacr:"\u012B",image:"\u2111",imagline:"\u2110",imagpart:"\u2111",imath:"\u0131",imof:"\u22B7",imped:"\u01B5",in:"\u2208",incare:"\u2105",infin:"\u221E",infintie:"\u29DD",inodot:"\u0131",int:"\u222B",intcal:"\u22BA",integers:"\u2124",intercal:"\u22BA",intlarhk:"\u2A17",intprod:"\u2A3C",iocy:"\u0451",iogon:"\u012F",iopf:"\u{1D55A}",iota:"\u03B9",iprod:"\u2A3C",iques:"\xBF",iquest:"\xBF",iscr:"\u{1D4BE}",isin:"\u2208",isinE:"\u22F9",isindot:"\u22F5",isins:"\u22F4",isinsv:"\u22F3",isinv:"\u2208",it:"\u2062",itilde:"\u0129",iukcy:"\u0456",ium:"\xEF",iuml:"\xEF",jcirc:"\u0135",jcy:"\u0439",jfr:"\u{1D527}",jmath:"\u0237",jopf:"\u{1D55B}",jscr:"\u{1D4BF}",jsercy:"\u0458",jukcy:"\u0454",kappa:"\u03BA",kappav:"\u03F0",kcedil:"\u0137",kcy:"\u043A",kfr:"\u{1D528}",kgreen:"\u0138",khcy:"\u0445",kjcy:"\u045C",kopf:"\u{1D55C}",kscr:"\u{1D4C0}",lAarr:"\u21DA",lArr:"\u21D0",lAtail:"\u291B",lBarr:"\u290E",lE:"\u2266",lEg:"\u2A8B",lHar:"\u2962",lacute:"\u013A",laemptyv:"\u29B4",lagran:"\u2112",lambda:"\u03BB",lang:"\u27E8",langd:"\u2991",langle:"\u27E8",lap:"\u2A85",laqu:"\xAB",laquo:"\xAB",larr:"\u2190",larrb:"\u21E4",larrbfs:"\u291F",larrfs:"\u291D",larrhk:"\u21A9",larrlp:"\u21AB",larrpl:"\u2939",larrsim:"\u2973",larrtl:"\u21A2",lat:"\u2AAB",latail:"\u2919",late:"\u2AAD",lates:"\u2AAD\uFE00",lbarr:"\u290C",lbbrk:"\u2772",lbrace:"{",lbrack:"[",lbrke:"\u298B",lbrksld:"\u298F",lbrkslu:"\u298D",lcaron:"\u013E",lcedil:"\u013C",lceil:"\u2308",lcub:"{",lcy:"\u043B",ldca:"\u2936",ldquo:"\u201C",ldquor:"\u201E",ldrdhar:"\u2967",ldrushar:"\u294B",ldsh:"\u21B2",le:"\u2264",leftarrow:"\u2190",leftarrowtail:"\u21A2",leftharpoondown:"\u21BD",leftharpoonup:"\u21BC",leftleftarrows:"\u21C7",leftrightarrow:"\u2194",leftrightarrows:"\u21C6",leftrightharpoons:"\u21CB",leftrightsquigarrow:"\u21AD",leftthreetimes:"\u22CB",leg:"\u22DA",leq:"\u2264",leqq:"\u2266",leqslant:"\u2A7D",les:"\u2A7D",lescc:"\u2AA8",lesdot:"\u2A7F",lesdoto:"\u2A81",lesdotor:"\u2A83",lesg:"\u22DA\uFE00",lesges:"\u2A93",lessapprox:"\u2A85",lessdot:"\u22D6",lesseqgtr:"\u22DA",lesseqqgtr:"\u2A8B",lessgtr:"\u2276",lesssim:"\u2272",lfisht:"\u297C",lfloor:"\u230A",lfr:"\u{1D529}",lg:"\u2276",lgE:"\u2A91",lhard:"\u21BD",lharu:"\u21BC",lharul:"\u296A",lhblk:"\u2584",ljcy:"\u0459",ll:"\u226A",llarr:"\u21C7",llcorner:"\u231E",llhard:"\u296B",lltri:"\u25FA",lmidot:"\u0140",lmoust:"\u23B0",lmoustache:"\u23B0",lnE:"\u2268",lnap:"\u2A89",lnapprox:"\u2A89",lne:"\u2A87",lneq:"\u2A87",lneqq:"\u2268",lnsim:"\u22E6",loang:"\u27EC",loarr:"\u21FD",lobrk:"\u27E6",longleftarrow:"\u27F5",longleftrightarrow:"\u27F7",longmapsto:"\u27FC",longrightarrow:"\u27F6",looparrowleft:"\u21AB",looparrowright:"\u21AC",lopar:"\u2985",lopf:"\u{1D55D}",loplus:"\u2A2D",lotimes:"\u2A34",lowast:"\u2217",lowbar:"_",loz:"\u25CA",lozenge:"\u25CA",lozf:"\u29EB",lpar:"(",lparlt:"\u2993",lrarr:"\u21C6",lrcorner:"\u231F",lrhar:"\u21CB",lrhard:"\u296D",lrm:"\u200E",lrtri:"\u22BF",lsaquo:"\u2039",lscr:"\u{1D4C1}",lsh:"\u21B0",lsim:"\u2272",lsime:"\u2A8D",lsimg:"\u2A8F",lsqb:"[",lsquo:"\u2018",lsquor:"\u201A",lstrok:"\u0142",l:"<",lt:"<",ltcc:"\u2AA6",ltcir:"\u2A79",ltdot:"\u22D6",lthree:"\u22CB",ltimes:"\u22C9",ltlarr:"\u2976",ltquest:"\u2A7B",ltrPar:"\u2996",ltri:"\u25C3",ltrie:"\u22B4",ltrif:"\u25C2",lurdshar:"\u294A",luruhar:"\u2966",lvertneqq:"\u2268\uFE00",lvnE:"\u2268\uFE00",mDDot:"\u223A",mac:"\xAF",macr:"\xAF",male:"\u2642",malt:"\u2720",maltese:"\u2720",map:"\u21A6",mapsto:"\u21A6",mapstodown:"\u21A7",mapstoleft:"\u21A4",mapstoup:"\u21A5",marker:"\u25AE",mcomma:"\u2A29",mcy:"\u043C",mdash:"\u2014",measuredangle:"\u2221",mfr:"\u{1D52A}",mho:"\u2127",micr:"\xB5",micro:"\xB5",mid:"\u2223",midast:"*",midcir:"\u2AF0",middo:"\xB7",middot:"\xB7",minus:"\u2212",minusb:"\u229F",minusd:"\u2238",minusdu:"\u2A2A",mlcp:"\u2ADB",mldr:"\u2026",mnplus:"\u2213",models:"\u22A7",mopf:"\u{1D55E}",mp:"\u2213",mscr:"\u{1D4C2}",mstpos:"\u223E",mu:"\u03BC",multimap:"\u22B8",mumap:"\u22B8",nGg:"\u22D9\u0338",nGt:"\u226B\u20D2",nGtv:"\u226B\u0338",nLeftarrow:"\u21CD",nLeftrightarrow:"\u21CE",nLl:"\u22D8\u0338",nLt:"\u226A\u20D2",nLtv:"\u226A\u0338",nRightarrow:"\u21CF",nVDash:"\u22AF",nVdash:"\u22AE",nabla:"\u2207",nacute:"\u0144",nang:"\u2220\u20D2",nap:"\u2249",napE:"\u2A70\u0338",napid:"\u224B\u0338",napos:"\u0149",napprox:"\u2249",natur:"\u266E",natural:"\u266E",naturals:"\u2115",nbs:"\xA0",nbsp:"\xA0",nbump:"\u224E\u0338",nbumpe:"\u224F\u0338",ncap:"\u2A43",ncaron:"\u0148",ncedil:"\u0146",ncong:"\u2247",ncongdot:"\u2A6D\u0338",ncup:"\u2A42",ncy:"\u043D",ndash:"\u2013",ne:"\u2260",neArr:"\u21D7",nearhk:"\u2924",nearr:"\u2197",nearrow:"\u2197",nedot:"\u2250\u0338",nequiv:"\u2262",nesear:"\u2928",nesim:"\u2242\u0338",nexist:"\u2204",nexists:"\u2204",nfr:"\u{1D52B}",ngE:"\u2267\u0338",nge:"\u2271",ngeq:"\u2271",ngeqq:"\u2267\u0338",ngeqslant:"\u2A7E\u0338",nges:"\u2A7E\u0338",ngsim:"\u2275",ngt:"\u226F",ngtr:"\u226F",nhArr:"\u21CE",nharr:"\u21AE",nhpar:"\u2AF2",ni:"\u220B",nis:"\u22FC",nisd:"\u22FA",niv:"\u220B",njcy:"\u045A",nlArr:"\u21CD",nlE:"\u2266\u0338",nlarr:"\u219A",nldr:"\u2025",nle:"\u2270",nleftarrow:"\u219A",nleftrightarrow:"\u21AE",nleq:"\u2270",nleqq:"\u2266\u0338",nleqslant:"\u2A7D\u0338",nles:"\u2A7D\u0338",nless:"\u226E",nlsim:"\u2274",nlt:"\u226E",nltri:"\u22EA",nltrie:"\u22EC",nmid:"\u2224",nopf:"\u{1D55F}",no:"\xAC",not:"\xAC",notin:"\u2209",notinE:"\u22F9\u0338",notindot:"\u22F5\u0338",notinva:"\u2209",notinvb:"\u22F7",notinvc:"\u22F6",notni:"\u220C",notniva:"\u220C",notnivb:"\u22FE",notnivc:"\u22FD",npar:"\u2226",nparallel:"\u2226",nparsl:"\u2AFD\u20E5",npart:"\u2202\u0338",npolint:"\u2A14",npr:"\u2280",nprcue:"\u22E0",npre:"\u2AAF\u0338",nprec:"\u2280",npreceq:"\u2AAF\u0338",nrArr:"\u21CF",nrarr:"\u219B",nrarrc:"\u2933\u0338",nrarrw:"\u219D\u0338",nrightarrow:"\u219B",nrtri:"\u22EB",nrtrie:"\u22ED",nsc:"\u2281",nsccue:"\u22E1",nsce:"\u2AB0\u0338",nscr:"\u{1D4C3}",nshortmid:"\u2224",nshortparallel:"\u2226",nsim:"\u2241",nsime:"\u2244",nsimeq:"\u2244",nsmid:"\u2224",nspar:"\u2226",nsqsube:"\u22E2",nsqsupe:"\u22E3",nsub:"\u2284",nsubE:"\u2AC5\u0338",nsube:"\u2288",nsubset:"\u2282\u20D2",nsubseteq:"\u2288",nsubseteqq:"\u2AC5\u0338",nsucc:"\u2281",nsucceq:"\u2AB0\u0338",nsup:"\u2285",nsupE:"\u2AC6\u0338",nsupe:"\u2289",nsupset:"\u2283\u20D2",nsupseteq:"\u2289",nsupseteqq:"\u2AC6\u0338",ntgl:"\u2279",ntild:"\xF1",ntilde:"\xF1",ntlg:"\u2278",ntriangleleft:"\u22EA",ntrianglelefteq:"\u22EC",ntriangleright:"\u22EB",ntrianglerighteq:"\u22ED",nu:"\u03BD",num:"#",numero:"\u2116",numsp:"\u2007",nvDash:"\u22AD",nvHarr:"\u2904",nvap:"\u224D\u20D2",nvdash:"\u22AC",nvge:"\u2265\u20D2",nvgt:">\u20D2",nvinfin:"\u29DE",nvlArr:"\u2902",nvle:"\u2264\u20D2",nvlt:"<\u20D2",nvltrie:"\u22B4\u20D2",nvrArr:"\u2903",nvrtrie:"\u22B5\u20D2",nvsim:"\u223C\u20D2",nwArr:"\u21D6",nwarhk:"\u2923",nwarr:"\u2196",nwarrow:"\u2196",nwnear:"\u2927",oS:"\u24C8",oacut:"\xF3",oacute:"\xF3",oast:"\u229B",ocir:"\xF4",ocirc:"\xF4",ocy:"\u043E",odash:"\u229D",odblac:"\u0151",odiv:"\u2A38",odot:"\u2299",odsold:"\u29BC",oelig:"\u0153",ofcir:"\u29BF",ofr:"\u{1D52C}",ogon:"\u02DB",ograv:"\xF2",ograve:"\xF2",ogt:"\u29C1",ohbar:"\u29B5",ohm:"\u03A9",oint:"\u222E",olarr:"\u21BA",olcir:"\u29BE",olcross:"\u29BB",oline:"\u203E",olt:"\u29C0",omacr:"\u014D",omega:"\u03C9",omicron:"\u03BF",omid:"\u29B6",ominus:"\u2296",oopf:"\u{1D560}",opar:"\u29B7",operp:"\u29B9",oplus:"\u2295",or:"\u2228",orarr:"\u21BB",ord:"\xBA",order:"\u2134",orderof:"\u2134",ordf:"\xAA",ordm:"\xBA",origof:"\u22B6",oror:"\u2A56",orslope:"\u2A57",orv:"\u2A5B",oscr:"\u2134",oslas:"\xF8",oslash:"\xF8",osol:"\u2298",otild:"\xF5",otilde:"\xF5",otimes:"\u2297",otimesas:"\u2A36",oum:"\xF6",ouml:"\xF6",ovbar:"\u233D",par:"\xB6",para:"\xB6",parallel:"\u2225",parsim:"\u2AF3",parsl:"\u2AFD",part:"\u2202",pcy:"\u043F",percnt:"%",period:".",permil:"\u2030",perp:"\u22A5",pertenk:"\u2031",pfr:"\u{1D52D}",phi:"\u03C6",phiv:"\u03D5",phmmat:"\u2133",phone:"\u260E",pi:"\u03C0",pitchfork:"\u22D4",piv:"\u03D6",planck:"\u210F",planckh:"\u210E",plankv:"\u210F",plus:"+",plusacir:"\u2A23",plusb:"\u229E",pluscir:"\u2A22",plusdo:"\u2214",plusdu:"\u2A25",pluse:"\u2A72",plusm:"\xB1",plusmn:"\xB1",plussim:"\u2A26",plustwo:"\u2A27",pm:"\xB1",pointint:"\u2A15",popf:"\u{1D561}",poun:"\xA3",pound:"\xA3",pr:"\u227A",prE:"\u2AB3",prap:"\u2AB7",prcue:"\u227C",pre:"\u2AAF",prec:"\u227A",precapprox:"\u2AB7",preccurlyeq:"\u227C",preceq:"\u2AAF",precnapprox:"\u2AB9",precneqq:"\u2AB5",precnsim:"\u22E8",precsim:"\u227E",prime:"\u2032",primes:"\u2119",prnE:"\u2AB5",prnap:"\u2AB9",prnsim:"\u22E8",prod:"\u220F",profalar:"\u232E",profline:"\u2312",profsurf:"\u2313",prop:"\u221D",propto:"\u221D",prsim:"\u227E",prurel:"\u22B0",pscr:"\u{1D4C5}",psi:"\u03C8",puncsp:"\u2008",qfr:"\u{1D52E}",qint:"\u2A0C",qopf:"\u{1D562}",qprime:"\u2057",qscr:"\u{1D4C6}",quaternions:"\u210D",quatint:"\u2A16",quest:"?",questeq:"\u225F",quo:'"',quot:'"',rAarr:"\u21DB",rArr:"\u21D2",rAtail:"\u291C",rBarr:"\u290F",rHar:"\u2964",race:"\u223D\u0331",racute:"\u0155",radic:"\u221A",raemptyv:"\u29B3",rang:"\u27E9",rangd:"\u2992",range:"\u29A5",rangle:"\u27E9",raqu:"\xBB",raquo:"\xBB",rarr:"\u2192",rarrap:"\u2975",rarrb:"\u21E5",rarrbfs:"\u2920",rarrc:"\u2933",rarrfs:"\u291E",rarrhk:"\u21AA",rarrlp:"\u21AC",rarrpl:"\u2945",rarrsim:"\u2974",rarrtl:"\u21A3",rarrw:"\u219D",ratail:"\u291A",ratio:"\u2236",rationals:"\u211A",rbarr:"\u290D",rbbrk:"\u2773",rbrace:"}",rbrack:"]",rbrke:"\u298C",rbrksld:"\u298E",rbrkslu:"\u2990",rcaron:"\u0159",rcedil:"\u0157",rceil:"\u2309",rcub:"}",rcy:"\u0440",rdca:"\u2937",rdldhar:"\u2969",rdquo:"\u201D",rdquor:"\u201D",rdsh:"\u21B3",real:"\u211C",realine:"\u211B",realpart:"\u211C",reals:"\u211D",rect:"\u25AD",re:"\xAE",reg:"\xAE",rfisht:"\u297D",rfloor:"\u230B",rfr:"\u{1D52F}",rhard:"\u21C1",rharu:"\u21C0",rharul:"\u296C",rho:"\u03C1",rhov:"\u03F1",rightarrow:"\u2192",rightarrowtail:"\u21A3",rightharpoondown:"\u21C1",rightharpoonup:"\u21C0",rightleftarrows:"\u21C4",rightleftharpoons:"\u21CC",rightrightarrows:"\u21C9",rightsquigarrow:"\u219D",rightthreetimes:"\u22CC",ring:"\u02DA",risingdotseq:"\u2253",rlarr:"\u21C4",rlhar:"\u21CC",rlm:"\u200F",rmoust:"\u23B1",rmoustache:"\u23B1",rnmid:"\u2AEE",roang:"\u27ED",roarr:"\u21FE",robrk:"\u27E7",ropar:"\u2986",ropf:"\u{1D563}",roplus:"\u2A2E",rotimes:"\u2A35",rpar:")",rpargt:"\u2994",rppolint:"\u2A12",rrarr:"\u21C9",rsaquo:"\u203A",rscr:"\u{1D4C7}",rsh:"\u21B1",rsqb:"]",rsquo:"\u2019",rsquor:"\u2019",rthree:"\u22CC",rtimes:"\u22CA",rtri:"\u25B9",rtrie:"\u22B5",rtrif:"\u25B8",rtriltri:"\u29CE",ruluhar:"\u2968",rx:"\u211E",sacute:"\u015B",sbquo:"\u201A",sc:"\u227B",scE:"\u2AB4",scap:"\u2AB8",scaron:"\u0161",sccue:"\u227D",sce:"\u2AB0",scedil:"\u015F",scirc:"\u015D",scnE:"\u2AB6",scnap:"\u2ABA",scnsim:"\u22E9",scpolint:"\u2A13",scsim:"\u227F",scy:"\u0441",sdot:"\u22C5",sdotb:"\u22A1",sdote:"\u2A66",seArr:"\u21D8",searhk:"\u2925",searr:"\u2198",searrow:"\u2198",sec:"\xA7",sect:"\xA7",semi:";",seswar:"\u2929",setminus:"\u2216",setmn:"\u2216",sext:"\u2736",sfr:"\u{1D530}",sfrown:"\u2322",sharp:"\u266F",shchcy:"\u0449",shcy:"\u0448",shortmid:"\u2223",shortparallel:"\u2225",sh:"\xAD",shy:"\xAD",sigma:"\u03C3",sigmaf:"\u03C2",sigmav:"\u03C2",sim:"\u223C",simdot:"\u2A6A",sime:"\u2243",simeq:"\u2243",simg:"\u2A9E",simgE:"\u2AA0",siml:"\u2A9D",simlE:"\u2A9F",simne:"\u2246",simplus:"\u2A24",simrarr:"\u2972",slarr:"\u2190",smallsetminus:"\u2216",smashp:"\u2A33",smeparsl:"\u29E4",smid:"\u2223",smile:"\u2323",smt:"\u2AAA",smte:"\u2AAC",smtes:"\u2AAC\uFE00",softcy:"\u044C",sol:"/",solb:"\u29C4",solbar:"\u233F",sopf:"\u{1D564}",spades:"\u2660",spadesuit:"\u2660",spar:"\u2225",sqcap:"\u2293",sqcaps:"\u2293\uFE00",sqcup:"\u2294",sqcups:"\u2294\uFE00",sqsub:"\u228F",sqsube:"\u2291",sqsubset:"\u228F",sqsubseteq:"\u2291",sqsup:"\u2290",sqsupe:"\u2292",sqsupset:"\u2290",sqsupseteq:"\u2292",squ:"\u25A1",square:"\u25A1",squarf:"\u25AA",squf:"\u25AA",srarr:"\u2192",sscr:"\u{1D4C8}",ssetmn:"\u2216",ssmile:"\u2323",sstarf:"\u22C6",star:"\u2606",starf:"\u2605",straightepsilon:"\u03F5",straightphi:"\u03D5",strns:"\xAF",sub:"\u2282",subE:"\u2AC5",subdot:"\u2ABD",sube:"\u2286",subedot:"\u2AC3",submult:"\u2AC1",subnE:"\u2ACB",subne:"\u228A",subplus:"\u2ABF",subrarr:"\u2979",subset:"\u2282",subseteq:"\u2286",subseteqq:"\u2AC5",subsetneq:"\u228A",subsetneqq:"\u2ACB",subsim:"\u2AC7",subsub:"\u2AD5",subsup:"\u2AD3",succ:"\u227B",succapprox:"\u2AB8",succcurlyeq:"\u227D",succeq:"\u2AB0",succnapprox:"\u2ABA",succneqq:"\u2AB6",succnsim:"\u22E9",succsim:"\u227F",sum:"\u2211",sung:"\u266A",sup:"\u2283",sup1:"\xB9",sup2:"\xB2",sup3:"\xB3",supE:"\u2AC6",supdot:"\u2ABE",supdsub:"\u2AD8",supe:"\u2287",supedot:"\u2AC4",suphsol:"\u27C9",suphsub:"\u2AD7",suplarr:"\u297B",supmult:"\u2AC2",supnE:"\u2ACC",supne:"\u228B",supplus:"\u2AC0",supset:"\u2283",supseteq:"\u2287",supseteqq:"\u2AC6",supsetneq:"\u228B",supsetneqq:"\u2ACC",supsim:"\u2AC8",supsub:"\u2AD4",supsup:"\u2AD6",swArr:"\u21D9",swarhk:"\u2926",swarr:"\u2199",swarrow:"\u2199",swnwar:"\u292A",szli:"\xDF",szlig:"\xDF",target:"\u2316",tau:"\u03C4",tbrk:"\u23B4",tcaron:"\u0165",tcedil:"\u0163",tcy:"\u0442",tdot:"\u20DB",telrec:"\u2315",tfr:"\u{1D531}",there4:"\u2234",therefore:"\u2234",theta:"\u03B8",thetasym:"\u03D1",thetav:"\u03D1",thickapprox:"\u2248",thicksim:"\u223C",thinsp:"\u2009",thkap:"\u2248",thksim:"\u223C",thor:"\xFE",thorn:"\xFE",tilde:"\u02DC",time:"\xD7",times:"\xD7",timesb:"\u22A0",timesbar:"\u2A31",timesd:"\u2A30",tint:"\u222D",toea:"\u2928",top:"\u22A4",topbot:"\u2336",topcir:"\u2AF1",topf:"\u{1D565}",topfork:"\u2ADA",tosa:"\u2929",tprime:"\u2034",trade:"\u2122",triangle:"\u25B5",triangledown:"\u25BF",triangleleft:"\u25C3",trianglelefteq:"\u22B4",triangleq:"\u225C",triangleright:"\u25B9",trianglerighteq:"\u22B5",tridot:"\u25EC",trie:"\u225C",triminus:"\u2A3A",triplus:"\u2A39",trisb:"\u29CD",tritime:"\u2A3B",trpezium:"\u23E2",tscr:"\u{1D4C9}",tscy:"\u0446",tshcy:"\u045B",tstrok:"\u0167",twixt:"\u226C",twoheadleftarrow:"\u219E",twoheadrightarrow:"\u21A0",uArr:"\u21D1",uHar:"\u2963",uacut:"\xFA",uacute:"\xFA",uarr:"\u2191",ubrcy:"\u045E",ubreve:"\u016D",ucir:"\xFB",ucirc:"\xFB",ucy:"\u0443",udarr:"\u21C5",udblac:"\u0171",udhar:"\u296E",ufisht:"\u297E",ufr:"\u{1D532}",ugrav:"\xF9",ugrave:"\xF9",uharl:"\u21BF",uharr:"\u21BE",uhblk:"\u2580",ulcorn:"\u231C",ulcorner:"\u231C",ulcrop:"\u230F",ultri:"\u25F8",umacr:"\u016B",um:"\xA8",uml:"\xA8",uogon:"\u0173",uopf:"\u{1D566}",uparrow:"\u2191",updownarrow:"\u2195",upharpoonleft:"\u21BF",upharpoonright:"\u21BE",uplus:"\u228E",upsi:"\u03C5",upsih:"\u03D2",upsilon:"\u03C5",upuparrows:"\u21C8",urcorn:"\u231D",urcorner:"\u231D",urcrop:"\u230E",uring:"\u016F",urtri:"\u25F9",uscr:"\u{1D4CA}",utdot:"\u22F0",utilde:"\u0169",utri:"\u25B5",utrif:"\u25B4",uuarr:"\u21C8",uum:"\xFC",uuml:"\xFC",uwangle:"\u29A7",vArr:"\u21D5",vBar:"\u2AE8",vBarv:"\u2AE9",vDash:"\u22A8",vangrt:"\u299C",varepsilon:"\u03F5",varkappa:"\u03F0",varnothing:"\u2205",varphi:"\u03D5",varpi:"\u03D6",varpropto:"\u221D",varr:"\u2195",varrho:"\u03F1",varsigma:"\u03C2",varsubsetneq:"\u228A\uFE00",varsubsetneqq:"\u2ACB\uFE00",varsupsetneq:"\u228B\uFE00",varsupsetneqq:"\u2ACC\uFE00",vartheta:"\u03D1",vartriangleleft:"\u22B2",vartriangleright:"\u22B3",vcy:"\u0432",vdash:"\u22A2",vee:"\u2228",veebar:"\u22BB",veeeq:"\u225A",vellip:"\u22EE",verbar:"|",vert:"|",vfr:"\u{1D533}",vltri:"\u22B2",vnsub:"\u2282\u20D2",vnsup:"\u2283\u20D2",vopf:"\u{1D567}",vprop:"\u221D",vrtri:"\u22B3",vscr:"\u{1D4CB}",vsubnE:"\u2ACB\uFE00",vsubne:"\u228A\uFE00",vsupnE:"\u2ACC\uFE00",vsupne:"\u228B\uFE00",vzigzag:"\u299A",wcirc:"\u0175",wedbar:"\u2A5F",wedge:"\u2227",wedgeq:"\u2259",weierp:"\u2118",wfr:"\u{1D534}",wopf:"\u{1D568}",wp:"\u2118",wr:"\u2240",wreath:"\u2240",wscr:"\u{1D4CC}",xcap:"\u22C2",xcirc:"\u25EF",xcup:"\u22C3",xdtri:"\u25BD",xfr:"\u{1D535}",xhArr:"\u27FA",xharr:"\u27F7",xi:"\u03BE",xlArr:"\u27F8",xlarr:"\u27F5",xmap:"\u27FC",xnis:"\u22FB",xodot:"\u2A00",xopf:"\u{1D569}",xoplus:"\u2A01",xotime:"\u2A02",xrArr:"\u27F9",xrarr:"\u27F6",xscr:"\u{1D4CD}",xsqcup:"\u2A06",xuplus:"\u2A04",xutri:"\u25B3",xvee:"\u22C1",xwedge:"\u22C0",yacut:"\xFD",yacute:"\xFD",yacy:"\u044F",ycirc:"\u0177",ycy:"\u044B",ye:"\xA5",yen:"\xA5",yfr:"\u{1D536}",yicy:"\u0457",yopf:"\u{1D56A}",yscr:"\u{1D4CE}",yucy:"\u044E",yum:"\xFF",yuml:"\xFF",zacute:"\u017A",zcaron:"\u017E",zcy:"\u0437",zdot:"\u017C",zeetrf:"\u2128",zeta:"\u03B6",zfr:"\u{1D537}",zhcy:"\u0436",zigrarr:"\u21DD",zopf:"\u{1D56B}",zscr:"\u{1D4CF}",zwj:"\u200D",zwnj:"\u200C"}});var Iu=x((pv,Pu)=>{"use strict";var Nu=qu();Pu.exports=RD;var LD={}.hasOwnProperty;function RD(e){return LD.call(Nu,e)?Nu[e]:!1}});var mr=x((hv,Hu)=>{"use strict";var Su=xu(),Lu=yu(),MD=Se(),UD=Tu(),Yu=Ou(),YD=Iu();Hu.exports=ep;var GD={}.hasOwnProperty,He=String.fromCharCode,zD=Function.prototype,Ru={warning:null,reference:null,text:null,warningContext:null,referenceContext:null,textContext:null,position:{},additional:null,attribute:!1,nonTerminated:!0},WD=9,Mu=10,VD=12,jD=32,Uu=38,$D=59,HD=60,KD=61,XD=35,JD=88,QD=120,ZD=65533,Ke="named",Wt="hexadecimal",Vt="decimal",jt={};jt[Wt]=16;jt[Vt]=10;var Hr={};Hr[Ke]=Yu;Hr[Vt]=MD;Hr[Wt]=UD;var Gu=1,zu=2,Wu=3,Vu=4,ju=5,zt=6,$u=7,we={};we[Gu]="Named character references must be terminated by a semicolon";we[zu]="Numeric character references must be terminated by a semicolon";we[Wu]="Named character references cannot be empty";we[Vu]="Numeric character references cannot be empty";we[ju]="Named character references must be known";we[zt]="Numeric character references cannot be disallowed";we[$u]="Numeric character references cannot be outside the permissible Unicode range";function ep(e,r){var t={},n,i;r||(r={});for(i in Ru)n=r[i],t[i]=n??Ru[i];return(t.position.indent||t.position.start)&&(t.indent=t.position.indent||[],t.position=t.position.start),rp(e,t)}function rp(e,r){var t=r.additional,n=r.nonTerminated,i=r.text,u=r.reference,a=r.warning,o=r.textContext,s=r.referenceContext,l=r.warningContext,c=r.position,f=r.indent||[],D=e.length,m=0,p=-1,h=c.column||1,F=c.line||1,g="",E=[],v,A,b,d,y,w,C,k,T,B,_,S,P,N,O,I,le,K,L;for(typeof t=="string"&&(t=t.charCodeAt(0)),I=ie(),k=a?Z:zD,m--,D++;++m<D;)if(y===Mu&&(h=f[p]||1),y=e.charCodeAt(m),y===Uu){if(C=e.charCodeAt(m+1),C===WD||C===Mu||C===VD||C===jD||C===Uu||C===HD||C!==C||t&&C===t){g+=He(y),h++;continue}for(P=m+1,S=P,L=P,C===XD?(L=++S,C=e.charCodeAt(L),C===JD||C===QD?(N=Wt,L=++S):N=Vt):N=Ke,v="",_="",d="",O=Hr[N],L--;++L<D&&(C=e.charCodeAt(L),!!O(C));)d+=He(C),N===Ke&&GD.call(Su,d)&&(v=d,_=Su[d]);b=e.charCodeAt(L)===$D,b&&(L++,A=N===Ke?YD(d):!1,A&&(v=d,_=A)),K=1+L-P,!b&&!n||(d?N===Ke?(b&&!_?k(ju,1):(v!==d&&(L=S+v.length,K=1+L-S,b=!1),b||(T=v?Gu:Wu,r.attribute?(C=e.charCodeAt(L),C===KD?(k(T,K),_=null):Yu(C)?_=null:k(T,K)):k(T,K))),w=_):(b||k(zu,K),w=parseInt(d,jt[N]),tp(w)?(k($u,K),w=He(ZD)):w in Lu?(k(zt,K),w=Lu[w]):(B="",np(w)&&k(zt,K),w>65535&&(w-=65536,B+=He(w>>>10|55296),w=56320|w&1023),w=B+He(w))):N!==Ke&&k(Vu,K)),w?(ve(),I=ie(),m=L-1,h+=L-P+1,E.push(w),le=ie(),le.offset++,u&&u.call(s,w,{start:I,end:le},e.slice(P-1,L)),I=le):(d=e.slice(P-1,L),g+=d,h+=d.length,m=L-1)}else y===10&&(F++,p++,h=0),y===y?(g+=He(y),h++):ve();return E.join("");function ie(){return{line:F,column:h,offset:m+(c.offset||0)}}function Z(Ae,G){var mt=ie();mt.column+=G,mt.offset+=G,a.call(l,we[Ae],mt,Ae)}function ve(){g&&(E.push(g),i&&i.call(o,g,{start:I,end:ie()}),g="")}}function tp(e){return e>=55296&&e<=57343||e>1114111}function np(e){return e>=1&&e<=8||e===11||e>=13&&e<=31||e>=127&&e<=159||e>=64976&&e<=65007||(e&65535)===65535||(e&65535)===65534}});var Ju=x((dv,Xu)=>{"use strict";var ip=Ie(),Ku=mr();Xu.exports=up;function up(e){return t.raw=n,t;function r(u){for(var a=e.offset,o=u.line,s=[];++o&&o in a;)s.push((a[o]||0)+1);return{start:u,indent:s}}function t(u,a,o){Ku(u,{position:r(a),warning:i,text:o,reference:o,textContext:e,referenceContext:e})}function n(u,a,o){return Ku(u,ip(o,{position:r(a),warning:i}))}function i(u,a,o){o!==3&&e.file.message(u,a)}}});var ea=x((mv,Zu)=>{"use strict";Zu.exports=ap;function ap(e){return r;function r(t,n){var i=this,u=i.offset,a=[],o=i[e+"Methods"],s=i[e+"Tokenizers"],l=n.line,c=n.column,f,D,m,p,h,F;if(!t)return a;for(w.now=v,w.file=i.file,g("");t;){for(f=-1,D=o.length,h=!1;++f<D&&(p=o[f],m=s[p],!(m&&(!m.onlyAtStart||i.atStart)&&(!m.notInList||!i.inList)&&(!m.notInBlock||!i.inBlock)&&(!m.notInLink||!i.inLink)&&(F=t.length,m.apply(i,[w,t]),h=F!==t.length,h))););h||i.file.fail(new Error("Infinite loop"),w.now())}return i.eof=v(),a;function g(C){for(var k=-1,T=C.indexOf(`
+`);T!==-1;)l++,k=T,T=C.indexOf(`
+`,T+1);k===-1?c+=C.length:c=C.length-k,l in u&&(k!==-1?c+=u[l]:c<=u[l]&&(c=u[l]+1))}function E(){var C=[],k=l+1;return function(){for(var T=l+1;k<T;)C.push((u[k]||0)+1),k++;return C}}function v(){var C={line:l,column:c};return C.offset=i.toOffset(C),C}function A(C){this.start=C,this.end=v()}function b(C){t.slice(0,C.length)!==C&&i.file.fail(new Error("Incorrectly eaten value: please report this warning on https://git.io/vg5Ft"),v())}function d(){var C=v();return k;function k(T,B){var _=T.position,S=_?_.start:C,P=[],N=_&&_.end.line,O=C.line;if(T.position=new A(S),_&&B&&_.indent){if(P=_.indent,N<O){for(;++N<O;)P.push((u[N]||0)+1);P.push(C.column)}B=P.concat(B)}return T.position.indent=B||[],T}}function y(C,k){var T=k?k.children:a,B=T[T.length-1],_;return B&&C.type===B.type&&(C.type==="text"||C.type==="blockquote")&&Qu(B)&&Qu(C)&&(_=C.type==="text"?op:sp,C=_.call(i,B,C)),C!==B&&T.push(C),i.atStart&&a.length!==0&&i.exitStart(),C}function w(C){var k=E(),T=d(),B=v();return b(C),_.reset=S,S.test=P,_.test=P,t=t.slice(C.length),g(C),k=k(),_;function _(N,O){return T(y(T(N),O),k)}function S(){var N=_.apply(null,arguments);return l=B.line,c=B.column,t=C+t,N}function P(){var N=T({});return l=B.line,c=B.column,t=C+t,N.position}}}}function Qu(e){var r,t;return e.type!=="text"||!e.position?!0:(r=e.position.start,t=e.position.end,r.line!==t.line||t.column-r.column===e.value.length)}function op(e,r){return e.value+=r.value,e}function sp(e,r){return this.options.commonmark||this.options.gfm?r:(e.children=e.children.concat(r.children),e)}});var na=x((Fv,ta)=>{"use strict";ta.exports=Kr;var $t=["\\","`","*","{","}","[","]","(",")","#","+","-",".","!","_",">"],Ht=$t.concat(["~","|"]),ra=Ht.concat([`
+`,'"',"$","%","&","'",",","/",":",";","<","=","?","@","^"]);Kr.default=$t;Kr.gfm=Ht;Kr.commonmark=ra;function Kr(e){var r=e||{};return r.commonmark?ra:r.gfm?Ht:$t}});var ua=x((gv,ia)=>{"use strict";ia.exports=["address","article","aside","base","basefont","blockquote","body","caption","center","col","colgroup","dd","details","dialog","dir","div","dl","dt","fieldset","figcaption","figure","footer","form","frame","frameset","h1","h2","h3","h4","h5","h6","head","header","hgroup","hr","html","iframe","legend","li","link","main","menu","menuitem","meta","nav","noframes","ol","optgroup","option","p","param","pre","section","source","title","summary","table","tbody","td","tfoot","th","thead","title","tr","track","ul"]});var Kt=x((Ev,aa)=>{"use strict";aa.exports={position:!0,gfm:!0,commonmark:!1,pedantic:!1,blocks:ua()}});var sa=x((Cv,oa)=>{"use strict";var cp=Ie(),lp=na(),fp=Kt();oa.exports=Dp;function Dp(e){var r=this,t=r.options,n,i;if(e==null)e={};else if(typeof e=="object")e=cp(e);else throw new Error("Invalid value `"+e+"` for setting `options`");for(n in fp){if(i=e[n],i==null&&(i=t[n]),n!=="blocks"&&typeof i!="boolean"||n==="blocks"&&typeof i!="object")throw new Error("Invalid value `"+i+"` for setting `options."+n+"`");e[n]=i}return r.options=e,r.escape=lp(e),r}});var fa=x((vv,la)=>{"use strict";la.exports=ca;function ca(e){if(e==null)return mp;if(typeof e=="string")return dp(e);if(typeof e=="object")return"length"in e?hp(e):pp(e);if(typeof e=="function")return e;throw new Error("Expected function, string, or object as test")}function pp(e){return r;function r(t){var n;for(n in e)if(t[n]!==e[n])return!1;return!0}}function hp(e){for(var r=[],t=-1;++t<e.length;)r[t]=ca(e[t]);return n;function n(){for(var i=-1;++i<r.length;)if(r[i].apply(this,arguments))return!0;return!1}}function dp(e){return r;function r(t){return!!(t&&t.type===e)}}function mp(){return!0}});var pa=x((Av,Da)=>{Da.exports=Fp;function Fp(e){return e}});var Fa=x((bv,ma)=>{"use strict";ma.exports=Xr;var gp=fa(),Ep=pa(),ha=!0,da="skip",Xt=!1;Xr.CONTINUE=ha;Xr.SKIP=da;Xr.EXIT=Xt;function Xr(e,r,t,n){var i,u;typeof r=="function"&&typeof t!="function"&&(n=t,t=r,r=null),u=gp(r),i=n?-1:1,a(e,null,[])();function a(o,s,l){var c=typeof o=="object"&&o!==null?o:{},f;return typeof c.type=="string"&&(f=typeof c.tagName=="string"?c.tagName:typeof c.name=="string"?c.name:void 0,D.displayName="node ("+Ep(c.type+(f?"<"+f+">":""))+")"),D;function D(){var m=l.concat(o),p=[],h,F;if((!r||u(o,s,l[l.length-1]||null))&&(p=Cp(t(o,l)),p[0]===Xt))return p;if(o.children&&p[0]!==da)for(F=(n?o.children.length:-1)+i;F>-1&&F<o.children.length;){if(h=a(o.children[F],F,m)(),h[0]===Xt)return h;F=typeof h[1]=="number"?h[1]:F+i}return p}}}function Cp(e){return e!==null&&typeof e=="object"&&"length"in e?e:typeof e=="number"?[ha,e]:[e]}});var Ea=x((xv,ga)=>{"use strict";ga.exports=Qr;var Jr=Fa(),vp=Jr.CONTINUE,Ap=Jr.SKIP,bp=Jr.EXIT;Qr.CONTINUE=vp;Qr.SKIP=Ap;Qr.EXIT=bp;function Qr(e,r,t,n){typeof r=="function"&&typeof t!="function"&&(n=t,t=r,r=null),Jr(e,r,i,n);function i(u,a){var o=a[a.length-1],s=o?o.children.indexOf(u):null;return t(u,s,o)}}});var va=x((yv,Ca)=>{"use strict";var xp=Ea();Ca.exports=yp;function yp(e,r){return xp(e,r?wp:kp),e}function wp(e){delete e.position}function kp(e){e.position=void 0}});var xa=x((wv,ba)=>{"use strict";var Aa=Ie(),Tp=va();ba.exports=Op;var Bp=`
+`,_p=/\r\n|\r/g;function Op(){var e=this,r=String(e.file),t={line:1,column:1,offset:0},n=Aa(t),i;return r=r.replace(_p,Bp),r.charCodeAt(0)===65279&&(r=r.slice(1),n.column++,n.offset++),i={type:"root",children:e.tokenizeBlock(r,n),position:{start:t,end:e.eof||Aa(t)}},e.options.position||Tp(i,!0),i}});var wa=x((kv,ya)=>{"use strict";var qp=/^[ \t]*(\n|$)/;ya.exports=Np;function Np(e,r,t){for(var n,i="",u=0,a=r.length;u<a&&(n=qp.exec(r.slice(u)),n!=null);)u+=n[0].length,i+=n[0];if(i!==""){if(t)return!0;e(i)}}});var Zr=x((Tv,ka)=>{"use strict";var ge="",Jt;ka.exports=Pp;function Pp(e,r){if(typeof e!="string")throw new TypeError("expected a string");if(r===1)return e;if(r===2)return e+e;var t=e.length*r;if(Jt!==e||typeof Jt>"u")Jt=e,ge="";else if(ge.length>=t)return ge.substr(0,t);for(;t>ge.length&&r>1;)r&1&&(ge+=e),r>>=1,e+=e;return ge+=e,ge=ge.substr(0,t),ge}});var Qt=x((Bv,Ta)=>{"use strict";Ta.exports=Ip;function Ip(e){return String(e).replace(/\n+$/,"")}});var Oa=x((_v,_a)=>{"use strict";var Sp=Zr(),Lp=Qt();_a.exports=Up;var Zt=`
+`,Ba="	",en=" ",Rp=4,Mp=Sp(en,Rp);function Up(e,r,t){for(var n=-1,i=r.length,u="",a="",o="",s="",l,c,f;++n<i;)if(l=r.charAt(n),f)if(f=!1,u+=o,a+=s,o="",s="",l===Zt)o=l,s=l;else for(u+=l,a+=l;++n<i;){if(l=r.charAt(n),!l||l===Zt){s=l,o=l;break}u+=l,a+=l}else if(l===en&&r.charAt(n+1)===l&&r.charAt(n+2)===l&&r.charAt(n+3)===l)o+=Mp,n+=3,f=!0;else if(l===Ba)o+=l,f=!0;else{for(c="";l===Ba||l===en;)c+=l,l=r.charAt(++n);if(l!==Zt)break;o+=c+l,s+=l}if(a)return t?!0:e(u)({type:"code",lang:null,meta:null,value:Lp(a)})}});var Pa=x((Ov,Na)=>{"use strict";Na.exports=Wp;var et=`
+`,Fr="	",Xe=" ",Yp="~",qa="`",Gp=3,zp=4;function Wp(e,r,t){var n=this,i=n.options.gfm,u=r.length+1,a=0,o="",s,l,c,f,D,m,p,h,F,g,E,v,A;if(i){for(;a<u&&(c=r.charAt(a),!(c!==Xe&&c!==Fr));)o+=c,a++;if(v=a,c=r.charAt(a),!(c!==Yp&&c!==qa)){for(a++,l=c,s=1,o+=c;a<u&&(c=r.charAt(a),c===l);)o+=c,s++,a++;if(!(s<Gp)){for(;a<u&&(c=r.charAt(a),!(c!==Xe&&c!==Fr));)o+=c,a++;for(f="",p="";a<u&&(c=r.charAt(a),!(c===et||l===qa&&c===l));)c===Xe||c===Fr?p+=c:(f+=p+c,p=""),a++;if(c=r.charAt(a),!(c&&c!==et)){if(t)return!0;A=e.now(),A.column+=o.length,A.offset+=o.length,o+=f,f=n.decode.raw(n.unescape(f),A),p&&(o+=p),p="",g="",E="",h="",F="";for(var b=!0;a<u;){if(c=r.charAt(a),h+=g,F+=E,g="",E="",c!==et){h+=c,E+=c,a++;continue}for(b?(o+=c,b=!1):(g+=c,E+=c),p="",a++;a<u&&(c=r.charAt(a),c===Xe);)p+=c,a++;if(g+=p,E+=p.slice(v),!(p.length>=zp)){for(p="";a<u&&(c=r.charAt(a),c===l);)p+=c,a++;if(g+=p,E+=p,!(p.length<s)){for(p="";a<u&&(c=r.charAt(a),!(c!==Xe&&c!==Fr));)g+=c,E+=c,a++;if(!c||c===et)break}}}for(o+=h+g,a=-1,u=f.length;++a<u;)if(c=f.charAt(a),c===Xe||c===Fr)D||(D=f.slice(0,a));else if(D){m=f.slice(a);break}return e(o)({type:"code",lang:D||f||null,meta:m||null,value:F})}}}}}});var Le=x((Je,Ia)=>{Je=Ia.exports=Vp;function Vp(e){return e.trim?e.trim():Je.right(Je.left(e))}Je.left=function(e){return e.trimLeft?e.trimLeft():e.replace(/^\s\s*/,"")};Je.right=function(e){if(e.trimRight)return e.trimRight();for(var r=/\s/,t=e.length;r.test(e.charAt(--t)););return e.slice(0,t+1)}});var rt=x((qv,Sa)=>{"use strict";Sa.exports=jp;function jp(e,r,t,n){for(var i=e.length,u=-1,a,o;++u<i;)if(a=e[u],o=a[1]||{},!(o.pedantic!==void 0&&o.pedantic!==t.options.pedantic)&&!(o.commonmark!==void 0&&o.commonmark!==t.options.commonmark)&&r[a[0]].apply(t,n))return!0;return!1}});var Ua=x((Nv,Ma)=>{"use strict";var $p=Le(),Hp=rt();Ma.exports=Kp;var rn=`
+`,La="	",tn=" ",Ra=">";function Kp(e,r,t){for(var n=this,i=n.offset,u=n.blockTokenizers,a=n.interruptBlockquote,o=e.now(),s=o.line,l=r.length,c=[],f=[],D=[],m,p=0,h,F,g,E,v,A,b,d;p<l&&(h=r.charAt(p),!(h!==tn&&h!==La));)p++;if(r.charAt(p)===Ra){if(t)return!0;for(p=0;p<l;){for(g=r.indexOf(rn,p),A=p,b=!1,g===-1&&(g=l);p<l&&(h=r.charAt(p),!(h!==tn&&h!==La));)p++;if(r.charAt(p)===Ra?(p++,b=!0,r.charAt(p)===tn&&p++):p=A,E=r.slice(p,g),!b&&!$p(E)){p=A;break}if(!b&&(F=r.slice(p),Hp(a,u,n,[e,F,!0])))break;v=A===p?E:r.slice(A,g),D.push(p-A),c.push(v),f.push(E),p=g+1}for(p=-1,l=D.length,m=e(c.join(rn));++p<l;)i[s]=(i[s]||0)+D[p],s++;return d=n.enterBlock(),f=n.tokenizeBlock(f.join(rn),o),d(),m({type:"blockquote",children:f})}}});var za=x((Pv,Ga)=>{"use strict";Ga.exports=Jp;var Ya=`
+`,gr="	",Er=" ",Cr="#",Xp=6;function Jp(e,r,t){for(var n=this,i=n.options.pedantic,u=r.length+1,a=-1,o=e.now(),s="",l="",c,f,D;++a<u;){if(c=r.charAt(a),c!==Er&&c!==gr){a--;break}s+=c}for(D=0;++a<=u;){if(c=r.charAt(a),c!==Cr){a--;break}s+=c,D++}if(!(D>Xp)&&!(!D||!i&&r.charAt(a+1)===Cr)){for(u=r.length+1,f="";++a<u;){if(c=r.charAt(a),c!==Er&&c!==gr){a--;break}f+=c}if(!(!i&&f.length===0&&c&&c!==Ya)){if(t)return!0;for(s+=f,f="",l="";++a<u&&(c=r.charAt(a),!(!c||c===Ya));){if(c!==Er&&c!==gr&&c!==Cr){l+=f+c,f="";continue}for(;c===Er||c===gr;)f+=c,c=r.charAt(++a);if(!i&&l&&!f&&c===Cr){l+=c;continue}for(;c===Cr;)f+=c,c=r.charAt(++a);for(;c===Er||c===gr;)f+=c,c=r.charAt(++a);a--}return o.column+=s.length,o.offset+=s.length,s+=l+f,e(s)({type:"heading",depth:D,children:n.tokenizeInline(l,o)})}}}});var ja=x((Iv,Va)=>{"use strict";Va.exports=ih;var Qp="	",Zp=`
+`,Wa=" ",eh="*",rh="-",th="_",nh=3;function ih(e,r,t){for(var n=-1,i=r.length+1,u="",a,o,s,l;++n<i&&(a=r.charAt(n),!(a!==Qp&&a!==Wa));)u+=a;if(!(a!==eh&&a!==rh&&a!==th))for(o=a,u+=a,s=1,l="";++n<i;)if(a=r.charAt(n),a===o)s++,u+=l+o,l="";else if(a===Wa)l+=a;else return s>=nh&&(!a||a===Zp)?(u+=l,t?!0:e(u)({type:"thematicBreak"})):void 0}});var nn=x((Sv,Ha)=>{"use strict";Ha.exports=sh;var $a="	",uh=" ",ah=1,oh=4;function sh(e){for(var r=0,t=0,n=e.charAt(r),i={},u,a=0;n===$a||n===uh;){for(u=n===$a?oh:ah,t+=u,u>1&&(t=Math.floor(t/u)*u);a<t;)i[++a]=r;n=e.charAt(++r)}return{indent:t,stops:i}}});var Ja=x((Lv,Xa)=>{"use strict";var ch=Le(),lh=Zr(),fh=nn();Xa.exports=hh;var Ka=`
+`,Dh=" ",ph="!";function hh(e,r){var t=e.split(Ka),n=t.length+1,i=1/0,u=[],a,o,s;for(t.unshift(lh(Dh,r)+ph);n--;)if(o=fh(t[n]),u[n]=o.stops,ch(t[n]).length!==0)if(o.indent)o.indent>0&&o.indent<i&&(i=o.indent);else{i=1/0;break}if(i!==1/0)for(n=t.length;n--;){for(s=u[n],a=i;a&&!(a in s);)a--;t[n]=t[n].slice(s[a]+1)}return t.shift(),t.join(Ka)}});var no=x((Rv,to)=>{"use strict";var dh=Le(),mh=Zr(),Qa=Se(),Fh=nn(),gh=Ja(),Eh=rt();to.exports=kh;var un="*",Ch="_",Za="+",an="-",eo=".",Ee=" ",oe=`
+`,tt="	",ro=")",vh="x",ke=4,Ah=/\n\n(?!\s*$)/,bh=/^\[([ X\tx])][ \t]/,xh=/^([ \t]*)([*+-]|\d+[.)])( {1,4}(?! )| |\t|$|(?=\n))([^\n]*)/,yh=/^([ \t]*)([*+-]|\d+[.)])([ \t]+)/,wh=/^( {1,4}|\t)?/gm;function kh(e,r,t){for(var n=this,i=n.options.commonmark,u=n.options.pedantic,a=n.blockTokenizers,o=n.interruptList,s=0,l=r.length,c=null,f,D,m,p,h,F,g,E,v,A,b,d,y,w,C,k,T,B,_,S=!1,P,N,O,I;s<l&&(p=r.charAt(s),!(p!==tt&&p!==Ee));)s++;if(p=r.charAt(s),p===un||p===Za||p===an)h=p,m=!1;else{for(m=!0,D="";s<l&&(p=r.charAt(s),!!Qa(p));)D+=p,s++;if(p=r.charAt(s),!D||!(p===eo||i&&p===ro)||t&&D!=="1")return;c=parseInt(D,10),h=p}if(p=r.charAt(++s),!(p!==Ee&&p!==tt&&(u||p!==oe&&p!==""))){if(t)return!0;for(s=0,w=[],C=[],k=[];s<l;){for(F=r.indexOf(oe,s),g=s,E=!1,I=!1,F===-1&&(F=l),f=0;s<l;){if(p=r.charAt(s),p===tt)f+=ke-f%ke;else if(p===Ee)f++;else break;s++}if(T&&f>=T.indent&&(I=!0),p=r.charAt(s),v=null,!I){if(p===un||p===Za||p===an)v=p,s++,f++;else{for(D="";s<l&&(p=r.charAt(s),!!Qa(p));)D+=p,s++;p=r.charAt(s),s++,D&&(p===eo||i&&p===ro)&&(v=p,f+=D.length+1)}if(v)if(p=r.charAt(s),p===tt)f+=ke-f%ke,s++;else if(p===Ee){for(O=s+ke;s<O&&r.charAt(s)===Ee;)s++,f++;s===O&&r.charAt(s)===Ee&&(s-=ke-1,f-=ke-1)}else p!==oe&&p!==""&&(v=null)}if(v){if(!u&&h!==v)break;E=!0}else!i&&!I&&r.charAt(g)===Ee?I=!0:i&&T&&(I=f>=T.indent||f>ke),E=!1,s=g;if(b=r.slice(g,F),A=g===s?b:r.slice(s,F),(v===un||v===Ch||v===an)&&a.thematicBreak.call(n,e,b,!0))break;if(d=y,y=!E&&!dh(A).length,I&&T)T.value=T.value.concat(k,b),C=C.concat(k,b),k=[];else if(E)k.length!==0&&(S=!0,T.value.push(""),T.trail=k.concat()),T={value:[b],indent:f,trail:[]},w.push(T),C=C.concat(k,b),k=[];else if(y){if(d&&!i)break;k.push(b)}else{if(d||Eh(o,a,n,[e,b,!0]))break;T.value=T.value.concat(k,b),C=C.concat(k,b),k=[]}s=F+1}for(P=e(C.join(oe)).reset({type:"list",ordered:m,start:c,spread:S,children:[]}),B=n.enterList(),_=n.enterBlock(),s=-1,l=w.length;++s<l;)T=w[s].value.join(oe),N=e.now(),e(T)(Th(n,T,N),P),T=w[s].trail.join(oe),s!==l-1&&(T+=oe),e(T);return B(),_(),P}}function Th(e,r,t){var n=e.offset,i=e.options.pedantic?Bh:_h,u=null,a,o;return r=i.apply(null,arguments),e.options.gfm&&(a=r.match(bh),a&&(o=a[0].length,u=a[1].toLowerCase()===vh,n[t.line]+=o,r=r.slice(o))),{type:"listItem",spread:Ah.test(r),checked:u,children:e.tokenizeBlock(r,t)}}function Bh(e,r,t){var n=e.offset,i=t.line;return r=r.replace(yh,u),i=t.line,r.replace(wh,u);function u(a){return n[i]=(n[i]||0)+a.length,i++,""}}function _h(e,r,t){var n=e.offset,i=t.line,u,a,o,s,l,c,f;for(r=r.replace(xh,D),s=r.split(oe),l=gh(r,Fh(u).indent).split(oe),l[0]=o,n[i]=(n[i]||0)+a.length,i++,c=0,f=s.length;++c<f;)n[i]=(n[i]||0)+s[c].length-l[c].length,i++;return l.join(oe);function D(m,p,h,F,g){return a=p+h+F,o=g,Number(h)<10&&a.length%2===1&&(h=Ee+h),u=p+mh(Ee,h.length)+F,u+o}}});var oo=x((Mv,ao)=>{"use strict";ao.exports=Sh;var on=`
+`,Oh="	",io=" ",uo="=",qh="-",Nh=3,Ph=1,Ih=2;function Sh(e,r,t){for(var n=this,i=e.now(),u=r.length,a=-1,o="",s,l,c,f,D;++a<u;){if(c=r.charAt(a),c!==io||a>=Nh){a--;break}o+=c}for(s="",l="";++a<u;){if(c=r.charAt(a),c===on){a--;break}c===io||c===Oh?l+=c:(s+=l+c,l="")}if(i.column+=o.length,i.offset+=o.length,o+=s+l,c=r.charAt(++a),f=r.charAt(++a),!(c!==on||f!==uo&&f!==qh)){for(o+=c,l=f,D=f===uo?Ph:Ih;++a<u;){if(c=r.charAt(a),c!==f){if(c!==on)return;a--;break}l+=c}return t?!0:e(o+l)({type:"heading",depth:D,children:n.tokenizeInline(s,i)})}}});var cn=x(sn=>{"use strict";var Lh="[a-zA-Z_:][a-zA-Z0-9:._-]*",Rh="[^\"'=<>`\\u0000-\\u0020]+",Mh="'[^']*'",Uh='"[^"]*"',Yh="(?:"+Rh+"|"+Mh+"|"+Uh+")",Gh="(?:\\s+"+Lh+"(?:\\s*=\\s*"+Yh+")?)",so="<[A-Za-z][A-Za-z0-9\\-]*"+Gh+"*\\s*\\/?>",co="<\\/[A-Za-z][A-Za-z0-9\\-]*\\s*>",zh="<!---->|<!--(?:-?[^>-])(?:-?[^-])*-->",Wh="<[?].*?[?]>",Vh="<![A-Za-z]+\\s+[^>]*>",jh="<!\\[CDATA\\[[\\s\\S]*?\\]\\]>";sn.openCloseTag=new RegExp("^(?:"+so+"|"+co+")");sn.tag=new RegExp("^(?:"+so+"|"+co+"|"+zh+"|"+Wh+"|"+Vh+"|"+jh+")")});var po=x((Yv,Do)=>{"use strict";var $h=cn().openCloseTag;Do.exports=sd;var Hh="	",Kh=" ",lo=`
+`,Xh="<",Jh=/^<(script|pre|style)(?=(\s|>|$))/i,Qh=/<\/(script|pre|style)>/i,Zh=/^<!--/,ed=/-->/,rd=/^<\?/,td=/\?>/,nd=/^<![A-Za-z]/,id=/>/,ud=/^<!\[CDATA\[/,ad=/]]>/,fo=/^$/,od=new RegExp($h.source+"\\s*$");function sd(e,r,t){for(var n=this,i=n.options.blocks.join("|"),u=new RegExp("^</?("+i+")(?=(\\s|/?>|$))","i"),a=r.length,o=0,s,l,c,f,D,m,p,h=[[Jh,Qh,!0],[Zh,ed,!0],[rd,td,!0],[nd,id,!0],[ud,ad,!0],[u,fo,!0],[od,fo,!1]];o<a&&(f=r.charAt(o),!(f!==Hh&&f!==Kh));)o++;if(r.charAt(o)===Xh){for(s=r.indexOf(lo,o+1),s=s===-1?a:s,l=r.slice(o,s),c=-1,D=h.length;++c<D;)if(h[c][0].test(l)){m=h[c];break}if(m){if(t)return m[2];if(o=s,!m[1].test(l))for(;o<a;){if(s=r.indexOf(lo,o+1),s=s===-1?a:s,l=r.slice(o+1,s),m[1].test(l)){l&&(o=s);break}o=s}return p=r.slice(0,o),e(p)({type:"html",value:p})}}}});var se=x((Gv,ho)=>{"use strict";ho.exports=fd;var cd=String.fromCharCode,ld=/\s/;function fd(e){return ld.test(typeof e=="number"?cd(e):e.charAt(0))}});var ln=x((zv,mo)=>{"use strict";var Dd=Tr();mo.exports=pd;function pd(e){return Dd(e).toLowerCase()}});var bo=x((Wv,Ao)=>{"use strict";var hd=se(),dd=ln();Ao.exports=Ed;var Fo='"',go="'",md="\\",Qe=`
+`,nt="	",it=" ",Dn="[",vr="]",Fd="(",gd=")",Eo=":",Co="<",vo=">";function Ed(e,r,t){for(var n=this,i=n.options.commonmark,u=0,a=r.length,o="",s,l,c,f,D,m,p,h;u<a&&(f=r.charAt(u),!(f!==it&&f!==nt));)o+=f,u++;if(f=r.charAt(u),f===Dn){for(u++,o+=f,c="";u<a&&(f=r.charAt(u),f!==vr);)f===md&&(c+=f,u++,f=r.charAt(u)),c+=f,u++;if(!(!c||r.charAt(u)!==vr||r.charAt(u+1)!==Eo)){for(m=c,o+=c+vr+Eo,u=o.length,c="";u<a&&(f=r.charAt(u),!(f!==nt&&f!==it&&f!==Qe));)o+=f,u++;if(f=r.charAt(u),c="",s=o,f===Co){for(u++;u<a&&(f=r.charAt(u),!!fn(f));)c+=f,u++;if(f=r.charAt(u),f===fn.delimiter)o+=Co+c+f,u++;else{if(i)return;u-=c.length+1,c=""}}if(!c){for(;u<a&&(f=r.charAt(u),!!Cd(f));)c+=f,u++;o+=c}if(c){for(p=c,c="";u<a&&(f=r.charAt(u),!(f!==nt&&f!==it&&f!==Qe));)c+=f,u++;if(f=r.charAt(u),D=null,f===Fo?D=Fo:f===go?D=go:f===Fd&&(D=gd),!D)c="",u=o.length;else if(c){for(o+=c+f,u=o.length,c="";u<a&&(f=r.charAt(u),f!==D);){if(f===Qe){if(u++,f=r.charAt(u),f===Qe||f===D)return;c+=Qe}c+=f,u++}if(f=r.charAt(u),f!==D)return;l=o,o+=c+f,u++,h=c,c=""}else return;for(;u<a&&(f=r.charAt(u),!(f!==nt&&f!==it));)o+=f,u++;if(f=r.charAt(u),!f||f===Qe)return t?!0:(s=e(s).test().end,p=n.decode.raw(n.unescape(p),s,{nonTerminated:!1}),h&&(l=e(l).test().end,h=n.decode.raw(n.unescape(h),l)),e(o)({type:"definition",identifier:dd(m),label:m,title:h||null,url:p}))}}}}function fn(e){return e!==vo&&e!==Dn&&e!==vr}fn.delimiter=vo;function Cd(e){return e!==Dn&&e!==vr&&!hd(e)}});var wo=x((Vv,yo)=>{"use strict";var vd=se();yo.exports=Od;var Ad="	",ut=`
+`,bd=" ",xd="-",yd=":",wd="\\",pn="|",kd=1,Td=2,xo="left",Bd="center",_d="right";function Od(e,r,t){var n=this,i,u,a,o,s,l,c,f,D,m,p,h,F,g,E,v,A,b,d,y,w,C;if(n.options.gfm){for(i=0,v=0,l=r.length+1,c=[];i<l;){if(y=r.indexOf(ut,i),w=r.indexOf(pn,i+1),y===-1&&(y=r.length),w===-1||w>y){if(v<Td)return;break}c.push(r.slice(i,y)),v++,i=y+1}for(o=c.join(ut),u=c.splice(1,1)[0]||[],i=0,l=u.length,v--,a=!1,p=[];i<l;){if(D=u.charAt(i),D===pn){if(m=null,a===!1){if(C===!1)return}else p.push(a),a=!1;C=!1}else if(D===xd)m=!0,a=a||null;else if(D===yd)a===xo?a=Bd:m&&a===null?a=_d:a=xo;else if(!vd(D))return;i++}if(a!==!1&&p.push(a),!(p.length<kd)){if(t)return!0;for(E=-1,b=[],d=e(o).reset({type:"table",align:p,children:b});++E<v;){for(A=c[E],s={type:"tableRow",children:[]},E&&e(ut),e(A).reset(s,d),l=A.length+1,i=0,f="",h="",F=!0;i<l;){if(D=A.charAt(i),D===Ad||D===bd){h?f+=D:e(D),i++;continue}D===""||D===pn?F?e(D):((h||D)&&!F&&(o=h,f.length>1&&(D?(o+=f.slice(0,-1),f=f.charAt(f.length-1)):(o+=f,f="")),g=e.now(),e(o)({type:"tableCell",children:n.tokenizeInline(h,g)},s)),e(f+D),f="",h=""):(f&&(h+=f,f=""),h+=D,D===wd&&i!==l-2&&(h+=A.charAt(i+1),i++)),F=!1,i++}E||e(ut+u)}return d}}}});var Bo=x((jv,To)=>{"use strict";var qd=Le(),Nd=Qt(),Pd=rt();To.exports=Ld;var Id="	",Ar=`
+`,Sd=" ",ko=4;function Ld(e,r,t){for(var n=this,i=n.options,u=i.commonmark,a=n.blockTokenizers,o=n.interruptParagraph,s=r.indexOf(Ar),l=r.length,c,f,D,m,p;s<l;){if(s===-1){s=l;break}if(r.charAt(s+1)===Ar)break;if(u){for(m=0,c=s+1;c<l;){if(D=r.charAt(c),D===Id){m=ko;break}else if(D===Sd)m++;else break;c++}if(m>=ko&&D!==Ar){s=r.indexOf(Ar,s+1);continue}}if(f=r.slice(s+1),Pd(o,a,n,[e,f,!0]))break;if(c=s,s=r.indexOf(Ar,s+1),s!==-1&&qd(r.slice(c,s))===""){s=c;break}}return f=r.slice(0,s),t?!0:(p=e.now(),f=Nd(f),e(f)({type:"paragraph",children:n.tokenizeInline(f,p)}))}});var Oo=x(($v,_o)=>{"use strict";_o.exports=Rd;function Rd(e,r){return e.indexOf("\\",r)}});var Io=x((Hv,Po)=>{"use strict";var Md=Oo();Po.exports=No;No.locator=Md;var Ud=`
+`,qo="\\";function No(e,r,t){var n=this,i,u;if(r.charAt(0)===qo&&(i=r.charAt(1),n.escape.indexOf(i)!==-1))return t?!0:(i===Ud?u={type:"break"}:u={type:"text",value:i},e(qo+i)(u))}});var hn=x((Kv,So)=>{"use strict";So.exports=Yd;function Yd(e,r){return e.indexOf("<",r)}});var Yo=x((Xv,Uo)=>{"use strict";var Lo=se(),Gd=mr(),zd=hn();Uo.exports=gn;gn.locator=zd;gn.notInLink=!0;var Ro="<",dn=">",Mo="@",mn="/",Fn="mailto:",at=Fn.length;function gn(e,r,t){var n=this,i="",u=r.length,a=0,o="",s=!1,l="",c,f,D,m,p;if(r.charAt(0)===Ro){for(a++,i=Ro;a<u&&(c=r.charAt(a),!(Lo(c)||c===dn||c===Mo||c===":"&&r.charAt(a+1)===mn));)o+=c,a++;if(o){if(l+=o,o="",c=r.charAt(a),l+=c,a++,c===Mo)s=!0;else{if(c!==":"||r.charAt(a+1)!==mn)return;l+=mn,a++}for(;a<u&&(c=r.charAt(a),!(Lo(c)||c===dn));)o+=c,a++;if(c=r.charAt(a),!(!o||c!==dn))return t?!0:(l+=o,D=l,i+=l+c,f=e.now(),f.column++,f.offset++,s&&(l.slice(0,at).toLowerCase()===Fn?(D=D.slice(at),f.column+=at,f.offset+=at):l=Fn+l),m=n.inlineTokenizers,n.inlineTokenizers={text:m.text},p=n.enterLink(),D=n.tokenizeInline(D,f),n.inlineTokenizers=m,p(),e(i)({type:"link",title:null,url:Gd(l,{nonTerminated:!1}),children:D}))}}}});var zo=x((Jv,Go)=>{"use strict";Go.exports=Wd;function Wd(e,r){var t=String(e),n=0,i;if(typeof r!="string")throw new Error("Expected character");for(i=t.indexOf(r);i!==-1;)n++,i=t.indexOf(r,i+r.length);return n}});var jo=x((Qv,Vo)=>{"use strict";Vo.exports=Vd;var Wo=["www.","http://","https://"];function Vd(e,r){var t=-1,n,i,u;if(!this.options.gfm)return t;for(i=Wo.length,n=-1;++n<i;)u=e.indexOf(Wo[n],r),u!==-1&&(t===-1||u<t)&&(t=u);return t}});var Jo=x((Zv,Xo)=>{"use strict";var $o=zo(),jd=mr(),$d=Se(),En=$e(),Hd=se(),Kd=jo();Xo.exports=vn;vn.locator=Kd;vn.notInLink=!0;var Xd=33,Jd=38,Qd=41,Zd=42,e0=44,r0=45,Cn=46,t0=58,n0=59,i0=63,u0=60,Ho=95,a0=126,o0="(",Ko=")";function vn(e,r,t){var n=this,i=n.options.gfm,u=n.inlineTokenizers,a=r.length,o=-1,s=!1,l,c,f,D,m,p,h,F,g,E,v,A,b,d;if(i){if(r.slice(0,4)==="www.")s=!0,D=4;else if(r.slice(0,7).toLowerCase()==="http://")D=7;else if(r.slice(0,8).toLowerCase()==="https://")D=8;else return;for(o=D-1,f=D,l=[];D<a;){if(h=r.charCodeAt(D),h===Cn){if(o===D-1)break;l.push(D),o=D,D++;continue}if($d(h)||En(h)||h===r0||h===Ho){D++;continue}break}if(h===Cn&&(l.pop(),D--),l[0]!==void 0&&(c=l.length<2?f:l[l.length-2]+1,r.slice(c,D).indexOf("_")===-1)){if(t)return!0;for(F=D,m=D;D<a&&(h=r.charCodeAt(D),!(Hd(h)||h===u0));)D++,h===Xd||h===Zd||h===e0||h===Cn||h===t0||h===i0||h===Ho||h===a0||(F=D);if(D=F,r.charCodeAt(D-1)===Qd)for(p=r.slice(m,D),g=$o(p,o0),E=$o(p,Ko);E>g;)D=m+p.lastIndexOf(Ko),p=r.slice(m,D),E--;if(r.charCodeAt(D-1)===n0&&(D--,En(r.charCodeAt(D-1)))){for(F=D-2;En(r.charCodeAt(F));)F--;r.charCodeAt(F)===Jd&&(D=F)}return v=r.slice(0,D),b=jd(v,{nonTerminated:!1}),s&&(b="http://"+b),d=n.enterLink(),n.inlineTokenizers={text:u.text},A=n.tokenizeInline(v,e.now()),n.inlineTokenizers=u,d(),e(v)({type:"link",title:null,url:b,children:A})}}}});var rs=x((e2,es)=>{"use strict";var s0=Se(),c0=$e(),l0=43,f0=45,D0=46,p0=95;es.exports=Zo;function Zo(e,r){var t=this,n,i;if(!this.options.gfm||(n=e.indexOf("@",r),n===-1))return-1;if(i=n,i===r||!Qo(e.charCodeAt(i-1)))return Zo.call(t,e,n+1);for(;i>r&&Qo(e.charCodeAt(i-1));)i--;return i}function Qo(e){return s0(e)||c0(e)||e===l0||e===f0||e===D0||e===p0}});var us=x((r2,is)=>{"use strict";var h0=mr(),ts=Se(),ns=$e(),d0=rs();is.exports=xn;xn.locator=d0;xn.notInLink=!0;var m0=43,An=45,ot=46,F0=64,bn=95;function xn(e,r,t){var n=this,i=n.options.gfm,u=n.inlineTokenizers,a=0,o=r.length,s=-1,l,c,f,D;if(i){for(l=r.charCodeAt(a);ts(l)||ns(l)||l===m0||l===An||l===ot||l===bn;)l=r.charCodeAt(++a);if(a!==0&&l===F0){for(a++;a<o;){if(l=r.charCodeAt(a),ts(l)||ns(l)||l===An||l===ot||l===bn){a++,s===-1&&l===ot&&(s=a);continue}break}if(!(s===-1||s===a||l===An||l===bn))return l===ot&&a--,c=r.slice(0,a),t?!0:(D=n.enterLink(),n.inlineTokenizers={text:u.text},f=n.tokenizeInline(c,e.now()),n.inlineTokenizers=u,D(),e(c)({type:"link",title:null,url:"mailto:"+h0(c,{nonTerminated:!1}),children:f}))}}}});var ss=x((t2,os)=>{"use strict";var g0=$e(),E0=hn(),C0=cn().tag;os.exports=as;as.locator=E0;var v0="<",A0="?",b0="!",x0="/",y0=/^<a /i,w0=/^<\/a>/i;function as(e,r,t){var n=this,i=r.length,u,a;if(!(r.charAt(0)!==v0||i<3)&&(u=r.charAt(1),!(!g0(u)&&u!==A0&&u!==b0&&u!==x0)&&(a=r.match(C0),!!a)))return t?!0:(a=a[0],!n.inLink&&y0.test(a)?n.inLink=!0:n.inLink&&w0.test(a)&&(n.inLink=!1),e(a)({type:"html",value:a}))}});var yn=x((n2,cs)=>{"use strict";cs.exports=k0;function k0(e,r){var t=e.indexOf("[",r),n=e.indexOf("![",r);return n===-1||t<n?t:n}});var ms=x((i2,ds)=>{"use strict";var br=se(),T0=yn();ds.exports=hs;hs.locator=T0;var B0=`
+`,_0="!",ls='"',fs="'",Ze="(",xr=")",wn="<",kn=">",Ds="[",yr="\\",O0="]",ps="`";function hs(e,r,t){var n=this,i="",u=0,a=r.charAt(0),o=n.options.pedantic,s=n.options.commonmark,l=n.options.gfm,c,f,D,m,p,h,F,g,E,v,A,b,d,y,w,C,k,T;if(a===_0&&(g=!0,i=a,a=r.charAt(++u)),a===Ds&&!(!g&&n.inLink)){for(i+=a,y="",u++,A=r.length,C=e.now(),d=0,C.column+=u,C.offset+=u;u<A;){if(a=r.charAt(u),h=a,a===ps){for(f=1;r.charAt(u+1)===ps;)h+=a,u++,f++;D?f>=D&&(D=0):D=f}else if(a===yr)u++,h+=r.charAt(u);else if((!D||l)&&a===Ds)d++;else if((!D||l)&&a===O0)if(d)d--;else{if(r.charAt(u+1)!==Ze)return;h+=Ze,c=!0,u++;break}y+=h,h="",u++}if(c){for(E=y,i+=y+h,u++;u<A&&(a=r.charAt(u),!!br(a));)i+=a,u++;if(a=r.charAt(u),y="",m=i,a===wn){for(u++,m+=wn;u<A&&(a=r.charAt(u),a!==kn);){if(s&&a===B0)return;y+=a,u++}if(r.charAt(u)!==kn)return;i+=wn+y+kn,w=y,u++}else{for(a=null,h="";u<A&&(a=r.charAt(u),!(h&&(a===ls||a===fs||s&&a===Ze)));){if(br(a)){if(!o)break;h+=a}else{if(a===Ze)d++;else if(a===xr){if(d===0)break;d--}y+=h,h="",a===yr&&(y+=yr,a=r.charAt(++u)),y+=a}u++}i+=y,w=y,u=i.length}for(y="";u<A&&(a=r.charAt(u),!!br(a));)y+=a,u++;if(a=r.charAt(u),i+=y,y&&(a===ls||a===fs||s&&a===Ze))if(u++,i+=a,y="",v=a===Ze?xr:a,p=i,s){for(;u<A&&(a=r.charAt(u),a!==v);)a===yr&&(y+=yr,a=r.charAt(++u)),u++,y+=a;if(a=r.charAt(u),a!==v)return;for(b=y,i+=y+a,u++;u<A&&(a=r.charAt(u),!!br(a));)i+=a,u++}else for(h="";u<A;){if(a=r.charAt(u),a===v)F&&(y+=v+h,h=""),F=!0;else if(!F)y+=a;else if(a===xr){i+=y+v+h,b=y;break}else br(a)?h+=a:(y+=v+h+a,h="",F=!1);u++}if(r.charAt(u)===xr)return t?!0:(i+=xr,w=n.decode.raw(n.unescape(w),e(m).test().end,{nonTerminated:!1}),b&&(p=e(p).test().end,b=n.decode.raw(n.unescape(b),p)),T={type:g?"image":"link",title:b||null,url:w},g?T.alt=n.decode.raw(n.unescape(E),C)||null:(k=n.enterLink(),T.children=n.tokenizeInline(E,C),k()),e(i)(T))}}}});var Es=x((u2,gs)=>{"use strict";var q0=se(),N0=yn(),P0=ln();gs.exports=Fs;Fs.locator=N0;var Tn="link",I0="image",S0="shortcut",L0="collapsed",Bn="full",R0="!",st="[",ct="\\",lt="]";function Fs(e,r,t){var n=this,i=n.options.commonmark,u=r.charAt(0),a=0,o=r.length,s="",l="",c=Tn,f=S0,D,m,p,h,F,g,E,v;if(u===R0&&(c=I0,l=u,u=r.charAt(++a)),u===st){for(a++,l+=u,g="",v=0;a<o;){if(u=r.charAt(a),u===st)E=!0,v++;else if(u===lt){if(!v)break;v--}u===ct&&(g+=ct,u=r.charAt(++a)),g+=u,a++}if(s=g,D=g,u=r.charAt(a),u===lt){if(a++,s+=u,g="",!i)for(;a<o&&(u=r.charAt(a),!!q0(u));)g+=u,a++;if(u=r.charAt(a),u===st){for(m="",g+=u,a++;a<o&&(u=r.charAt(a),!(u===st||u===lt));)u===ct&&(m+=ct,u=r.charAt(++a)),m+=u,a++;u=r.charAt(a),u===lt?(f=m?Bn:L0,g+=m+u,a++):m="",s+=g,g=""}else{if(!D)return;m=D}if(!(f!==Bn&&E))return s=l+s,c===Tn&&n.inLink?null:t?!0:(p=e.now(),p.column+=l.length,p.offset+=l.length,m=f===Bn?m:D,h={type:c+"Reference",identifier:P0(m),label:m,referenceType:f},c===Tn?(F=n.enterLink(),h.children=n.tokenizeInline(D,p),F()):h.alt=n.decode.raw(n.unescape(D),p)||null,e(s)(h))}}}});var vs=x((a2,Cs)=>{"use strict";Cs.exports=M0;function M0(e,r){var t=e.indexOf("**",r),n=e.indexOf("__",r);return n===-1?t:t===-1||n<t?n:t}});var ys=x((o2,xs)=>{"use strict";var U0=Le(),As=se(),Y0=vs();xs.exports=bs;bs.locator=Y0;var G0="\\",z0="*",W0="_";function bs(e,r,t){var n=this,i=0,u=r.charAt(i),a,o,s,l,c,f,D;if(!(u!==z0&&u!==W0||r.charAt(++i)!==u)&&(o=n.options.pedantic,s=u,c=s+s,f=r.length,i++,l="",u="",!(o&&As(r.charAt(i)))))for(;i<f;){if(D=u,u=r.charAt(i),u===s&&r.charAt(i+1)===s&&(!o||!As(D))&&(u=r.charAt(i+2),u!==s))return U0(l)?t?!0:(a=e.now(),a.column+=2,a.offset+=2,e(c+l+c)({type:"strong",children:n.tokenizeInline(l,a)})):void 0;!o&&u===G0&&(l+=u,u=r.charAt(++i)),l+=u,i++}}});var ks=x((s2,ws)=>{"use strict";ws.exports=$0;var V0=String.fromCharCode,j0=/\w/;function $0(e){return j0.test(typeof e=="number"?V0(e):e.charAt(0))}});var Bs=x((c2,Ts)=>{"use strict";Ts.exports=H0;function H0(e,r){var t=e.indexOf("*",r),n=e.indexOf("_",r);return n===-1?t:t===-1||n<t?n:t}});var Ps=x((l2,Ns)=>{"use strict";var K0=Le(),X0=ks(),_s=se(),J0=Bs();Ns.exports=qs;qs.locator=J0;var Q0="*",Os="_",Z0="\\";function qs(e,r,t){var n=this,i=0,u=r.charAt(i),a,o,s,l,c,f,D;if(!(u!==Q0&&u!==Os)&&(o=n.options.pedantic,c=u,s=u,f=r.length,i++,l="",u="",!(o&&_s(r.charAt(i)))))for(;i<f;){if(D=u,u=r.charAt(i),u===s&&(!o||!_s(D))){if(u=r.charAt(++i),u!==s){if(!K0(l)||D===s)return;if(!o&&s===Os&&X0(u)){l+=s;continue}return t?!0:(a=e.now(),a.column++,a.offset++,e(c+l+s)({type:"emphasis",children:n.tokenizeInline(l,a)}))}l+=s}!o&&u===Z0&&(l+=u,u=r.charAt(++i)),l+=u,i++}}});var Ss=x((f2,Is)=>{"use strict";Is.exports=em;function em(e,r){return e.indexOf("~~",r)}});var Ys=x((D2,Us)=>{"use strict";var Ls=se(),rm=Ss();Us.exports=Ms;Ms.locator=rm;var ft="~",Rs="~~";function Ms(e,r,t){var n=this,i="",u="",a="",o="",s,l,c;if(!(!n.options.gfm||r.charAt(0)!==ft||r.charAt(1)!==ft||Ls(r.charAt(2))))for(s=1,l=r.length,c=e.now(),c.column+=2,c.offset+=2;++s<l;){if(i=r.charAt(s),i===ft&&u===ft&&(!a||!Ls(a)))return t?!0:e(Rs+o+Rs)({type:"delete",children:n.tokenizeInline(o,c)});o+=u,a=u,u=i}}});var zs=x((p2,Gs)=>{"use strict";Gs.exports=tm;function tm(e,r){return e.indexOf("`",r)}});var js=x((h2,Vs)=>{"use strict";var nm=zs();Vs.exports=Ws;Ws.locator=nm;var _n=10,On=32,qn=96;function Ws(e,r,t){for(var n=r.length,i=0,u,a,o,s,l,c;i<n&&r.charCodeAt(i)===qn;)i++;if(!(i===0||i===n)){for(u=i,l=r.charCodeAt(i);i<n;){if(s=l,l=r.charCodeAt(i+1),s===qn){if(a===void 0&&(a=i),o=i+1,l!==qn&&o-a===u){c=!0;break}}else a!==void 0&&(a=void 0,o=void 0);i++}if(c){if(t)return!0;if(i=u,n=a,s=r.charCodeAt(i),l=r.charCodeAt(n-1),c=!1,n-i>2&&(s===On||s===_n)&&(l===On||l===_n)){for(i++,n--;i<n;){if(s=r.charCodeAt(i),s!==On&&s!==_n){c=!0;break}i++}c===!0&&(u++,a--)}return e(r.slice(0,o))({type:"inlineCode",value:r.slice(u,a)})}}}});var Hs=x((d2,$s)=>{"use strict";$s.exports=im;function im(e,r){for(var t=e.indexOf(`
+`,r);t>r&&e.charAt(t-1)===" ";)t--;return t}});var Js=x((m2,Xs)=>{"use strict";var um=Hs();Xs.exports=Ks;Ks.locator=um;var am=" ",om=`
+`,sm=2;function Ks(e,r,t){for(var n=r.length,i=-1,u="",a;++i<n;){if(a=r.charAt(i),a===om)return i<sm?void 0:t?!0:(u+=a,e(u)({type:"break"}));if(a!==am)return;u+=a}}});var Zs=x((F2,Qs)=>{"use strict";Qs.exports=cm;function cm(e,r,t){var n=this,i,u,a,o,s,l,c,f,D,m;if(t)return!0;for(i=n.inlineMethods,o=i.length,u=n.inlineTokenizers,a=-1,D=r.length;++a<o;)f=i[a],!(f==="text"||!u[f])&&(c=u[f].locator,c||e.file.fail("Missing locator: `"+f+"`"),l=c.call(n,r,1),l!==-1&&l<D&&(D=l));s=r.slice(0,D),m=e.now(),n.decode(s,m,p);function p(h,F,g){e(g||h)({type:"text",value:h})}}});var nc=x((g2,tc)=>{"use strict";var lm=Ie(),Dt=Eu(),fm=vu(),Dm=bu(),pm=Ju(),Nn=ea();tc.exports=ec;function ec(e,r){this.file=r,this.offset={},this.options=lm(this.options),this.setOptions({}),this.inList=!1,this.inBlock=!1,this.inLink=!1,this.atStart=!0,this.toOffset=fm(r).toOffset,this.unescape=Dm(this,"escape"),this.decode=pm(this)}var Y=ec.prototype;Y.setOptions=sa();Y.parse=xa();Y.options=Kt();Y.exitStart=Dt("atStart",!0);Y.enterList=Dt("inList",!1);Y.enterLink=Dt("inLink",!1);Y.enterBlock=Dt("inBlock",!1);Y.interruptParagraph=[["thematicBreak"],["list"],["atxHeading"],["fencedCode"],["blockquote"],["html"],["setextHeading",{commonmark:!1}],["definition",{commonmark:!1}]];Y.interruptList=[["atxHeading",{pedantic:!1}],["fencedCode",{pedantic:!1}],["thematicBreak",{pedantic:!1}],["definition",{commonmark:!1}]];Y.interruptBlockquote=[["indentedCode",{commonmark:!0}],["fencedCode",{commonmark:!0}],["atxHeading",{commonmark:!0}],["setextHeading",{commonmark:!0}],["thematicBreak",{commonmark:!0}],["html",{commonmark:!0}],["list",{commonmark:!0}],["definition",{commonmark:!1}]];Y.blockTokenizers={blankLine:wa(),indentedCode:Oa(),fencedCode:Pa(),blockquote:Ua(),atxHeading:za(),thematicBreak:ja(),list:no(),setextHeading:oo(),html:po(),definition:bo(),table:wo(),paragraph:Bo()};Y.inlineTokenizers={escape:Io(),autoLink:Yo(),url:Jo(),email:us(),html:ss(),link:ms(),reference:Es(),strong:ys(),emphasis:Ps(),deletion:Ys(),code:js(),break:Js(),text:Zs()};Y.blockMethods=rc(Y.blockTokenizers);Y.inlineMethods=rc(Y.inlineTokenizers);Y.tokenizeBlock=Nn("block");Y.tokenizeInline=Nn("inline");Y.tokenizeFactory=Nn;function rc(e){var r=[],t;for(t in e)r.push(t);return r}});var oc=x((E2,ac)=>{"use strict";var hm=Fu(),dm=Ie(),ic=nc();ac.exports=uc;uc.Parser=ic;function uc(e){var r=this.data("settings"),t=hm(ic);t.prototype.options=dm(t.prototype.options,r,e),this.Parser=t}});var cc=x((C2,sc)=>{"use strict";sc.exports=mm;function mm(e){if(e)throw e}});var Pn=x((v2,lc)=>{lc.exports=function(r){return r!=null&&r.constructor!=null&&typeof r.constructor.isBuffer=="function"&&r.constructor.isBuffer(r)}});var Ec=x((A2,gc)=>{"use strict";var pt=Object.prototype.hasOwnProperty,Fc=Object.prototype.toString,fc=Object.defineProperty,Dc=Object.getOwnPropertyDescriptor,pc=function(r){return typeof Array.isArray=="function"?Array.isArray(r):Fc.call(r)==="[object Array]"},hc=function(r){if(!r||Fc.call(r)!=="[object Object]")return!1;var t=pt.call(r,"constructor"),n=r.constructor&&r.constructor.prototype&&pt.call(r.constructor.prototype,"isPrototypeOf");if(r.constructor&&!t&&!n)return!1;var i;for(i in r);return typeof i>"u"||pt.call(r,i)},dc=function(r,t){fc&&t.name==="__proto__"?fc(r,t.name,{enumerable:!0,configurable:!0,value:t.newValue,writable:!0}):r[t.name]=t.newValue},mc=function(r,t){if(t==="__proto__")if(pt.call(r,t)){if(Dc)return Dc(r,t).value}else return;return r[t]};gc.exports=function e(){var r,t,n,i,u,a,o=arguments[0],s=1,l=arguments.length,c=!1;for(typeof o=="boolean"&&(c=o,o=arguments[1]||{},s=2),(o==null||typeof o!="object"&&typeof o!="function")&&(o={});s<l;++s)if(r=arguments[s],r!=null)for(t in r)n=mc(o,t),i=mc(r,t),o!==i&&(c&&i&&(hc(i)||(u=pc(i)))?(u?(u=!1,a=n&&pc(n)?n:[]):a=n&&hc(n)?n:{},dc(o,{name:t,newValue:e(c,a,i)})):typeof i<"u"&&dc(o,{name:t,newValue:i}));return o}});var vc=x((b2,Cc)=>{"use strict";Cc.exports=e=>{if(Object.prototype.toString.call(e)!=="[object Object]")return!1;let r=Object.getPrototypeOf(e);return r===null||r===Object.prototype}});var bc=x((x2,Ac)=>{"use strict";var Fm=[].slice;Ac.exports=gm;function gm(e,r){var t;return n;function n(){var a=Fm.call(arguments,0),o=e.length>a.length,s;o&&a.push(i);try{s=e.apply(null,a)}catch(l){if(o&&t)throw l;return i(l)}o||(s&&typeof s.then=="function"?s.then(u,i):s instanceof Error?i(s):u(s))}function i(){t||(t=!0,r.apply(null,arguments))}function u(a){i(null,a)}}});var Tc=x((y2,kc)=>{"use strict";var yc=bc();kc.exports=wc;wc.wrap=yc;var xc=[].slice;function wc(){var e=[],r={};return r.run=t,r.use=n,r;function t(){var i=-1,u=xc.call(arguments,0,-1),a=arguments[arguments.length-1];if(typeof a!="function")throw new Error("Expected function as last argument, not "+a);o.apply(null,[null].concat(u));function o(s){var l=e[++i],c=xc.call(arguments,0),f=c.slice(1),D=u.length,m=-1;if(s){a(s);return}for(;++m<D;)(f[m]===null||f[m]===void 0)&&(f[m]=u[m]);u=f,l?yc(l,o).apply(null,u):a.apply(null,[null].concat(u))}}function n(i){if(typeof i!="function")throw new Error("Expected `fn` to be a function, not "+i);return e.push(i),r}}});var qc=x((w2,Oc)=>{"use strict";var er={}.hasOwnProperty;Oc.exports=Em;function Em(e){return!e||typeof e!="object"?"":er.call(e,"position")||er.call(e,"type")?Bc(e.position):er.call(e,"start")||er.call(e,"end")?Bc(e):er.call(e,"line")||er.call(e,"column")?In(e):""}function In(e){return(!e||typeof e!="object")&&(e={}),_c(e.line)+":"+_c(e.column)}function Bc(e){return(!e||typeof e!="object")&&(e={}),In(e.start)+"-"+In(e.end)}function _c(e){return e&&typeof e=="number"?e:1}});var Ic=x((k2,Pc)=>{"use strict";var Cm=qc();Pc.exports=Sn;function Nc(){}Nc.prototype=Error.prototype;Sn.prototype=new Nc;var Te=Sn.prototype;Te.file="";Te.name="";Te.reason="";Te.message="";Te.stack="";Te.fatal=null;Te.column=null;Te.line=null;function Sn(e,r,t){var n,i,u;typeof r=="string"&&(t=r,r=null),n=vm(t),i=Cm(r)||"1:1",u={start:{line:null,column:null},end:{line:null,column:null}},r&&r.position&&(r=r.position),r&&(r.start?(u=r,r=r.start):u.start=r),e.stack&&(this.stack=e.stack,e=e.message),this.message=e,this.name=i,this.reason=e,this.line=r?r.line:null,this.column=r?r.column:null,this.location=u,this.source=n[0],this.ruleId=n[1]}function vm(e){var r=[null,null],t;return typeof e=="string"&&(t=e.indexOf(":"),t===-1?r[1]=e:(r[0]=e.slice(0,t),r[1]=e.slice(t+1))),r}});var Sc=x(rr=>{"use strict";rr.basename=Am;rr.dirname=bm;rr.extname=xm;rr.join=ym;rr.sep="/";function Am(e,r){var t=0,n=-1,i,u,a,o;if(r!==void 0&&typeof r!="string")throw new TypeError('"ext" argument must be a string');if(wr(e),i=e.length,r===void 0||!r.length||r.length>e.length){for(;i--;)if(e.charCodeAt(i)===47){if(a){t=i+1;break}}else n<0&&(a=!0,n=i+1);return n<0?"":e.slice(t,n)}if(r===e)return"";for(u=-1,o=r.length-1;i--;)if(e.charCodeAt(i)===47){if(a){t=i+1;break}}else u<0&&(a=!0,u=i+1),o>-1&&(e.charCodeAt(i)===r.charCodeAt(o--)?o<0&&(n=i):(o=-1,n=u));return t===n?n=u:n<0&&(n=e.length),e.slice(t,n)}function bm(e){var r,t,n;if(wr(e),!e.length)return".";for(r=-1,n=e.length;--n;)if(e.charCodeAt(n)===47){if(t){r=n;break}}else t||(t=!0);return r<0?e.charCodeAt(0)===47?"/":".":r===1&&e.charCodeAt(0)===47?"//":e.slice(0,r)}function xm(e){var r=-1,t=0,n=-1,i=0,u,a,o;for(wr(e),o=e.length;o--;){if(a=e.charCodeAt(o),a===47){if(u){t=o+1;break}continue}n<0&&(u=!0,n=o+1),a===46?r<0?r=o:i!==1&&(i=1):r>-1&&(i=-1)}return r<0||n<0||i===0||i===1&&r===n-1&&r===t+1?"":e.slice(r,n)}function ym(){for(var e=-1,r;++e<arguments.length;)wr(arguments[e]),arguments[e]&&(r=r===void 0?arguments[e]:r+"/"+arguments[e]);return r===void 0?".":wm(r)}function wm(e){var r,t;return wr(e),r=e.charCodeAt(0)===47,t=km(e,!r),!t.length&&!r&&(t="."),t.length&&e.charCodeAt(e.length-1)===47&&(t+="/"),r?"/"+t:t}function km(e,r){for(var t="",n=0,i=-1,u=0,a=-1,o,s;++a<=e.length;){if(a<e.length)o=e.charCodeAt(a);else{if(o===47)break;o=47}if(o===47){if(!(i===a-1||u===1))if(i!==a-1&&u===2){if(t.length<2||n!==2||t.charCodeAt(t.length-1)!==46||t.charCodeAt(t.length-2)!==46){if(t.length>2){if(s=t.lastIndexOf("/"),s!==t.length-1){s<0?(t="",n=0):(t=t.slice(0,s),n=t.length-1-t.lastIndexOf("/")),i=a,u=0;continue}}else if(t.length){t="",n=0,i=a,u=0;continue}}r&&(t=t.length?t+"/..":"..",n=2)}else t.length?t+="/"+e.slice(i+1,a):t=e.slice(i+1,a),n=a-i-1;i=a,u=0}else o===46&&u>-1?u++:u=-1}return t}function wr(e){if(typeof e!="string")throw new TypeError("Path must be a string. Received "+JSON.stringify(e))}});var Rc=x(Lc=>{"use strict";Lc.cwd=Tm;function Tm(){return"/"}});var Yc=x((_2,Uc)=>{"use strict";var ce=Sc(),Bm=Rc(),_m=Pn();Uc.exports=Ce;var Om={}.hasOwnProperty,Ln=["history","path","basename","stem","extname","dirname"];Ce.prototype.toString=Gm;Object.defineProperty(Ce.prototype,"path",{get:qm,set:Nm});Object.defineProperty(Ce.prototype,"dirname",{get:Pm,set:Im});Object.defineProperty(Ce.prototype,"basename",{get:Sm,set:Lm});Object.defineProperty(Ce.prototype,"extname",{get:Rm,set:Mm});Object.defineProperty(Ce.prototype,"stem",{get:Um,set:Ym});function Ce(e){var r,t;if(!e)e={};else if(typeof e=="string"||_m(e))e={contents:e};else if("message"in e&&"messages"in e)return e;if(!(this instanceof Ce))return new Ce(e);for(this.data={},this.messages=[],this.history=[],this.cwd=Bm.cwd(),t=-1;++t<Ln.length;)r=Ln[t],Om.call(e,r)&&(this[r]=e[r]);for(r in e)Ln.indexOf(r)<0&&(this[r]=e[r])}function qm(){return this.history[this.history.length-1]}function Nm(e){Mn(e,"path"),this.path!==e&&this.history.push(e)}function Pm(){return typeof this.path=="string"?ce.dirname(this.path):void 0}function Im(e){Mc(this.path,"dirname"),this.path=ce.join(e||"",this.basename)}function Sm(){return typeof this.path=="string"?ce.basename(this.path):void 0}function Lm(e){Mn(e,"basename"),Rn(e,"basename"),this.path=ce.join(this.dirname||"",e)}function Rm(){return typeof this.path=="string"?ce.extname(this.path):void 0}function Mm(e){if(Rn(e,"extname"),Mc(this.path,"extname"),e){if(e.charCodeAt(0)!==46)throw new Error("`extname` must start with `.`");if(e.indexOf(".",1)>-1)throw new Error("`extname` cannot contain multiple dots")}this.path=ce.join(this.dirname,this.stem+(e||""))}function Um(){return typeof this.path=="string"?ce.basename(this.path,this.extname):void 0}function Ym(e){Mn(e,"stem"),Rn(e,"stem"),this.path=ce.join(this.dirname||"",e+(this.extname||""))}function Gm(e){return(this.contents||"").toString(e)}function Rn(e,r){if(e&&e.indexOf(ce.sep)>-1)throw new Error("`"+r+"` cannot be a path: did not expect `"+ce.sep+"`")}function Mn(e,r){if(!e)throw new Error("`"+r+"` cannot be empty")}function Mc(e,r){if(!e)throw new Error("Setting `"+r+"` requires `path` to be set too")}});var zc=x((O2,Gc)=>{"use strict";var zm=Ic(),ht=Yc();Gc.exports=ht;ht.prototype.message=Wm;ht.prototype.info=jm;ht.prototype.fail=Vm;function Wm(e,r,t){var n=new zm(e,r,t);return this.path&&(n.name=this.path+":"+n.name,n.file=this.path),n.fatal=!1,this.messages.push(n),n}function Vm(){var e=this.message.apply(this,arguments);throw e.fatal=!0,e}function jm(){var e=this.message.apply(this,arguments);return e.fatal=null,e}});var Vc=x((q2,Wc)=>{"use strict";Wc.exports=zc()});var el=x((N2,Zc)=>{"use strict";var jc=cc(),$m=Pn(),dt=Ec(),$c=vc(),Jc=Tc(),kr=Vc();Zc.exports=Qc().freeze();var Hm=[].slice,Km={}.hasOwnProperty,Xm=Jc().use(Jm).use(Qm).use(Zm);function Jm(e,r){r.tree=e.parse(r.file)}function Qm(e,r,t){e.run(r.tree,r.file,n);function n(i,u,a){i?t(i):(r.tree=u,r.file=a,t())}}function Zm(e,r){var t=e.stringify(r.tree,r.file);t==null||(typeof t=="string"||$m(t)?("value"in r.file&&(r.file.value=t),r.file.contents=t):r.file.result=t)}function Qc(){var e=[],r=Jc(),t={},n=-1,i;return u.data=o,u.freeze=a,u.attachers=e,u.use=s,u.parse=c,u.stringify=m,u.run=f,u.runSync=D,u.process=p,u.processSync=h,u;function u(){for(var F=Qc(),g=-1;++g<e.length;)F.use.apply(null,e[g]);return F.data(dt(!0,{},t)),F}function a(){var F,g;if(i)return u;for(;++n<e.length;)F=e[n],F[1]!==!1&&(F[1]===!0&&(F[1]=void 0),g=F[0].apply(u,F.slice(1)),typeof g=="function"&&r.use(g));return i=!0,n=1/0,u}function o(F,g){return typeof F=="string"?arguments.length===2?(Gn("data",i),t[F]=g,u):Km.call(t,F)&&t[F]||null:F?(Gn("data",i),t=F,u):t}function s(F){var g;if(Gn("use",i),F!=null)if(typeof F=="function")b.apply(null,arguments);else if(typeof F=="object")"length"in F?A(F):E(F);else throw new Error("Expected usable value, not `"+F+"`");return g&&(t.settings=dt(t.settings||{},g)),u;function E(d){A(d.plugins),d.settings&&(g=dt(g||{},d.settings))}function v(d){if(typeof d=="function")b(d);else if(typeof d=="object")"length"in d?b.apply(null,d):E(d);else throw new Error("Expected usable value, not `"+d+"`")}function A(d){var y=-1;if(d!=null)if(typeof d=="object"&&"length"in d)for(;++y<d.length;)v(d[y]);else throw new Error("Expected a list of plugins, not `"+d+"`")}function b(d,y){var w=l(d);w?($c(w[1])&&$c(y)&&(y=dt(!0,w[1],y)),w[1]=y):e.push(Hm.call(arguments))}}function l(F){for(var g=-1;++g<e.length;)if(e[g][0]===F)return e[g]}function c(F){var g=kr(F),E;return a(),E=u.Parser,Un("parse",E),Hc(E,"parse")?new E(String(g),g).parse():E(String(g),g)}function f(F,g,E){if(Kc(F),a(),!E&&typeof g=="function"&&(E=g,g=null),!E)return new Promise(v);v(null,E);function v(A,b){r.run(F,kr(g),d);function d(y,w,C){w=w||F,y?b(y):A?A(w):E(null,w,C)}}}function D(F,g){var E,v;return f(F,g,A),Xc("runSync","run",v),E;function A(b,d){v=!0,E=d,jc(b)}}function m(F,g){var E=kr(g),v;return a(),v=u.Compiler,Yn("stringify",v),Kc(F),Hc(v,"compile")?new v(F,E).compile():v(F,E)}function p(F,g){if(a(),Un("process",u.Parser),Yn("process",u.Compiler),!g)return new Promise(E);E(null,g);function E(v,A){var b=kr(F);Xm.run(u,{file:b},d);function d(y){y?A(y):v?v(b):g(null,b)}}}function h(F){var g,E;return a(),Un("processSync",u.Parser),Yn("processSync",u.Compiler),g=kr(F),p(g,v),Xc("processSync","process",E),g;function v(A){E=!0,jc(A)}}}function Hc(e,r){return typeof e=="function"&&e.prototype&&(eF(e.prototype)||r in e.prototype)}function eF(e){var r;for(r in e)return!0;return!1}function Un(e,r){if(typeof r!="function")throw new Error("Cannot `"+e+"` without `Parser`")}function Yn(e,r){if(typeof r!="function")throw new Error("Cannot `"+e+"` without `Compiler`")}function Gn(e,r){if(r)throw new Error("Cannot invoke `"+e+"` on a frozen processor.\nCreate a new processor first, by invoking it: use `processor()` instead of `processor`.")}function Kc(e){if(!e||typeof e.type!="string")throw new Error("Expected node, got `"+e+"`")}function Xc(e,r,t){if(!t)throw new Error("`"+e+"` finished async. Use `"+r+"` instead")}});var gl={};Vn(gl,{languages:()=>Ki,options:()=>Xi,parsers:()=>Wn,printers:()=>fF});var Me=(e,r)=>(t,n,...i)=>t|1&&n==null?void 0:(r.call(n)??n[e]).apply(n,i);function yl(e){return this[e<0?this.length+e:e]}var wl=Me("at",function(){if(Array.isArray(this)||typeof this=="string")return yl}),U=wl;var kl=String.prototype.replaceAll??function(e,r){return e.global?this.replace(e,r):this.split(e).join(r)},Tl=Me("replaceAll",function(){if(typeof this=="string")return kl}),R=Tl;var $i=Re(Tr(),1);function fe(e){if(typeof e!="string")throw new TypeError("Expected a string");return e.replace(/[|\\{}()[\]^$+*?.]/g,"\\$&").replace(/-/g,"\\x2d")}var _l=()=>{},tr=_l;var V="string",j="array",be="cursor",ee="indent",re="align",De="trim",X="group",J="fill",Q="if-break",pe="indent-if-break",he="line-suffix",de="line-suffix-boundary",$="line",me="label",te="break-parent",Br=new Set([be,ee,re,De,X,J,Q,pe,he,de,$,me,te]);function Ol(e){if(typeof e=="string")return V;if(Array.isArray(e))return j;if(!e)return;let{type:r}=e;if(Br.has(r))return r}var W=Ol;var ql=e=>new Intl.ListFormat("en-US",{type:"disjunction"}).format(e);function Nl(e){let r=e===null?"null":typeof e;if(r!=="string"&&r!=="object")return`Unexpected doc '${r}', 
+Expected it to be 'string' or 'object'.`;if(W(e))throw new Error("doc is valid.");let t=Object.prototype.toString.call(e);if(t!=="[object Object]")return`Unexpected doc '${t}'.`;let n=ql([...Br].map(i=>`'${i}'`));return`Unexpected doc.type '${e.type}'.
+Expected it to be ${n}.`}var markdown_gt=class extends Error{name="InvalidDocError";constructor(r){super(Nl(r)),this.doc=r}},Be=markdown_gt;var $n={};function Pl(e,r,t,n){let i=[e];for(;i.length>0;){let u=i.pop();if(u===$n){t(i.pop());continue}t&&i.push(u,$n);let a=W(u);if(!a)throw new Be(u);if(r?.(u)!==!1)switch(a){case j:case J:{let o=a===j?u:u.parts;for(let s=o.length,l=s-1;l>=0;--l)i.push(o[l]);break}case Q:i.push(u.flatContents,u.breakContents);break;case X:if(n&&u.expandedStates)for(let o=u.expandedStates.length,s=o-1;s>=0;--s)i.push(u.expandedStates[s]);else i.push(u.contents);break;case re:case ee:case pe:case me:case he:i.push(u.contents);break;case V:case be:case De:case de:case $:case te:break;default:throw new Be(u)}}}var Hn=Pl;function Il(e,r){if(typeof e=="string")return r(e);let t=new Map;return n(e);function n(u){if(t.has(u))return t.get(u);let a=i(u);return t.set(u,a),a}function i(u){switch(W(u)){case j:return r(u.map(n));case J:return r({...u,parts:u.parts.map(n)});case Q:return r({...u,breakContents:n(u.breakContents),flatContents:n(u.flatContents)});case X:{let{expandedStates:a,contents:o}=u;return a?(a=a.map(n),o=a[0]):o=n(o),r({...u,contents:o,expandedStates:a})}case re:case ee:case pe:case me:case he:return r({...u,contents:n(u.contents)});case V:case be:case De:case de:case $:case te:return r(u);default:throw new Be(u)}}}function Kn(e){if(e.length>0){let r=U(0,e,-1);!r.expandedStates&&!r.break&&(r.break="propagated")}return null}function Xn(e){let r=new Set,t=[];function n(u){if(u.type===te&&Kn(t),u.type===X){if(t.push(u),r.has(u))return!1;r.add(u)}}function i(u){u.type===X&&t.pop().break&&Kn(t)}Hn(e,n,i,!0)}function xe(e,r=nr){return Il(e,t=>typeof t=="string"?_r(r,t.split(`
+`)):t)}var ne=tr,Or=tr,Jn=tr,Qn=tr;function ir(e){return ne(e),{type:ee,contents:e}}function Fe(e,r){return Qn(e),ne(r),{type:re,contents:r,n:e}}function ur(e){return Fe({type:"root"},e)}var Ue={type:te};function Ye(e){return Jn(e),{type:J,parts:e}}function Ge(e,r={}){return ne(e),Or(r.expandedStates,!0),{type:X,id:r.id,contents:e,break:!!r.shouldBreak,expandedStates:r.expandedStates}}function Zn(e,r="",t={}){return ne(e),r!==""&&ne(r),{type:Q,breakContents:e,flatContents:r,groupId:t.groupId}}function _r(e,r){ne(e),Or(r);let t=[];for(let n=0;n<r.length;n++)n!==0&&t.push(e),t.push(r[n]);return t}var qr={type:$},Nr={type:$,soft:!0},ar={type:$,hard:!0},M=[ar,Ue],Sl={type:$,hard:!0,literal:!0},nr=[Sl,Ue];var Ll="cr",Rl="crlf";var Ml="\r",Ul=`\r
+`,Yl=`
+`,Gl=Yl;function ei(e){return e===Ll?Ml:e===Rl?Ul:Gl}var ri=()=>/[#*0-9]\uFE0F?\u20E3|[\xA9\xAE\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA\u231A\u231B\u2328\u23CF\u23ED-\u23EF\u23F1\u23F2\u23F8-\u23FA\u24C2\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC\u25FE\u2600-\u2604\u260E\u2611\u2614\u2615\u2618\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642\u2648-\u2653\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E\u267F\u2692\u2694-\u2697\u2699\u269B\u269C\u26A0\u26A7\u26AA\u26B0\u26B1\u26BD\u26BE\u26C4\u26C8\u26CF\u26D1\u26E9\u26F0-\u26F5\u26F7\u26F8\u26FA\u2702\u2708\u2709\u270F\u2712\u2714\u2716\u271D\u2721\u2733\u2734\u2744\u2747\u2757\u2763\u27A1\u2934\u2935\u2B05-\u2B07\u2B1B\u2B1C\u2B55\u3030\u303D\u3297\u3299]\uFE0F?|[\u261D\u270C\u270D](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\u270A\u270B](?:\uD83C[\uDFFB-\uDFFF])?|[\u23E9-\u23EC\u23F0\u23F3\u25FD\u2693\u26A1\u26AB\u26C5\u26CE\u26D4\u26EA\u26FD\u2705\u2728\u274C\u274E\u2753-\u2755\u2795-\u2797\u27B0\u27BF\u2B50]|\u26D3\uFE0F?(?:\u200D\uD83D\uDCA5)?|\u26F9(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|\u2764\uFE0F?(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79))?|\uD83C(?:[\uDC04\uDD70\uDD71\uDD7E\uDD7F\uDE02\uDE37\uDF21\uDF24-\uDF2C\uDF36\uDF7D\uDF96\uDF97\uDF99-\uDF9B\uDF9E\uDF9F\uDFCD\uDFCE\uDFD4-\uDFDF\uDFF5\uDFF7]\uFE0F?|[\uDF85\uDFC2\uDFC7](?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC4\uDFCA](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDFCB\uDFCC](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDCCF\uDD8E\uDD91-\uDD9A\uDE01\uDE1A\uDE2F\uDE32-\uDE36\uDE38-\uDE3A\uDE50\uDE51\uDF00-\uDF20\uDF2D-\uDF35\uDF37-\uDF43\uDF45-\uDF4A\uDF4C-\uDF7C\uDF7E-\uDF84\uDF86-\uDF93\uDFA0-\uDFC1\uDFC5\uDFC6\uDFC8\uDFC9\uDFCF-\uDFD3\uDFE0-\uDFF0\uDFF8-\uDFFF]|\uDDE6\uD83C[\uDDE8-\uDDEC\uDDEE\uDDF1\uDDF2\uDDF4\uDDF6-\uDDFA\uDDFC\uDDFD\uDDFF]|\uDDE7\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEF\uDDF1-\uDDF4\uDDF6-\uDDF9\uDDFB\uDDFC\uDDFE\uDDFF]|\uDDE8\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDEE\uDDF0-\uDDF7\uDDFA-\uDDFF]|\uDDE9\uD83C[\uDDEA\uDDEC\uDDEF\uDDF0\uDDF2\uDDF4\uDDFF]|\uDDEA\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDED\uDDF7-\uDDFA]|\uDDEB\uD83C[\uDDEE-\uDDF0\uDDF2\uDDF4\uDDF7]|\uDDEC\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEE\uDDF1-\uDDF3\uDDF5-\uDDFA\uDDFC\uDDFE]|\uDDED\uD83C[\uDDF0\uDDF2\uDDF3\uDDF7\uDDF9\uDDFA]|\uDDEE\uD83C[\uDDE8-\uDDEA\uDDF1-\uDDF4\uDDF6-\uDDF9]|\uDDEF\uD83C[\uDDEA\uDDF2\uDDF4\uDDF5]|\uDDF0\uD83C[\uDDEA\uDDEC-\uDDEE\uDDF2\uDDF3\uDDF5\uDDF7\uDDFC\uDDFE\uDDFF]|\uDDF1\uD83C[\uDDE6-\uDDE8\uDDEE\uDDF0\uDDF7-\uDDFB\uDDFE]|\uDDF2\uD83C[\uDDE6\uDDE8-\uDDED\uDDF0-\uDDFF]|\uDDF3\uD83C[\uDDE6\uDDE8\uDDEA-\uDDEC\uDDEE\uDDF1\uDDF4\uDDF5\uDDF7\uDDFA\uDDFF]|\uDDF4\uD83C\uDDF2|\uDDF5\uD83C[\uDDE6\uDDEA-\uDDED\uDDF0-\uDDF3\uDDF7-\uDDF9\uDDFC\uDDFE]|\uDDF6\uD83C\uDDE6|\uDDF7\uD83C[\uDDEA\uDDF4\uDDF8\uDDFA\uDDFC]|\uDDF8\uD83C[\uDDE6-\uDDEA\uDDEC-\uDDF4\uDDF7-\uDDF9\uDDFB\uDDFD-\uDDFF]|\uDDF9\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDED\uDDEF-\uDDF4\uDDF7\uDDF9\uDDFB\uDDFC\uDDFF]|\uDDFA\uD83C[\uDDE6\uDDEC\uDDF2\uDDF3\uDDF8\uDDFE\uDDFF]|\uDDFB\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDEE\uDDF3\uDDFA]|\uDDFC\uD83C[\uDDEB\uDDF8]|\uDDFD\uD83C\uDDF0|\uDDFE\uD83C[\uDDEA\uDDF9]|\uDDFF\uD83C[\uDDE6\uDDF2\uDDFC]|\uDF44(?:\u200D\uD83D\uDFEB)?|\uDF4B(?:\u200D\uD83D\uDFE9)?|\uDFC3(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDFF3\uFE0F?(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08))?|\uDFF4(?:\u200D\u2620\uFE0F?|\uDB40\uDC67\uDB40\uDC62\uDB40(?:\uDC65\uDB40\uDC6E\uDB40\uDC67|\uDC73\uDB40\uDC63\uDB40\uDC74|\uDC77\uDB40\uDC6C\uDB40\uDC73)\uDB40\uDC7F)?)|\uD83D(?:[\uDC3F\uDCFD\uDD49\uDD4A\uDD6F\uDD70\uDD73\uDD76-\uDD79\uDD87\uDD8A-\uDD8D\uDDA5\uDDA8\uDDB1\uDDB2\uDDBC\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA\uDECB\uDECD-\uDECF\uDEE0-\uDEE5\uDEE9\uDEF0\uDEF3]\uFE0F?|[\uDC42\uDC43\uDC46-\uDC50\uDC66\uDC67\uDC6B-\uDC6D\uDC72\uDC74-\uDC76\uDC78\uDC7C\uDC83\uDC85\uDC8F\uDC91\uDCAA\uDD7A\uDD95\uDD96\uDE4C\uDE4F\uDEC0\uDECC](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC6E-\uDC71\uDC73\uDC77\uDC81\uDC82\uDC86\uDC87\uDE45-\uDE47\uDE4B\uDE4D\uDE4E\uDEA3\uDEB4\uDEB5](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD74\uDD90](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\uDC00-\uDC07\uDC09-\uDC14\uDC16-\uDC25\uDC27-\uDC3A\uDC3C-\uDC3E\uDC40\uDC44\uDC45\uDC51-\uDC65\uDC6A\uDC79-\uDC7B\uDC7D-\uDC80\uDC84\uDC88-\uDC8E\uDC90\uDC92-\uDCA9\uDCAB-\uDCFC\uDCFF-\uDD3D\uDD4B-\uDD4E\uDD50-\uDD67\uDDA4\uDDFB-\uDE2D\uDE2F-\uDE34\uDE37-\uDE41\uDE43\uDE44\uDE48-\uDE4A\uDE80-\uDEA2\uDEA4-\uDEB3\uDEB7-\uDEBF\uDEC1-\uDEC5\uDED0-\uDED2\uDED5-\uDED8\uDEDC-\uDEDF\uDEEB\uDEEC\uDEF4-\uDEFC\uDFE0-\uDFEB\uDFF0]|\uDC08(?:\u200D\u2B1B)?|\uDC15(?:\u200D\uD83E\uDDBA)?|\uDC26(?:\u200D(?:\u2B1B|\uD83D\uDD25))?|\uDC3B(?:\u200D\u2744\uFE0F?)?|\uDC41\uFE0F?(?:\u200D\uD83D\uDDE8\uFE0F?)?|\uDC68(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDC68\uDC69]\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?))?|\uDC69(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?[\uDC68\uDC69]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|\uDC69\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?))|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFC-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFC-\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFD-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFD-\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFD\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFD\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFE])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFE]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFE])))?))?|\uDD75(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDE2E(?:\u200D\uD83D\uDCA8)?|\uDE35(?:\u200D\uD83D\uDCAB)?|\uDE36(?:\u200D\uD83C\uDF2B\uFE0F?)?|\uDE42(?:\u200D[\u2194\u2195]\uFE0F?)?|\uDEB6(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?)|\uD83E(?:[\uDD0C\uDD0F\uDD18-\uDD1F\uDD30-\uDD34\uDD36\uDD77\uDDB5\uDDB6\uDDBB\uDDD2\uDDD3\uDDD5\uDEC3-\uDEC5\uDEF0\uDEF2-\uDEF8](?:\uD83C[\uDFFB-\uDFFF])?|[\uDD26\uDD35\uDD37-\uDD39\uDD3C-\uDD3E\uDDB8\uDDB9\uDDCD\uDDCF\uDDD4\uDDD6-\uDDDD](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDDDE\uDDDF](?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD0D\uDD0E\uDD10-\uDD17\uDD20-\uDD25\uDD27-\uDD2F\uDD3A\uDD3F-\uDD45\uDD47-\uDD76\uDD78-\uDDB4\uDDB7\uDDBA\uDDBC-\uDDCC\uDDD0\uDDE0-\uDDFF\uDE70-\uDE7C\uDE80-\uDE8A\uDE8E-\uDEC2\uDEC6\uDEC8\uDECD-\uDEDC\uDEDF-\uDEEA\uDEEF]|\uDDCE(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDDD1(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1|\uDDD1\u200D\uD83E\uDDD2(?:\u200D\uD83E\uDDD2)?|\uDDD2(?:\u200D\uD83E\uDDD2)?))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE])))?))?|\uDEF1(?:\uD83C(?:\uDFFB(?:\u200D\uD83E\uDEF2\uD83C[\uDFFC-\uDFFF])?|\uDFFC(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFD-\uDFFF])?|\uDFFD(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])?|\uDFFE(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFD\uDFFF])?|\uDFFF(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFE])?))?)/g;function Et(e){return e===12288||e>=65281&&e<=65376||e>=65504&&e<=65510}function Ct(e){return e>=4352&&e<=4447||e===8986||e===8987||e===9001||e===9002||e>=9193&&e<=9196||e===9200||e===9203||e===9725||e===9726||e===9748||e===9749||e>=9776&&e<=9783||e>=9800&&e<=9811||e===9855||e>=9866&&e<=9871||e===9875||e===9889||e===9898||e===9899||e===9917||e===9918||e===9924||e===9925||e===9934||e===9940||e===9962||e===9970||e===9971||e===9973||e===9978||e===9981||e===9989||e===9994||e===9995||e===10024||e===10060||e===10062||e>=10067&&e<=10069||e===10071||e>=10133&&e<=10135||e===10160||e===10175||e===11035||e===11036||e===11088||e===11093||e>=11904&&e<=11929||e>=11931&&e<=12019||e>=12032&&e<=12245||e>=12272&&e<=12287||e>=12289&&e<=12350||e>=12353&&e<=12438||e>=12441&&e<=12543||e>=12549&&e<=12591||e>=12593&&e<=12686||e>=12688&&e<=12773||e>=12783&&e<=12830||e>=12832&&e<=12871||e>=12880&&e<=42124||e>=42128&&e<=42182||e>=43360&&e<=43388||e>=44032&&e<=55203||e>=63744&&e<=64255||e>=65040&&e<=65049||e>=65072&&e<=65106||e>=65108&&e<=65126||e>=65128&&e<=65131||e>=94176&&e<=94180||e>=94192&&e<=94198||e>=94208&&e<=101589||e>=101631&&e<=101662||e>=101760&&e<=101874||e>=110576&&e<=110579||e>=110581&&e<=110587||e===110589||e===110590||e>=110592&&e<=110882||e===110898||e>=110928&&e<=110930||e===110933||e>=110948&&e<=110951||e>=110960&&e<=111355||e>=119552&&e<=119638||e>=119648&&e<=119670||e===126980||e===127183||e===127374||e>=127377&&e<=127386||e>=127488&&e<=127490||e>=127504&&e<=127547||e>=127552&&e<=127560||e===127568||e===127569||e>=127584&&e<=127589||e>=127744&&e<=127776||e>=127789&&e<=127797||e>=127799&&e<=127868||e>=127870&&e<=127891||e>=127904&&e<=127946||e>=127951&&e<=127955||e>=127968&&e<=127984||e===127988||e>=127992&&e<=128062||e===128064||e>=128066&&e<=128252||e>=128255&&e<=128317||e>=128331&&e<=128334||e>=128336&&e<=128359||e===128378||e===128405||e===128406||e===128420||e>=128507&&e<=128591||e>=128640&&e<=128709||e===128716||e>=128720&&e<=128722||e>=128725&&e<=128728||e>=128732&&e<=128735||e===128747||e===128748||e>=128756&&e<=128764||e>=128992&&e<=129003||e===129008||e>=129292&&e<=129338||e>=129340&&e<=129349||e>=129351&&e<=129535||e>=129648&&e<=129660||e>=129664&&e<=129674||e>=129678&&e<=129734||e===129736||e>=129741&&e<=129756||e>=129759&&e<=129770||e>=129775&&e<=129784||e>=131072&&e<=196605||e>=196608&&e<=262141}var ti="\xA9\xAE\u203C\u2049\u2122\u2139\u2194\u2195\u2196\u2197\u2198\u2199\u21A9\u21AA\u2328\u23CF\u23F1\u23F2\u23F8\u23F9\u23FA\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC\u2600\u2601\u2602\u2603\u2604\u260E\u2611\u2618\u261D\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638\u2639\u263A\u2640\u2642\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E\u2692\u2694\u2695\u2696\u2697\u2699\u269B\u269C\u26A0\u26A7\u26B0\u26B1\u26C8\u26CF\u26D1\u26D3\u26E9\u26F1\u26F7\u26F8\u26F9\u2702\u2708\u2709\u270C\u270D\u270F\u2712\u2714\u2716\u271D\u2721\u2733\u2734\u2744\u2747\u2763\u2764\u27A1\u2934\u2935\u2B05\u2B06\u2B07";var zl=/[^\x20-\x7F]/u,Wl=new Set(ti);function Vl(e){if(!e)return 0;if(!zl.test(e))return e.length;e=e.replace(ri(),t=>Wl.has(t)?" ":"  ");let r=0;for(let t of e){let n=t.codePointAt(0);n<=31||n>=127&&n<=159||n>=768&&n<=879||n>=65024&&n<=65039||(r+=Et(n)||Ct(n)?2:1)}return r}var or=Vl;var jl={type:0},$l={type:1},vt={value:"",length:0,queue:[],get root(){return vt}};function ni(e,r,t){let n=r.type===1?e.queue.slice(0,-1):[...e.queue,r],i="",u=0,a=0,o=0;for(let p of n)switch(p.type){case 0:c(),t.useTabs?s(1):l(t.tabWidth);break;case 3:{let{string:h}=p;c(),i+=h,u+=h.length;break}case 2:{let{width:h}=p;a+=1,o+=h;break}default:throw new Error(`Unexpected indent comment '${p.type}'.`)}return D(),{...e,value:i,length:u,queue:n};function s(p){i+="	".repeat(p),u+=t.tabWidth*p}function l(p){i+=" ".repeat(p),u+=p}function c(){t.useTabs?f():D()}function f(){a>0&&s(a),m()}function D(){o>0&&l(o),m()}function m(){a=0,o=0}}function ii(e,r,t){if(!r)return e;if(r.type==="root")return{...e,root:e};if(r===Number.NEGATIVE_INFINITY)return e.root;let n;return typeof r=="number"?r<0?n=$l:n={type:2,width:r}:n={type:3,string:r},ni(e,n,t)}function ui(e,r){return ni(e,jl,r)}function Hl(e){let r=0;for(let t=e.length-1;t>=0;t--){let n=e[t];if(n===" "||n==="	")r++;else break}return r}function At(e){let r=Hl(e);return{text:r===0?e:e.slice(0,e.length-r),count:r}}var H=Symbol("MODE_BREAK"),ue=Symbol("MODE_FLAT"),bt=Symbol("DOC_FILL_PRINTED_LENGTH");function Pr(e,r,t,n,i,u){if(t===Number.POSITIVE_INFINITY)return!0;let a=r.length,o=!1,s=[e],l="";for(;t>=0;){if(s.length===0){if(a===0)return!0;s.push(r[--a]);continue}let{mode:c,doc:f}=s.pop(),D=W(f);switch(D){case V:f&&(o&&(l+=" ",t-=1,o=!1),l+=f,t-=or(f));break;case j:case J:{let m=D===j?f:f.parts,p=f[bt]??0;for(let h=m.length-1;h>=p;h--)s.push({mode:c,doc:m[h]});break}case ee:case re:case pe:case me:s.push({mode:c,doc:f.contents});break;case De:{let{text:m,count:p}=At(l);l=m,t+=p;break}case X:{if(u&&f.break)return!1;let m=f.break?H:c,p=f.expandedStates&&m===H?U(0,f.expandedStates,-1):f.contents;s.push({mode:m,doc:p});break}case Q:{let p=(f.groupId?i[f.groupId]||ue:c)===H?f.breakContents:f.flatContents;p&&s.push({mode:c,doc:p});break}case $:if(c===H||f.hard)return!0;f.soft||(o=!0);break;case he:n=!0;break;case de:if(n)return!1;break}}return!1}function ai(e,r){let t=Object.create(null),n=r.printWidth,i=ei(r.endOfLine),u=0,a=[{indent:vt,mode:H,doc:e}],o="",s=!1,l=[],c=[],f=[],D=[],m=0;for(Xn(e);a.length>0;){let{indent:E,mode:v,doc:A}=a.pop();switch(W(A)){case V:{let b=i!==`
+`?R(0,A,`
+`,i):A;b&&(o+=b,a.length>0&&(u+=or(b)));break}case j:for(let b=A.length-1;b>=0;b--)a.push({indent:E,mode:v,doc:A[b]});break;case be:if(c.length>=2)throw new Error("There are too many 'cursor' in doc.");c.push(m+o.length);break;case ee:a.push({indent:ui(E,r),mode:v,doc:A.contents});break;case re:a.push({indent:ii(E,A.n,r),mode:v,doc:A.contents});break;case De:g();break;case X:switch(v){case ue:if(!s){a.push({indent:E,mode:A.break?H:ue,doc:A.contents});break}case H:{s=!1;let b={indent:E,mode:ue,doc:A.contents},d=n-u,y=l.length>0;if(!A.break&&Pr(b,a,d,y,t))a.push(b);else if(A.expandedStates){let w=U(0,A.expandedStates,-1);if(A.break){a.push({indent:E,mode:H,doc:w});break}else for(let C=1;C<A.expandedStates.length+1;C++)if(C>=A.expandedStates.length){a.push({indent:E,mode:H,doc:w});break}else{let k=A.expandedStates[C],T={indent:E,mode:ue,doc:k};if(Pr(T,a,d,y,t)){a.push(T);break}}}else a.push({indent:E,mode:H,doc:A.contents});break}}A.id&&(t[A.id]=U(0,a,-1).mode);break;case J:{let b=n-u,d=A[bt]??0,{parts:y}=A,w=y.length-d;if(w===0)break;let C=y[d+0],k=y[d+1],T={indent:E,mode:ue,doc:C},B={indent:E,mode:H,doc:C},_=Pr(T,[],b,l.length>0,t,!0);if(w===1){_?a.push(T):a.push(B);break}let S={indent:E,mode:ue,doc:k},P={indent:E,mode:H,doc:k};if(w===2){_?a.push(S,T):a.push(P,B);break}let N=y[d+2],O={indent:E,mode:v,doc:{...A,[bt]:d+2}},le=Pr({indent:E,mode:ue,doc:[C,k,N]},[],b,l.length>0,t,!0);a.push(O),le?a.push(S,T):_?a.push(P,T):a.push(P,B);break}case Q:case pe:{let b=A.groupId?t[A.groupId]:v;if(b===H){let d=A.type===Q?A.breakContents:A.negate?A.contents:ir(A.contents);d&&a.push({indent:E,mode:v,doc:d})}if(b===ue){let d=A.type===Q?A.flatContents:A.negate?ir(A.contents):A.contents;d&&a.push({indent:E,mode:v,doc:d})}break}case he:l.push({indent:E,mode:v,doc:A.contents});break;case de:l.length>0&&a.push({indent:E,mode:v,doc:ar});break;case $:switch(v){case ue:if(A.hard)s=!0;else{A.soft||(o+=" ",u+=1);break}case H:if(l.length>0){a.push({indent:E,mode:v,doc:A},...l.reverse()),l.length=0;break}A.literal?(o+=i,u=0,E.root&&(E.root.value&&(o+=E.root.value),u=E.root.length)):(g(),o+=i+E.value,u=E.length);break}break;case me:a.push({indent:E,mode:v,doc:A.contents});break;case te:break;default:throw new Be(A)}a.length===0&&l.length>0&&(a.push(...l.reverse()),l.length=0)}let p=f.join("")+o,h=[...D,...c];if(h.length!==2)return{formatted:p};let F=h[0];return{formatted:p,cursorNodeStart:F,cursorNodeText:p.slice(F,U(0,h,-1))};function g(){let{text:E,count:v}=At(o);E&&(f.push(E),m+=E.length),o="",u-=v,c.length>0&&(D.push(...c.map(A=>Math.min(A,m))),c.length=0)}}function Kl(e,r){let t=e.matchAll(new RegExp(`(?:${fe(r)})+`,"gu"));return t.reduce||(t=[...t]),t.reduce((n,[i])=>Math.max(n,i.length),0)/r.length}var Ir=Kl;function Xl(e,r){let t=e.match(new RegExp(`(${fe(r)})+`,"gu"));if(t===null)return 1;let n=new Map,i=0;for(let u of t){let a=u.length/r.length;n.set(a,!0),a>i&&(i=a)}for(let u=1;u<i;u++)if(!n.get(u))return u;return i+1}var oi=Xl;var si=Object.freeze({character:"'",codePoint:39}),ci=Object.freeze({character:'"',codePoint:34}),Jl=Object.freeze({preferred:si,alternate:ci}),Ql=Object.freeze({preferred:ci,alternate:si});function Zl(e,r){let{preferred:t,alternate:n}=r===!0||r==="'"?Jl:Ql,{length:i}=e,u=0,a=0;for(let o=0;o<i;o++){let s=e.charCodeAt(o);s===t.codePoint?u++:s===n.codePoint&&a++}return(u>a?n:t).character}var li=Zl;var xt=class extends Error{name="UnexpectedNodeError";constructor(r,t,n="type"){super(`Unexpected ${t} node ${n}: ${JSON.stringify(r[n])}.`),this.node=r}},fi=xt;var bi=Re(Tr(),1);var ef=Array.prototype.toReversed??function(){return[...this].reverse()},rf=Me("toReversed",function(){if(Array.isArray(this))return ef}),Di=rf;function tf(){let e=globalThis,r=e.Deno?.build?.os;return typeof r=="string"?r==="windows":e.navigator?.platform?.startsWith("Win")??e.process?.platform?.startsWith("win")??!1}var nf=tf();function pi(e){if(e=e instanceof URL?e:new URL(e),e.protocol!=="file:")throw new TypeError(`URL must be a file URL: received "${e.protocol}"`);return e}function uf(e){return e=pi(e),decodeURIComponent(e.pathname.replace(/%(?![0-9A-Fa-f]{2})/g,"%25"))}function af(e){e=pi(e);let r=decodeURIComponent(e.pathname.replace(/\//g,"\\").replace(/%(?![0-9A-Fa-f]{2})/g,"%25")).replace(/^\\*([A-Za-z]:)(\\|$)/,"$1\\");return e.hostname!==""&&(r=`\\\\${e.hostname}${r}`),r}function yt(e){return nf?af(e):uf(e)}var hi=e=>String(e).split(/[/\\]/u).pop(),di=e=>String(e).startsWith("file:");function mi(e,r){if(!r)return;let t=hi(r).toLowerCase();return e.find(({filenames:n})=>n?.some(i=>i.toLowerCase()===t))??e.find(({extensions:n})=>n?.some(i=>t.endsWith(i)))}function of(e,r){if(r)return e.find(({name:t})=>t.toLowerCase()===r)??e.find(({aliases:t})=>t?.includes(r))??e.find(({extensions:t})=>t?.includes(`.${r}`))}var sf=void 0;function Fi(e,r){if(r){if(di(r))try{r=yt(r)}catch{return}if(typeof r=="string")return e.find(({isSupported:t})=>t?.({filepath:r}))}}function cf(e,r){let t=Di(0,e.plugins).flatMap(i=>i.languages??[]);return(of(t,r.language)??mi(t,r.physicalFile)??mi(t,r.file)??Fi(t,r.physicalFile)??Fi(t,r.file)??sf?.(t,r.physicalFile))?.parsers[0]}var wt=cf;var Sr=Symbol.for("PRETTIER_IS_FRONT_MATTER");function lf(e){return!!e?.[Sr]}var kt=lf;var sr=3;function ff(e){let r=e.slice(0,sr);if(r!=="---"&&r!=="+++")return;let t=e.indexOf(`
+`,sr);if(t===-1)return;let n=e.slice(sr,t).trim(),i=e.indexOf(`
+${r}`,t),u=n;if(u||(u=r==="+++"?"toml":"yaml"),i===-1&&r==="---"&&u==="yaml"&&(i=e.indexOf(`
+...`,t)),i===-1)return;let a=i+1+sr,o=e.charAt(a+1);if(!/\s?/u.test(o))return;let s=e.slice(0,a),l;return{language:u,explicitLanguage:n||null,value:e.slice(t+1,i),startDelimiter:r,endDelimiter:s.slice(-sr),raw:s,start:{line:1,column:0,index:0},end:{index:s.length,get line(){return l??(l=s.split(`
+`)),l.length},get column(){return l??(l=s.split(`
+`)),U(0,l,-1).length}},[Sr]:!0}}function Df(e){let r=ff(e);return r?{frontMatter:r,get content(){let{raw:t}=r;return R(0,t,/[^\n]/gu," ")+e.slice(t.length)}}:{content:e}}var _e=Df;var gi="format";var Ei=/<!--\s*@(?:noformat|noprettier)\s*-->|\{\s*\/\*\s*@(?:noformat|noprettier)\s*\*\/\s*\}|<!--.*\r?\n[\s\S]*(^|\n)[^\S\n]*@(?:noformat|noprettier)[^\S\n]*($|\n)[\s\S]*\n.*-->/mu,Ci=/<!--\s*@(?:format|prettier)\s*-->|\{\s*\/\*\s*@(?:format|prettier)\s*\*\/\s*\}|<!--.*\r?\n[\s\S]*(^|\n)[^\S\n]*@(?:format|prettier)[^\S\n]*($|\n)[\s\S]*\n.*-->/mu;var Lr=e=>_e(e).content.trimStart().match(Ci)?.index===0,vi=e=>_e(e).content.trimStart().match(Ei)?.index===0,Ai=e=>{let{frontMatter:r}=_e(e),t=`<!-- @${gi} -->`;return r?`${r.raw}
 
 ${t}
 
-${r.content}`:`${t}
+${e.slice(r.end.index)}`:`${t}
 
-${r.content}`};var Cl=new Set(["position","raw"]);function Qn(e,r,t){if((e.type==="front-matter"||e.type==="code"||e.type==="yaml"||e.type==="import"||e.type==="export"||e.type==="jsx")&&delete r.value,e.type==="list"&&delete r.isAligned,(e.type==="list"||e.type==="listItem")&&delete r.spread,e.type==="text")return null;if(e.type==="inlineCode"&&(r.value=N(!1,e.value,`
-`," ")),e.type==="wikiLink"&&(r.value=N(!1,e.value.trim(),/[\t\n]+/gu," ")),(e.type==="definition"||e.type==="linkReference"||e.type==="imageReference")&&(r.label=(0,Xn.default)(e.label)),(e.type==="link"||e.type==="image")&&e.url&&e.url.includes("("))for(let n of"<>")r.url=N(!1,e.url,n,encodeURIComponent(n));if((e.type==="definition"||e.type==="link"||e.type==="image")&&e.title&&(r.title=N(!1,e.title,/\\(?=["')])/gu,"")),(t==null?void 0:t.type)==="root"&&t.children.length>0&&(t.children[0]===e||Hn(t.children[0])&&t.children[1]===e)&&e.type==="html"&&dt(e.value))return null}Qn.ignoredProperties=Cl;var Zn=Qn;var ei=/(?:[\u02ea-\u02eb\u1100-\u11ff\u2e80-\u2e99\u2e9b-\u2ef3\u2f00-\u2fd5\u2ff0-\u303f\u3041-\u3096\u3099-\u309f\u30a1-\u30fa\u30fc-\u30ff\u3105-\u312f\u3131-\u318e\u3190-\u4dbf\u4e00-\u9fff\ua700-\ua707\ua960-\ua97c\uac00-\ud7a3\ud7b0-\ud7c6\ud7cb-\ud7fb\uf900-\ufa6d\ufa70-\ufad9\ufe10-\ufe1f\ufe30-\ufe6f\uff00-\uffef]|[\ud840-\ud868\ud86a-\ud86c\ud86f-\ud872\ud874-\ud879\ud880-\ud883\ud885-\ud887][\udc00-\udfff]|\ud81b[\udfe3]|\ud82b[\udff0-\udff3\udff5-\udffb\udffd-\udffe]|\ud82c[\udc00-\udd22\udd32\udd50-\udd52\udd55\udd64-\udd67]|\ud83c[\ude00\ude50-\ude51]|\ud869[\udc00-\udedf\udf00-\udfff]|\ud86d[\udc00-\udf39\udf40-\udfff]|\ud86e[\udc00-\udc1d\udc20-\udfff]|\ud873[\udc00-\udea1\udeb0-\udfff]|\ud87a[\udc00-\udfe0]|\ud87e[\udc00-\ude1d]|\ud884[\udc00-\udf4a\udf50-\udfff]|\ud888[\udc00-\udfaf])(?:[\ufe00-\ufe0f]|\udb40[\udd00-\uddef])?/u,Se=/(?:[\u0021-\u002f\u003a-\u0040\u005b-\u0060\u007b-\u007e]|\p{General_Category=Connector_Punctuation}|\p{General_Category=Dash_Punctuation}|\p{General_Category=Close_Punctuation}|\p{General_Category=Final_Punctuation}|\p{General_Category=Initial_Punctuation}|\p{General_Category=Other_Punctuation}|\p{General_Category=Open_Punctuation})/u;async function bl(e,r){if(e.language==="yaml"){let t=e.value.trim(),n=t?await r(t,{parser:"yaml"}):"";return _e([e.startDelimiter,e.explicitLanguage,L,n,n?L:"",e.endDelimiter])}}var ri=bl;var yl=e=>String(e).split(/[/\\]/u).pop();function ti(e,r){if(!r)return;let t=yl(r).toLowerCase();return e.find(({filenames:n})=>n==null?void 0:n.some(a=>a.toLowerCase()===t))??e.find(({extensions:n})=>n==null?void 0:n.some(a=>t.endsWith(a)))}function Al(e,r){if(r)return e.find(({name:t})=>t.toLowerCase()===r)??e.find(({aliases:t})=>t==null?void 0:t.includes(r))??e.find(({extensions:t})=>t==null?void 0:t.includes(`.${r}`))}function xl(e,r){let t=e.plugins.flatMap(a=>a.languages??[]),n=Al(t,r.language)??ti(t,r.physicalFile)??ti(t,r.file)??(r.physicalFile,void 0);return n==null?void 0:n.parsers[0]}var ni=xl;var wl=new Proxy(()=>{},{get:()=>wl});function Oe(e){return e.position.start.offset}function Pe(e){return e.position.end.offset}var ht=new Set(["liquidNode","inlineCode","emphasis","esComment","strong","delete","wikiLink","link","linkReference","image","imageReference","footnote","footnoteReference","sentence","whitespace","word","break","inlineMath"]),Or=new Set([...ht,"tableCell","paragraph","heading"]),Le="non-cjk",De="cj-letter",be="k-letter",ur="cjk-punctuation",kl=/\p{Script_Extensions=Hangul}/u;function Pr(e){let r=[],t=e.split(/([\t\n ]+)/u);for(let[a,u]of t.entries()){if(a%2===1){r.push({type:"whitespace",value:/\n/u.test(u)?`
-`:" "});continue}if((a===0||a===t.length-1)&&u==="")continue;let i=u.split(new RegExp(`(${ei.source})`,"u"));for(let[o,s]of i.entries())if(!((o===0||o===i.length-1)&&s==="")){if(o%2===0){s!==""&&n({type:"word",value:s,kind:Le,hasLeadingPunctuation:Se.test(s[0]),hasTrailingPunctuation:Se.test(M(!1,s,-1))});continue}n(Se.test(s)?{type:"word",value:s,kind:ur,hasLeadingPunctuation:!0,hasTrailingPunctuation:!0}:{type:"word",value:s,kind:kl.test(s)?be:De,hasLeadingPunctuation:!1,hasTrailingPunctuation:!1})}}return r;function n(a){let u=M(!1,r,-1);(u==null?void 0:u.type)==="word"&&!i(Le,ur)&&![u.value,a.value].some(o=>/\u3000/u.test(o))&&r.push({type:"whitespace",value:""}),r.push(a);function i(o,s){return u.kind===o&&a.kind===s||u.kind===s&&a.kind===o}}}function Me(e,r){let t=r.originalText.slice(e.position.start.offset,e.position.end.offset),{numberText:n,leadingSpaces:a}=t.match(/^\s*(?<numberText>\d+)(\.|\))(?<leadingSpaces>\s*)/u).groups;return{number:Number(n),leadingSpaces:a}}function ii(e,r){return!e.ordered||e.children.length<2||Me(e.children[1],r).number!==1?!1:Me(e.children[0],r).number!==0?!0:e.children.length>2&&Me(e.children[2],r).number===1}function Lr(e,r){let{value:t}=e;return e.position.end.offset===r.length&&t.endsWith(`
+${e}`};var pf=new Set(["position","raw"]);function xi(e,r,t){if((e.type==="code"||e.type==="yaml"||e.type==="import"||e.type==="export"||e.type==="jsx")&&delete r.value,e.type==="list"&&delete r.isAligned,(e.type==="list"||e.type==="listItem")&&delete r.spread,e.type==="text")return null;if(e.type==="inlineCode"&&(r.value=R(0,e.value,`
+`," ")),e.type==="wikiLink"&&(r.value=R(0,e.value.trim(),/[\t\n]+/gu," ")),(e.type==="definition"||e.type==="linkReference"||e.type==="imageReference")&&(r.label=(0,bi.default)(e.label)),(e.type==="link"||e.type==="image")&&e.url&&e.url.includes("("))for(let n of"<>")r.url=R(0,e.url,n,encodeURIComponent(n));if((e.type==="definition"||e.type==="link"||e.type==="image")&&e.title&&(r.title=R(0,e.title,/\\(?=["')])/gu,"")),t?.type==="root"&&t.children.length>0&&(t.children[0]===e||kt(t.children[0])&&t.children[1]===e)&&e.type==="html"&&Lr(e.value))return null}xi.ignoredProperties=pf;var yi=xi;var wi=/(?:[\u{2c7}\u{2c9}-\u{2cb}\u{2d9}\u{2ea}-\u{2eb}\u{305}\u{323}\u{1100}-\u{11ff}\u{2e80}-\u{2e99}\u{2e9b}-\u{2ef3}\u{2f00}-\u{2fd5}\u{2ff0}-\u{303f}\u{3041}-\u{3096}\u{3099}-\u{30ff}\u{3105}-\u{312f}\u{3131}-\u{318e}\u{3190}-\u{4dbf}\u{4e00}-\u{9fff}\u{a700}-\u{a707}\u{a960}-\u{a97c}\u{ac00}-\u{d7a3}\u{d7b0}-\u{d7c6}\u{d7cb}-\u{d7fb}\u{f900}-\u{fa6d}\u{fa70}-\u{fad9}\u{fe10}-\u{fe1f}\u{fe30}-\u{fe6f}\u{ff00}-\u{ffef}\u{16fe3}\u{16ff2}-\u{16ff6}\u{1aff0}-\u{1aff3}\u{1aff5}-\u{1affb}\u{1affd}-\u{1affe}\u{1b000}-\u{1b122}\u{1b132}\u{1b150}-\u{1b152}\u{1b155}\u{1b164}-\u{1b167}\u{1f200}\u{1f250}-\u{1f251}\u{20000}-\u{2a6df}\u{2a700}-\u{2b81d}\u{2b820}-\u{2cead}\u{2ceb0}-\u{2ebe0}\u{2ebf0}-\u{2ee5d}\u{2f800}-\u{2fa1d}\u{30000}-\u{3134a}\u{31350}-\u{33479}])(?:[\u{fe00}-\u{fe0f}\u{e0100}-\u{e01ef}])?/u,Oe=/(?:[\u{21}-\u{2f}\u{3a}-\u{40}\u{5b}-\u{60}\u{7b}-\u{7e}]|\p{General_Category=Connector_Punctuation}|\p{General_Category=Dash_Punctuation}|\p{General_Category=Close_Punctuation}|\p{General_Category=Final_Punctuation}|\p{General_Category=Initial_Punctuation}|\p{General_Category=Other_Punctuation}|\p{General_Category=Open_Punctuation})/u;var qe=e=>e.position.start.offset,Ne=e=>e.position.end.offset;var Tt=new Set(["liquidNode","inlineCode","emphasis","esComment","strong","delete","wikiLink","link","linkReference","image","imageReference","footnote","footnoteReference","sentence","whitespace","word","break","inlineMath"]),Rr=new Set([...Tt,"tableCell","paragraph","heading"]),We="non-cjk",ae="cj-letter",Pe="k-letter",cr="cjk-punctuation",hf=/\p{Script_Extensions=Hangul}/u;function Mr(e){let r=[],t=e.split(/([\t\n ]+)/u);for(let[i,u]of t.entries()){if(i%2===1){r.push({type:"whitespace",value:/\n/u.test(u)?`
+`:" "});continue}if((i===0||i===t.length-1)&&u==="")continue;let a=u.split(new RegExp(`(${wi.source})`,"u"));for(let[o,s]of a.entries())if(!((o===0||o===a.length-1)&&s==="")){if(o%2===0){s!==""&&n({type:"word",value:s,kind:We,isCJ:!1,hasLeadingPunctuation:Oe.test(s[0]),hasTrailingPunctuation:Oe.test(U(0,s,-1))});continue}if(Oe.test(s)){n({type:"word",value:s,kind:cr,isCJ:!0,hasLeadingPunctuation:!0,hasTrailingPunctuation:!0});continue}if(hf.test(s)){n({type:"word",value:s,kind:Pe,isCJ:!1,hasLeadingPunctuation:!1,hasTrailingPunctuation:!1});continue}n({type:"word",value:s,kind:ae,isCJ:!0,hasLeadingPunctuation:!1,hasTrailingPunctuation:!1})}}return r;function n(i){let u=U(0,r,-1);u?.type==="word"&&!a(We,cr)&&![u.value,i.value].some(o=>/\u3000/u.test(o))&&r.push({type:"whitespace",value:""}),r.push(i);function a(o,s){return u.kind===o&&i.kind===s||u.kind===s&&i.kind===o}}}function ze(e,r){let t=r.originalText.slice(e.position.start.offset,e.position.end.offset),{numberText:n,leadingSpaces:i}=t.match(/^\s*(?<numberText>\d+)(\.|\))(?<leadingSpaces>\s*)/u).groups;return{number:Number(n),leadingSpaces:i}}function ki(e,r){return!e.ordered||e.children.length<2||ze(e.children[1],r).number!==1?!1:ze(e.children[0],r).number!==0?!0:e.children.length>2&&ze(e.children[2],r).number===1}function Ur(e,r){let{value:t}=e;return e.position.end.offset===r.length&&t.endsWith(`
 `)&&r.endsWith(`
-`)?t.slice(0,-1):t}function ye(e,r){return function t(n,a,u){let i={...r(n,a,u)};return i.children&&(i.children=i.children.map((o,s)=>t(o,s,[i,...u]))),i}(e,null,[])}function mt(e){if((e==null?void 0:e.type)!=="link"||e.children.length!==1)return!1;let[r]=e.children;return Oe(e)===Oe(r)&&Pe(e)===Pe(r)}function Bl(e,r){let{node:t}=e;if(t.type==="code"&&t.lang!==null){let n=ni(r,{language:t.lang});if(n)return async a=>{let u=r.__inJsTemplate?"~":"`",i=u.repeat(Math.max(3,_r(t.value,u)+1)),o={parser:n};t.lang==="ts"||t.lang==="typescript"?o.filepath="dummy.ts":t.lang==="tsx"&&(o.filepath="dummy.tsx");let s=await a(Lr(t,r.originalText),o);return _e([i,t.lang,t.meta?" "+t.meta:"",L,Ce(s),L,i])}}switch(t.type){case"front-matter":return n=>ri(t,n);case"import":case"export":return n=>n(t.value,{parser:"babel"});case"jsx":return n=>n(`<$>${t.value}</$>`,{parser:"__js_expression",rootMarker:"mdx"})}return null}var ui=Bl;var ar=null;function or(e){if(ar!==null&&typeof ar.property){let r=ar;return ar=or.prototype=null,r}return ar=or.prototype=e??Object.create(null),new or}var ql=10;for(let e=0;e<=ql;e++)or();function Ft(e){return or(e)}function Tl(e,r="type"){Ft(e);function t(n){let a=n[r],u=e[a];if(!Array.isArray(u))throw Object.assign(new Error(`Missing visitor keys for '${a}'.`),{node:n});return u}return t}var ai=Tl;var _l={"front-matter":[],root:["children"],paragraph:["children"],sentence:["children"],word:[],whitespace:[],emphasis:["children"],strong:["children"],delete:["children"],inlineCode:[],wikiLink:[],link:["children"],image:[],blockquote:["children"],heading:["children"],code:[],html:[],list:["children"],thematicBreak:[],linkReference:["children"],imageReference:[],definition:[],footnote:["children"],footnoteReference:[],footnoteDefinition:["children"],table:["children"],tableCell:["children"],break:[],liquidNode:[],import:[],export:[],esComment:[],jsx:[],math:[],inlineMath:[],tableRow:["children"],listItem:["children"],text:[]},oi=_l;var Sl=ai(oi),si=Sl;function ci(e){switch(e){case"cr":return"\r";case"crlf":return`\r
-`;default:return`
-`}}var li=()=>/[#*0-9]\uFE0F?\u20E3|[\xA9\xAE\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA\u231A\u231B\u2328\u23CF\u23ED-\u23EF\u23F1\u23F2\u23F8-\u23FA\u24C2\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC\u25FE\u2600-\u2604\u260E\u2611\u2614\u2615\u2618\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642\u2648-\u2653\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E\u267F\u2692\u2694-\u2697\u2699\u269B\u269C\u26A0\u26A7\u26AA\u26B0\u26B1\u26BD\u26BE\u26C4\u26C8\u26CF\u26D1\u26E9\u26F0-\u26F5\u26F7\u26F8\u26FA\u2702\u2708\u2709\u270F\u2712\u2714\u2716\u271D\u2721\u2733\u2734\u2744\u2747\u2757\u2763\u27A1\u2934\u2935\u2B05-\u2B07\u2B1B\u2B1C\u2B55\u3030\u303D\u3297\u3299]\uFE0F?|[\u261D\u270C\u270D](?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?|[\u270A\u270B](?:\uD83C[\uDFFB-\uDFFF])?|[\u23E9-\u23EC\u23F0\u23F3\u25FD\u2693\u26A1\u26AB\u26C5\u26CE\u26D4\u26EA\u26FD\u2705\u2728\u274C\u274E\u2753-\u2755\u2795-\u2797\u27B0\u27BF\u2B50]|\u26D3\uFE0F?(?:\u200D\uD83D\uDCA5)?|\u26F9(?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|\u2764\uFE0F?(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79))?|\uD83C(?:[\uDC04\uDD70\uDD71\uDD7E\uDD7F\uDE02\uDE37\uDF21\uDF24-\uDF2C\uDF36\uDF7D\uDF96\uDF97\uDF99-\uDF9B\uDF9E\uDF9F\uDFCD\uDFCE\uDFD4-\uDFDF\uDFF5\uDFF7]\uFE0F?|[\uDF85\uDFC2\uDFC7](?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC4\uDFCA](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDFCB\uDFCC](?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDCCF\uDD8E\uDD91-\uDD9A\uDE01\uDE1A\uDE2F\uDE32-\uDE36\uDE38-\uDE3A\uDE50\uDE51\uDF00-\uDF20\uDF2D-\uDF35\uDF37-\uDF43\uDF45-\uDF4A\uDF4C-\uDF7C\uDF7E-\uDF84\uDF86-\uDF93\uDFA0-\uDFC1\uDFC5\uDFC6\uDFC8\uDFC9\uDFCF-\uDFD3\uDFE0-\uDFF0\uDFF8-\uDFFF]|\uDDE6\uD83C[\uDDE8-\uDDEC\uDDEE\uDDF1\uDDF2\uDDF4\uDDF6-\uDDFA\uDDFC\uDDFD\uDDFF]|\uDDE7\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEF\uDDF1-\uDDF4\uDDF6-\uDDF9\uDDFB\uDDFC\uDDFE\uDDFF]|\uDDE8\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDEE\uDDF0-\uDDF5\uDDF7\uDDFA-\uDDFF]|\uDDE9\uD83C[\uDDEA\uDDEC\uDDEF\uDDF0\uDDF2\uDDF4\uDDFF]|\uDDEA\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDED\uDDF7-\uDDFA]|\uDDEB\uD83C[\uDDEE-\uDDF0\uDDF2\uDDF4\uDDF7]|\uDDEC\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEE\uDDF1-\uDDF3\uDDF5-\uDDFA\uDDFC\uDDFE]|\uDDED\uD83C[\uDDF0\uDDF2\uDDF3\uDDF7\uDDF9\uDDFA]|\uDDEE\uD83C[\uDDE8-\uDDEA\uDDF1-\uDDF4\uDDF6-\uDDF9]|\uDDEF\uD83C[\uDDEA\uDDF2\uDDF4\uDDF5]|\uDDF0\uD83C[\uDDEA\uDDEC-\uDDEE\uDDF2\uDDF3\uDDF5\uDDF7\uDDFC\uDDFE\uDDFF]|\uDDF1\uD83C[\uDDE6-\uDDE8\uDDEE\uDDF0\uDDF7-\uDDFB\uDDFE]|\uDDF2\uD83C[\uDDE6\uDDE8-\uDDED\uDDF0-\uDDFF]|\uDDF3\uD83C[\uDDE6\uDDE8\uDDEA-\uDDEC\uDDEE\uDDF1\uDDF4\uDDF5\uDDF7\uDDFA\uDDFF]|\uDDF4\uD83C\uDDF2|\uDDF5\uD83C[\uDDE6\uDDEA-\uDDED\uDDF0-\uDDF3\uDDF7-\uDDF9\uDDFC\uDDFE]|\uDDF6\uD83C\uDDE6|\uDDF7\uD83C[\uDDEA\uDDF4\uDDF8\uDDFA\uDDFC]|\uDDF8\uD83C[\uDDE6-\uDDEA\uDDEC-\uDDF4\uDDF7-\uDDF9\uDDFB\uDDFD-\uDDFF]|\uDDF9\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDED\uDDEF-\uDDF4\uDDF7\uDDF9\uDDFB\uDDFC\uDDFF]|\uDDFA\uD83C[\uDDE6\uDDEC\uDDF2\uDDF3\uDDF8\uDDFE\uDDFF]|\uDDFB\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDEE\uDDF3\uDDFA]|\uDDFC\uD83C[\uDDEB\uDDF8]|\uDDFD\uD83C\uDDF0|\uDDFE\uD83C[\uDDEA\uDDF9]|\uDDFF\uD83C[\uDDE6\uDDF2\uDDFC]|\uDF44(?:\u200D\uD83D\uDFEB)?|\uDF4B(?:\u200D\uD83D\uDFE9)?|\uDFC3(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDFF3\uFE0F?(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08))?|\uDFF4(?:\u200D\u2620\uFE0F?|\uDB40\uDC67\uDB40\uDC62\uDB40(?:\uDC65\uDB40\uDC6E\uDB40\uDC67|\uDC73\uDB40\uDC63\uDB40\uDC74|\uDC77\uDB40\uDC6C\uDB40\uDC73)\uDB40\uDC7F)?)|\uD83D(?:[\uDC3F\uDCFD\uDD49\uDD4A\uDD6F\uDD70\uDD73\uDD76-\uDD79\uDD87\uDD8A-\uDD8D\uDDA5\uDDA8\uDDB1\uDDB2\uDDBC\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA\uDECB\uDECD-\uDECF\uDEE0-\uDEE5\uDEE9\uDEF0\uDEF3]\uFE0F?|[\uDC42\uDC43\uDC46-\uDC50\uDC66\uDC67\uDC6B-\uDC6D\uDC72\uDC74-\uDC76\uDC78\uDC7C\uDC83\uDC85\uDC8F\uDC91\uDCAA\uDD7A\uDD95\uDD96\uDE4C\uDE4F\uDEC0\uDECC](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC6E\uDC70\uDC71\uDC73\uDC77\uDC81\uDC82\uDC86\uDC87\uDE45-\uDE47\uDE4B\uDE4D\uDE4E\uDEA3\uDEB4\uDEB5](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD74\uDD90](?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?|[\uDC00-\uDC07\uDC09-\uDC14\uDC16-\uDC25\uDC27-\uDC3A\uDC3C-\uDC3E\uDC40\uDC44\uDC45\uDC51-\uDC65\uDC6A\uDC79-\uDC7B\uDC7D-\uDC80\uDC84\uDC88-\uDC8E\uDC90\uDC92-\uDCA9\uDCAB-\uDCFC\uDCFF-\uDD3D\uDD4B-\uDD4E\uDD50-\uDD67\uDDA4\uDDFB-\uDE2D\uDE2F-\uDE34\uDE37-\uDE41\uDE43\uDE44\uDE48-\uDE4A\uDE80-\uDEA2\uDEA4-\uDEB3\uDEB7-\uDEBF\uDEC1-\uDEC5\uDED0-\uDED2\uDED5-\uDED7\uDEDC-\uDEDF\uDEEB\uDEEC\uDEF4-\uDEFC\uDFE0-\uDFEB\uDFF0]|\uDC08(?:\u200D\u2B1B)?|\uDC15(?:\u200D\uD83E\uDDBA)?|\uDC26(?:\u200D(?:\u2B1B|\uD83D\uDD25))?|\uDC3B(?:\u200D\u2744\uFE0F?)?|\uDC41\uFE0F?(?:\u200D\uD83D\uDDE8\uFE0F?)?|\uDC68(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDC68\uDC69]\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE])))?))?|\uDC69(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?[\uDC68\uDC69]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|\uDC69\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?))|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFE])))?))?|\uDC6F(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDD75(?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDE2E(?:\u200D\uD83D\uDCA8)?|\uDE35(?:\u200D\uD83D\uDCAB)?|\uDE36(?:\u200D\uD83C\uDF2B\uFE0F?)?|\uDE42(?:\u200D[\u2194\u2195]\uFE0F?)?|\uDEB6(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?)|\uD83E(?:[\uDD0C\uDD0F\uDD18-\uDD1F\uDD30-\uDD34\uDD36\uDD77\uDDB5\uDDB6\uDDBB\uDDD2\uDDD3\uDDD5\uDEC3-\uDEC5\uDEF0\uDEF2-\uDEF8](?:\uD83C[\uDFFB-\uDFFF])?|[\uDD26\uDD35\uDD37-\uDD39\uDD3D\uDD3E\uDDB8\uDDB9\uDDCD\uDDCF\uDDD4\uDDD6-\uDDDD](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDDDE\uDDDF](?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD0D\uDD0E\uDD10-\uDD17\uDD20-\uDD25\uDD27-\uDD2F\uDD3A\uDD3F-\uDD45\uDD47-\uDD76\uDD78-\uDDB4\uDDB7\uDDBA\uDDBC-\uDDCC\uDDD0\uDDE0-\uDDFF\uDE70-\uDE7C\uDE80-\uDE88\uDE90-\uDEBD\uDEBF-\uDEC2\uDECE-\uDEDB\uDEE0-\uDEE8]|\uDD3C(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF])?|\uDDCE(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDDD1(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1|\uDDD1\u200D\uD83E\uDDD2(?:\u200D\uD83E\uDDD2)?|\uDDD2(?:\u200D\uD83E\uDDD2)?))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?))?|\uDEF1(?:\uD83C(?:\uDFFB(?:\u200D\uD83E\uDEF2\uD83C[\uDFFC-\uDFFF])?|\uDFFC(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFD-\uDFFF])?|\uDFFD(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])?|\uDFFE(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFD\uDFFF])?|\uDFFF(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFE])?))?)/g;function fi(e){return e===12288||e>=65281&&e<=65376||e>=65504&&e<=65510}function Di(e){return e>=4352&&e<=4447||e===8986||e===8987||e===9001||e===9002||e>=9193&&e<=9196||e===9200||e===9203||e===9725||e===9726||e===9748||e===9749||e>=9800&&e<=9811||e===9855||e===9875||e===9889||e===9898||e===9899||e===9917||e===9918||e===9924||e===9925||e===9934||e===9940||e===9962||e===9970||e===9971||e===9973||e===9978||e===9981||e===9989||e===9994||e===9995||e===10024||e===10060||e===10062||e>=10067&&e<=10069||e===10071||e>=10133&&e<=10135||e===10160||e===10175||e===11035||e===11036||e===11088||e===11093||e>=11904&&e<=11929||e>=11931&&e<=12019||e>=12032&&e<=12245||e>=12272&&e<=12287||e>=12289&&e<=12350||e>=12353&&e<=12438||e>=12441&&e<=12543||e>=12549&&e<=12591||e>=12593&&e<=12686||e>=12688&&e<=12771||e>=12783&&e<=12830||e>=12832&&e<=12871||e>=12880&&e<=19903||e>=19968&&e<=42124||e>=42128&&e<=42182||e>=43360&&e<=43388||e>=44032&&e<=55203||e>=63744&&e<=64255||e>=65040&&e<=65049||e>=65072&&e<=65106||e>=65108&&e<=65126||e>=65128&&e<=65131||e>=94176&&e<=94180||e===94192||e===94193||e>=94208&&e<=100343||e>=100352&&e<=101589||e>=101632&&e<=101640||e>=110576&&e<=110579||e>=110581&&e<=110587||e===110589||e===110590||e>=110592&&e<=110882||e===110898||e>=110928&&e<=110930||e===110933||e>=110948&&e<=110951||e>=110960&&e<=111355||e===126980||e===127183||e===127374||e>=127377&&e<=127386||e>=127488&&e<=127490||e>=127504&&e<=127547||e>=127552&&e<=127560||e===127568||e===127569||e>=127584&&e<=127589||e>=127744&&e<=127776||e>=127789&&e<=127797||e>=127799&&e<=127868||e>=127870&&e<=127891||e>=127904&&e<=127946||e>=127951&&e<=127955||e>=127968&&e<=127984||e===127988||e>=127992&&e<=128062||e===128064||e>=128066&&e<=128252||e>=128255&&e<=128317||e>=128331&&e<=128334||e>=128336&&e<=128359||e===128378||e===128405||e===128406||e===128420||e>=128507&&e<=128591||e>=128640&&e<=128709||e===128716||e>=128720&&e<=128722||e>=128725&&e<=128727||e>=128732&&e<=128735||e===128747||e===128748||e>=128756&&e<=128764||e>=128992&&e<=129003||e===129008||e>=129292&&e<=129338||e>=129340&&e<=129349||e>=129351&&e<=129535||e>=129648&&e<=129660||e>=129664&&e<=129672||e>=129680&&e<=129725||e>=129727&&e<=129733||e>=129742&&e<=129755||e>=129760&&e<=129768||e>=129776&&e<=129784||e>=131072&&e<=196605||e>=196608&&e<=262141}var pi=e=>!(fi(e)||Di(e));var Ol=/[^\x20-\x7F]/u;function Pl(e){if(!e)return 0;if(!Ol.test(e))return e.length;e=e.replace(li(),"  ");let r=0;for(let t of e){let n=t.codePointAt(0);n<=31||n>=127&&n<=159||n>=768&&n<=879||(r+=pi(n)?1:2)}return r}var sr=Pl;var G=Symbol("MODE_BREAK"),ne=Symbol("MODE_FLAT"),cr=Symbol("cursor");function di(){return{value:"",length:0,queue:[]}}function Ll(e,r){return markdown_gt(e,{type:"indent"},r)}function Il(e,r,t){return r===Number.NEGATIVE_INFINITY?e.root||di():r<0?markdown_gt(e,{type:"dedent"},t):r?r.type==="root"?{...e,root:e}:markdown_gt(e,{type:typeof r=="string"?"stringAlign":"numberAlign",n:r},t):e}function markdown_gt(e,r,t){let n=r.type==="dedent"?e.queue.slice(0,-1):[...e.queue,r],a="",u=0,i=0,o=0;for(let p of n)switch(p.type){case"indent":c(),t.useTabs?s(1):l(t.tabWidth);break;case"stringAlign":c(),a+=p.n,u+=p.n.length;break;case"numberAlign":i+=1,o+=p.n;break;default:throw new Error(`Unexpected type '${p.type}'`)}return D(),{...e,value:a,length:u,queue:n};function s(p){a+="	".repeat(p),u+=t.tabWidth*p}function l(p){a+=" ".repeat(p),u+=p}function c(){t.useTabs?f():D()}function f(){i>0&&s(i),h()}function D(){o>0&&l(o),h()}function h(){i=0,o=0}}function vt(e){let r=0,t=0,n=e.length;e:for(;n--;){let a=e[n];if(a===cr){t++;continue}for(let u=a.length-1;u>=0;u--){let i=a[u];if(i===" "||i==="	")r++;else{e[n]=a.slice(0,u+1);break e}}}if(r>0||t>0)for(e.length=n+1;t-- >0;)e.push(cr);return r}function Ir(e,r,t,n,a,u){if(t===Number.POSITIVE_INFINITY)return!0;let i=r.length,o=[e],s=[];for(;t>=0;){if(o.length===0){if(i===0)return!0;o.push(r[--i]);continue}let{mode:l,doc:c}=o.pop(),f=Y(c);switch(f){case $:s.push(c),t-=sr(c);break;case H:case J:{let D=f===H?c:c.parts;for(let h=D.length-1;h>=0;h--)o.push({mode:l,doc:D[h]});break}case ee:case re:case se:case fe:o.push({mode:l,doc:c.contents});break;case oe:t+=vt(s);break;case K:{if(u&&c.break)return!1;let D=c.break?G:l,h=c.expandedStates&&D===G?M(!1,c.expandedStates,-1):c.contents;o.push({mode:D,doc:h});break}case X:{let h=(c.groupId?a[c.groupId]||ne:l)===G?c.breakContents:c.flatContents;h&&o.push({mode:l,doc:h});break}case W:if(l===G||c.hard)return!0;c.soft||(s.push(" "),t--);break;case ce:n=!0;break;case le:if(n)return!1;break}}return!1}function hi(e,r){let t={},n=r.printWidth,a=ci(r.endOfLine),u=0,i=[{ind:di(),mode:G,doc:e}],o=[],s=!1,l=[],c=0;for(Yn(e);i.length>0;){let{ind:D,mode:h,doc:p}=i.pop();switch(Y(p)){case $:{let d=a!==`
-`?N(!1,p,`
-`,a):p;o.push(d),i.length>0&&(u+=sr(d));break}case H:for(let d=p.length-1;d>=0;d--)i.push({ind:D,mode:h,doc:p[d]});break;case ge:if(c>=2)throw new Error("There are too many 'cursor' in doc.");o.push(cr),c++;break;case ee:i.push({ind:Ll(D,r),mode:h,doc:p.contents});break;case re:i.push({ind:Il(D,p.n,r),mode:h,doc:p.contents});break;case oe:u-=vt(o);break;case K:switch(h){case ne:if(!s){i.push({ind:D,mode:p.break?G:ne,doc:p.contents});break}case G:{s=!1;let d={ind:D,mode:ne,doc:p.contents},m=n-u,F=l.length>0;if(!p.break&&Ir(d,i,m,F,t))i.push(d);else if(p.expandedStates){let y=M(!1,p.expandedStates,-1);if(p.break){i.push({ind:D,mode:G,doc:y});break}else for(let E=1;E<p.expandedStates.length+1;E++)if(E>=p.expandedStates.length){i.push({ind:D,mode:G,doc:y});break}else{let B=p.expandedStates[E],b={ind:D,mode:ne,doc:B};if(Ir(b,i,m,F,t)){i.push(b);break}}}else i.push({ind:D,mode:G,doc:p.contents});break}}p.id&&(t[p.id]=M(!1,i,-1).mode);break;case J:{let d=n-u,{parts:m}=p;if(m.length===0)break;let[F,y]=m,E={ind:D,mode:ne,doc:F},B={ind:D,mode:G,doc:F},b=Ir(E,[],d,l.length>0,t,!0);if(m.length===1){b?i.push(E):i.push(B);break}let g={ind:D,mode:ne,doc:y},A={ind:D,mode:G,doc:y};if(m.length===2){b?i.push(g,E):i.push(A,B);break}m.splice(0,2);let x={ind:D,mode:h,doc:Ee(m)},v=m[0];Ir({ind:D,mode:ne,doc:[F,y,v]},[],d,l.length>0,t,!0)?i.push(x,g,E):b?i.push(x,A,E):i.push(x,A,B);break}case X:case se:{let d=p.groupId?t[p.groupId]:h;if(d===G){let m=p.type===X?p.breakContents:p.negate?p.contents:Ze(p.contents);m&&i.push({ind:D,mode:h,doc:m})}if(d===ne){let m=p.type===X?p.flatContents:p.negate?Ze(p.contents):p.contents;m&&i.push({ind:D,mode:h,doc:m})}break}case ce:l.push({ind:D,mode:h,doc:p.contents});break;case le:l.length>0&&i.push({ind:D,mode:h,doc:rr});break;case W:switch(h){case ne:if(p.hard)s=!0;else{p.soft||(o.push(" "),u+=1);break}case G:if(l.length>0){i.push({ind:D,mode:h,doc:p},...l.reverse()),l.length=0;break}p.literal?D.root?(o.push(a,D.root.value),u=D.root.length):(o.push(a),u=0):(u-=vt(o),o.push(a+D.value),u=D.length);break}break;case fe:i.push({ind:D,mode:h,doc:p.contents});break;case te:break;default:throw new qe(p)}i.length===0&&l.length>0&&(i.push(...l.reverse()),l.length=0)}let f=o.indexOf(cr);if(f!==-1){let D=o.indexOf(cr,f+1),h=o.slice(0,f).join(""),p=o.slice(f+1,D).join(""),d=o.slice(D+1).join("");return{formatted:h+p+d,cursorNodeStart:h.length,cursorNodeText:p}}return{formatted:o.join("")}}function mi(e,r,t){let{node:n}=e,a=[],u=e.map(()=>e.map(({index:f})=>{let D=hi(t(),r).formatted,h=sr(D);return a[f]=Math.max(a[f]??3,h),{text:D,width:h}},"children"),"children"),i=s(!1);if(r.proseWrap!=="never")return[er,i];let o=s(!0);return[er,ze(zn(o,i))];function s(f){return Tr(rr,[c(u[0],f),l(f),...u.slice(1).map(D=>c(D,f))].map(D=>`| ${D.join(" | ")} |`))}function l(f){return a.map((D,h)=>{let p=n.align[h],d=p==="center"||p==="left"?":":"-",m=p==="center"||p==="right"?":":"-",F=f?"-":"-".repeat(D-2);return`${d}${F}${m}`})}function c(f,D){return f.map(({text:h,width:p},d)=>{if(D)return h;let m=a[d]-p,F=n.align[d],y=0;F==="right"?y=m:F==="center"&&(y=Math.floor(m/2));let E=m-y;return`${" ".repeat(y)}${h}${" ".repeat(E)}`})}}function Fi(e,r,t){let n=e.map(t,"children");return Nl(n)}function Nl(e){let r=[""];return function t(n){for(let a of n){let u=Y(a);if(u===H){t(a);continue}let i=a,o=[];u===J&&([i,...o]=a.parts),r.push([r.pop(),i],...o)}}(e),Ee(r)}var Rl=/^.$/su;function Ul(e,r){return e=zl(e,r),e=Yl(e),e=Vl(e,r),e=jl(e,r),e=Gl(e),e}function zl(e,r){return ye(e,t=>t.type!=="text"||t.value==="*"||t.value==="_"||!Rl.test(t.value)||t.position.end.offset-t.position.start.offset===t.value.length?t:{...t,value:r.originalText.slice(t.position.start.offset,t.position.end.offset)})}function Ml(e,r,t){return ye(e,n=>{if(!n.children)return n;let a=n.children.reduce((u,i)=>{let o=M(!1,u,-1);return o&&r(o,i)?u.splice(-1,1,t(o,i)):u.push(i),u},[]);return{...n,children:a}})}function Yl(e){return Ml(e,(r,t)=>r.type==="text"&&t.type==="text",(r,t)=>({type:"text",value:r.value+t.value,position:{start:r.position.start,end:t.position.end}}))}function Gl(e){return ye(e,(r,t,[n])=>{if(r.type!=="text")return r;let{value:a}=r;return n.type==="paragraph"&&(t===0&&(a=a.trimStart()),t===n.children.length-1&&(a=a.trimEnd())),{type:"sentence",position:r.position,children:Pr(a)}})}function Vl(e,r){return ye(e,(t,n,a)=>{if(t.type==="code"){let u=/^\n?(?: {4,}|\t)/u.test(r.originalText.slice(t.position.start.offset,t.position.end.offset));if(t.isIndented=u,u)for(let i=0;i<a.length;i++){let o=a[i];if(o.hasIndentedCodeblock)break;o.type==="list"&&(o.hasIndentedCodeblock=!0)}}return t})}function jl(e,r){return ye(e,(a,u,i)=>{if(a.type==="list"&&a.children.length>0){for(let o=0;o<i.length;o++){let s=i[o];if(s.type==="list"&&!s.isAligned)return a.isAligned=!1,a}a.isAligned=n(a)}return a});function t(a){return a.children.length===0?-1:a.children[0].position.start.column-1}function n(a){if(!a.ordered)return!0;let[u,i]=a.children;if(Me(u,r).leadingSpaces.length>1)return!0;let s=t(u);if(s===-1)return!1;if(a.children.length===1)return s%r.tabWidth===0;let l=t(i);return s!==l?!1:s%r.tabWidth===0?!0:Me(i,r).leadingSpaces.length>1}}var gi=Ul;function vi(e,r){let t=[""];return e.each(()=>{let{node:n}=e,a=r();switch(n.type){case"whitespace":if(Y(a)!==$){t.push(a,"");break}default:t.push([t.pop(),a])}},"children"),Ee(t)}var $l=new Set(["heading","tableCell","link","wikiLink"]),Hl=new Set(`$(\xA3\xA5\xB7'"\u3008\u300A\u300C\u300E\u3010\u3014\u3016\u301D\uFE59\uFE5B\uFF04\uFF08\uFF3B\uFF5B\uFFE1\uFFE5[{\u2035\uFE34\uFE35\uFE37\uFE39\uFE3B\uFE3D\uFE3F\uFE41\uFE43\uFE4F\u3018\uFF5F\xAB`),Wl=new Set(`!%),.:;?]}\xA2\xB0\xB7'"\u2020\u2021\u203A\u2103\u2236\u3001\u3002\u3003\u3006\u3015\u3017\u301E\uFE5A\uFE5C\uFF01\uFF02\uFF05\uFF07\uFF09\uFF0C\uFF0E\uFF1A\uFF1B\uFF1F\uFF3D\uFF5D\uFF5E\u2013\u2014\u2022\u3009\u300B\u300D\uFE30\uFE31\uFE32\uFE33\uFE50\uFE51\uFE52\uFE53\uFE54\uFE55\uFE56\uFE58\uFE36\uFE38\uFE3A\uFE3C\uFE3E\uFE40\uFE42\uFE57\uFF5C\uFF64\u300F\u3011\u3019\u301F\uFF60\xBB\u30FD\u30FE\u30FC\u30A1\u30A3\u30A5\u30A7\u30A9\u30C3\u30E3\u30E5\u30E7\u30EE\u30F5\u30F6\u3041\u3043\u3045\u3047\u3049\u3063\u3083\u3085\u3087\u308E\u3095\u3096\u31F0\u31F1\u31F2\u31F3\u31F4\u31F5\u31F6\u31F7\u31F8\u31F9\u31FA\u31FB\u31FC\u31FD\u31FE\u31FF\u3005\u303B\u2010\u30A0\u301C\uFF5E\u203C\u2047\u2048\u2049\u30FB\u3099\u309A`),Ei=new Set("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~");function Kl({parent:e}){if(e.usesCJSpaces===void 0){let r={" ":0,"":0},{children:t}=e;for(let n=1;n<t.length-1;++n){let a=t[n];if(a.type==="whitespace"&&(a.value===" "||a.value==="")){let u=t[n-1].kind,i=t[n+1].kind;(u===De&&i===Le||u===Le&&i===De)&&++r[a.value]}}e.usesCJSpaces=r[" "]>r[""]}return e.usesCJSpaces}function Jl(e,r){if(r)return!0;let{previous:t,next:n}=e;if(!t||!n)return!0;let a=t.kind,u=n.kind;return bi(a)&&bi(u)||a===be&&u===De||u===be&&a===De?!0:a===ur||u===ur||a===De&&u===De?!1:Ei.has(n.value[0])||Ei.has(M(!1,t.value,-1))?!0:t.hasTrailingPunctuation||n.hasLeadingPunctuation?!1:Kl(e)}function Ci(e){return e===Le||e===De||e===be}function bi(e){return e===Le||e===be}function Xl(e,r,t,n,a){if(t!=="always"||e.hasAncestor(s=>$l.has(s.type)))return!1;if(n)return r!=="";if(r===" ")return!0;let{previous:u,next:i}=e;return!(r===""&&((u==null?void 0:u.kind)===be&&Ci(i==null?void 0:i.kind)||(i==null?void 0:i.kind)===be&&Ci(u==null?void 0:u.kind))||!a&&(i&&Wl.has(i.value[0])||u&&Hl.has(M(!1,u.value,-1))))}function Et(e,r,t,n){if(t==="preserve"&&r===`
-`)return L;let a=r===" "||r===`
-`&&Jl(e,n);return Xl(e,r,t,n,a)?a?Br:qr:a?" ":""}var Ql=new Set(["listItem","definition"]);function Zl(e,r,t){var a,u;let{node:n}=e;if(af(e)){let i=[""],o=Pr(r.originalText.slice(n.position.start.offset,n.position.end.offset));for(let s of o){if(s.type==="word"){i.push([i.pop(),s.value]);continue}let l=Et(e,s.value,r.proseWrap,!0);if(Y(l)===$){i.push([i.pop(),l]);continue}i.push(l)}return Ee(i)}switch(n.type){case"front-matter":return r.originalText.slice(n.position.start.offset,n.position.end.offset);case"root":return n.children.length===0?"":[tf(e,r,t),L];case"paragraph":return Fi(e,r,t);case"sentence":return vi(e,t);case"word":{let i=N(!1,N(!1,n.value,"*",String.raw`\*`),new RegExp([`(^|${Se.source})(_+)`,`(_+)(${Se.source}|$)`].join("|"),"gu"),(l,c,f,D,h)=>N(!1,f?`${c}${f}`:`${D}${h}`,"_",String.raw`\_`)),o=(l,c,f)=>l.type==="sentence"&&f===0,s=(l,c,f)=>mt(l.children[f-1]);return i!==n.value&&(e.match(void 0,o,s)||e.match(void 0,o,(l,c,f)=>l.type==="emphasis"&&f===0,s))&&(i=i.replace(/^(\\?[*_])+/u,l=>N(!1,l,"\\",""))),i}case"whitespace":{let{next:i}=e,o=i&&/^>|^(?:[*+-]|#{1,6}|\d+[).])$/u.test(i.value)?"never":r.proseWrap;return Et(e,n.value,o)}case"emphasis":{let i;if(mt(n.children[0]))i=r.originalText[n.position.start.offset];else{let{previous:o,next:s}=e;i=(o==null?void 0:o.type)==="sentence"&&((a=M(!1,o.children,-1))==null?void 0:a.type)==="word"&&!M(!1,o.children,-1).hasTrailingPunctuation||(s==null?void 0:s.type)==="sentence"&&((u=s.children[0])==null?void 0:u.type)==="word"&&!s.children[0].hasLeadingPunctuation||e.hasAncestor(c=>c.type==="emphasis")?"*":"_"}return[i,V(e,r,t),i]}case"strong":return["**",V(e,r,t),"**"];case"delete":return["~~",V(e,r,t),"~~"];case"inlineCode":{let i=r.proseWrap==="preserve"?n.value:N(!1,n.value,`
-`," "),o=Gn(i,"`"),s="`".repeat(o||1),l=i.startsWith("`")||i.endsWith("`")||/^[\n ]/u.test(i)&&/[\n ]$/u.test(i)&&/[^\n ]/u.test(i)?" ":"";return[s,l,i,l,s]}case"wikiLink":{let i="";return r.proseWrap==="preserve"?i=n.value:i=N(!1,n.value,/[\t\n]+/gu," "),["[[",i,"]]"]}case"link":switch(r.originalText[n.position.start.offset]){case"<":{let i="mailto:";return["<",n.url.startsWith(i)&&r.originalText.slice(n.position.start.offset+1,n.position.start.offset+1+i.length)!==i?n.url.slice(i.length):n.url,">"]}case"[":return["[",V(e,r,t),"](",Ct(n.url,")"),Nr(n.title,r),")"];default:return r.originalText.slice(n.position.start.offset,n.position.end.offset)}case"image":return["![",n.alt||"","](",Ct(n.url,")"),Nr(n.title,r),")"];case"blockquote":return["> ",ve("> ",V(e,r,t))];case"heading":return["#".repeat(n.depth)+" ",V(e,r,t)];case"code":{if(n.isIndented){let s=" ".repeat(4);return ve(s,[s,Ce(n.value,L)])}let i=r.__inJsTemplate?"~":"`",o=i.repeat(Math.max(3,_r(n.value,i)+1));return[o,n.lang||"",n.meta?" "+n.meta:"",L,Ce(Lr(n,r.originalText),L),L,o]}case"html":{let{parent:i,isLast:o}=e,s=i.type==="root"&&o?n.value.trimEnd():n.value,l=/^<!--.*-->$/su.test(s);return Ce(s,l?L:_e(tr))}case"list":{let i=Ai(n,e.parent),o=ii(n,r);return V(e,r,t,{processor(s){let l=f(),c=s.node;if(c.children.length===2&&c.children[1].type==="html"&&c.children[0].position.start.column!==c.children[1].position.start.column)return[l,yi(s,r,t,l)];return[l,ve(" ".repeat(l.length),yi(s,r,t,l))];function f(){let D=n.ordered?(s.isFirst?n.start:o?1:n.start+s.index)+(i%2===0?". ":") "):i%2===0?"- ":"* ";return n.isAligned||n.hasIndentedCodeblock?ef(D,r):D}}})}case"thematicBreak":{let{ancestors:i}=e,o=i.findIndex(l=>l.type==="list");return o===-1?"---":Ai(i[o],i[o+1])%2===0?"***":"---"}case"linkReference":return["[",V(e,r,t),"]",n.referenceType==="full"?bt(n):n.referenceType==="collapsed"?"[]":""];case"imageReference":switch(n.referenceType){case"full":return["![",n.alt||"","]",bt(n)];default:return["![",n.alt,"]",n.referenceType==="collapsed"?"[]":""]}case"definition":{let i=r.proseWrap==="always"?Br:" ";return ze([bt(n),":",Ze([i,Ct(n.url),n.title===null?"":[i,Nr(n.title,r,!1)]])])}case"footnote":return["[^",V(e,r,t),"]"];case"footnoteReference":return Bi(n);case"footnoteDefinition":{let i=n.children.length===1&&n.children[0].type==="paragraph"&&(r.proseWrap==="never"||r.proseWrap==="preserve"&&n.children[0].position.start.line===n.children[0].position.end.line);return[Bi(n),": ",i?V(e,r,t):ze([ve(" ".repeat(4),V(e,r,t,{processor:({isFirst:o})=>o?ze([qr,t()]):t()}))])]}case"table":return mi(e,r,t);case"tableCell":return V(e,r,t);case"break":return/\s/u.test(r.originalText[n.position.start.offset])?["  ",_e(tr)]:["\\",L];case"liquidNode":return Ce(n.value,L);case"import":case"export":case"jsx":return n.value;case"esComment":return["{/* ",n.value," */}"];case"math":return["$$",L,n.value?[Ce(n.value,L),L]:"","$$"];case"inlineMath":return r.originalText.slice(Oe(n),Pe(n));case"tableRow":case"listItem":case"text":default:throw new $n(n,"Markdown")}}function yi(e,r,t,n){let{node:a}=e,u=a.checked===null?"":a.checked?"[x] ":"[ ] ";return[u,V(e,r,t,{processor({node:i,isFirst:o}){if(o&&i.type!=="list")return ve(" ".repeat(u.length),t());let s=" ".repeat(sf(r.tabWidth-n.length,0,3));return[s,ve(s,t())]}})]}function ef(e,r){let t=n();return e+" ".repeat(t>=4?0:t);function n(){let a=e.length%r.tabWidth;return a===0?0:r.tabWidth-a}}function Ai(e,r){return rf(e,r,t=>t.ordered===e.ordered)}function rf(e,r,t){let n=-1;for(let a of r.children)if(a.type===e.type&&t(a)?n++:n=-1,a===e)return n}function tf(e,r,t){let n=[],a=null,{children:u}=e.node;for(let[i,o]of u.entries())switch(yt(o)){case"start":a===null&&(a={index:i,offset:o.position.end.offset});break;case"end":a!==null&&(n.push({start:a,end:{index:i,offset:o.position.start.offset}}),a=null);break;default:break}return V(e,r,t,{processor({index:i}){if(n.length>0){let o=n[0];if(i===o.start.index)return[xi(u[o.start.index]),r.originalText.slice(o.start.offset,o.end.offset),xi(u[o.end.index])];if(o.start.index<i&&i<o.end.index)return!1;if(i===o.end.index)return n.shift(),!1}return t()}})}function V(e,r,t,n={}){let{processor:a=t}=n,u=[];return e.each(()=>{let i=a(e);i!==!1&&(u.length>0&&nf(e)&&(u.push(L),(uf(e,r)||ki(e))&&u.push(L),ki(e)&&u.push(L)),u.push(i))},"children"),u}function xi(e){if(e.type==="html")return e.value;if(e.type==="paragraph"&&Array.isArray(e.children)&&e.children.length===1&&e.children[0].type==="esComment")return["{/* ",e.children[0].value," */}"]}function yt(e){let r;if(e.type==="html")r=e.value.match(/^<!--\s*prettier-ignore(?:-(start|end))?\s*-->$/u);else{let t;e.type==="esComment"?t=e:e.type==="paragraph"&&e.children.length===1&&e.children[0].type==="esComment"&&(t=e.children[0]),t&&(r=t.value.match(/^prettier-ignore(?:-(start|end))?$/u))}return r?r[1]||"next":!1}function nf({node:e,parent:r}){let t=ht.has(e.type),n=e.type==="html"&&Or.has(r.type);return!t&&!n}function wi(e,r){return e.type==="listItem"&&(e.spread||r.originalText.charAt(e.position.end.offset-1)===`
-`)}function uf({node:e,previous:r,parent:t},n){if(wi(r,n))return!0;let i=r.type===e.type&&Ql.has(e.type),o=t.type==="listItem"&&!wi(t,n),s=yt(r)==="next",l=e.type==="html"&&r.type==="html"&&r.position.end.line+1===e.position.start.line,c=e.type==="html"&&t.type==="listItem"&&r.type==="paragraph"&&r.position.end.line+1===e.position.start.line;return!(i||o||s||l||c)}function ki({node:e,previous:r}){let t=r.type==="list",n=e.type==="code"&&e.isIndented;return t&&n}function af(e){let r=e.findAncestor(t=>t.type==="linkReference"||t.type==="imageReference");return r&&(r.type!=="linkReference"||r.referenceType!=="full")}var of=(e,r)=>{for(let t of r)e=N(!1,e,t,encodeURIComponent(t));return e};function Ct(e,r=[]){let t=[" ",...Array.isArray(r)?r:[r]];return new RegExp(t.map(n=>Be(n)).join("|"),"u").test(e)?`<${of(e,"<>")}>`:e}function Nr(e,r,t=!0){if(!e)return"";if(t)return" "+Nr(e,r,!1);if(e=N(!1,e,/\\(?=["')])/gu,""),e.includes('"')&&e.includes("'")&&!e.includes(")"))return`(${e})`;let n=jn(e,r.singleQuote);return e=N(!1,e,"\\","\\\\"),e=N(!1,e,n,`\\${n}`),`${n}${e}${n}`}function sf(e,r,t){return e<r?r:e>t?t:e}function cf(e){return e.index>0&&yt(e.previous)==="next"}function bt(e){return`[${(0,qi.default)(e.label)}]`}function Bi(e){return`[^${e.label}]`}var lf={preprocess:gi,print:Zl,embed:ui,massageAstNode:Zn,hasPrettierIgnore:cf,insertPragma:Jn,getVisitorKeys:si},Ti=lf;var _i=[{linguistLanguageId:222,name:"Markdown",type:"prose",color:"#083fa1",aliases:["md","pandoc"],aceMode:"markdown",codemirrorMode:"gfm",codemirrorMimeType:"text/x-gfm",wrap:!0,extensions:[".md",".livemd",".markdown",".mdown",".mdwn",".mkd",".mkdn",".mkdown",".ronn",".scd",".workbook"],filenames:["contents.lr","README"],tmScope:"text.md",parsers:["markdown"],vscodeLanguageIds:["markdown"]},{linguistLanguageId:222,name:"MDX",type:"prose",color:"#083fa1",aliases:["md","pandoc"],aceMode:"markdown",codemirrorMode:"gfm",codemirrorMimeType:"text/x-gfm",wrap:!0,extensions:[".mdx"],filenames:[],tmScope:"text.md",parsers:["mdx"],vscodeLanguageIds:["mdx"]}];var At={bracketSpacing:{category:"Common",type:"boolean",default:!0,description:"Print spaces between brackets.",oppositeDescription:"Do not print spaces between brackets."},singleQuote:{category:"Common",type:"boolean",default:!1,description:"Use single quotes instead of double quotes."},proseWrap:{category:"Common",type:"choice",default:"preserve",description:"How to wrap prose.",choices:[{value:"always",description:"Wrap prose if it exceeds the print width."},{value:"never",description:"Do not wrap prose."},{value:"preserve",description:"Wrap prose as-is."}]},bracketSameLine:{category:"Common",type:"boolean",default:!1,description:"Put > of opening tags on the last line instead of on a new line."},singleAttributePerLine:{category:"Common",type:"boolean",default:!1,description:"Enforce single attribute per line in HTML, Vue and JSX."}};var ff={proseWrap:At.proseWrap,singleQuote:At.singleQuote},Si=ff;var On={};Ln(On,{markdown:()=>km,mdx:()=>Bm,remark:()=>km});var Wc=Ue(Pi(),1),Kc=Ue(Wi(),1),Jc=Ue(Gs(),1),Xc=Ue(Ic(),1);var vm=/^import\s/u,Em=/^export\s/u,Nc=String.raw`[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)*|`,Rc=/<!---->|<!---?[^>-](?:-?[^-])*-->/u,Cm=/^\{\s*\/\*(.*)\*\/\s*\}/u,bm=`
+`)?t.slice(0,-1):t}function ye(e,r){return(function t(n,i,u){let a={...r(n,i,u)};return a.children&&(a.children=a.children.map((o,s)=>t(o,s,[a,...u]))),a})(e,null,[])}function Yr(e){if(e?.type!=="link"||e.children.length!==1)return!1;let[r]=e.children;return qe(e)===qe(r)&&Ne(e)===Ne(r)}function lr(e){let r;if(e.type==="html")r=e.value.match(/^<!--\s*prettier-ignore(?:-(start|end))?\s*-->$/u);else{let t;e.type==="esComment"?t=e:e.type==="paragraph"&&e.children.length===1&&e.children[0].type==="esComment"&&(t=e.children[0]),t&&(r=t.value.match(/^prettier-ignore(?:-(start|end))?$/u))}return r?r[1]||"next":!1}function Gr(e,r){return t(e,r,n=>n.ordered===e.ordered);function t(n,i,u){let a=-1;for(let o of i.children)if(o.type===n.type&&u(o)?a++:a=-1,o===n)return a}}function df(e,r){let{node:t}=e;switch(t.type){case"code":{let{lang:n}=t;if(!n)return;let i;return n==="angular-ts"?i=wt(r,{language:"typescript"}):n==="angular-html"?i="angular":i=wt(r,{language:n}),i?async u=>{let a={parser:i};n==="ts"||n==="typescript"?a.filepath="dummy.ts":n==="tsx"&&(a.filepath="dummy.tsx");let o=await u(Ur(t,r.originalText),a),s=r.__inJsTemplate?"~":"`",l=s.repeat(Math.max(3,Ir(t.value,s)+1));return ur([l,t.lang,t.meta?" "+t.meta:"",M,xe(o),M,l])}:void 0}case"import":case"export":return n=>n(t.value,{__onHtmlBindingRoot:i=>mf(i,t.type),parser:"babel"});case"jsx":return n=>n(`<$>${t.value}</$>`,{parser:"__js_expression",rootMarker:"mdx"})}return null}function mf(e,r){let{program:{body:t}}=e;if(!t.every(n=>n.type==="ImportDeclaration"||n.type==="ExportDefaultDeclaration"||n.type==="ExportNamedDeclaration"))throw new Error(`Unexpected '${r}' in MDX.`)}var Ti=df;var fr=null;function Dr(e){if(fr!==null&&typeof fr.property){let r=fr;return fr=Dr.prototype=null,r}return fr=Dr.prototype=e??Object.create(null),new Dr}var Ff=10;for(let e=0;e<=Ff;e++)Dr();function Bt(e){return Dr(e)}function gf(e,r="type"){Bt(e);function t(n){let i=n[r],u=e[i];if(!Array.isArray(u))throw Object.assign(new Error(`Missing visitor keys for '${i}'.`),{node:n});return u}return t}var Bi=gf;var q=[["children"],[]],_i={root:q[0],paragraph:q[0],sentence:q[0],word:q[1],whitespace:q[1],emphasis:q[0],strong:q[0],delete:q[0],inlineCode:q[1],wikiLink:q[1],link:q[0],image:q[1],blockquote:q[0],heading:q[0],code:q[1],html:q[1],list:q[0],thematicBreak:q[1],linkReference:q[0],imageReference:q[1],definition:q[1],footnote:q[0],footnoteReference:q[1],footnoteDefinition:q[0],table:q[0],tableCell:q[0],break:q[1],liquidNode:q[1],import:q[1],export:q[1],esComment:q[1],jsx:q[1],math:q[1],inlineMath:q[1],tableRow:q[0],listItem:q[0],text:q[1]};var Ef=Bi(_i),Oi=Ef;function z(e,r,t,n={}){let{processor:i=t}=n,u=[];return e.each(()=>{let a=i(e);a!==!1&&(u.length>0&&Cf(e)&&(u.push(M),(Af(e,r)||qi(e))&&u.push(M),qi(e)&&u.push(M)),u.push(a))},"children"),u}function Cf({node:e,parent:r}){let t=Tt.has(e.type),n=e.type==="html"&&Rr.has(r.type);return!t&&!n}var vf=new Set(["listItem","definition"]);function Af({node:e,previous:r,parent:t},n){if(Ni(r,n)||e.type==="list"&&t.type==="listItem"&&r.type==="code")return!0;let u=r.type===e.type&&vf.has(e.type),a=t.type==="listItem"&&(e.type==="list"||!Ni(t,n)),o=lr(r)==="next",s=e.type==="html"&&r.type==="html"&&r.position.end.line+1===e.position.start.line,l=e.type==="html"&&t.type==="listItem"&&r.type==="paragraph"&&r.position.end.line+1===e.position.start.line;return!(u||a||o||s||l)}function qi({node:e,previous:r}){let t=r.type==="list",n=e.type==="code"&&e.isIndented;return t&&n}function Ni(e,r){return e.type==="listItem"&&(e.spread||r.originalText.charAt(e.position.end.offset-1)===`
+`)}function Ii(e,r,t){let{node:n}=e,i=Gr(n,e.parent),u=ki(n,r);return z(e,r,t,{processor(){let a=s(),{node:o}=e;if(o.children.length===2&&o.children[1].type==="html"&&o.children[0].position.start.column!==o.children[1].position.start.column)return[a,Pi(e,r,t,a)];return[a,Fe(" ".repeat(a.length),Pi(e,r,t,a))];function s(){let l=n.ordered?(e.isFirst?n.start:u?1:n.start+e.index)+(i%2===0?". ":") "):i%2===0?"- ":"* ";return(n.isAligned||n.hasIndentedCodeblock)&&n.ordered?bf(l,r):l}}})}function Pi(e,r,t,n){let{node:i}=e,u=i.checked===null?"":i.checked?"[x] ":"[ ] ";return[u,z(e,r,t,{processor({node:a,isFirst:o}){if(o&&a.type!=="list")return Fe(" ".repeat(u.length),t());let s=" ".repeat(xf(r.tabWidth-n.length,0,3));return[s,Fe(s,t())]}})]}function bf(e,r){let t=n();return e+" ".repeat(t>=4?0:t);function n(){let i=e.length%r.tabWidth;return i===0?0:r.tabWidth-i}}function xf(e,r,t){return Math.max(r,Math.min(e,t))}function Si(e,r,t){let{node:n}=e,i=[],u=e.map(()=>e.map(({index:f})=>{let D=ai(t(),r).formatted,m=or(D);return i[f]=Math.max(i[f]??3,m),{text:D,width:m}},"children"),"children"),a=s(!1);if(r.proseWrap!=="never")return[Ue,a];let o=s(!0);return[Ue,Ge(Zn(o,a))];function s(f){return _r(ar,[c(u[0],f),l(f),...u.slice(1).map(D=>c(D,f))].map(D=>`| ${D.join(" | ")} |`))}function l(f){return i.map((D,m)=>{let p=n.align[m],h=p==="center"||p==="left"?":":"-",F=p==="center"||p==="right"?":":"-",g=f?"-":"-".repeat(D-2);return`${h}${g}${F}`})}function c(f,D){return f.map(({text:m,width:p},h)=>{if(D)return m;let F=i[h]-p,g=n.align[h],E=0;g==="right"?E=F:g==="center"&&(E=Math.floor(F/2));let v=F-E;return`${" ".repeat(E)}${m}${" ".repeat(v)}`})}}function Li(e){let{node:r}=e,t=R(0,R(0,r.value,"*","\\*"),new RegExp([`(^|${Oe.source})(_+)`,`(_+)(${Oe.source}|$)`].join("|"),"gu"),(u,a,o,s,l)=>R(0,o?`${a}${o}`:`${s}${l}`,"_","\\_")),n=(u,a,o)=>u.type==="sentence"&&o===0,i=(u,a,o)=>Yr(u.children[o-1]);return t!==r.value&&(e.match(void 0,n,i)||e.match(void 0,n,(u,a,o)=>u.type==="emphasis"&&o===0,i))&&(t=t.replace(/^(\\?[*_])+/u,u=>R(0,u,"\\",""))),t}function Ri(e,r,t){let n=e.map(t,"children");return yf(n)}function yf(e){let r=[""];return(function t(n){for(let i of n){let u=W(i);if(u===j){t(i);continue}let a=i,o=[];u===J&&([a,...o]=i.parts),r.push([r.pop(),a],...o)}})(e),Ye(r)}var _t=class{#e;constructor(r){this.#e=new Set(r)}getLeadingWhitespaceCount(r){let t=this.#e,n=0;for(let i=0;i<r.length&&t.has(r.charAt(i));i++)n++;return n}getTrailingWhitespaceCount(r){let t=this.#e,n=0;for(let i=r.length-1;i>=0&&t.has(r.charAt(i));i--)n++;return n}getLeadingWhitespace(r){let t=this.getLeadingWhitespaceCount(r);return r.slice(0,t)}getTrailingWhitespace(r){let t=this.getTrailingWhitespaceCount(r);return r.slice(r.length-t)}hasLeadingWhitespace(r){return this.#e.has(r.charAt(0))}hasTrailingWhitespace(r){return this.#e.has(U(0,r,-1))}trimStart(r){let t=this.getLeadingWhitespaceCount(r);return r.slice(t)}trimEnd(r){let t=this.getTrailingWhitespaceCount(r);return r.slice(0,r.length-t)}trim(r){return this.trimEnd(this.trimStart(r))}split(r,t=!1){let n=`[${fe([...this.#e].join(""))}]+`,i=new RegExp(t?`(${n})`:n,"u");return r.split(i)}hasWhitespaceCharacter(r){let t=this.#e;return Array.prototype.some.call(r,n=>t.has(n))}hasNonWhitespaceCharacter(r){let t=this.#e;return Array.prototype.some.call(r,n=>!t.has(n))}isWhitespaceOnly(r){let t=this.#e;return Array.prototype.every.call(r,n=>t.has(n))}#r(r){let t=Number.POSITIVE_INFINITY;for(let n of r.split(`
+`)){if(n.length===0)continue;let i=this.getLeadingWhitespaceCount(n);if(i===0)return 0;n.length!==i&&i<t&&(t=i)}return t===Number.POSITIVE_INFINITY?0:t}dedentString(r){let t=this.#r(r);return t===0?r:r.split(`
+`).map(n=>n.slice(t)).join(`
+`)}},Mi=_t;var wf=["	",`
+`,"\f","\r"," "],kf=new Mi(wf),Ot=kf;var Tf=/^\\?.$/su,Bf=/^\n *>[ >]*$/u;function _f(e,r){return e=Of(e,r),e=Nf(e),e=If(e,r),e=Sf(e,r),e=Pf(e),e}function Of(e,r){return ye(e,t=>{if(t.type!=="text")return t;let{value:n}=t;if(n==="*"||n==="_"||!Tf.test(n)||t.position.end.offset-t.position.start.offset===n.length)return t;let i=r.originalText.slice(t.position.start.offset,t.position.end.offset);return Bf.test(i)?t:{...t,value:i}})}function qf(e,r,t){return ye(e,n=>{if(!n.children)return n;let i=[],u,a;for(let o of n.children)u&&r(u,o)?(o=t(u,o),i.splice(-1,1,o),a||(a=!0)):i.push(o),u=o;return a?{...n,children:i}:n})}function Nf(e){return qf(e,(r,t)=>r.type==="text"&&t.type==="text",(r,t)=>({type:"text",value:r.value+t.value,position:{start:r.position.start,end:t.position.end}}))}function Pf(e){return ye(e,(r,t,[n])=>{if(r.type!=="text")return r;let{value:i}=r;return n.type==="paragraph"&&(t===0&&(i=Ot.trimStart(i)),t===n.children.length-1&&(i=Ot.trimEnd(i))),{type:"sentence",position:r.position,children:Mr(i)}})}function If(e,r){return ye(e,(t,n,i)=>{if(t.type==="code"){let u=/^\n?(?: {4,}|\t)/u.test(r.originalText.slice(t.position.start.offset,t.position.end.offset));if(t.isIndented=u,u)for(let a=0;a<i.length;a++){let o=i[a];if(o.hasIndentedCodeblock)break;o.type==="list"&&(o.hasIndentedCodeblock=!0)}}return t})}function Sf(e,r){return ye(e,(i,u,a)=>{if(i.type==="list"&&i.children.length>0){for(let o=0;o<a.length;o++){let s=a[o];if(s.type==="list"&&!s.isAligned)return i.isAligned=!1,i}i.isAligned=n(i)}return i});function t(i){return i.children.length===0?-1:i.children[0].position.start.column-1}function n(i){if(!i.ordered)return!0;let[u,a]=i.children;if(ze(u,r).leadingSpaces.length>1)return!0;let s=t(u);if(s===-1)return!1;if(i.children.length===1)return s%r.tabWidth===0;let l=t(a);return s!==l?!1:s%r.tabWidth===0?!0:ze(a,r).leadingSpaces.length>1}}var Ui=_f;function Yi(e,r){let t=[""];return e.each(()=>{let{node:n}=e,i=r();switch(n.type){case"whitespace":if(W(i)!==V){t.push(i,"");break}default:t.push([t.pop(),i])}},"children"),Ye(t)}var Lf=new Set(["heading","tableCell","link","wikiLink"]),Gi=new Set("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~");function Rf({parent:e}){if(e.usesCJSpaces===void 0){let r={" ":0,"":0},{children:t}=e;for(let n=1;n<t.length-1;++n){let i=t[n];if(i.type==="whitespace"&&(i.value===" "||i.value==="")){let u=t[n-1].kind,a=t[n+1].kind;(u===ae&&a===We||u===We&&a===ae)&&++r[i.value]}}e.usesCJSpaces=r[" "]>r[""]}return e.usesCJSpaces}function Mf(e,r){if(r)return!0;let{previous:t,next:n}=e;if(!t||!n)return!0;let i=t.kind,u=n.kind;return zi(i)&&zi(u)||i===Pe&&u===ae||u===Pe&&i===ae?!0:i===cr||u===cr||i===ae&&u===ae?!1:Gi.has(n.value[0])||Gi.has(U(0,t.value,-1))?!0:t.hasTrailingPunctuation||n.hasLeadingPunctuation?!1:Rf(e)}function zi(e){return e===We||e===Pe}function Uf(e,r,t,n){if(t!=="always"||e.hasAncestor(a=>Lf.has(a.type)))return!1;if(n)return r!=="";let{previous:i,next:u}=e;return!i||!u?!0:r===""?!1:i.kind===Pe&&u.kind===ae||u.kind===Pe&&i.kind===ae?!0:!(i.isCJ||u.isCJ)}function qt(e,r,t,n){if(t==="preserve"&&r===`
+`)return M;let i=r===" "||r===`
+`&&Mf(e,n);return Uf(e,r,t,n)?i?qr:Nr:i?" ":""}function Wi(e){let{previous:r,next:t}=e;return r?.type==="sentence"&&U(0,r.children,-1)?.type==="word"&&!U(0,r.children,-1).hasTrailingPunctuation||t?.type==="sentence"&&t.children[0]?.type==="word"&&!t.children[0].hasLeadingPunctuation}function Yf(e,r,t){let{node:n}=e;if(zf(e)){let i=[""],u=Mr(r.originalText.slice(n.position.start.offset,n.position.end.offset));for(let a of u){if(a.type==="word"){i.push([i.pop(),a.value]);continue}let o=qt(e,a.value,r.proseWrap,!0);if(W(o)===V){i.push([i.pop(),o]);continue}i.push(o,"")}return Ye(i)}switch(n.type){case"root":return n.children.length===0?"":[Gf(e,r,t),M];case"paragraph":return Ri(e,r,t);case"sentence":return Yi(e,t);case"word":return Li(e);case"whitespace":{let{next:i}=e,u=i&&/^>|^(?:[*+-]|#{1,6}|\d+[).])$/u.test(i.value)?"never":r.proseWrap;return qt(e,n.value,u)}case"emphasis":{let i;if(Yr(n.children[0]))i=r.originalText[n.position.start.offset];else{let u=Wi(e),a=e.callParent(({node:o})=>o.type==="strong"&&Wi(e));i=u||a||e.hasAncestor(o=>o.type==="emphasis")?"*":"_"}return[i,z(e,r,t),i]}case"strong":return["**",z(e,r,t),"**"];case"delete":return["~~",z(e,r,t),"~~"];case"inlineCode":{let i=r.proseWrap==="preserve"?n.value:R(0,n.value,`
+`," "),u=oi(i,"`"),a="`".repeat(u),o=i.startsWith("`")||i.endsWith("`")||/^[\n ]/u.test(i)&&/[\n ]$/u.test(i)&&/[^\n ]/u.test(i)?" ":"";return[a,o,i,o,a]}case"wikiLink":{let i="";return r.proseWrap==="preserve"?i=n.value:i=R(0,n.value,/[\t\n]+/gu," "),["[[",i,"]]"]}case"link":switch(r.originalText[n.position.start.offset]){case"<":{let i="mailto:";return["<",n.url.startsWith(i)&&r.originalText.slice(n.position.start.offset+1,n.position.start.offset+1+i.length)!==i?n.url.slice(i.length):n.url,">"]}case"[":return["[",z(e,r,t),"](",Nt(n.url,")"),zr(n.title,r),")"];default:return r.originalText.slice(n.position.start.offset,n.position.end.offset)}case"image":return["![",n.alt||"","](",Nt(n.url,")"),zr(n.title,r),")"];case"blockquote":return["> ",Fe("> ",z(e,r,t))];case"heading":return["#".repeat(n.depth)+" ",z(e,r,t)];case"code":{if(n.isIndented){let a=" ".repeat(4);return Fe(a,[a,xe(n.value,M)])}let i=r.__inJsTemplate?"~":"`",u=i.repeat(Math.max(3,Ir(n.value,i)+1));return[u,n.lang||"",n.meta?" "+n.meta:"",M,xe(Ur(n,r.originalText),M),M,u]}case"html":{let{parent:i,isLast:u}=e,a=i.type==="root"&&u?n.value.trimEnd():n.value,o=/^<!--.*-->$/su.test(a);return xe(a,o?M:ur(nr))}case"list":return Ii(e,r,t);case"thematicBreak":{let{ancestors:i}=e,u=i.findIndex(o=>o.type==="list");return u===-1?"---":Gr(i[u],i[u+1])%2===0?"***":"---"}case"linkReference":return["[",z(e,r,t),"]",n.referenceType==="full"?Pt(n):n.referenceType==="collapsed"?"[]":""];case"imageReference":switch(n.referenceType){case"full":return["![",n.alt||"","]",Pt(n)];default:return["![",n.alt,"]",n.referenceType==="collapsed"?"[]":""]}case"definition":{let i=r.proseWrap==="always"?qr:" ";return Ge([Pt(n),":",ir([i,Nt(n.url),n.title===null?"":[i,zr(n.title,r,!1)]])])}case"footnote":return["[^",z(e,r,t),"]"];case"footnoteReference":return ji(n);case"footnoteDefinition":{let i=n.children.length===1&&n.children[0].type==="paragraph"&&(r.proseWrap==="never"||r.proseWrap==="preserve"&&n.children[0].position.start.line===n.children[0].position.end.line);return[ji(n),": ",i?z(e,r,t):Ge([Fe(" ".repeat(4),z(e,r,t,{processor:({isFirst:u})=>u?Ge([Nr,t()]):t()}))])]}case"table":return Si(e,r,t);case"tableCell":return z(e,r,t);case"break":return/\s/u.test(r.originalText[n.position.start.offset])?["  ",ur(nr)]:["\\",M];case"liquidNode":return xe(n.value,M);case"import":case"export":case"jsx":return n.value.trimEnd();case"esComment":return["{/* ",n.value," */}"];case"math":return["$$",M,n.value?[xe(n.value,M),M]:"","$$"];case"inlineMath":return r.originalText.slice(qe(n),Ne(n));case"frontMatter":case"tableRow":case"listItem":case"text":default:throw new fi(n,"Markdown")}}function Gf(e,r,t){let n=[],i=null,{children:u}=e.node;for(let[a,o]of u.entries())switch(lr(o)){case"start":i===null&&(i={index:a,offset:o.position.end.offset});break;case"end":i!==null&&(n.push({start:i,end:{index:a,offset:o.position.start.offset}}),i=null);break;default:break}return z(e,r,t,{processor({index:a}){if(n.length>0){let o=n[0];if(a===o.start.index)return[Vi(u[o.start.index]),r.originalText.slice(o.start.offset,o.end.offset),Vi(u[o.end.index])];if(o.start.index<a&&a<o.end.index)return!1;if(a===o.end.index)return n.shift(),!1}return t()}})}function Vi(e){if(e.type==="html")return e.value;if(e.type==="paragraph"&&Array.isArray(e.children)&&e.children.length===1&&e.children[0].type==="esComment")return["{/* ",e.children[0].value," */}"]}function zf(e){let r=e.findAncestor(t=>t.type==="linkReference"||t.type==="imageReference");return r&&(r.type!=="linkReference"||r.referenceType!=="full")}var Wf=(e,r)=>{for(let t of r)e=R(0,e,t,encodeURIComponent(t));return e};function Nt(e,r=[]){let t=[" ",...Array.isArray(r)?r:[r]];return new RegExp(t.map(n=>fe(n)).join("|"),"u").test(e)?`<${Wf(e,"<>")}>`:e}function zr(e,r,t=!0){if(!e)return"";if(t)return" "+zr(e,r,!1);if(e=R(0,e,/\\(?=["')])/gu,""),e.includes('"')&&e.includes("'")&&!e.includes(")"))return`(${e})`;let n=li(e,r.singleQuote);return e=R(0,e,"\\","\\\\"),e=R(0,e,n,`\\${n}`),`${n}${e}${n}`}function Vf(e){return e.index>0&&lr(e.previous)==="next"}function Pt(e){return`[${(0,$i.default)(e.label)}]`}function ji(e){return`[^${e.label}]`}var jf={features:{experimental_frontMatterSupport:{massageAstNode:!0,embed:!0,print:!0}},preprocess:Ui,print:Yf,embed:Ti,massageAstNode:yi,hasPrettierIgnore:Vf,insertPragma:Ai,getVisitorKeys:Oi},Hi=jf;var Ki=[{name:"Markdown",type:"prose",aceMode:"markdown",extensions:[".md",".livemd",".markdown",".mdown",".mdwn",".mkd",".mkdn",".mkdown",".ronn",".scd",".workbook"],filenames:["contents.lr","README"],tmScope:"text.md",aliases:["md","pandoc"],codemirrorMode:"gfm",codemirrorMimeType:"text/x-gfm",wrap:!0,parsers:["markdown"],vscodeLanguageIds:["markdown"],linguistLanguageId:222},{name:"MDX",type:"prose",aceMode:"markdown",extensions:[".mdx"],filenames:[],tmScope:"text.md",aliases:["md","pandoc"],codemirrorMode:"gfm",codemirrorMimeType:"text/x-gfm",wrap:!0,parsers:["mdx"],vscodeLanguageIds:["mdx"],linguistLanguageId:222}];var It={bracketSpacing:{category:"Common",type:"boolean",default:!0,description:"Print spaces between brackets.",oppositeDescription:"Do not print spaces between brackets."},objectWrap:{category:"Common",type:"choice",default:"preserve",description:"How to wrap object literals.",choices:[{value:"preserve",description:"Keep as multi-line, if there is a newline between the opening brace and first property."},{value:"collapse",description:"Fit to a single line when possible."}]},singleQuote:{category:"Common",type:"boolean",default:!1,description:"Use single quotes instead of double quotes."},proseWrap:{category:"Common",type:"choice",default:"preserve",description:"How to wrap prose.",choices:[{value:"always",description:"Wrap prose if it exceeds the print width."},{value:"never",description:"Do not wrap prose."},{value:"preserve",description:"Wrap prose as-is."}]},bracketSameLine:{category:"Common",type:"boolean",default:!1,description:"Put > of opening tags on the last line instead of on a new line."},singleAttributePerLine:{category:"Common",type:"boolean",default:!1,description:"Enforce single attribute per line in HTML, Vue and JSX."}};var $f={proseWrap:It.proseWrap,singleQuote:It.singleQuote},Xi=$f;var Wn={};Vn(Wn,{markdown:()=>cF,mdx:()=>lF,remark:()=>cF});var Dl=Re(Qi(),1),pl=Re(Du(),1),hl=Re(oc(),1),dl=Re(el(),1);var rF=/^import\s/u,tF=/^export\s/u,rl="[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)*|",tl=/<!---->|<!---?[^>-](?:-?[^-])*-->/u,nF=/^\{\s*\/\*(.*)\*\/\s*\}/u;var iF=e=>rF.test(e),nl=e=>tF.test(e),il=e=>iF(e)||nl(e),zn=(e,r)=>{let t=r.indexOf(`
 
-`,Uc=e=>vm.test(e),Sn=e=>Em.test(e),zc=(e,r)=>{let t=r.indexOf(bm),n=r.slice(0,t);if(Sn(n)||Uc(n))return e(n)({type:Sn(n)?"export":"import",value:n})},Mc=(e,r)=>{let t=Cm.exec(r);if(t)return e(t[0])({type:"esComment",value:t[1].trim()})};zc.locator=e=>Sn(e)||Uc(e)?-1:1;Mc.locator=(e,r)=>e.indexOf("{",r);var Yc=function(){let{Parser:e}=this,{blockTokenizers:r,blockMethods:t,inlineTokenizers:n,inlineMethods:a}=e.prototype;r.esSyntax=zc,n.esComment=Mc,t.splice(t.indexOf("paragraph"),0,"esSyntax"),a.splice(a.indexOf("text"),0,"esComment")};var ym=function(){let e=this.Parser.prototype;e.blockMethods=["frontMatter",...e.blockMethods],e.blockTokenizers.frontMatter=r;function r(t,n){let a=ir(n);if(a.frontMatter)return t(a.frontMatter.raw)(a.frontMatter)}r.onlyAtStart=!0},Gc=ym;function Am(){return e=>ye(e,(r,t,[n])=>r.type!=="html"||Rc.test(r.value)||Or.has(n.type)?r:{...r,type:"jsx"})}var Vc=Am;var xm=function(){let e=this.Parser.prototype,r=e.inlineMethods;r.splice(r.indexOf("text"),0,"liquid"),e.inlineTokenizers.liquid=t;function t(n,a){let u=a.match(/^(\{%.*?%\}|\{\{.*?\}\})/su);if(u)return n(u[0])({type:"liquidNode",value:u[0]})}t.locator=function(n,a){return n.indexOf("{",a)}},jc=xm;var wm=function(){let e="wikiLink",r=/^\[\[(?<linkContents>.+?)\]\]/su,t=this.Parser.prototype,n=t.inlineMethods;n.splice(n.indexOf("link"),0,e),t.inlineTokenizers.wikiLink=a;function a(u,i){let o=r.exec(i);if(o){let s=o.groups.linkContents.trim();return u(o[0])({type:e,value:s})}}a.locator=function(u,i){return u.indexOf("[",i)}},$c=wm;function Qc({isMDX:e}){return r=>{let t=(0,Xc.default)().use(Jc.default,{commonmark:!0,...e&&{blocks:[Nc]}}).use(Wc.default).use(Gc).use(Kc.default).use(e?Yc:Hc).use(jc).use(e?Vc:Hc).use($c);return t.run(t.parse(r))}}function Hc(){}var Zc={astFormat:"mdast",hasPragma:Kn,locStart:Oe,locEnd:Pe},km={...Zc,parse:Qc({isMDX:!1})},Bm={...Zc,parse:Qc({isMDX:!0})};var qm={mdast:Ti};var fC=Pn;
+`),n=t===-1?r:r.slice(0,t);if(il(n))return e(n)({type:nl(n)?"export":"import",value:n})};zn.notInBlock=!0;zn.locator=e=>il(e)?-1:1;var ul=(e,r)=>{let t=nF.exec(r);if(t)return e(t[0])({type:"esComment",value:t[1].trim()})};ul.locator=(e,r)=>e.indexOf("{",r);var al=function(){let{Parser:e}=this,{blockTokenizers:r,blockMethods:t,inlineTokenizers:n,inlineMethods:i}=e.prototype;r.esSyntax=zn,n.esComment=ul,t.splice(t.indexOf("paragraph"),0,"esSyntax"),i.splice(i.indexOf("text"),0,"esComment")};var uF=function(){let e=this.Parser.prototype;e.blockMethods=["frontMatter",...e.blockMethods],e.blockTokenizers.frontMatter=r;function r(t,n){let{frontMatter:i}=_e(n);if(i)return t(i.raw)({...i,type:"frontMatter"})}r.onlyAtStart=!0},ol=uF;function aF(){return e=>ye(e,(r,t,[n])=>r.type!=="html"||tl.test(r.value)||Rr.has(n.type)?r:{...r,type:"jsx"})}var sl=aF;var oF=function(){let e=this.Parser.prototype,r=e.inlineMethods;r.splice(r.indexOf("text"),0,"liquid"),e.inlineTokenizers.liquid=t;function t(n,i){let u=i.match(/^(\{%.*?%\}|\{\{.*?\}\})/su);if(u)return n(u[0])({type:"liquidNode",value:u[0]})}t.locator=function(n,i){return n.indexOf("{",i)}},cl=oF;var sF=function(){let e="wikiLink",r=/^\[\[(?<linkContents>.+?)\]\]/su,t=this.Parser.prototype,n=t.inlineMethods;n.splice(n.indexOf("link"),0,e),t.inlineTokenizers.wikiLink=i;function i(u,a){let o=r.exec(a);if(o){let s=o.groups.linkContents.trim();return u(o[0])({type:e,value:s})}}i.locator=function(u,a){return u.indexOf("[",a)}},ll=sF;function ml({isMDX:e}){return r=>{let t=(0,dl.default)().use(hl.default,{commonmark:!0,...e&&{blocks:[rl]}}).use(Dl.default).use(ol).use(pl.default).use(e?al:fl).use(cl).use(e?sl:fl).use(ll);return t.run(t.parse(r))}}function fl(){}var Fl={astFormat:"mdast",hasPragma:Lr,hasIgnorePragma:vi,locStart:qe,locEnd:Ne},cF={...Fl,parse:ml({isMDX:!1})},lF={...Fl,parse:ml({isMDX:!0})};var fF={mdast:Hi};
 
 ;// CONCATENATED MODULE: ./node_modules/prettier/standalone.mjs
-var yu=Object.create;var He=Object.defineProperty;var Au=Object.getOwnPropertyDescriptor;var Bu=Object.getOwnPropertyNames;var wu=Object.getPrototypeOf,xu=Object.prototype.hasOwnProperty;var standalone_sr=e=>{throw TypeError(e)};var _u=(e,t)=>()=>(e&&(t=e(e=0)),t);var standalone_At=(e,t)=>()=>(t||e((t={exports:{}}).exports,t),t.exports),We=(e,t)=>{for(var r in t)He(e,r,{get:t[r],enumerable:!0})},standalone_ar=(e,t,r,n)=>{if(t&&typeof t=="object"||typeof t=="function")for(let o of Bu(t))!xu.call(e,o)&&o!==r&&He(e,o,{get:()=>t[o],enumerable:!(n=Au(t,o))||n.enumerable});return e};var standalone_Me=(e,t,r)=>(r=e!=null?yu(wu(e)):{},standalone_ar(t||!e||!e.__esModule?He(r,"default",{value:e,enumerable:!0}):r,e)),vu=e=>standalone_ar(He({},"__esModule",{value:!0}),e);var bu=(e,t,r)=>t.has(e)||standalone_sr("Cannot "+r);var Dr=(e,t,r)=>t.has(e)?standalone_sr("Cannot add the same private member more than once"):t instanceof WeakSet?t.add(e):t.set(e,r);var pe=(e,t,r)=>(bu(e,t,"access private method"),r);var it=standalone_At((ia,sn)=>{"use strict";var on=new Proxy(String,{get:()=>on});sn.exports=on});var Tn={};We(Tn,{default:()=>_o,shouldHighlight:()=>standalone_xo});var standalone_xo,_o,kn=_u(()=>{standalone_xo=()=>!1,_o=String});var standalone_Pn=standalone_At((bD,Xt)=>{var g=String,Ln=function(){return{isColorSupported:!1,reset:g,bold:g,dim:g,italic:g,underline:g,inverse:g,hidden:g,strikethrough:g,black:g,red:g,green:g,yellow:g,blue:g,magenta:g,cyan:g,white:g,gray:g,bgBlack:g,bgRed:g,bgGreen:g,bgYellow:g,bgBlue:g,bgMagenta:g,bgCyan:g,bgWhite:g}};Xt.exports=Ln();Xt.exports.createColors=Ln});var standalone_$n=standalone_At(Ct=>{"use strict";Object.defineProperty(Ct,"__esModule",{value:!0});Ct.codeFrameColumns=Mn;Ct.default=To;var In=(kn(),vu(Tn)),Hn=vo(standalone_Pn(),!0);function Wn(e){if(typeof WeakMap!="function")return null;var t=new WeakMap,r=new WeakMap;return(Wn=function(n){return n?r:t})(e)}function vo(e,t){if(!t&&e&&e.__esModule)return e;if(e===null||typeof e!="object"&&typeof e!="function")return{default:e};var r=Wn(t);if(r&&r.has(e))return r.get(e);var n={__proto__:null},o=Object.defineProperty&&Object.getOwnPropertyDescriptor;for(var u in e)if(u!=="default"&&{}.hasOwnProperty.call(e,u)){var i=o?Object.getOwnPropertyDescriptor(e,u):null;i&&(i.get||i.set)?Object.defineProperty(n,u,i):n[u]=e[u]}return n.default=e,r&&r.set(e,n),n}var bo=Hn.default,Rn=(e,t)=>r=>e(t(r)),Zt;function Oo(e){if(e){var t;return(t=Zt)!=null||(Zt=(0,Hn.createColors)(!0)),Zt}return bo}var Yn=!1;function So(e){return{gutter:e.gray,marker:Rn(e.red,e.bold),message:Rn(e.red,e.bold)}}var jn=/\r\n|[\n\r\u2028\u2029]/;function No(e,t,r){let n=Object.assign({column:0,line:-1},e.start),o=Object.assign({},n,e.end),{linesAbove:u=2,linesBelow:i=3}=r||{},s=n.line,a=n.column,D=o.line,l=o.column,d=Math.max(s-(u+1),0),f=Math.min(t.length,D+i);s===-1&&(d=0),D===-1&&(f=t.length);let p=D-s,c={};if(p)for(let F=0;F<=p;F++){let m=F+s;if(!a)c[m]=!0;else if(F===0){let E=t[m-1].length;c[m]=[a,E-a+1]}else if(F===p)c[m]=[0,l];else{let E=t[m-F].length;c[m]=[0,E]}}else a===l?a?c[s]=[a,0]:c[s]=!0:c[s]=[a,l-a];return{start:d,end:f,markerLines:c}}function Mn(e,t,r={}){let n=(r.highlightCode||r.forceColor)&&(0,In.shouldHighlight)(r),o=Oo(r.forceColor),u=So(o),i=(F,m)=>n?F(m):m,s=e.split(jn),{start:a,end:D,markerLines:l}=No(t,s,r),d=t.start&&typeof t.start.column=="number",f=String(D).length,c=(n?(0,In.default)(e,r):e).split(jn,D).slice(a,D).map((F,m)=>{let E=a+1+m,w=` ${` ${E}`.slice(-f)} |`,h=l[E],C=!l[E+1];if(h){let k="";if(Array.isArray(h)){let v=F.slice(0,Math.max(h[0]-1,0)).replace(/[^\t]/g," "),$=h[1]||1;k=[`
- `,i(u.gutter,w.replace(/\d/g," "))," ",v,i(u.marker,"^").repeat($)].join(""),C&&r.message&&(k+=" "+i(u.message,r.message))}return[i(u.marker,">"),i(u.gutter,w),F.length>0?` ${F}`:"",k].join("")}else return` ${i(u.gutter,w)}${F.length>0?` ${F}`:""}`}).join(`
-`);return r.message&&!d&&(c=`${" ".repeat(f+1)}${r.message}
-${c}`),n?o.reset(c):c}function To(e,t,r,n={}){if(!Yn){Yn=!0;let u="Passing lineNumber and colNumber is deprecated to @babel/code-frame. Please use `codeFrameColumns`.";{let i=new Error(u);i.name="DeprecationWarning",console.warn(new Error(u))}}return r=Math.max(r,0),Mn(e,{start:{column:r,line:t}},n)}});var standalone_ir={};We(standalone_ir,{__debug:()=>standalone_di,check:()=>standalone_fi,doc:()=>standalone_nr,format:()=>gu,formatWithCursor:()=>Cu,getSupportInfo:()=>standalone_pi,util:()=>standalone_or,version:()=>fu});var standalone_Ou=(e,t,r,n)=>{if(!(e&&t==null))return t.replaceAll?t.replaceAll(r,n):r.global?t.replace(r,n):t.split(r).join(n)},standalone_ne=standalone_Ou;function Z(){}Z.prototype={diff:function(t,r){var n,o=arguments.length>2&&arguments[2]!==void 0?arguments[2]:{},u=o.callback;typeof o=="function"&&(u=o,o={}),this.options=o;var i=this;function s(h){return u?(setTimeout(function(){u(void 0,h)},0),!0):h}t=this.castInput(t),r=this.castInput(r),t=this.removeEmpty(this.tokenize(t)),r=this.removeEmpty(this.tokenize(r));var a=r.length,D=t.length,l=1,d=a+D;o.maxEditLength&&(d=Math.min(d,o.maxEditLength));var f=(n=o.timeout)!==null&&n!==void 0?n:1/0,p=Date.now()+f,c=[{oldPos:-1,lastComponent:void 0}],F=this.extractCommon(c[0],r,t,0);if(c[0].oldPos+1>=D&&F+1>=a)return s([{value:this.join(r),count:r.length}]);var m=-1/0,E=1/0;function A(){for(var h=Math.max(m,-l);h<=Math.min(E,l);h+=2){var C=void 0,k=c[h-1],v=c[h+1];k&&(c[h-1]=void 0);var $=!1;if(v){var ye=v.oldPos-h;$=v&&0<=ye&&ye<a}var yt=k&&k.oldPos+1<D;if(!$&&!yt){c[h]=void 0;continue}if(!yt||$&&k.oldPos+1<v.oldPos?C=i.addToPath(v,!0,void 0,0):C=i.addToPath(k,void 0,!0,1),F=i.extractCommon(C,r,t,h),C.oldPos+1>=D&&F+1>=a)return s(Su(i,C.lastComponent,r,t,i.useLongestToken));c[h]=C,C.oldPos+1>=D&&(E=Math.min(E,h-1)),F+1>=a&&(m=Math.max(m,h+1))}l++}if(u)(function h(){setTimeout(function(){if(l>d||Date.now()>p)return u();A()||h()},0)})();else for(;l<=d&&Date.now()<=p;){var w=A();if(w)return w}},addToPath:function(t,r,n,o){var u=t.lastComponent;return u&&u.added===r&&u.removed===n?{oldPos:t.oldPos+o,lastComponent:{count:u.count+1,added:r,removed:n,previousComponent:u.previousComponent}}:{oldPos:t.oldPos+o,lastComponent:{count:1,added:r,removed:n,previousComponent:u}}},extractCommon:function(t,r,n,o){for(var u=r.length,i=n.length,s=t.oldPos,a=s-o,D=0;a+1<u&&s+1<i&&this.equals(r[a+1],n[s+1]);)a++,s++,D++;return D&&(t.lastComponent={count:D,previousComponent:t.lastComponent}),t.oldPos=s,a},equals:function(t,r){return this.options.comparator?this.options.comparator(t,r):t===r||this.options.ignoreCase&&t.toLowerCase()===r.toLowerCase()},removeEmpty:function(t){for(var r=[],n=0;n<t.length;n++)t[n]&&r.push(t[n]);return r},castInput:function(t){return t},tokenize:function(t){return t.split("")},join:function(t){return t.join("")}};function Su(e,t,r,n,o){for(var u=[],i;t;)u.push(t),i=t.previousComponent,delete t.previousComponent,t=i;u.reverse();for(var s=0,a=u.length,D=0,l=0;s<a;s++){var d=u[s];if(d.removed){if(d.value=e.join(n.slice(l,l+d.count)),l+=d.count,s&&u[s-1].added){var p=u[s-1];u[s-1]=u[s],u[s]=p}}else{if(!d.added&&o){var f=r.slice(D,D+d.count);f=f.map(function(F,m){var E=n[l+m];return E.length>F.length?E:F}),d.value=e.join(f)}else d.value=e.join(r.slice(D,D+d.count));D+=d.count,d.added||(l+=d.count)}}var c=u[a-1];return a>1&&typeof c.value=="string"&&(c.added||c.removed)&&e.equals("",c.value)&&(u[a-2].value+=c.value,u.pop()),u}var standalone_hi=new Z;var lr=/^[A-Za-z\xC0-\u02C6\u02C8-\u02D7\u02DE-\u02FF\u1E00-\u1EFF]+$/,standalone_cr=/\S/,fr=new Z;fr.equals=function(e,t){return this.options.ignoreCase&&(e=e.toLowerCase(),t=t.toLowerCase()),e===t||this.options.ignoreWhitespace&&!standalone_cr.test(e)&&!standalone_cr.test(t)};fr.tokenize=function(e){for(var t=e.split(/([^\S\r\n]+|[()[\]{}'"\r\n]|\b)/),r=0;r<t.length-1;r++)!t[r+1]&&t[r+2]&&lr.test(t[r])&&lr.test(t[r+2])&&(t[r]+=t[r+2],t.splice(r+1,2),r--);return t};var standalone_pr=new Z;standalone_pr.tokenize=function(e){this.options.stripTrailingCr&&(e=e.replace(/\r\n/g,`
-`));var t=[],r=e.split(/(\n|\r\n)/);r[r.length-1]||r.pop();for(var n=0;n<r.length;n++){var o=r[n];n%2&&!this.options.newlineIsToken?t[t.length-1]+=o:(this.options.ignoreWhitespace&&(o=o.trim()),t.push(o))}return t};var Nu=new Z;Nu.tokenize=function(e){return e.split(/(\S.+?[.!?])(?=\s+|$)/)};var Tu=new Z;Tu.tokenize=function(e){return e.split(/([{}:;,]|\s+)/)};function $e(e){"@babel/helpers - typeof";return typeof Symbol=="function"&&typeof Symbol.iterator=="symbol"?$e=function(t){return typeof t}:$e=function(t){return t&&typeof Symbol=="function"&&t.constructor===Symbol&&t!==Symbol.prototype?"symbol":typeof t},$e(e)}var ku=Object.prototype.toString,Ae=new Z;Ae.useLongestToken=!0;Ae.tokenize=standalone_pr.tokenize;Ae.castInput=function(e){var t=this.options,r=t.undefinedReplacement,n=t.stringifyReplacer,o=n===void 0?function(u,i){return typeof i>"u"?r:i}:n;return typeof e=="string"?e:JSON.stringify(standalone_Bt(e,null,null,o),o,"  ")};Ae.equals=function(e,t){return Z.prototype.equals.call(Ae,e.replace(/,([\r\n])/g,"$1"),t.replace(/,([\r\n])/g,"$1"))};function standalone_Bt(e,t,r,n,o){t=t||[],r=r||[],n&&(e=n(o,e));var u;for(u=0;u<t.length;u+=1)if(t[u]===e)return r[u];var i;if(ku.call(e)==="[object Array]"){for(t.push(e),i=new Array(e.length),r.push(i),u=0;u<e.length;u+=1)i[u]=standalone_Bt(e[u],t,r,n,o);return t.pop(),r.pop(),i}if(e&&e.toJSON&&(e=e.toJSON()),$e(e)==="object"&&e!==null){t.push(e),i={},r.push(i);var s=[],a;for(a in e)e.hasOwnProperty(a)&&s.push(a);for(s.sort(),u=0;u<s.length;u+=1)a=s[u],i[a]=standalone_Bt(e[a],t,r,n,a);t.pop(),r.pop()}else i=e;return i}var standalone_Ve=new Z;standalone_Ve.tokenize=function(e){return e.slice()};standalone_Ve.join=standalone_Ve.removeEmpty=function(e){return e};function dr(e,t,r){return standalone_Ve.diff(e,t,r)}function Fr(e){let t=e.indexOf("\r");return t>=0?e.charAt(t+1)===`
-`?"crlf":"cr":"lf"}function standalone_Be(e){switch(e){case"cr":return"\r";case"crlf":return`\r
-`;default:return`
-`}}function wt(e,t){let r;switch(t){case`
-`:r=/\n/gu;break;case"\r":r=/\r/gu;break;case`\r
-`:r=/\r\n/gu;break;default:throw new Error(`Unexpected "eol" ${JSON.stringify(t)}.`)}let n=e.match(r);return n?n.length:0}function mr(e){return standalone_ne(!1,e,/\r\n?/gu,`
-`)}var U="string",standalone_W="array",z="cursor",standalone_L="indent",P="align",I="trim",x="group",S="fill",_="if-break",R="indent-if-break",standalone_Y="line-suffix",j="line-suffix-boundary",B="line",standalone_N="label",b="break-parent",standalone_Ue=new Set([z,standalone_L,P,I,x,S,_,R,standalone_Y,j,B,standalone_N,b]);function Lu(e){if(typeof e=="string")return U;if(Array.isArray(e))return standalone_W;if(!e)return;let{type:t}=e;if(standalone_Ue.has(t))return t}var standalone_G=Lu;var Pu=e=>new Intl.ListFormat("en-US",{type:"disjunction"}).format(e);function standalone_Iu(e){let t=e===null?"null":typeof e;if(t!=="string"&&t!=="object")return`Unexpected doc '${t}', 
-Expected it to be 'string' or 'object'.`;if(standalone_G(e))throw new Error("doc is valid.");let r=Object.prototype.toString.call(e);if(r!=="[object Object]")return`Unexpected doc '${r}'.`;let n=Pu([...standalone_Ue].map(o=>`'${o}'`));return`Unexpected doc.type '${e.type}'.
-Expected it to be ${n}.`}var xt=class extends Error{name="InvalidDocError";constructor(t){super(standalone_Iu(t)),this.doc=t}},Q=xt;var Er={};function Ru(e,t,r,n){let o=[e];for(;o.length>0;){let u=o.pop();if(u===Er){r(o.pop());continue}r&&o.push(u,Er);let i=standalone_G(u);if(!i)throw new Q(u);if((t==null?void 0:t(u))!==!1)switch(i){case standalone_W:case S:{let s=i===standalone_W?u:u.parts;for(let a=s.length,D=a-1;D>=0;--D)o.push(s[D]);break}case _:o.push(u.flatContents,u.breakContents);break;case x:if(n&&u.expandedStates)for(let s=u.expandedStates.length,a=s-1;a>=0;--a)o.push(u.expandedStates[a]);else o.push(u.contents);break;case P:case standalone_L:case R:case standalone_N:case standalone_Y:o.push(u.contents);break;case U:case z:case I:case j:case B:case b:break;default:throw new Q(u)}}}var we=Ru;var hr=()=>{},standalone_K=hr,standalone_ze=hr;function standalone_De(e){return standalone_K(e),{type:standalone_L,contents:e}}function ae(e,t){return standalone_K(t),{type:P,contents:t,n:e}}function _t(e,t={}){return standalone_K(e),standalone_ze(t.expandedStates,!0),{type:x,id:t.id,contents:e,break:!!t.shouldBreak,expandedStates:t.expandedStates}}function Cr(e){return ae(Number.NEGATIVE_INFINITY,e)}function gr(e){return ae({type:"root"},e)}function yr(e){return ae(-1,e)}function Ar(e,t){return _t(e[0],{...t,expandedStates:e})}function Ge(e){return standalone_ze(e),{type:S,parts:e}}function standalone_Br(e,t="",r={}){return standalone_K(e),t!==""&&standalone_K(t),{type:_,breakContents:e,flatContents:t,groupId:r.groupId}}function standalone_wr(e,t){return standalone_K(e),{type:R,contents:e,groupId:t.groupId,negate:t.negate}}function xe(e){return standalone_K(e),{type:standalone_Y,contents:e}}var standalone_xr={type:j},de={type:b},standalone_r={type:I},standalone_e={type:B,hard:!0},standalone_vt={type:B,hard:!0,literal:!0},Ke={type:B},vr={type:B,soft:!0},q=[standalone_e,de],standalone_qe=[standalone_vt,de],standalone_ve={type:z};function standalone_be(e,t){standalone_K(e),standalone_ze(t);let r=[];for(let n=0;n<t.length;n++)n!==0&&r.push(e),r.push(t[n]);return r}function Je(e,t,r){standalone_K(e);let n=e;if(t>0){for(let o=0;o<Math.floor(t/r);++o)n=standalone_De(n);n=ae(t%r,n),n=ae(Number.NEGATIVE_INFINITY,n)}return n}function br(e,t){return standalone_K(t),e?{type:standalone_N,label:e,contents:t}:t}function standalone_ee(e){var t;if(!e)return"";if(Array.isArray(e)){let r=[];for(let n of e)if(Array.isArray(n))r.push(...standalone_ee(n));else{let o=standalone_ee(n);o!==""&&r.push(o)}return r}return e.type===_?{...e,breakContents:standalone_ee(e.breakContents),flatContents:standalone_ee(e.flatContents)}:e.type===x?{...e,contents:standalone_ee(e.contents),expandedStates:(t=e.expandedStates)==null?void 0:t.map(standalone_ee)}:e.type===S?{type:"fill",parts:e.parts.map(standalone_ee)}:e.contents?{...e,contents:standalone_ee(e.contents)}:e}function standalone_Or(e){let t=Object.create(null),r=new Set;return n(standalone_ee(e));function n(u,i,s){var a,D;if(typeof u=="string")return JSON.stringify(u);if(Array.isArray(u)){let l=u.map(n).filter(Boolean);return l.length===1?l[0]:`[${l.join(", ")}]`}if(u.type===B){let l=((a=s==null?void 0:s[i+1])==null?void 0:a.type)===b;return u.literal?l?"literalline":"literallineWithoutBreakParent":u.hard?l?"hardline":"hardlineWithoutBreakParent":u.soft?"softline":"line"}if(u.type===b)return((D=s==null?void 0:s[i-1])==null?void 0:D.type)===B&&s[i-1].hard?void 0:"breakParent";if(u.type===I)return"trim";if(u.type===standalone_L)return"indent("+n(u.contents)+")";if(u.type===P)return u.n===Number.NEGATIVE_INFINITY?"dedentToRoot("+n(u.contents)+")":u.n<0?"dedent("+n(u.contents)+")":u.n.type==="root"?"markAsRoot("+n(u.contents)+")":"align("+JSON.stringify(u.n)+", "+n(u.contents)+")";if(u.type===_)return"ifBreak("+n(u.breakContents)+(u.flatContents?", "+n(u.flatContents):"")+(u.groupId?(u.flatContents?"":', ""')+`, { groupId: ${o(u.groupId)} }`:"")+")";if(u.type===R){let l=[];u.negate&&l.push("negate: true"),u.groupId&&l.push(`groupId: ${o(u.groupId)}`);let d=l.length>0?`, { ${l.join(", ")} }`:"";return`indentIfBreak(${n(u.contents)}${d})`}if(u.type===x){let l=[];u.break&&u.break!=="propagated"&&l.push("shouldBreak: true"),u.id&&l.push(`id: ${o(u.id)}`);let d=l.length>0?`, { ${l.join(", ")} }`:"";return u.expandedStates?`conditionalGroup([${u.expandedStates.map(f=>n(f)).join(",")}]${d})`:`group(${n(u.contents)}${d})`}if(u.type===S)return`fill([${u.parts.map(l=>n(l)).join(", ")}])`;if(u.type===standalone_Y)return"lineSuffix("+n(u.contents)+")";if(u.type===j)return"lineSuffixBoundary";if(u.type===standalone_N)return`label(${JSON.stringify(u.label)}, ${n(u.contents)})`;throw new Error("Unknown doc type "+u.type)}function o(u){if(typeof u!="symbol")return JSON.stringify(String(u));if(u in t)return t[u];let i=u.description||"symbol";for(let s=0;;s++){let a=i+(s>0?` #${s}`:"");if(!r.has(a))return r.add(a),t[u]=`Symbol.for(${JSON.stringify(a)})`}}}var Yu=(e,t,r)=>{if(!(e&&t==null))return Array.isArray(t)||typeof t=="string"?t[r<0?t.length+r:r]:t.at(r)},y=Yu;var standalone_Sr=()=>/[#*0-9]\uFE0F?\u20E3|[\xA9\xAE\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA\u231A\u231B\u2328\u23CF\u23ED-\u23EF\u23F1\u23F2\u23F8-\u23FA\u24C2\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC\u25FE\u2600-\u2604\u260E\u2611\u2614\u2615\u2618\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642\u2648-\u2653\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E\u267F\u2692\u2694-\u2697\u2699\u269B\u269C\u26A0\u26A7\u26AA\u26B0\u26B1\u26BD\u26BE\u26C4\u26C8\u26CF\u26D1\u26E9\u26F0-\u26F5\u26F7\u26F8\u26FA\u2702\u2708\u2709\u270F\u2712\u2714\u2716\u271D\u2721\u2733\u2734\u2744\u2747\u2757\u2763\u27A1\u2934\u2935\u2B05-\u2B07\u2B1B\u2B1C\u2B55\u3030\u303D\u3297\u3299]\uFE0F?|[\u261D\u270C\u270D](?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?|[\u270A\u270B](?:\uD83C[\uDFFB-\uDFFF])?|[\u23E9-\u23EC\u23F0\u23F3\u25FD\u2693\u26A1\u26AB\u26C5\u26CE\u26D4\u26EA\u26FD\u2705\u2728\u274C\u274E\u2753-\u2755\u2795-\u2797\u27B0\u27BF\u2B50]|\u26D3\uFE0F?(?:\u200D\uD83D\uDCA5)?|\u26F9(?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|\u2764\uFE0F?(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79))?|\uD83C(?:[\uDC04\uDD70\uDD71\uDD7E\uDD7F\uDE02\uDE37\uDF21\uDF24-\uDF2C\uDF36\uDF7D\uDF96\uDF97\uDF99-\uDF9B\uDF9E\uDF9F\uDFCD\uDFCE\uDFD4-\uDFDF\uDFF5\uDFF7]\uFE0F?|[\uDF85\uDFC2\uDFC7](?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC4\uDFCA](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDFCB\uDFCC](?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDCCF\uDD8E\uDD91-\uDD9A\uDE01\uDE1A\uDE2F\uDE32-\uDE36\uDE38-\uDE3A\uDE50\uDE51\uDF00-\uDF20\uDF2D-\uDF35\uDF37-\uDF43\uDF45-\uDF4A\uDF4C-\uDF7C\uDF7E-\uDF84\uDF86-\uDF93\uDFA0-\uDFC1\uDFC5\uDFC6\uDFC8\uDFC9\uDFCF-\uDFD3\uDFE0-\uDFF0\uDFF8-\uDFFF]|\uDDE6\uD83C[\uDDE8-\uDDEC\uDDEE\uDDF1\uDDF2\uDDF4\uDDF6-\uDDFA\uDDFC\uDDFD\uDDFF]|\uDDE7\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEF\uDDF1-\uDDF4\uDDF6-\uDDF9\uDDFB\uDDFC\uDDFE\uDDFF]|\uDDE8\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDEE\uDDF0-\uDDF5\uDDF7\uDDFA-\uDDFF]|\uDDE9\uD83C[\uDDEA\uDDEC\uDDEF\uDDF0\uDDF2\uDDF4\uDDFF]|\uDDEA\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDED\uDDF7-\uDDFA]|\uDDEB\uD83C[\uDDEE-\uDDF0\uDDF2\uDDF4\uDDF7]|\uDDEC\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEE\uDDF1-\uDDF3\uDDF5-\uDDFA\uDDFC\uDDFE]|\uDDED\uD83C[\uDDF0\uDDF2\uDDF3\uDDF7\uDDF9\uDDFA]|\uDDEE\uD83C[\uDDE8-\uDDEA\uDDF1-\uDDF4\uDDF6-\uDDF9]|\uDDEF\uD83C[\uDDEA\uDDF2\uDDF4\uDDF5]|\uDDF0\uD83C[\uDDEA\uDDEC-\uDDEE\uDDF2\uDDF3\uDDF5\uDDF7\uDDFC\uDDFE\uDDFF]|\uDDF1\uD83C[\uDDE6-\uDDE8\uDDEE\uDDF0\uDDF7-\uDDFB\uDDFE]|\uDDF2\uD83C[\uDDE6\uDDE8-\uDDED\uDDF0-\uDDFF]|\uDDF3\uD83C[\uDDE6\uDDE8\uDDEA-\uDDEC\uDDEE\uDDF1\uDDF4\uDDF5\uDDF7\uDDFA\uDDFF]|\uDDF4\uD83C\uDDF2|\uDDF5\uD83C[\uDDE6\uDDEA-\uDDED\uDDF0-\uDDF3\uDDF7-\uDDF9\uDDFC\uDDFE]|\uDDF6\uD83C\uDDE6|\uDDF7\uD83C[\uDDEA\uDDF4\uDDF8\uDDFA\uDDFC]|\uDDF8\uD83C[\uDDE6-\uDDEA\uDDEC-\uDDF4\uDDF7-\uDDF9\uDDFB\uDDFD-\uDDFF]|\uDDF9\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDED\uDDEF-\uDDF4\uDDF7\uDDF9\uDDFB\uDDFC\uDDFF]|\uDDFA\uD83C[\uDDE6\uDDEC\uDDF2\uDDF3\uDDF8\uDDFE\uDDFF]|\uDDFB\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDEE\uDDF3\uDDFA]|\uDDFC\uD83C[\uDDEB\uDDF8]|\uDDFD\uD83C\uDDF0|\uDDFE\uD83C[\uDDEA\uDDF9]|\uDDFF\uD83C[\uDDE6\uDDF2\uDDFC]|\uDF44(?:\u200D\uD83D\uDFEB)?|\uDF4B(?:\u200D\uD83D\uDFE9)?|\uDFC3(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDFF3\uFE0F?(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08))?|\uDFF4(?:\u200D\u2620\uFE0F?|\uDB40\uDC67\uDB40\uDC62\uDB40(?:\uDC65\uDB40\uDC6E\uDB40\uDC67|\uDC73\uDB40\uDC63\uDB40\uDC74|\uDC77\uDB40\uDC6C\uDB40\uDC73)\uDB40\uDC7F)?)|\uD83D(?:[\uDC3F\uDCFD\uDD49\uDD4A\uDD6F\uDD70\uDD73\uDD76-\uDD79\uDD87\uDD8A-\uDD8D\uDDA5\uDDA8\uDDB1\uDDB2\uDDBC\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA\uDECB\uDECD-\uDECF\uDEE0-\uDEE5\uDEE9\uDEF0\uDEF3]\uFE0F?|[\uDC42\uDC43\uDC46-\uDC50\uDC66\uDC67\uDC6B-\uDC6D\uDC72\uDC74-\uDC76\uDC78\uDC7C\uDC83\uDC85\uDC8F\uDC91\uDCAA\uDD7A\uDD95\uDD96\uDE4C\uDE4F\uDEC0\uDECC](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC6E\uDC70\uDC71\uDC73\uDC77\uDC81\uDC82\uDC86\uDC87\uDE45-\uDE47\uDE4B\uDE4D\uDE4E\uDEA3\uDEB4\uDEB5](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD74\uDD90](?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?|[\uDC00-\uDC07\uDC09-\uDC14\uDC16-\uDC25\uDC27-\uDC3A\uDC3C-\uDC3E\uDC40\uDC44\uDC45\uDC51-\uDC65\uDC6A\uDC79-\uDC7B\uDC7D-\uDC80\uDC84\uDC88-\uDC8E\uDC90\uDC92-\uDCA9\uDCAB-\uDCFC\uDCFF-\uDD3D\uDD4B-\uDD4E\uDD50-\uDD67\uDDA4\uDDFB-\uDE2D\uDE2F-\uDE34\uDE37-\uDE41\uDE43\uDE44\uDE48-\uDE4A\uDE80-\uDEA2\uDEA4-\uDEB3\uDEB7-\uDEBF\uDEC1-\uDEC5\uDED0-\uDED2\uDED5-\uDED7\uDEDC-\uDEDF\uDEEB\uDEEC\uDEF4-\uDEFC\uDFE0-\uDFEB\uDFF0]|\uDC08(?:\u200D\u2B1B)?|\uDC15(?:\u200D\uD83E\uDDBA)?|\uDC26(?:\u200D(?:\u2B1B|\uD83D\uDD25))?|\uDC3B(?:\u200D\u2744\uFE0F?)?|\uDC41\uFE0F?(?:\u200D\uD83D\uDDE8\uFE0F?)?|\uDC68(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDC68\uDC69]\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE])))?))?|\uDC69(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?[\uDC68\uDC69]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|\uDC69\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?))|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFE])))?))?|\uDC6F(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDD75(?:\uFE0F|\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDE2E(?:\u200D\uD83D\uDCA8)?|\uDE35(?:\u200D\uD83D\uDCAB)?|\uDE36(?:\u200D\uD83C\uDF2B\uFE0F?)?|\uDE42(?:\u200D[\u2194\u2195]\uFE0F?)?|\uDEB6(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?)|\uD83E(?:[\uDD0C\uDD0F\uDD18-\uDD1F\uDD30-\uDD34\uDD36\uDD77\uDDB5\uDDB6\uDDBB\uDDD2\uDDD3\uDDD5\uDEC3-\uDEC5\uDEF0\uDEF2-\uDEF8](?:\uD83C[\uDFFB-\uDFFF])?|[\uDD26\uDD35\uDD37-\uDD39\uDD3D\uDD3E\uDDB8\uDDB9\uDDCD\uDDCF\uDDD4\uDDD6-\uDDDD](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDDDE\uDDDF](?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD0D\uDD0E\uDD10-\uDD17\uDD20-\uDD25\uDD27-\uDD2F\uDD3A\uDD3F-\uDD45\uDD47-\uDD76\uDD78-\uDDB4\uDDB7\uDDBA\uDDBC-\uDDCC\uDDD0\uDDE0-\uDDFF\uDE70-\uDE7C\uDE80-\uDE88\uDE90-\uDEBD\uDEBF-\uDEC2\uDECE-\uDEDB\uDEE0-\uDEE8]|\uDD3C(?:\u200D[\u2640\u2642]\uFE0F?|\uD83C[\uDFFB-\uDFFF])?|\uDDCE(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDDD1(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1|\uDDD1\u200D\uD83E\uDDD2(?:\u200D\uD83E\uDDD2)?|\uDDD2(?:\u200D\uD83E\uDDD2)?))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF])))?))?|\uDEF1(?:\uD83C(?:\uDFFB(?:\u200D\uD83E\uDEF2\uD83C[\uDFFC-\uDFFF])?|\uDFFC(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFD-\uDFFF])?|\uDFFD(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])?|\uDFFE(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFD\uDFFF])?|\uDFFF(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFE])?))?)/g;function standalone_Nr(e){return e===12288||e>=65281&&e<=65376||e>=65504&&e<=65510}function standalone_Tr(e){return e>=4352&&e<=4447||e===8986||e===8987||e===9001||e===9002||e>=9193&&e<=9196||e===9200||e===9203||e===9725||e===9726||e===9748||e===9749||e>=9800&&e<=9811||e===9855||e===9875||e===9889||e===9898||e===9899||e===9917||e===9918||e===9924||e===9925||e===9934||e===9940||e===9962||e===9970||e===9971||e===9973||e===9978||e===9981||e===9989||e===9994||e===9995||e===10024||e===10060||e===10062||e>=10067&&e<=10069||e===10071||e>=10133&&e<=10135||e===10160||e===10175||e===11035||e===11036||e===11088||e===11093||e>=11904&&e<=11929||e>=11931&&e<=12019||e>=12032&&e<=12245||e>=12272&&e<=12287||e>=12289&&e<=12350||e>=12353&&e<=12438||e>=12441&&e<=12543||e>=12549&&e<=12591||e>=12593&&e<=12686||e>=12688&&e<=12771||e>=12783&&e<=12830||e>=12832&&e<=12871||e>=12880&&e<=19903||e>=19968&&e<=42124||e>=42128&&e<=42182||e>=43360&&e<=43388||e>=44032&&e<=55203||e>=63744&&e<=64255||e>=65040&&e<=65049||e>=65072&&e<=65106||e>=65108&&e<=65126||e>=65128&&e<=65131||e>=94176&&e<=94180||e===94192||e===94193||e>=94208&&e<=100343||e>=100352&&e<=101589||e>=101632&&e<=101640||e>=110576&&e<=110579||e>=110581&&e<=110587||e===110589||e===110590||e>=110592&&e<=110882||e===110898||e>=110928&&e<=110930||e===110933||e>=110948&&e<=110951||e>=110960&&e<=111355||e===126980||e===127183||e===127374||e>=127377&&e<=127386||e>=127488&&e<=127490||e>=127504&&e<=127547||e>=127552&&e<=127560||e===127568||e===127569||e>=127584&&e<=127589||e>=127744&&e<=127776||e>=127789&&e<=127797||e>=127799&&e<=127868||e>=127870&&e<=127891||e>=127904&&e<=127946||e>=127951&&e<=127955||e>=127968&&e<=127984||e===127988||e>=127992&&e<=128062||e===128064||e>=128066&&e<=128252||e>=128255&&e<=128317||e>=128331&&e<=128334||e>=128336&&e<=128359||e===128378||e===128405||e===128406||e===128420||e>=128507&&e<=128591||e>=128640&&e<=128709||e===128716||e>=128720&&e<=128722||e>=128725&&e<=128727||e>=128732&&e<=128735||e===128747||e===128748||e>=128756&&e<=128764||e>=128992&&e<=129003||e===129008||e>=129292&&e<=129338||e>=129340&&e<=129349||e>=129351&&e<=129535||e>=129648&&e<=129660||e>=129664&&e<=129672||e>=129680&&e<=129725||e>=129727&&e<=129733||e>=129742&&e<=129755||e>=129760&&e<=129768||e>=129776&&e<=129784||e>=131072&&e<=196605||e>=196608&&e<=262141}var standalone_kr=e=>!(standalone_Nr(e)||standalone_Tr(e));var ju=/[^\x20-\x7F]/u;function standalone_Hu(e){if(!e)return 0;if(!ju.test(e))return e.length;e=e.replace(standalone_Sr(),"  ");let t=0;for(let r of e){let n=r.codePointAt(0);n<=31||n>=127&&n<=159||n>=768&&n<=879||(t+=standalone_kr(n)?1:2)}return t}var standalone_Oe=standalone_Hu;function standalone_Ne(e,t){if(typeof e=="string")return t(e);let r=new Map;return n(e);function n(u){if(r.has(u))return r.get(u);let i=o(u);return r.set(u,i),i}function o(u){switch(standalone_G(u)){case standalone_W:return t(u.map(n));case S:return t({...u,parts:u.parts.map(n)});case _:return t({...u,breakContents:n(u.breakContents),flatContents:n(u.flatContents)});case x:{let{expandedStates:i,contents:s}=u;return i?(i=i.map(n),s=i[0]):s=n(s),t({...u,contents:s,expandedStates:i})}case P:case standalone_L:case R:case standalone_N:case standalone_Y:return t({...u,contents:n(u.contents)});case U:case z:case I:case j:case B:case b:return t(u);default:throw new Q(u)}}}function Xe(e,t,r){let n=r,o=!1;function u(i){if(o)return!1;let s=t(i);s!==void 0&&(o=!0,n=s)}return we(e,u),n}function Wu(e){if(e.type===x&&e.break||e.type===B&&e.hard||e.type===b)return!0}function standalone_Ir(e){return Xe(e,Wu,!1)}function standalone_Lr(e){if(e.length>0){let t=y(!1,e,-1);!t.expandedStates&&!t.break&&(t.break="propagated")}return null}function Rr(e){let t=new Set,r=[];function n(u){if(u.type===b&&standalone_Lr(r),u.type===x){if(r.push(u),t.has(u))return!1;t.add(u)}}function o(u){u.type===x&&r.pop().break&&standalone_Lr(r)}we(e,n,o,!0)}function standalone_Mu(e){return e.type===B&&!e.hard?e.soft?"":" ":e.type===_?e.flatContents:e}function Yr(e){return standalone_Ne(e,standalone_Mu)}function standalone_Pr(e){for(e=[...e];e.length>=2&&y(!1,e,-2).type===B&&y(!1,e,-1).type===b;)e.length-=2;if(e.length>0){let t=standalone_Se(y(!1,e,-1));e[e.length-1]=t}return e}function standalone_Se(e){switch(standalone_G(e)){case standalone_L:case R:case x:case standalone_Y:case standalone_N:{let t=standalone_Se(e.contents);return{...e,contents:t}}case _:return{...e,breakContents:standalone_Se(e.breakContents),flatContents:standalone_Se(e.flatContents)};case S:return{...e,parts:standalone_Pr(e.parts)};case standalone_W:return standalone_Pr(e);case U:return e.replace(/[\n\r]*$/u,"");case P:case z:case I:case j:case B:case b:break;default:throw new Q(e)}return e}function standalone_Ze(e){return standalone_Se(standalone_Vu(e))}function $u(e){switch(standalone_G(e)){case S:if(e.parts.every(t=>t===""))return"";break;case x:if(!e.contents&&!e.id&&!e.break&&!e.expandedStates)return"";if(e.contents.type===x&&e.contents.id===e.id&&e.contents.break===e.break&&e.contents.expandedStates===e.expandedStates)return e.contents;break;case P:case standalone_L:case R:case standalone_Y:if(!e.contents)return"";break;case _:if(!e.flatContents&&!e.breakContents)return"";break;case standalone_W:{let t=[];for(let r of e){if(!r)continue;let[n,...o]=Array.isArray(r)?r:[r];typeof n=="string"&&typeof y(!1,t,-1)=="string"?t[t.length-1]+=n:t.push(n),t.push(...o)}return t.length===0?"":t.length===1?t[0]:t}case U:case z:case I:case j:case B:case standalone_N:case b:break;default:throw new Q(e)}return e}function standalone_Vu(e){return standalone_Ne(e,t=>$u(t))}function jr(e,t=standalone_qe){return standalone_Ne(e,r=>typeof r=="string"?standalone_be(t,r.split(`
-`)):r)}function standalone_Uu(e){if(e.type===B)return!0}function standalone_Hr(e){return Xe(e,standalone_Uu,!1)}function Qe(e,t){return e.type===standalone_N?{...e,contents:t(e.contents)}:t(e)}var standalone_H=Symbol("MODE_BREAK"),standalone_J=Symbol("MODE_FLAT"),standalone_Te=Symbol("cursor");function Wr(){return{value:"",length:0,queue:[]}}function zu(e,t){return standalone_bt(e,{type:"indent"},t)}function Gu(e,t,r){return t===Number.NEGATIVE_INFINITY?e.root||Wr():t<0?standalone_bt(e,{type:"dedent"},r):t?t.type==="root"?{...e,root:e}:standalone_bt(e,{type:typeof t=="string"?"stringAlign":"numberAlign",n:t},r):e}function standalone_bt(e,t,r){let n=t.type==="dedent"?e.queue.slice(0,-1):[...e.queue,t],o="",u=0,i=0,s=0;for(let c of n)switch(c.type){case"indent":l(),r.useTabs?a(1):D(r.tabWidth);break;case"stringAlign":l(),o+=c.n,u+=c.n.length;break;case"numberAlign":i+=1,s+=c.n;break;default:throw new Error(`Unexpected type '${c.type}'`)}return f(),{...e,value:o,length:u,queue:n};function a(c){o+="	".repeat(c),u+=r.tabWidth*c}function D(c){o+=" ".repeat(c),u+=c}function l(){r.useTabs?d():f()}function d(){i>0&&a(i),p()}function f(){s>0&&D(s),p()}function p(){i=0,s=0}}function Ot(e){let t=0,r=0,n=e.length;e:for(;n--;){let o=e[n];if(o===standalone_Te){r++;continue}for(let u=o.length-1;u>=0;u--){let i=o[u];if(i===" "||i==="	")t++;else{e[n]=o.slice(0,u+1);break e}}}if(t>0||r>0)for(e.length=n+1;r-- >0;)e.push(standalone_Te);return t}function et(e,t,r,n,o,u){if(r===Number.POSITIVE_INFINITY)return!0;let i=t.length,s=[e],a=[];for(;r>=0;){if(s.length===0){if(i===0)return!0;s.push(t[--i]);continue}let{mode:D,doc:l}=s.pop(),d=standalone_G(l);switch(d){case U:a.push(l),r-=standalone_Oe(l);break;case standalone_W:case S:{let f=d===standalone_W?l:l.parts;for(let p=f.length-1;p>=0;p--)s.push({mode:D,doc:f[p]});break}case standalone_L:case P:case R:case standalone_N:s.push({mode:D,doc:l.contents});break;case I:r+=Ot(a);break;case x:{if(u&&l.break)return!1;let f=l.break?standalone_H:D,p=l.expandedStates&&f===standalone_H?y(!1,l.expandedStates,-1):l.contents;s.push({mode:f,doc:p});break}case _:{let p=(l.groupId?o[l.groupId]||standalone_J:D)===standalone_H?l.breakContents:l.flatContents;p&&s.push({mode:D,doc:p});break}case B:if(D===standalone_H||l.hard)return!0;l.soft||(a.push(" "),r--);break;case standalone_Y:n=!0;break;case j:if(n)return!1;break}}return!1}function Fe(e,t){let r={},n=t.printWidth,o=standalone_Be(t.endOfLine),u=0,i=[{ind:Wr(),mode:standalone_H,doc:e}],s=[],a=!1,D=[],l=0;for(Rr(e);i.length>0;){let{ind:f,mode:p,doc:c}=i.pop();switch(standalone_G(c)){case U:{let F=o!==`
-`?standalone_ne(!1,c,`
-`,o):c;s.push(F),i.length>0&&(u+=standalone_Oe(F));break}case standalone_W:for(let F=c.length-1;F>=0;F--)i.push({ind:f,mode:p,doc:c[F]});break;case z:if(l>=2)throw new Error("There are too many 'cursor' in doc.");s.push(standalone_Te),l++;break;case standalone_L:i.push({ind:zu(f,t),mode:p,doc:c.contents});break;case P:i.push({ind:Gu(f,c.n,t),mode:p,doc:c.contents});break;case I:u-=Ot(s);break;case x:switch(p){case standalone_J:if(!a){i.push({ind:f,mode:c.break?standalone_H:standalone_J,doc:c.contents});break}case standalone_H:{a=!1;let F={ind:f,mode:standalone_J,doc:c.contents},m=n-u,E=D.length>0;if(!c.break&&et(F,i,m,E,r))i.push(F);else if(c.expandedStates){let A=y(!1,c.expandedStates,-1);if(c.break){i.push({ind:f,mode:standalone_H,doc:A});break}else for(let w=1;w<c.expandedStates.length+1;w++)if(w>=c.expandedStates.length){i.push({ind:f,mode:standalone_H,doc:A});break}else{let h=c.expandedStates[w],C={ind:f,mode:standalone_J,doc:h};if(et(C,i,m,E,r)){i.push(C);break}}}else i.push({ind:f,mode:standalone_H,doc:c.contents});break}}c.id&&(r[c.id]=y(!1,i,-1).mode);break;case S:{let F=n-u,{parts:m}=c;if(m.length===0)break;let[E,A]=m,w={ind:f,mode:standalone_J,doc:E},h={ind:f,mode:standalone_H,doc:E},C=et(w,[],F,D.length>0,r,!0);if(m.length===1){C?i.push(w):i.push(h);break}let k={ind:f,mode:standalone_J,doc:A},v={ind:f,mode:standalone_H,doc:A};if(m.length===2){C?i.push(k,w):i.push(v,h);break}m.splice(0,2);let $={ind:f,mode:p,doc:Ge(m)},ye=m[0];et({ind:f,mode:standalone_J,doc:[E,A,ye]},[],F,D.length>0,r,!0)?i.push($,k,w):C?i.push($,v,w):i.push($,v,h);break}case _:case R:{let F=c.groupId?r[c.groupId]:p;if(F===standalone_H){let m=c.type===_?c.breakContents:c.negate?c.contents:standalone_De(c.contents);m&&i.push({ind:f,mode:p,doc:m})}if(F===standalone_J){let m=c.type===_?c.flatContents:c.negate?standalone_De(c.contents):c.contents;m&&i.push({ind:f,mode:p,doc:m})}break}case standalone_Y:D.push({ind:f,mode:p,doc:c.contents});break;case j:D.length>0&&i.push({ind:f,mode:p,doc:standalone_e});break;case B:switch(p){case standalone_J:if(c.hard)a=!0;else{c.soft||(s.push(" "),u+=1);break}case standalone_H:if(D.length>0){i.push({ind:f,mode:p,doc:c},...D.reverse()),D.length=0;break}c.literal?f.root?(s.push(o,f.root.value),u=f.root.length):(s.push(o),u=0):(u-=Ot(s),s.push(o+f.value),u=f.length);break}break;case standalone_N:i.push({ind:f,mode:p,doc:c.contents});break;case b:break;default:throw new Q(c)}i.length===0&&D.length>0&&(i.push(...D.reverse()),D.length=0)}let d=s.indexOf(standalone_Te);if(d!==-1){let f=s.indexOf(standalone_Te,d+1),p=s.slice(0,d).join(""),c=s.slice(d+1,f).join(""),F=s.slice(f+1).join("");return{formatted:p+c+F,cursorNodeStart:p.length,cursorNodeText:c}}return{formatted:s.join("")}}function standalone_Ku(e,t,r=0){let n=0;for(let o=r;o<e.length;++o)e[o]==="	"?n=n+t-n%t:n++;return n}var me=standalone_Ku;var standalone_te,Nt,tt,St=class{constructor(t){Dr(this,standalone_te);this.stack=[t]}get key(){let{stack:t,siblings:r}=this;return y(!1,t,r===null?-2:-4)??null}get index(){return this.siblings===null?null:y(!1,this.stack,-2)}get node(){return y(!1,this.stack,-1)}get parent(){return this.getNode(1)}get grandparent(){return this.getNode(2)}get isInArray(){return this.siblings!==null}get siblings(){let{stack:t}=this,r=y(!1,t,-3);return Array.isArray(r)?r:null}get next(){let{siblings:t}=this;return t===null?null:t[this.index+1]}get previous(){let{siblings:t}=this;return t===null?null:t[this.index-1]}get isFirst(){return this.index===0}get isLast(){let{siblings:t,index:r}=this;return t!==null&&r===t.length-1}get isRoot(){return this.stack.length===1}get root(){return this.stack[0]}get ancestors(){return[...pe(this,standalone_te,tt).call(this)]}getName(){let{stack:t}=this,{length:r}=t;return r>1?y(!1,t,-2):null}getValue(){return y(!1,this.stack,-1)}getNode(t=0){let r=pe(this,standalone_te,Nt).call(this,t);return r===-1?null:this.stack[r]}getParentNode(t=0){return this.getNode(t+1)}call(t,...r){let{stack:n}=this,{length:o}=n,u=y(!1,n,-1);for(let i of r)u=u[i],n.push(i,u);try{return t(this)}finally{n.length=o}}callParent(t,r=0){let n=pe(this,standalone_te,Nt).call(this,r+1),o=this.stack.splice(n+1);try{return t(this)}finally{this.stack.push(...o)}}each(t,...r){let{stack:n}=this,{length:o}=n,u=y(!1,n,-1);for(let i of r)u=u[i],n.push(i,u);try{for(let i=0;i<u.length;++i)n.push(i,u[i]),t(this,i,u),n.length-=2}finally{n.length=o}}map(t,...r){let n=[];return this.each((o,u,i)=>{n[u]=t(o,u,i)},...r),n}match(...t){let r=this.stack.length-1,n=null,o=this.stack[r--];for(let u of t){if(o===void 0)return!1;let i=null;if(typeof n=="number"&&(i=n,n=this.stack[r--],o=this.stack[r--]),u&&!u(o,n,i))return!1;n=this.stack[r--],o=this.stack[r--]}return!0}findAncestor(t){for(let r of pe(this,standalone_te,tt).call(this))if(t(r))return r}hasAncestor(t){for(let r of pe(this,standalone_te,tt).call(this))if(t(r))return!0;return!1}};standalone_te=new WeakSet,Nt=function(t){let{stack:r}=this;for(let n=r.length-1;n>=0;n-=2)if(!Array.isArray(r[n])&&--t<0)return n;return-1},tt=function*(){let{stack:t}=this;for(let r=t.length-3;r>=0;r-=2){let n=t[r];Array.isArray(n)||(yield n)}};var Mr=St;var $r=new Proxy(()=>{},{get:()=>$r}),ke=$r;function qu(e){return e!==null&&typeof e=="object"}var Vr=qu;function*Tt(e,t){let{getVisitorKeys:r,filter:n=()=>!0}=t,o=u=>Vr(u)&&n(u);for(let u of r(e)){let i=e[u];if(Array.isArray(i))for(let s of i)o(s)&&(yield s);else o(i)&&(yield i)}}function*Ur(e,t){let r=[e];for(let n=0;n<r.length;n++){let o=r[n];for(let u of Tt(o,t))yield u,r.push(u)}}function standalone_Ee(e){return(t,r,n)=>{let o=!!(n!=null&&n.backwards);if(r===!1)return!1;let{length:u}=t,i=r;for(;i>=0&&i<u;){let s=t.charAt(i);if(e instanceof RegExp){if(!e.test(s))return i}else if(!e.includes(s))return i;o?i--:i++}return i===-1||i===u?i:!1}}var zr=standalone_Ee(/\s/u),T=standalone_Ee(" 	"),rt=standalone_Ee(",; 	"),nt=standalone_Ee(/[^\n\r]/u);function Ju(e,t,r){let n=!!(r!=null&&r.backwards);if(t===!1)return!1;let o=e.charAt(t);if(n){if(e.charAt(t-1)==="\r"&&o===`
-`)return t-2;if(o===`
-`||o==="\r"||o==="\u2028"||o==="\u2029")return t-1}else{if(o==="\r"&&e.charAt(t+1)===`
-`)return t+2;if(o===`
-`||o==="\r"||o==="\u2028"||o==="\u2029")return t+1}return t}var standalone_M=Ju;function Xu(e,t,r={}){let n=T(e,r.backwards?t-1:t,r),o=standalone_M(e,n,r);return n!==o}var standalone_V=Xu;function standalone_Zu(e){return Array.isArray(e)&&e.length>0}var kt=standalone_Zu;var Gr=new Set(["tokens","comments","parent","enclosingNode","precedingNode","followingNode"]),Qu=e=>Object.keys(e).filter(t=>!Gr.has(t));function eo(e){return e?t=>e(t,Gr):Qu}var standalone_X=eo;function to(e){let t=e.type||e.kind||"(unknown type)",r=String(e.name||e.id&&(typeof e.id=="object"?e.id.name:e.id)||e.key&&(typeof e.key=="object"?e.key.name:e.key)||e.value&&(typeof e.value=="object"?"":String(e.value))||e.operator||"");return r.length>20&&(r=r.slice(0,19)+"\u2026"),t+(r?" "+r:"")}function Lt(e,t){(e.comments??(e.comments=[])).push(t),t.printed=!1,t.nodeDescription=to(e)}function standalone_ue(e,t){t.leading=!0,t.trailing=!1,Lt(e,t)}function standalone_re(e,t,r){t.leading=!1,t.trailing=!1,r&&(t.marker=r),Lt(e,t)}function standalone_oe(e,t){t.leading=!1,t.trailing=!0,Lt(e,t)}var Pt=new WeakMap;function ut(e,t){if(Pt.has(e))return Pt.get(e);let{printer:{getCommentChildNodes:r,canAttachComment:n,getVisitorKeys:o},locStart:u,locEnd:i}=t;if(!n)return[];let s=((r==null?void 0:r(e,t))??[...Tt(e,{getVisitorKeys:standalone_X(o)})]).flatMap(a=>n(a)?[a]:ut(a,t));return s.sort((a,D)=>u(a)-u(D)||i(a)-i(D)),Pt.set(e,s),s}function standalone_qr(e,t,r,n){let{locStart:o,locEnd:u}=r,i=o(t),s=u(t),a=ut(e,r),D,l,d=0,f=a.length;for(;d<f;){let p=d+f>>1,c=a[p],F=o(c),m=u(c);if(F<=i&&s<=m)return standalone_qr(c,t,r,c);if(m<=i){D=c,d=p+1;continue}if(s<=F){l=c,f=p;continue}throw new Error("Comment location overlaps with node location")}if((n==null?void 0:n.type)==="TemplateLiteral"){let{quasis:p}=n,c=standalone_Rt(p,t,r);D&&standalone_Rt(p,D,r)!==c&&(D=null),l&&standalone_Rt(p,l,r)!==c&&(l=null)}return{enclosingNode:n,precedingNode:D,followingNode:l}}var It=()=>!1;function Jr(e,t){let{comments:r}=e;if(delete e.comments,!kt(r)||!t.printer.canAttachComment)return;let n=[],{locStart:o,locEnd:u,printer:{experimentalFeatures:{avoidAstMutation:i=!1}={},handleComments:s={}},originalText:a}=t,{ownLine:D=It,endOfLine:l=It,remaining:d=It}=s,f=r.map((p,c)=>({...standalone_qr(e,p,t),comment:p,text:a,options:t,ast:e,isLastComment:r.length-1===c}));for(let[p,c]of f.entries()){let{comment:F,precedingNode:m,enclosingNode:E,followingNode:A,text:w,options:h,ast:C,isLastComment:k}=c;if(h.parser==="json"||h.parser==="json5"||h.parser==="jsonc"||h.parser==="__js_expression"||h.parser==="__ts_expression"||h.parser==="__vue_expression"||h.parser==="__vue_ts_expression"){if(o(F)-o(C)<=0){standalone_ue(C,F);continue}if(u(F)-u(C)>=0){standalone_oe(C,F);continue}}let v;if(i?v=[c]:(F.enclosingNode=E,F.precedingNode=m,F.followingNode=A,v=[F,w,h,C,k]),ro(w,h,f,p))F.placement="ownLine",D(...v)||(A?standalone_ue(A,F):m?standalone_oe(m,F):E?standalone_re(E,F):standalone_re(C,F));else if(no(w,h,f,p))F.placement="endOfLine",l(...v)||(m?standalone_oe(m,F):A?standalone_ue(A,F):E?standalone_re(E,F):standalone_re(C,F));else if(F.placement="remaining",!d(...v))if(m&&A){let $=n.length;$>0&&n[$-1].followingNode!==A&&standalone_Kr(n,h),n.push(c)}else m?standalone_oe(m,F):A?standalone_ue(A,F):E?standalone_re(E,F):standalone_re(C,F)}if(standalone_Kr(n,t),!i)for(let p of r)delete p.precedingNode,delete p.enclosingNode,delete p.followingNode}var Xr=e=>!/[\S\n\u2028\u2029]/u.test(e);function ro(e,t,r,n){let{comment:o,precedingNode:u}=r[n],{locStart:i,locEnd:s}=t,a=i(o);if(u)for(let D=n-1;D>=0;D--){let{comment:l,precedingNode:d}=r[D];if(d!==u||!Xr(e.slice(s(l),a)))break;a=i(l)}return standalone_V(e,a,{backwards:!0})}function no(e,t,r,n){let{comment:o,followingNode:u}=r[n],{locStart:i,locEnd:s}=t,a=s(o);if(u)for(let D=n+1;D<r.length;D++){let{comment:l,followingNode:d}=r[D];if(d!==u||!Xr(e.slice(a,i(l))))break;a=s(l)}return standalone_V(e,a)}function standalone_Kr(e,t){var s,a;let r=e.length;if(r===0)return;let{precedingNode:n,followingNode:o}=e[0],u=t.locStart(o),i;for(i=r;i>0;--i){let{comment:D,precedingNode:l,followingNode:d}=e[i-1];ke.strictEqual(l,n),ke.strictEqual(d,o);let f=t.originalText.slice(t.locEnd(D),u);if(((a=(s=t.printer).isGap)==null?void 0:a.call(s,f,t))??/^[\s(]*$/u.test(f))u=t.locStart(D);else break}for(let[D,{comment:l}]of e.entries())D<i?standalone_oe(n,l):standalone_ue(o,l);for(let D of[n,o])D.comments&&D.comments.length>1&&D.comments.sort((l,d)=>t.locStart(l)-t.locStart(d));e.length=0}function standalone_Rt(e,t,r){let n=r.locStart(t)-1;for(let o=1;o<e.length;++o)if(n<r.locStart(e[o]))return o-1;return 0}function uo(e,t){let r=t-1;r=T(e,r,{backwards:!0}),r=standalone_M(e,r,{backwards:!0}),r=T(e,r,{backwards:!0});let n=standalone_M(e,r,{backwards:!0});return r!==n}var standalone_Le=uo;function Zr(e,t){let r=e.node;return r.printed=!0,t.printer.printComment(e,t)}function standalone_oo(e,t){var l;let r=e.node,n=[Zr(e,t)],{printer:o,originalText:u,locStart:i,locEnd:s}=t;if((l=o.isBlockComment)==null?void 0:l.call(o,r)){let d=standalone_V(u,s(r))?standalone_V(u,i(r),{backwards:!0})?q:Ke:" ";n.push(d)}else n.push(q);let D=standalone_M(u,T(u,s(r)));return D!==!1&&standalone_V(u,D)&&n.push(q),n}function standalone_io(e,t,r){var D;let n=e.node,o=Zr(e,t),{printer:u,originalText:i,locStart:s}=t,a=(D=u.isBlockComment)==null?void 0:D.call(u,n);if(r!=null&&r.hasLineSuffix&&!(r!=null&&r.isBlock)||standalone_V(i,s(n),{backwards:!0})){let l=standalone_Le(i,s(n));return{doc:xe([q,l?q:"",o]),isBlock:a,hasLineSuffix:!0}}return!a||r!=null&&r.hasLineSuffix?{doc:[xe([" ",o]),de],isBlock:a,hasLineSuffix:!0}:{doc:[" ",o],isBlock:a,hasLineSuffix:!1}}function so(e,t){let r=e.node;if(!r)return{};let n=t[Symbol.for("printedComments")];if((r.comments||[]).filter(a=>!n.has(a)).length===0)return{leading:"",trailing:""};let u=[],i=[],s;return e.each(()=>{let a=e.node;if(n!=null&&n.has(a))return;let{leading:D,trailing:l}=a;D?u.push(standalone_oo(e,t)):l&&(s=standalone_io(e,t,s),i.push(s.doc))},"comments"),{leading:u,trailing:i}}function Qr(e,t,r){let{leading:n,trailing:o}=so(e,r);return!n&&!o?t:Qe(t,u=>[n,u,o])}function en(e){let{[Symbol.for("comments")]:t,[Symbol.for("printedComments")]:r}=e;for(let n of t){if(!n.printed&&!r.has(n))throw new Error('Comment "'+n.value.trim()+'" was not printed. Please report this error!');delete n.printed}}function ao(e){return()=>{}}var standalone_tn=ao;var standalone_Pe=class extends Error{name="ConfigError"},standalone_Ie=class extends Error{name="UndefinedParserError"};var rn={cursorOffset:{category:"Special",type:"int",default:-1,range:{start:-1,end:1/0,step:1},description:"Print (to stderr) where a cursor at the given position would move to after formatting.",cliCategory:"Editor"},endOfLine:{category:"Global",type:"choice",default:"lf",description:"Which end of line characters to apply.",choices:[{value:"lf",description:"Line Feed only (\\n), common on Linux and macOS as well as inside git repos"},{value:"crlf",description:"Carriage Return + Line Feed characters (\\r\\n), common on Windows"},{value:"cr",description:"Carriage Return character only (\\r), used very rarely"},{value:"auto",description:`Maintain existing
-(mixed values within one file are normalised by looking at what's used after the first line)`}]},filepath:{category:"Special",type:"path",description:"Specify the input filepath. This will be used to do parser inference.",cliName:"stdin-filepath",cliCategory:"Other",cliDescription:"Path to the file to pretend that stdin comes from."},insertPragma:{category:"Special",type:"boolean",default:!1,description:"Insert @format pragma into file's first docblock comment.",cliCategory:"Other"},parser:{category:"Global",type:"choice",default:void 0,description:"Which parser to use.",exception:e=>typeof e=="string"||typeof e=="function",choices:[{value:"flow",description:"Flow"},{value:"babel",description:"JavaScript"},{value:"babel-flow",description:"Flow"},{value:"babel-ts",description:"TypeScript"},{value:"typescript",description:"TypeScript"},{value:"acorn",description:"JavaScript"},{value:"espree",description:"JavaScript"},{value:"meriyah",description:"JavaScript"},{value:"css",description:"CSS"},{value:"less",description:"Less"},{value:"scss",description:"SCSS"},{value:"json",description:"JSON"},{value:"json5",description:"JSON5"},{value:"jsonc",description:"JSON with Comments"},{value:"json-stringify",description:"JSON.stringify"},{value:"graphql",description:"GraphQL"},{value:"markdown",description:"Markdown"},{value:"mdx",description:"MDX"},{value:"vue",description:"Vue"},{value:"yaml",description:"YAML"},{value:"glimmer",description:"Ember / Handlebars"},{value:"html",description:"HTML"},{value:"angular",description:"Angular"},{value:"lwc",description:"Lightning Web Components"}]},plugins:{type:"path",array:!0,default:[{value:[]}],category:"Global",description:"Add a plugin. Multiple plugins can be passed as separate `--plugin`s.",exception:e=>typeof e=="string"||typeof e=="object",cliName:"plugin",cliCategory:"Config"},printWidth:{category:"Global",type:"int",default:80,description:"The line length where Prettier will try wrap.",range:{start:0,end:1/0,step:1}},rangeEnd:{category:"Special",type:"int",default:1/0,range:{start:0,end:1/0,step:1},description:`Format code ending at a given character offset (exclusive).
+var standalone_Zn=Object.create;var standalone_Mt=Object.defineProperty;var eo=Object.getOwnPropertyDescriptor;var to=Object.getOwnPropertyNames;var uo=Object.getPrototypeOf,ro=Object.prototype.hasOwnProperty;var standalone_no=(e,t)=>()=>(t||e((t={exports:{}}).exports,t),t.exports),Yt=(e,t)=>{for(var u in t)standalone_Mt(e,u,{get:t[u],enumerable:!0})},standalone_oo=(e,t,u,r)=>{if(t&&typeof t=="object"||typeof t=="function")for(let o of to(t))!ro.call(e,o)&&o!==u&&standalone_Mt(e,o,{get:()=>t[o],enumerable:!(r=eo(t,o))||r.enumerable});return e};var ao=(e,t,u)=>(u=e!=null?standalone_Zn(uo(e)):{},standalone_oo(t||!e||!e.__esModule?standalone_Mt(u,"default",{value:e,enumerable:!0}):u,e));var dn=standalone_no((of,ln)=>{var yt,bt,At,_t,xt,$e,bu,Ke,Bt,cn,Tt,Ve,Nt,St,wt,pe,fn,Ot,Pt,Aa;Nt=/\/(?![*\/])(?:\[(?:[^\]\\\n\r\u2028\u2029]+|\\.)*\]|[^\/\\\n\r\u2028\u2029]+|\\.)*(\/[$_\u200C\u200D\p{ID_Continue}]*|\\)?/yu;Ve=/--|\+\+|=>|\.{3}|\??\.(?!\d)|(?:&&|\|\||\?\?|[+\-%&|^]|\*{1,2}|<{1,2}|>{1,3}|!=?|={1,2}|\/(?![\/*]))=?|[?~,:;[\](){}]/y;yt=/(\x23?)(?=[$_\p{ID_Start}\\])(?:[$_\u200C\u200D\p{ID_Continue}]+|\\u[\da-fA-F]{4}|\\u\{[\da-fA-F]+\})+/yu;wt=/(['"])(?:[^'"\\\n\r]+|(?!\1)['"]|\\(?:\r\n|[^]))*(\1)?/y;Tt=/(?:0[xX][\da-fA-F](?:_?[\da-fA-F])*|0[oO][0-7](?:_?[0-7])*|0[bB][01](?:_?[01])*)n?|0n|[1-9](?:_?\d)*n|(?:(?:0(?!\d)|0\d*[89]\d*|[1-9](?:_?\d)*)(?:\.(?:\d(?:_?\d)*)?)?|\.\d(?:_?\d)*)(?:[eE][+-]?\d(?:_?\d)*)?|0[0-7]+/y;pe=/[`}](?:[^`\\$]+|\\[^]|\$(?!\{))*(`|\$\{)?/y;Pt=/[\t\v\f\ufeff\p{Zs}]+/yu;Ke=/\r?\n|[\r\u2028\u2029]/y;Bt=/\/\*(?:[^*]+|\*(?!\/))*(\*\/)?/y;St=/\/\/.*/y;At=/[<>.:={}]|\/(?![\/*])/y;bt=/[$_\p{ID_Start}][$_\u200C\u200D\p{ID_Continue}-]*/yu;_t=/(['"])(?:[^'"]+|(?!\1)['"])*(\1)?/y;xt=/[^<>{}]+/y;Ot=/^(?:[\/+-]|\.{3}|\?(?:InterpolationIn(?:JSX|Template)|NoLineTerminatorHere|NonExpressionParenEnd|UnaryIncDec))?$|[{}([,;<>=*%&|^!~?:]$/;fn=/^(?:=>|[;\]){}]|else|\?(?:NoLineTerminatorHere|NonExpressionParenEnd))?$/;$e=/^(?:await|case|default|delete|do|else|instanceof|new|return|throw|typeof|void|yield)$/;bu=/^(?:return|throw|yield)$/;cn=RegExp(Ke.source);ln.exports=Aa=function*(e,{jsx:t=!1}={}){var u,r,o,n,a,s,i,D,f,l,d,c,p,F;for({length:s}=e,n=0,a="",F=[{tag:"JS"}],u=[],d=0,c=!1;n<s;){switch(D=F[F.length-1],D.tag){case"JS":case"JSNonExpressionParen":case"InterpolationInTemplate":case"InterpolationInJSX":if(e[n]==="/"&&(Ot.test(a)||$e.test(a))&&(Nt.lastIndex=n,i=Nt.exec(e))){n=Nt.lastIndex,a=i[0],c=!0,yield{type:"RegularExpressionLiteral",value:i[0],closed:i[1]!==void 0&&i[1]!=="\\"};continue}if(Ve.lastIndex=n,i=Ve.exec(e)){switch(p=i[0],f=Ve.lastIndex,l=p,p){case"(":a==="?NonExpressionParenKeyword"&&F.push({tag:"JSNonExpressionParen",nesting:d}),d++,c=!1;break;case")":d--,c=!0,D.tag==="JSNonExpressionParen"&&d===D.nesting&&(F.pop(),l="?NonExpressionParenEnd",c=!1);break;case"{":Ve.lastIndex=0,o=!fn.test(a)&&(Ot.test(a)||$e.test(a)),u.push(o),c=!1;break;case"}":switch(D.tag){case"InterpolationInTemplate":if(u.length===D.nesting){pe.lastIndex=n,i=pe.exec(e),n=pe.lastIndex,a=i[0],i[1]==="${"?(a="?InterpolationInTemplate",c=!1,yield{type:"TemplateMiddle",value:i[0]}):(F.pop(),c=!0,yield{type:"TemplateTail",value:i[0],closed:i[1]==="`"});continue}break;case"InterpolationInJSX":if(u.length===D.nesting){F.pop(),n+=1,a="}",yield{type:"JSXPunctuator",value:"}"};continue}}c=u.pop(),l=c?"?ExpressionBraceEnd":"}";break;case"]":c=!0;break;case"++":case"--":l=c?"?PostfixIncDec":"?UnaryIncDec";break;case"<":if(t&&(Ot.test(a)||$e.test(a))){F.push({tag:"JSXTag"}),n+=1,a="<",yield{type:"JSXPunctuator",value:p};continue}c=!1;break;default:c=!1}n=f,a=l,yield{type:"Punctuator",value:p};continue}if(yt.lastIndex=n,i=yt.exec(e)){switch(n=yt.lastIndex,l=i[0],i[0]){case"for":case"if":case"while":case"with":a!=="."&&a!=="?."&&(l="?NonExpressionParenKeyword")}a=l,c=!$e.test(i[0]),yield{type:i[1]==="#"?"PrivateIdentifier":"IdentifierName",value:i[0]};continue}if(wt.lastIndex=n,i=wt.exec(e)){n=wt.lastIndex,a=i[0],c=!0,yield{type:"StringLiteral",value:i[0],closed:i[2]!==void 0};continue}if(Tt.lastIndex=n,i=Tt.exec(e)){n=Tt.lastIndex,a=i[0],c=!0,yield{type:"NumericLiteral",value:i[0]};continue}if(pe.lastIndex=n,i=pe.exec(e)){n=pe.lastIndex,a=i[0],i[1]==="${"?(a="?InterpolationInTemplate",F.push({tag:"InterpolationInTemplate",nesting:u.length}),c=!1,yield{type:"TemplateHead",value:i[0]}):(c=!0,yield{type:"NoSubstitutionTemplate",value:i[0],closed:i[1]==="`"});continue}break;case"JSXTag":case"JSXTagEnd":if(At.lastIndex=n,i=At.exec(e)){switch(n=At.lastIndex,l=i[0],i[0]){case"<":F.push({tag:"JSXTag"});break;case">":F.pop(),a==="/"||D.tag==="JSXTagEnd"?(l="?JSX",c=!0):F.push({tag:"JSXChildren"});break;case"{":F.push({tag:"InterpolationInJSX",nesting:u.length}),l="?InterpolationInJSX",c=!1;break;case"/":a==="<"&&(F.pop(),F[F.length-1].tag==="JSXChildren"&&F.pop(),F.push({tag:"JSXTagEnd"}))}a=l,yield{type:"JSXPunctuator",value:i[0]};continue}if(bt.lastIndex=n,i=bt.exec(e)){n=bt.lastIndex,a=i[0],yield{type:"JSXIdentifier",value:i[0]};continue}if(_t.lastIndex=n,i=_t.exec(e)){n=_t.lastIndex,a=i[0],yield{type:"JSXString",value:i[0],closed:i[2]!==void 0};continue}break;case"JSXChildren":if(xt.lastIndex=n,i=xt.exec(e)){n=xt.lastIndex,a=i[0],yield{type:"JSXText",value:i[0]};continue}switch(e[n]){case"<":F.push({tag:"JSXTag"}),n++,a="<",yield{type:"JSXPunctuator",value:"<"};continue;case"{":F.push({tag:"InterpolationInJSX",nesting:u.length}),n++,a="?InterpolationInJSX",c=!1,yield{type:"JSXPunctuator",value:"{"};continue}}if(Pt.lastIndex=n,i=Pt.exec(e)){n=Pt.lastIndex,yield{type:"WhiteSpace",value:i[0]};continue}if(Ke.lastIndex=n,i=Ke.exec(e)){n=Ke.lastIndex,c=!1,bu.test(a)&&(a="?NoLineTerminatorHere"),yield{type:"LineTerminatorSequence",value:i[0]};continue}if(Bt.lastIndex=n,i=Bt.exec(e)){n=Bt.lastIndex,cn.test(i[0])&&(c=!1,bu.test(a)&&(a="?NoLineTerminatorHere")),yield{type:"MultiLineComment",value:i[0],closed:i[1]!==void 0};continue}if(St.lastIndex=n,i=St.exec(e)){n=St.lastIndex,c=!1,yield{type:"SingleLineComment",value:i[0]};continue}r=String.fromCodePoint(e.codePointAt(n)),n+=r.length,a=r,c=!1,yield{type:D.tag.startsWith("JSX")?"JSXInvalid":"Invalid",value:r}}}});var standalone_Hn={};Yt(standalone_Hn,{__debug:()=>standalone_li,check:()=>standalone_ci,doc:()=>wu,format:()=>standalone_Jn,formatWithCursor:()=>standalone_zn,getSupportInfo:()=>standalone_fi,util:()=>Pu,version:()=>Mn});var standalone_X=(e,t)=>(u,r,...o)=>u|1&&r==null?void 0:(t.call(r)??r[e]).apply(r,o);var io=String.prototype.replaceAll??function(e,t){return e.global?this.replace(e,t):this.split(e).join(t)},so=standalone_X("replaceAll",function(){if(typeof this=="string")return io}),oe=so;var standalone_Ne=class{diff(t,u,r={}){let o;typeof r=="function"?(o=r,r={}):"callback"in r&&(o=r.callback);let n=this.castInput(t,r),a=this.castInput(u,r),s=this.removeEmpty(this.tokenize(n,r)),i=this.removeEmpty(this.tokenize(a,r));return this.diffWithOptionsObj(s,i,r,o)}diffWithOptionsObj(t,u,r,o){var n;let a=m=>{if(m=this.postProcess(m,r),o){setTimeout(function(){o(m)},0);return}else return m},s=u.length,i=t.length,D=1,f=s+i;r.maxEditLength!=null&&(f=Math.min(f,r.maxEditLength));let l=(n=r.timeout)!==null&&n!==void 0?n:1/0,d=Date.now()+l,c=[{oldPos:-1,lastComponent:void 0}],p=this.extractCommon(c[0],u,t,0,r);if(c[0].oldPos+1>=i&&p+1>=s)return a(this.buildValues(c[0].lastComponent,u,t));let F=-1/0,C=1/0,y=()=>{for(let m=Math.max(F,-D);m<=Math.min(C,D);m+=2){let h,E=c[m-1],g=c[m+1];E&&(c[m-1]=void 0);let A=!1;if(g){let Q=g.oldPos-m;A=g&&0<=Q&&Q<s}let J=E&&E.oldPos+1<i;if(!A&&!J){c[m]=void 0;continue}if(!J||A&&E.oldPos<g.oldPos?h=this.addToPath(g,!0,!1,0,r):h=this.addToPath(E,!1,!0,1,r),p=this.extractCommon(h,u,t,m,r),h.oldPos+1>=i&&p+1>=s)return a(this.buildValues(h.lastComponent,u,t))||!0;c[m]=h,h.oldPos+1>=i&&(C=Math.min(C,m-1)),p+1>=s&&(F=Math.max(F,m+1))}D++};if(o)(function m(){setTimeout(function(){if(D>f||Date.now()>d)return o(void 0);y()||m()},0)})();else for(;D<=f&&Date.now()<=d;){let m=y();if(m)return m}}addToPath(t,u,r,o,n){let a=t.lastComponent;return a&&!n.oneChangePerToken&&a.added===u&&a.removed===r?{oldPos:t.oldPos+o,lastComponent:{count:a.count+1,added:u,removed:r,previousComponent:a.previousComponent}}:{oldPos:t.oldPos+o,lastComponent:{count:1,added:u,removed:r,previousComponent:a}}}extractCommon(t,u,r,o,n){let a=u.length,s=r.length,i=t.oldPos,D=i-o,f=0;for(;D+1<a&&i+1<s&&this.equals(r[i+1],u[D+1],n);)D++,i++,f++,n.oneChangePerToken&&(t.lastComponent={count:1,previousComponent:t.lastComponent,added:!1,removed:!1});return f&&!n.oneChangePerToken&&(t.lastComponent={count:f,previousComponent:t.lastComponent,added:!1,removed:!1}),t.oldPos=i,D}equals(t,u,r){return r.comparator?r.comparator(t,u):t===u||!!r.ignoreCase&&t.toLowerCase()===u.toLowerCase()}removeEmpty(t){let u=[];for(let r=0;r<t.length;r++)t[r]&&u.push(t[r]);return u}castInput(t,u){return t}tokenize(t,u){return Array.from(t)}join(t){return t.join("")}postProcess(t,u){return t}get useLongestToken(){return!1}buildValues(t,u,r){let o=[],n;for(;t;)o.push(t),n=t.previousComponent,delete t.previousComponent,t=n;o.reverse();let a=o.length,s=0,i=0,D=0;for(;s<a;s++){let f=o[s];if(f.removed)f.value=this.join(r.slice(D,D+f.count)),D+=f.count;else{if(!f.added&&this.useLongestToken){let l=u.slice(i,i+f.count);l=l.map(function(d,c){let p=r[D+c];return p.length>d.length?p:d}),f.value=this.join(l)}else f.value=this.join(u.slice(i,i+f.count));i+=f.count,f.added||(D+=f.count)}}return o}};var jt=class extends (/* unused pure expression or super */ null && (standalone_Ne)){tokenize(t){return t.slice()}join(t){return t}removeEmpty(t){return t}},ku=new jt;function Ut(e,t,u){return ku.diff(e,t,u)}var Do=()=>{},P=Do;var Ru="cr",Lu="crlf",co="lf",fo=co,Wt="\r",Mu=`\r
+`,Je=`
+`,lo=Je;function Yu(e){let t=e.indexOf(Wt);return t!==-1?e.charAt(t+1)===Je?Lu:Ru:fo}function standalone_Se(e){return e===Ru?Wt:e===Lu?Mu:lo}var standalone_po=new Map([[Je,/\n/gu],[Wt,/\r/gu],[Mu,/\r\n/gu]]);function $t(e,t){let u=standalone_po.get(t);return e.match(u)?.length??0}var Fo=/\r\n?/gu;function ju(e){return oe(0,e,Fo,Je)}function mo(e){return this[e<0?this.length+e:e]}var Eo=standalone_X("at",function(){if(Array.isArray(this)||typeof this=="string")return mo}),b=Eo;var G="string",standalone_j="array",standalone_U="cursor",I="indent",k="align",v="trim",standalone_x="group",w="fill",B="if-break",standalone_R="indent-if-break",L="line-suffix",standalone_M="line-suffix-boundary",_="line",O="label",T="break-parent",He=new Set([standalone_U,I,k,v,standalone_x,w,B,standalone_R,L,standalone_M,_,O,T]);function Uu(e){let t=e.length;for(;t>0&&(e[t-1]==="\r"||e[t-1]===`
+`);)t--;return t<e.length?e.slice(0,t):e}function Co(e){if(typeof e=="string")return G;if(Array.isArray(e))return standalone_j;if(!e)return;let{type:t}=e;if(He.has(t))return t}var standalone_H=Co;var ho=e=>new Intl.ListFormat("en-US",{type:"disjunction"}).format(e);function go(e){let t=e===null?"null":typeof e;if(t!=="string"&&t!=="object")return`Unexpected doc '${t}', 
+Expected it to be 'string' or 'object'.`;if(standalone_H(e))throw new Error("doc is valid.");let u=Object.prototype.toString.call(e);if(u!=="[object Object]")return`Unexpected doc '${u}'.`;let r=ho([...He].map(o=>`'${o}'`));return`Unexpected doc.type '${e.type}'.
+Expected it to be ${r}.`}var Vt=class extends Error{name="InvalidDocError";constructor(t){super(go(t)),this.doc=t}},Z=Vt;var Wu={};function yo(e,t,u,r){let o=[e];for(;o.length>0;){let n=o.pop();if(n===Wu){u(o.pop());continue}u&&o.push(n,Wu);let a=standalone_H(n);if(!a)throw new Z(n);if(t?.(n)!==!1)switch(a){case standalone_j:case w:{let s=a===standalone_j?n:n.parts;for(let i=s.length,D=i-1;D>=0;--D)o.push(s[D]);break}case B:o.push(n.flatContents,n.breakContents);break;case standalone_x:if(r&&n.expandedStates)for(let s=n.expandedStates.length,i=s-1;i>=0;--i)o.push(n.expandedStates[i]);else o.push(n.contents);break;case k:case I:case standalone_R:case O:case L:o.push(n.contents);break;case G:case standalone_U:case v:case standalone_M:case _:case T:break;default:throw new Z(n)}}}var we=yo;function standalone_Pe(e,t){if(typeof e=="string")return t(e);let u=new Map;return r(e);function r(n){if(u.has(n))return u.get(n);let a=o(n);return u.set(n,a),a}function o(n){switch(standalone_H(n)){case standalone_j:return t(n.map(r));case w:return t({...n,parts:n.parts.map(r)});case B:return t({...n,breakContents:r(n.breakContents),flatContents:r(n.flatContents)});case standalone_x:{let{expandedStates:a,contents:s}=n;return a?(a=a.map(r),s=a[0]):s=r(s),t({...n,contents:s,expandedStates:a})}case k:case I:case standalone_R:case O:case L:return t({...n,contents:r(n.contents)});case G:case standalone_U:case v:case standalone_M:case _:case T:return t(n);default:throw new Z(n)}}}function Xe(e,t,u){let r=u,o=!1;function n(a){if(o)return!1;let s=t(a);s!==void 0&&(o=!0,r=s)}return we(e,n),r}function standalone_bo(e){if(e.type===standalone_x&&e.break||e.type===_&&e.hard||e.type===T)return!0}function Ku(e){return Xe(e,standalone_bo,!1)}function $u(e){if(e.length>0){let t=b(0,e,-1);!t.expandedStates&&!t.break&&(t.break="propagated")}return null}function Gu(e){let t=new Set,u=[];function r(n){if(n.type===T&&$u(u),n.type===standalone_x){if(u.push(n),t.has(n))return!1;t.add(n)}}function o(n){n.type===standalone_x&&u.pop().break&&$u(u)}we(e,r,o,!0)}function Ao(e){return e.type===_&&!e.hard?e.soft?"":" ":e.type===B?e.flatContents:e}function zu(e){return standalone_Pe(e,Ao)}function Vu(e){for(e=[...e];e.length>=2&&b(0,e,-2).type===_&&b(0,e,-1).type===T;)e.length-=2;if(e.length>0){let t=standalone_Oe(b(0,e,-1));e[e.length-1]=t}return e}function standalone_Oe(e){switch(standalone_H(e)){case I:case standalone_R:case standalone_x:case L:case O:{let t=standalone_Oe(e.contents);return{...e,contents:t}}case B:return{...e,breakContents:standalone_Oe(e.breakContents),flatContents:standalone_Oe(e.flatContents)};case w:return{...e,parts:Vu(e.parts)};case standalone_j:return Vu(e);case G:return Uu(e);case k:case standalone_U:case v:case standalone_M:case _:case T:break;default:throw new Z(e)}return e}function standalone_qe(e){return standalone_Oe(xo(e))}function _o(e){switch(standalone_H(e)){case w:if(e.parts.every(t=>t===""))return"";break;case standalone_x:if(!e.contents&&!e.id&&!e.break&&!e.expandedStates)return"";if(e.contents.type===standalone_x&&e.contents.id===e.id&&e.contents.break===e.break&&e.contents.expandedStates===e.expandedStates)return e.contents;break;case k:case I:case standalone_R:case L:if(!e.contents)return"";break;case B:if(!e.flatContents&&!e.breakContents)return"";break;case standalone_j:{let t=[];for(let u of e){if(!u)continue;let[r,...o]=Array.isArray(u)?u:[u];typeof r=="string"&&typeof b(0,t,-1)=="string"?t[t.length-1]+=r:t.push(r),t.push(...o)}return t.length===0?"":t.length===1?t[0]:t}case G:case standalone_U:case v:case standalone_M:case _:case O:case T:break;default:throw new Z(e)}return e}function xo(e){return standalone_Pe(e,t=>_o(t))}function standalone_Ju(e,t=Qe){return standalone_Pe(e,u=>typeof u=="string"?standalone_Ie(t,u.split(`
+`)):u)}function standalone_Bo(e){if(e.type===_)return!0}function Hu(e){return Xe(e,standalone_Bo,!1)}function Ee(e,t){return e.type===O?{...e,contents:t(e.contents)}:t(e)}var N=P,Ze=P,Xu=P,standalone_qu=P;function standalone_ae(e){return N(e),{type:I,contents:e}}function standalone_De(e,t){return standalone_qu(e),N(t),{type:k,contents:t,n:e}}function Qu(e){return standalone_De(Number.NEGATIVE_INFINITY,e)}function et(e){return standalone_De({type:"root"},e)}function Zu(e){return standalone_De(-1,e)}function tt(e,t,u){N(e);let r=e;if(t>0){for(let o=0;o<Math.floor(t/u);++o)r=standalone_ae(r);r=standalone_De(t%u,r),r=standalone_De(Number.NEGATIVE_INFINITY,r)}return r}var ce={type:T};var standalone_ee={type:standalone_U};function er(e){return Xu(e),{type:w,parts:e}}function standalone_Kt(e,t={}){return N(e),Ze(t.expandedStates,!0),{type:standalone_x,id:t.id,contents:e,break:!!t.shouldBreak,expandedStates:t.expandedStates}}function standalone_tr(e,t){return standalone_Kt(e[0],{...t,expandedStates:e})}function standalone_ur(e,t="",u={}){return N(e),t!==""&&N(t),{type:B,breakContents:e,flatContents:t,groupId:u.groupId}}function rr(e,t){return N(e),{type:standalone_R,contents:e,groupId:t.groupId,negate:t.negate}}function standalone_Ie(e,t){N(e),Ze(t);let u=[];for(let r=0;r<t.length;r++)r!==0&&u.push(e),u.push(t[r]);return u}function standalone_nr(e,t){return N(t),e?{type:O,label:e,contents:t}:t}var ut={type:_},standalone_or={type:_,soft:!0},ke={type:_,hard:!0},standalone_V=[ke,ce],Gt={type:_,hard:!0,literal:!0},Qe=[Gt,ce];function ve(e){return N(e),{type:L,contents:e}}var standalone_ar={type:standalone_M};var standalone_ir={type:v};function standalone_te(e){if(!e)return"";if(Array.isArray(e)){let t=[];for(let u of e)if(Array.isArray(u))t.push(...standalone_te(u));else{let r=standalone_te(u);r!==""&&t.push(r)}return t}return e.type===B?{...e,breakContents:standalone_te(e.breakContents),flatContents:standalone_te(e.flatContents)}:e.type===standalone_x?{...e,contents:standalone_te(e.contents),expandedStates:e.expandedStates?.map(standalone_te)}:e.type===w?{type:"fill",parts:e.parts.map(standalone_te)}:e.contents?{...e,contents:standalone_te(e.contents)}:e}function standalone_sr(e){let t=Object.create(null),u=new Set;return r(standalone_te(e));function r(n,a,s){if(typeof n=="string")return JSON.stringify(n);if(Array.isArray(n)){let i=n.map(r).filter(Boolean);return i.length===1?i[0]:`[${i.join(", ")}]`}if(n.type===_){let i=s?.[a+1]?.type===T;return n.literal?i?"literalline":"literallineWithoutBreakParent":n.hard?i?"hardline":"hardlineWithoutBreakParent":n.soft?"softline":"line"}if(n.type===T)return s?.[a-1]?.type===_&&s[a-1].hard?void 0:"breakParent";if(n.type===v)return"trim";if(n.type===I)return"indent("+r(n.contents)+")";if(n.type===k)return n.n===Number.NEGATIVE_INFINITY?"dedentToRoot("+r(n.contents)+")":n.n<0?"dedent("+r(n.contents)+")":n.n.type==="root"?"markAsRoot("+r(n.contents)+")":"align("+JSON.stringify(n.n)+", "+r(n.contents)+")";if(n.type===B)return"ifBreak("+r(n.breakContents)+(n.flatContents?", "+r(n.flatContents):"")+(n.groupId?(n.flatContents?"":', ""')+`, { groupId: ${o(n.groupId)} }`:"")+")";if(n.type===standalone_R){let i=[];n.negate&&i.push("negate: true"),n.groupId&&i.push(`groupId: ${o(n.groupId)}`);let D=i.length>0?`, { ${i.join(", ")} }`:"";return`indentIfBreak(${r(n.contents)}${D})`}if(n.type===standalone_x){let i=[];n.break&&n.break!=="propagated"&&i.push("shouldBreak: true"),n.id&&i.push(`id: ${o(n.id)}`);let D=i.length>0?`, { ${i.join(", ")} }`:"";return n.expandedStates?`conditionalGroup([${n.expandedStates.map(f=>r(f)).join(",")}]${D})`:`group(${r(n.contents)}${D})`}if(n.type===w)return`fill([${n.parts.map(i=>r(i)).join(", ")}])`;if(n.type===L)return"lineSuffix("+r(n.contents)+")";if(n.type===standalone_M)return"lineSuffixBoundary";if(n.type===O)return`label(${JSON.stringify(n.label)}, ${r(n.contents)})`;if(n.type===standalone_U)return"cursor";throw new Error("Unknown doc type "+n.type)}function o(n){if(typeof n!="symbol")return JSON.stringify(String(n));if(n in t)return t[n];let a=n.description||"symbol";for(let s=0;;s++){let i=a+(s>0?` #${s}`:"");if(!u.has(i))return u.add(i),t[n]=`Symbol.for(${JSON.stringify(i)})`}}}var standalone_Dr=()=>/[#*0-9]\uFE0F?\u20E3|[\xA9\xAE\u203C\u2049\u2122\u2139\u2194-\u2199\u21A9\u21AA\u231A\u231B\u2328\u23CF\u23ED-\u23EF\u23F1\u23F2\u23F8-\u23FA\u24C2\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC\u25FE\u2600-\u2604\u260E\u2611\u2614\u2615\u2618\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638-\u263A\u2640\u2642\u2648-\u2653\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E\u267F\u2692\u2694-\u2697\u2699\u269B\u269C\u26A0\u26A7\u26AA\u26B0\u26B1\u26BD\u26BE\u26C4\u26C8\u26CF\u26D1\u26E9\u26F0-\u26F5\u26F7\u26F8\u26FA\u2702\u2708\u2709\u270F\u2712\u2714\u2716\u271D\u2721\u2733\u2734\u2744\u2747\u2757\u2763\u27A1\u2934\u2935\u2B05-\u2B07\u2B1B\u2B1C\u2B55\u3030\u303D\u3297\u3299]\uFE0F?|[\u261D\u270C\u270D](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\u270A\u270B](?:\uD83C[\uDFFB-\uDFFF])?|[\u23E9-\u23EC\u23F0\u23F3\u25FD\u2693\u26A1\u26AB\u26C5\u26CE\u26D4\u26EA\u26FD\u2705\u2728\u274C\u274E\u2753-\u2755\u2795-\u2797\u27B0\u27BF\u2B50]|\u26D3\uFE0F?(?:\u200D\uD83D\uDCA5)?|\u26F9(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|\u2764\uFE0F?(?:\u200D(?:\uD83D\uDD25|\uD83E\uDE79))?|\uD83C(?:[\uDC04\uDD70\uDD71\uDD7E\uDD7F\uDE02\uDE37\uDF21\uDF24-\uDF2C\uDF36\uDF7D\uDF96\uDF97\uDF99-\uDF9B\uDF9E\uDF9F\uDFCD\uDFCE\uDFD4-\uDFDF\uDFF5\uDFF7]\uFE0F?|[\uDF85\uDFC2\uDFC7](?:\uD83C[\uDFFB-\uDFFF])?|[\uDFC4\uDFCA](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDFCB\uDFCC](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDCCF\uDD8E\uDD91-\uDD9A\uDE01\uDE1A\uDE2F\uDE32-\uDE36\uDE38-\uDE3A\uDE50\uDE51\uDF00-\uDF20\uDF2D-\uDF35\uDF37-\uDF43\uDF45-\uDF4A\uDF4C-\uDF7C\uDF7E-\uDF84\uDF86-\uDF93\uDFA0-\uDFC1\uDFC5\uDFC6\uDFC8\uDFC9\uDFCF-\uDFD3\uDFE0-\uDFF0\uDFF8-\uDFFF]|\uDDE6\uD83C[\uDDE8-\uDDEC\uDDEE\uDDF1\uDDF2\uDDF4\uDDF6-\uDDFA\uDDFC\uDDFD\uDDFF]|\uDDE7\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEF\uDDF1-\uDDF4\uDDF6-\uDDF9\uDDFB\uDDFC\uDDFE\uDDFF]|\uDDE8\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDEE\uDDF0-\uDDF7\uDDFA-\uDDFF]|\uDDE9\uD83C[\uDDEA\uDDEC\uDDEF\uDDF0\uDDF2\uDDF4\uDDFF]|\uDDEA\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDED\uDDF7-\uDDFA]|\uDDEB\uD83C[\uDDEE-\uDDF0\uDDF2\uDDF4\uDDF7]|\uDDEC\uD83C[\uDDE6\uDDE7\uDDE9-\uDDEE\uDDF1-\uDDF3\uDDF5-\uDDFA\uDDFC\uDDFE]|\uDDED\uD83C[\uDDF0\uDDF2\uDDF3\uDDF7\uDDF9\uDDFA]|\uDDEE\uD83C[\uDDE8-\uDDEA\uDDF1-\uDDF4\uDDF6-\uDDF9]|\uDDEF\uD83C[\uDDEA\uDDF2\uDDF4\uDDF5]|\uDDF0\uD83C[\uDDEA\uDDEC-\uDDEE\uDDF2\uDDF3\uDDF5\uDDF7\uDDFC\uDDFE\uDDFF]|\uDDF1\uD83C[\uDDE6-\uDDE8\uDDEE\uDDF0\uDDF7-\uDDFB\uDDFE]|\uDDF2\uD83C[\uDDE6\uDDE8-\uDDED\uDDF0-\uDDFF]|\uDDF3\uD83C[\uDDE6\uDDE8\uDDEA-\uDDEC\uDDEE\uDDF1\uDDF4\uDDF5\uDDF7\uDDFA\uDDFF]|\uDDF4\uD83C\uDDF2|\uDDF5\uD83C[\uDDE6\uDDEA-\uDDED\uDDF0-\uDDF3\uDDF7-\uDDF9\uDDFC\uDDFE]|\uDDF6\uD83C\uDDE6|\uDDF7\uD83C[\uDDEA\uDDF4\uDDF8\uDDFA\uDDFC]|\uDDF8\uD83C[\uDDE6-\uDDEA\uDDEC-\uDDF4\uDDF7-\uDDF9\uDDFB\uDDFD-\uDDFF]|\uDDF9\uD83C[\uDDE6\uDDE8\uDDE9\uDDEB-\uDDED\uDDEF-\uDDF4\uDDF7\uDDF9\uDDFB\uDDFC\uDDFF]|\uDDFA\uD83C[\uDDE6\uDDEC\uDDF2\uDDF3\uDDF8\uDDFE\uDDFF]|\uDDFB\uD83C[\uDDE6\uDDE8\uDDEA\uDDEC\uDDEE\uDDF3\uDDFA]|\uDDFC\uD83C[\uDDEB\uDDF8]|\uDDFD\uD83C\uDDF0|\uDDFE\uD83C[\uDDEA\uDDF9]|\uDDFF\uD83C[\uDDE6\uDDF2\uDDFC]|\uDF44(?:\u200D\uD83D\uDFEB)?|\uDF4B(?:\u200D\uD83D\uDFE9)?|\uDFC3(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDFF3\uFE0F?(?:\u200D(?:\u26A7\uFE0F?|\uD83C\uDF08))?|\uDFF4(?:\u200D\u2620\uFE0F?|\uDB40\uDC67\uDB40\uDC62\uDB40(?:\uDC65\uDB40\uDC6E\uDB40\uDC67|\uDC73\uDB40\uDC63\uDB40\uDC74|\uDC77\uDB40\uDC6C\uDB40\uDC73)\uDB40\uDC7F)?)|\uD83D(?:[\uDC3F\uDCFD\uDD49\uDD4A\uDD6F\uDD70\uDD73\uDD76-\uDD79\uDD87\uDD8A-\uDD8D\uDDA5\uDDA8\uDDB1\uDDB2\uDDBC\uDDC2-\uDDC4\uDDD1-\uDDD3\uDDDC-\uDDDE\uDDE1\uDDE3\uDDE8\uDDEF\uDDF3\uDDFA\uDECB\uDECD-\uDECF\uDEE0-\uDEE5\uDEE9\uDEF0\uDEF3]\uFE0F?|[\uDC42\uDC43\uDC46-\uDC50\uDC66\uDC67\uDC6B-\uDC6D\uDC72\uDC74-\uDC76\uDC78\uDC7C\uDC83\uDC85\uDC8F\uDC91\uDCAA\uDD7A\uDD95\uDD96\uDE4C\uDE4F\uDEC0\uDECC](?:\uD83C[\uDFFB-\uDFFF])?|[\uDC6E-\uDC71\uDC73\uDC77\uDC81\uDC82\uDC86\uDC87\uDE45-\uDE47\uDE4B\uDE4D\uDE4E\uDEA3\uDEB4\uDEB5](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD74\uDD90](?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?|[\uDC00-\uDC07\uDC09-\uDC14\uDC16-\uDC25\uDC27-\uDC3A\uDC3C-\uDC3E\uDC40\uDC44\uDC45\uDC51-\uDC65\uDC6A\uDC79-\uDC7B\uDC7D-\uDC80\uDC84\uDC88-\uDC8E\uDC90\uDC92-\uDCA9\uDCAB-\uDCFC\uDCFF-\uDD3D\uDD4B-\uDD4E\uDD50-\uDD67\uDDA4\uDDFB-\uDE2D\uDE2F-\uDE34\uDE37-\uDE41\uDE43\uDE44\uDE48-\uDE4A\uDE80-\uDEA2\uDEA4-\uDEB3\uDEB7-\uDEBF\uDEC1-\uDEC5\uDED0-\uDED2\uDED5-\uDED8\uDEDC-\uDEDF\uDEEB\uDEEC\uDEF4-\uDEFC\uDFE0-\uDFEB\uDFF0]|\uDC08(?:\u200D\u2B1B)?|\uDC15(?:\u200D\uD83E\uDDBA)?|\uDC26(?:\u200D(?:\u2B1B|\uD83D\uDD25))?|\uDC3B(?:\u200D\u2744\uFE0F?)?|\uDC41\uFE0F?(?:\u200D\uD83D\uDDE8\uFE0F?)?|\uDC68(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDC68\uDC69]\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?)|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFC-\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFD-\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFD\uDFFF]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?\uDC68\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE])|\uD83E(?:[\uDD1D\uDEEF]\u200D\uD83D\uDC68\uD83C[\uDFFB-\uDFFE]|[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3])))?))?|\uDC69(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:\uDC8B\u200D\uD83D)?[\uDC68\uDC69]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?|\uDC69\u200D\uD83D(?:\uDC66(?:\u200D\uD83D\uDC66)?|\uDC67(?:\u200D\uD83D[\uDC66\uDC67])?))|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFC-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFC-\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFD-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFD-\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFD\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFD\uDFFF]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D\uD83D(?:[\uDC68\uDC69]|\uDC8B\u200D\uD83D[\uDC68\uDC69])\uD83C[\uDFFB-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFE])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3]|\uDD1D\u200D\uD83D[\uDC68\uDC69]\uD83C[\uDFFB-\uDFFE]|\uDEEF\u200D\uD83D\uDC69\uD83C[\uDFFB-\uDFFE])))?))?|\uDD75(?:\uD83C[\uDFFB-\uDFFF]|\uFE0F)?(?:\u200D[\u2640\u2642]\uFE0F?)?|\uDE2E(?:\u200D\uD83D\uDCA8)?|\uDE35(?:\u200D\uD83D\uDCAB)?|\uDE36(?:\u200D\uD83C\uDF2B\uFE0F?)?|\uDE42(?:\u200D[\u2194\u2195]\uFE0F?)?|\uDEB6(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?)|\uD83E(?:[\uDD0C\uDD0F\uDD18-\uDD1F\uDD30-\uDD34\uDD36\uDD77\uDDB5\uDDB6\uDDBB\uDDD2\uDDD3\uDDD5\uDEC3-\uDEC5\uDEF0\uDEF2-\uDEF8](?:\uD83C[\uDFFB-\uDFFF])?|[\uDD26\uDD35\uDD37-\uDD39\uDD3C-\uDD3E\uDDB8\uDDB9\uDDCD\uDDCF\uDDD4\uDDD6-\uDDDD](?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDDDE\uDDDF](?:\u200D[\u2640\u2642]\uFE0F?)?|[\uDD0D\uDD0E\uDD10-\uDD17\uDD20-\uDD25\uDD27-\uDD2F\uDD3A\uDD3F-\uDD45\uDD47-\uDD76\uDD78-\uDDB4\uDDB7\uDDBA\uDDBC-\uDDCC\uDDD0\uDDE0-\uDDFF\uDE70-\uDE7C\uDE80-\uDE8A\uDE8E-\uDEC2\uDEC6\uDEC8\uDECD-\uDEDC\uDEDF-\uDEEA\uDEEF]|\uDDCE(?:\uD83C[\uDFFB-\uDFFF])?(?:\u200D(?:[\u2640\u2642]\uFE0F?(?:\u200D\u27A1\uFE0F?)?|\u27A1\uFE0F?))?|\uDDD1(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1|\uDDD1\u200D\uD83E\uDDD2(?:\u200D\uD83E\uDDD2)?|\uDDD2(?:\u200D\uD83E\uDDD2)?))|\uD83C(?:\uDFFB(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFC-\uDFFF])))?|\uDFFC(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFD-\uDFFF])))?|\uDFFD(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])))?|\uDFFE(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFD\uDFFF])))?|\uDFFF(?:\u200D(?:[\u2695\u2696\u2708]\uFE0F?|\u2764\uFE0F?\u200D(?:\uD83D\uDC8B\u200D)?\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE]|\uD83C[\uDF3E\uDF73\uDF7C\uDF84\uDF93\uDFA4\uDFA8\uDFEB\uDFED]|\uD83D(?:[\uDCBB\uDCBC\uDD27\uDD2C\uDE80\uDE92]|\uDC30\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE])|\uD83E(?:[\uDDAF\uDDBC\uDDBD](?:\u200D\u27A1\uFE0F?)?|[\uDDB0-\uDDB3\uDE70]|\uDD1D\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFF]|\uDEEF\u200D\uD83E\uDDD1\uD83C[\uDFFB-\uDFFE])))?))?|\uDEF1(?:\uD83C(?:\uDFFB(?:\u200D\uD83E\uDEF2\uD83C[\uDFFC-\uDFFF])?|\uDFFC(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFD-\uDFFF])?|\uDFFD(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB\uDFFC\uDFFE\uDFFF])?|\uDFFE(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFD\uDFFF])?|\uDFFF(?:\u200D\uD83E\uDEF2\uD83C[\uDFFB-\uDFFE])?))?)/g;function zt(e){return e===12288||e>=65281&&e<=65376||e>=65504&&e<=65510}function Jt(e){return e>=4352&&e<=4447||e===8986||e===8987||e===9001||e===9002||e>=9193&&e<=9196||e===9200||e===9203||e===9725||e===9726||e===9748||e===9749||e>=9776&&e<=9783||e>=9800&&e<=9811||e===9855||e>=9866&&e<=9871||e===9875||e===9889||e===9898||e===9899||e===9917||e===9918||e===9924||e===9925||e===9934||e===9940||e===9962||e===9970||e===9971||e===9973||e===9978||e===9981||e===9989||e===9994||e===9995||e===10024||e===10060||e===10062||e>=10067&&e<=10069||e===10071||e>=10133&&e<=10135||e===10160||e===10175||e===11035||e===11036||e===11088||e===11093||e>=11904&&e<=11929||e>=11931&&e<=12019||e>=12032&&e<=12245||e>=12272&&e<=12287||e>=12289&&e<=12350||e>=12353&&e<=12438||e>=12441&&e<=12543||e>=12549&&e<=12591||e>=12593&&e<=12686||e>=12688&&e<=12773||e>=12783&&e<=12830||e>=12832&&e<=12871||e>=12880&&e<=42124||e>=42128&&e<=42182||e>=43360&&e<=43388||e>=44032&&e<=55203||e>=63744&&e<=64255||e>=65040&&e<=65049||e>=65072&&e<=65106||e>=65108&&e<=65126||e>=65128&&e<=65131||e>=94176&&e<=94180||e>=94192&&e<=94198||e>=94208&&e<=101589||e>=101631&&e<=101662||e>=101760&&e<=101874||e>=110576&&e<=110579||e>=110581&&e<=110587||e===110589||e===110590||e>=110592&&e<=110882||e===110898||e>=110928&&e<=110930||e===110933||e>=110948&&e<=110951||e>=110960&&e<=111355||e>=119552&&e<=119638||e>=119648&&e<=119670||e===126980||e===127183||e===127374||e>=127377&&e<=127386||e>=127488&&e<=127490||e>=127504&&e<=127547||e>=127552&&e<=127560||e===127568||e===127569||e>=127584&&e<=127589||e>=127744&&e<=127776||e>=127789&&e<=127797||e>=127799&&e<=127868||e>=127870&&e<=127891||e>=127904&&e<=127946||e>=127951&&e<=127955||e>=127968&&e<=127984||e===127988||e>=127992&&e<=128062||e===128064||e>=128066&&e<=128252||e>=128255&&e<=128317||e>=128331&&e<=128334||e>=128336&&e<=128359||e===128378||e===128405||e===128406||e===128420||e>=128507&&e<=128591||e>=128640&&e<=128709||e===128716||e>=128720&&e<=128722||e>=128725&&e<=128728||e>=128732&&e<=128735||e===128747||e===128748||e>=128756&&e<=128764||e>=128992&&e<=129003||e===129008||e>=129292&&e<=129338||e>=129340&&e<=129349||e>=129351&&e<=129535||e>=129648&&e<=129660||e>=129664&&e<=129674||e>=129678&&e<=129734||e===129736||e>=129741&&e<=129756||e>=129759&&e<=129770||e>=129775&&e<=129784||e>=131072&&e<=196605||e>=196608&&e<=262141}var standalone_cr="\xA9\xAE\u203C\u2049\u2122\u2139\u2194\u2195\u2196\u2197\u2198\u2199\u21A9\u21AA\u2328\u23CF\u23F1\u23F2\u23F8\u23F9\u23FA\u25AA\u25AB\u25B6\u25C0\u25FB\u25FC\u2600\u2601\u2602\u2603\u2604\u260E\u2611\u2618\u261D\u2620\u2622\u2623\u2626\u262A\u262E\u262F\u2638\u2639\u263A\u2640\u2642\u265F\u2660\u2663\u2665\u2666\u2668\u267B\u267E\u2692\u2694\u2695\u2696\u2697\u2699\u269B\u269C\u26A0\u26A7\u26B0\u26B1\u26C8\u26CF\u26D1\u26D3\u26E9\u26F1\u26F7\u26F8\u26F9\u2702\u2708\u2709\u270C\u270D\u270F\u2712\u2714\u2716\u271D\u2721\u2733\u2734\u2744\u2747\u2763\u2764\u27A1\u2934\u2935\u2B05\u2B06\u2B07";var To=/[^\x20-\x7F]/u,No=new Set(standalone_cr);function So(e){if(!e)return 0;if(!To.test(e))return e.length;e=e.replace(standalone_Dr(),u=>No.has(u)?" ":"  ");let t=0;for(let u of e){let r=u.codePointAt(0);r<=31||r>=127&&r<=159||r>=768&&r<=879||r>=65024&&r<=65039||(t+=zt(r)||Jt(r)?2:1)}return t}var standalone_Re=So;var standalone_wo={type:0},standalone_Oo={type:1},Ht={value:"",length:0,queue:[],get root(){return Ht}};function standalone_fr(e,t,u){let r=t.type===1?e.queue.slice(0,-1):[...e.queue,t],o="",n=0,a=0,s=0;for(let p of r)switch(p.type){case 0:f(),u.useTabs?i(1):D(u.tabWidth);break;case 3:{let{string:F}=p;f(),o+=F,n+=F.length;break}case 2:{let{width:F}=p;a+=1,s+=F;break}default:throw new Error(`Unexpected indent comment '${p.type}'.`)}return d(),{...e,value:o,length:n,queue:r};function i(p){o+="	".repeat(p),n+=u.tabWidth*p}function D(p){o+=" ".repeat(p),n+=p}function f(){u.useTabs?l():d()}function l(){a>0&&i(a),c()}function d(){s>0&&D(s),c()}function c(){a=0,s=0}}function standalone_lr(e,t,u){if(!t)return e;if(t.type==="root")return{...e,root:e};if(t===Number.NEGATIVE_INFINITY)return e.root;let r;return typeof t=="number"?t<0?r=standalone_Oo:r={type:2,width:t}:r={type:3,string:t},standalone_fr(e,r,u)}function dr(e,t){return standalone_fr(e,standalone_wo,t)}function Po(e){let t=0;for(let u=e.length-1;u>=0;u--){let r=e[u];if(r===" "||r==="	")t++;else break}return t}function Xt(e){let t=Po(e);return{text:t===0?e:e.slice(0,e.length-t),count:t}}var standalone_W=Symbol("MODE_BREAK"),standalone_q=Symbol("MODE_FLAT"),standalone_qt=Symbol("DOC_FILL_PRINTED_LENGTH");function standalone_rt(e,t,u,r,o,n){if(u===Number.POSITIVE_INFINITY)return!0;let a=t.length,s=!1,i=[e],D="";for(;u>=0;){if(i.length===0){if(a===0)return!0;i.push(t[--a]);continue}let{mode:f,doc:l}=i.pop(),d=standalone_H(l);switch(d){case G:l&&(s&&(D+=" ",u-=1,s=!1),D+=l,u-=standalone_Re(l));break;case standalone_j:case w:{let c=d===standalone_j?l:l.parts,p=l[standalone_qt]??0;for(let F=c.length-1;F>=p;F--)i.push({mode:f,doc:c[F]});break}case I:case k:case standalone_R:case O:i.push({mode:f,doc:l.contents});break;case v:{let{text:c,count:p}=Xt(D);D=c,u+=p;break}case standalone_x:{if(n&&l.break)return!1;let c=l.break?standalone_W:f,p=l.expandedStates&&c===standalone_W?b(0,l.expandedStates,-1):l.contents;i.push({mode:c,doc:p});break}case B:{let p=(l.groupId?o[l.groupId]||standalone_q:f)===standalone_W?l.breakContents:l.flatContents;p&&i.push({mode:f,doc:p});break}case _:if(f===standalone_W||l.hard)return!0;l.soft||(s=!0);break;case L:r=!0;break;case standalone_M:if(r)return!1;break}}return!1}function Ce(e,t){let u=Object.create(null),r=t.printWidth,o=standalone_Se(t.endOfLine),n=0,a=[{indent:Ht,mode:standalone_W,doc:e}],s="",i=!1,D=[],f=[],l=[],d=[],c=0;for(Gu(e);a.length>0;){let{indent:m,mode:h,doc:E}=a.pop();switch(standalone_H(E)){case G:{let g=o!==`
+`?oe(0,E,`
+`,o):E;g&&(s+=g,a.length>0&&(n+=standalone_Re(g)));break}case standalone_j:for(let g=E.length-1;g>=0;g--)a.push({indent:m,mode:h,doc:E[g]});break;case standalone_U:if(f.length>=2)throw new Error("There are too many 'cursor' in doc.");f.push(c+s.length);break;case I:a.push({indent:dr(m,t),mode:h,doc:E.contents});break;case k:a.push({indent:standalone_lr(m,E.n,t),mode:h,doc:E.contents});break;case v:y();break;case standalone_x:switch(h){case standalone_q:if(!i){a.push({indent:m,mode:E.break?standalone_W:standalone_q,doc:E.contents});break}case standalone_W:{i=!1;let g={indent:m,mode:standalone_q,doc:E.contents},A=r-n,J=D.length>0;if(!E.break&&standalone_rt(g,a,A,J,u))a.push(g);else if(E.expandedStates){let Q=b(0,E.expandedStates,-1);if(E.break){a.push({indent:m,mode:standalone_W,doc:Q});break}else for(let re=1;re<E.expandedStates.length+1;re++)if(re>=E.expandedStates.length){a.push({indent:m,mode:standalone_W,doc:Q});break}else{let Te=E.expandedStates[re],ne={indent:m,mode:standalone_q,doc:Te};if(standalone_rt(ne,a,A,J,u)){a.push(ne);break}}}else a.push({indent:m,mode:standalone_W,doc:E.contents});break}}E.id&&(u[E.id]=b(0,a,-1).mode);break;case w:{let g=r-n,A=E[standalone_qt]??0,{parts:J}=E,Q=J.length-A;if(Q===0)break;let re=J[A+0],Te=J[A+1],ne={indent:m,mode:standalone_q,doc:re},vt={indent:m,mode:standalone_W,doc:re},Rt=standalone_rt(ne,[],g,D.length>0,u,!0);if(Q===1){Rt?a.push(ne):a.push(vt);break}let Iu={indent:m,mode:standalone_q,doc:Te},Lt={indent:m,mode:standalone_W,doc:Te};if(Q===2){Rt?a.push(Iu,ne):a.push(Lt,vt);break}let Xn=J[A+2],qn={indent:m,mode:h,doc:{...E,[standalone_qt]:A+2}},Qn=standalone_rt({indent:m,mode:standalone_q,doc:[re,Te,Xn]},[],g,D.length>0,u,!0);a.push(qn),Qn?a.push(Iu,ne):Rt?a.push(Lt,ne):a.push(Lt,vt);break}case B:case standalone_R:{let g=E.groupId?u[E.groupId]:h;if(g===standalone_W){let A=E.type===B?E.breakContents:E.negate?E.contents:standalone_ae(E.contents);A&&a.push({indent:m,mode:h,doc:A})}if(g===standalone_q){let A=E.type===B?E.flatContents:E.negate?standalone_ae(E.contents):E.contents;A&&a.push({indent:m,mode:h,doc:A})}break}case L:D.push({indent:m,mode:h,doc:E.contents});break;case standalone_M:D.length>0&&a.push({indent:m,mode:h,doc:ke});break;case _:switch(h){case standalone_q:if(E.hard)i=!0;else{E.soft||(s+=" ",n+=1);break}case standalone_W:if(D.length>0){a.push({indent:m,mode:h,doc:E},...D.reverse()),D.length=0;break}E.literal?(s+=o,n=0,m.root&&(m.root.value&&(s+=m.root.value),n=m.root.length)):(y(),s+=o+m.value,n=m.length);break}break;case O:a.push({indent:m,mode:h,doc:E.contents});break;case T:break;default:throw new Z(E)}a.length===0&&D.length>0&&(a.push(...D.reverse()),D.length=0)}let p=l.join("")+s,F=[...d,...f];if(F.length!==2)return{formatted:p};let C=F[0];return{formatted:p,cursorNodeStart:C,cursorNodeText:p.slice(C,b(0,F,-1))};function y(){let{text:m,count:h}=Xt(s);m&&(l.push(m),c+=m.length),s="",n-=h,f.length>0&&(d.push(...f.map(E=>Math.min(E,c))),f.length=0)}}function standalone_Io(e,t,u=0){let r=0;for(let o=u;o<e.length;++o)e[o]==="	"?r=r+t-r%t:r++;return r}var standalone_he=standalone_Io;var standalone_Qt=class{constructor(t){this.stack=[t]}get key(){let{stack:t,siblings:u}=this;return b(0,t,u===null?-2:-4)??null}get index(){return this.siblings===null?null:b(0,this.stack,-2)}get node(){return b(0,this.stack,-1)}get parent(){return this.getNode(1)}get grandparent(){return this.getNode(2)}get isInArray(){return this.siblings!==null}get siblings(){let{stack:t}=this,u=b(0,t,-3);return Array.isArray(u)?u:null}get next(){let{siblings:t}=this;return t===null?null:t[this.index+1]}get previous(){let{siblings:t}=this;return t===null?null:t[this.index-1]}get isFirst(){return this.index===0}get isLast(){let{siblings:t,index:u}=this;return t!==null&&u===t.length-1}get isRoot(){return this.stack.length===1}get root(){return this.stack[0]}get ancestors(){return[...this.#e()]}getName(){let{stack:t}=this,{length:u}=t;return u>1?b(0,t,-2):null}getValue(){return b(0,this.stack,-1)}getNode(t=0){let u=this.#t(t);return u===-1?null:this.stack[u]}getParentNode(t=0){return this.getNode(t+1)}#t(t){let{stack:u}=this;for(let r=u.length-1;r>=0;r-=2)if(!Array.isArray(u[r])&&--t<0)return r;return-1}call(t,...u){let{stack:r}=this,{length:o}=r,n=b(0,r,-1);for(let a of u)n=n?.[a],r.push(a,n);try{return t(this)}finally{r.length=o}}callParent(t,u=0){let r=this.#t(u+1),o=this.stack.splice(r+1);try{return t(this)}finally{this.stack.push(...o)}}each(t,...u){let{stack:r}=this,{length:o}=r,n=b(0,r,-1);for(let a of u)n=n[a],r.push(a,n);try{for(let a=0;a<n.length;++a)r.push(a,n[a]),t(this,a,n),r.length-=2}finally{r.length=o}}map(t,...u){let r=[];return this.each((o,n,a)=>{r[n]=t(o,n,a)},...u),r}match(...t){let u=this.stack.length-1,r=null,o=this.stack[u--];for(let n of t){if(o===void 0)return!1;let a=null;if(typeof r=="number"&&(a=r,r=this.stack[u--],o=this.stack[u--]),n&&!n(o,r,a))return!1;r=this.stack[u--],o=this.stack[u--]}return!0}findAncestor(t){for(let u of this.#e())if(t(u))return u}hasAncestor(t){for(let u of this.#e())if(t(u))return!0;return!1}*#e(){let{stack:t}=this;for(let u=t.length-3;u>=0;u-=2){let r=t[u];Array.isArray(r)||(yield r)}}},pr=standalone_Qt;function ko(e){return e!==null&&typeof e=="object"}var ge=ko;function standalone_ye(e){return(t,u,r)=>{let o=!!r?.backwards;if(u===!1)return!1;let{length:n}=t,a=u;for(;a>=0&&a<n;){let s=t.charAt(a);if(e instanceof RegExp){if(!e.test(s))return a}else if(!e.includes(s))return a;o?a--:a++}return a===-1||a===n?a:!1}}var Fr=standalone_ye(/\s/u),Y=standalone_ye(" 	"),nt=standalone_ye(",; 	"),ot=standalone_ye(/[^\n\r]/u);var standalone_mr=e=>e===`
+`||e==="\r"||e==="\u2028"||e==="\u2029";function vo(e,t,u){let r=!!u?.backwards;if(t===!1)return!1;let o=e.charAt(t);if(r){if(e.charAt(t-1)==="\r"&&o===`
+`)return t-2;if(standalone_mr(o))return t-1}else{if(o==="\r"&&e.charAt(t+1)===`
+`)return t+2;if(standalone_mr(o))return t+1}return t}var K=vo;function Ro(e,t,u={}){let r=Y(e,u.backwards?t-1:t,u),o=K(e,r,u);return r!==o}var standalone_z=Ro;function Lo(e){return Array.isArray(e)&&e.length>0}var Er=Lo;function*standalone_be(e,t){let{getVisitorKeys:u,filter:r=()=>!0}=t,o=n=>ge(n)&&r(n);for(let n of u(e)){let a=e[n];if(Array.isArray(a))for(let s of a)o(s)&&(yield s);else o(a)&&(yield a)}}function*Cr(e,t){let u=[e];for(let r=0;r<u.length;r++){let o=u[r];for(let n of standalone_be(o,t))yield n,u.push(n)}}function hr(e,t){return standalone_be(e,t).next().done}function gr(e,t,u){let{cache:r}=u;if(r.has(e))return r.get(e);let{filter:o}=u;if(!o)return[];let n,a=(u.getChildren?.(e,u)??[...standalone_be(e,{getVisitorKeys:u.getVisitorKeys})]).flatMap(D=>(n??(n=[e,...t]),o(D,n)?[D]:gr(D,n,u))),{locStart:s,locEnd:i}=u;return a.sort((D,f)=>s(D)-s(f)||i(D)-i(f)),r.set(e,a),a}var at=gr;function Mo(e){let t=e.type||e.kind||"(unknown type)",u=String(e.name||e.id&&(typeof e.id=="object"?e.id.name:e.id)||e.key&&(typeof e.key=="object"?e.key.name:e.key)||e.value&&(typeof e.value=="object"?"":String(e.value))||e.operator||"");return u.length>20&&(u=u.slice(0,19)+"\u2026"),t+(u?" "+u:"")}function Zt(e,t){(e.comments??(e.comments=[])).push(t),t.printed=!1,t.nodeDescription=Mo(e)}function standalone_fe(e,t){t.leading=!0,t.trailing=!1,Zt(e,t)}function standalone_ue(e,t,u){t.leading=!1,t.trailing=!1,u&&(t.marker=u),Zt(e,t)}function le(e,t){t.leading=!1,t.trailing=!0,Zt(e,t)}var standalone_uu=new WeakMap;function br(e,t,u,r,o=[]){let{locStart:n,locEnd:a}=u,s=n(t),i=a(t),D=at(e,o,{cache:standalone_uu,locStart:n,locEnd:a,getVisitorKeys:u.getVisitorKeys,filter:u.printer.canAttachComment,getChildren:u.printer.getCommentChildNodes}),f,l,d=0,c=D.length;for(;d<c;){let p=d+c>>1,F=D[p],C=n(F),y=a(F);if(C<=s&&i<=y)return br(F,t,u,F,[F,...o]);if(y<=s){f=F,d=p+1;continue}if(i<=C){l=F,c=p;continue}throw new Error("Comment location overlaps with node location")}if(r?.type==="TemplateLiteral"){let{quasis:p}=r,F=tu(p,t,u);f&&tu(p,f,u)!==F&&(f=null),l&&tu(p,l,u)!==F&&(l=null)}return{enclosingNode:r,precedingNode:f,followingNode:l}}var eu=()=>!1;function Ar(e,t){let{comments:u}=e;if(delete e.comments,!Er(u)||!t.printer.canAttachComment)return;let r=[],{printer:{features:{experimental_avoidAstMutation:o},handleComments:n={}},originalText:a}=t,{ownLine:s=eu,endOfLine:i=eu,remaining:D=eu}=n,f=u.map((l,d)=>({...br(e,l,t),comment:l,text:a,options:t,ast:e,isLastComment:u.length-1===d}));for(let[l,d]of f.entries()){let{comment:c,precedingNode:p,enclosingNode:F,followingNode:C,text:y,options:m,ast:h,isLastComment:E}=d,g;if(o?g=[d]:(c.enclosingNode=F,c.precedingNode=p,c.followingNode=C,g=[c,y,m,h,E]),standalone_Yo(y,m,f,l))c.placement="ownLine",s(...g)||(C?standalone_fe(C,c):p?le(p,c):F?standalone_ue(F,c):standalone_ue(h,c));else if(standalone_jo(y,m,f,l))c.placement="endOfLine",i(...g)||(p?le(p,c):C?standalone_fe(C,c):F?standalone_ue(F,c):standalone_ue(h,c));else if(c.placement="remaining",!D(...g))if(p&&C){let A=r.length;A>0&&r[A-1].followingNode!==C&&yr(r,m),r.push(d)}else p?le(p,c):C?standalone_fe(C,c):F?standalone_ue(F,c):standalone_ue(h,c)}if(yr(r,t),!o)for(let l of u)delete l.precedingNode,delete l.enclosingNode,delete l.followingNode}var standalone_r=e=>!/[\S\n\u2028\u2029]/u.test(e);function standalone_Yo(e,t,u,r){let{comment:o,precedingNode:n}=u[r],{locStart:a,locEnd:s}=t,i=a(o);if(n)for(let D=r-1;D>=0;D--){let{comment:f,precedingNode:l}=u[D];if(l!==n||!standalone_r(e.slice(s(f),i)))break;i=a(f)}return standalone_z(e,i,{backwards:!0})}function standalone_jo(e,t,u,r){let{comment:o,followingNode:n}=u[r],{locStart:a,locEnd:s}=t,i=s(o);if(n)for(let D=r+1;D<u.length;D++){let{comment:f,followingNode:l}=u[D];if(l!==n||!standalone_r(e.slice(i,a(f))))break;i=s(f)}return standalone_z(e,i)}function yr(e,t){let u=e.length;if(u===0)return;let{precedingNode:r,followingNode:o}=e[0],n=t.locStart(o),a;for(a=u;a>0;--a){let{comment:s,precedingNode:i,followingNode:D}=e[a-1];P(i,r),P(D,o);let f=t.originalText.slice(t.locEnd(s),n);if(t.printer.isGap?.(f,t)??/^[\s(]*$/u.test(f))n=t.locStart(s);else break}for(let[s,{comment:i}]of e.entries())s<a?le(r,i):standalone_fe(o,i);for(let s of[r,o])s.comments&&s.comments.length>1&&s.comments.sort((i,D)=>t.locStart(i)-t.locStart(D));e.length=0}function tu(e,t,u){let r=u.locStart(t)-1;for(let o=1;o<e.length;++o)if(r<u.locStart(e[o]))return o-1;return 0}function Uo(e,t){let u=t-1;u=Y(e,u,{backwards:!0}),u=K(e,u,{backwards:!0}),u=Y(e,u,{backwards:!0});let r=K(e,u,{backwards:!0});return u!==r}var standalone_Le=Uo;function xr(e,t){let u=e.node;return u.printed=!0,t.printer.printComment(e,t)}function Wo(e,t){let u=e.node,r=[xr(e,t)],{printer:o,originalText:n,locStart:a,locEnd:s}=t;if(o.isBlockComment?.(u)){let f=standalone_z(n,s(u))?standalone_z(n,a(u),{backwards:!0})?standalone_V:ut:" ";r.push(f)}else r.push(standalone_V);let D=K(n,Y(n,s(u)));return D!==!1&&standalone_z(n,D)&&r.push(standalone_V),r}function $o(e,t,u){let r=e.node,o=xr(e,t),{printer:n,originalText:a,locStart:s}=t,i=n.isBlockComment?.(r);if(u?.hasLineSuffix&&!u?.isBlock||standalone_z(a,s(r),{backwards:!0})){let D=standalone_Le(a,s(r));return{doc:ve([standalone_V,D?standalone_V:"",o]),isBlock:i,hasLineSuffix:!0}}return!i||u?.hasLineSuffix?{doc:[ve([" ",o]),ce],isBlock:i,hasLineSuffix:!0}:{doc:[" ",o],isBlock:i,hasLineSuffix:!1}}function Vo(e,t){let u=e.node;if(!u)return{};let r=t[Symbol.for("printedComments")];if((u.comments||[]).filter(i=>!r.has(i)).length===0)return{leading:"",trailing:""};let n=[],a=[],s;return e.each(()=>{let i=e.node;if(r?.has(i))return;let{leading:D,trailing:f}=i;D?n.push(Wo(e,t)):f&&(s=$o(e,t,s),a.push(s.doc))},"comments"),{leading:n,trailing:a}}function standalone_Br(e,t,u){let{leading:r,trailing:o}=Vo(e,u);return!r&&!o?t:Ee(t,n=>[r,n,o])}function standalone_Tr(e){let{[Symbol.for("comments")]:t,[Symbol.for("printedComments")]:u}=e;for(let r of t){if(!r.printed&&!u.has(r))throw new Error('Comment "'+r.value.trim()+'" was not printed. Please report this error!');delete r.printed}}var standalone_Nr=()=>P;var standalone_Me=class extends Error{name="ConfigError"},standalone_Ye=class extends Error{name="UndefinedParserError"};var standalone_Sr={checkIgnorePragma:{category:"Special",type:"boolean",default:!1,description:"Check whether the file's first docblock comment contains '@noprettier' or '@noformat' to determine if it should be formatted.",cliCategory:"Other"},cursorOffset:{category:"Special",type:"int",default:-1,range:{start:-1,end:1/0,step:1},description:"Print (to stderr) where a cursor at the given position would move to after formatting.",cliCategory:"Editor"},endOfLine:{category:"Global",type:"choice",default:"lf",description:"Which end of line characters to apply.",choices:[{value:"lf",description:"Line Feed only (\\n), common on Linux and macOS as well as inside git repos"},{value:"crlf",description:"Carriage Return + Line Feed characters (\\r\\n), common on Windows"},{value:"cr",description:"Carriage Return character only (\\r), used very rarely"},{value:"auto",description:`Maintain existing
+(mixed values within one file are normalised by looking at what's used after the first line)`}]},filepath:{category:"Special",type:"path",description:"Specify the input filepath. This will be used to do parser inference.",cliName:"stdin-filepath",cliCategory:"Other",cliDescription:"Path to the file to pretend that stdin comes from."},insertPragma:{category:"Special",type:"boolean",default:!1,description:"Insert @format pragma into file's first docblock comment.",cliCategory:"Other"},parser:{category:"Global",type:"choice",default:void 0,description:"Which parser to use.",exception:e=>typeof e=="string"||typeof e=="function",choices:[{value:"flow",description:"Flow"},{value:"babel",description:"JavaScript"},{value:"babel-flow",description:"Flow"},{value:"babel-ts",description:"TypeScript"},{value:"typescript",description:"TypeScript"},{value:"acorn",description:"JavaScript"},{value:"espree",description:"JavaScript"},{value:"meriyah",description:"JavaScript"},{value:"css",description:"CSS"},{value:"less",description:"Less"},{value:"scss",description:"SCSS"},{value:"json",description:"JSON"},{value:"json5",description:"JSON5"},{value:"jsonc",description:"JSON with Comments"},{value:"json-stringify",description:"JSON.stringify"},{value:"graphql",description:"GraphQL"},{value:"markdown",description:"Markdown"},{value:"mdx",description:"MDX"},{value:"vue",description:"Vue"},{value:"yaml",description:"YAML"},{value:"glimmer",description:"Ember / Handlebars"},{value:"html",description:"HTML"},{value:"angular",description:"Angular"},{value:"lwc",description:"Lightning Web Components"},{value:"mjml",description:"MJML"}]},plugins:{type:"path",array:!0,default:[{value:[]}],category:"Global",description:"Add a plugin. Multiple plugins can be passed as separate `--plugin`s.",exception:e=>typeof e=="string"||typeof e=="object",cliName:"plugin",cliCategory:"Config"},printWidth:{category:"Global",type:"int",default:80,description:"The line length where Prettier will try wrap.",range:{start:0,end:1/0,step:1}},rangeEnd:{category:"Special",type:"int",default:1/0,range:{start:0,end:1/0,step:1},description:`Format code ending at a given character offset (exclusive).
 The range will extend forwards to the end of the selected statement.`,cliCategory:"Editor"},rangeStart:{category:"Special",type:"int",default:0,range:{start:0,end:1/0,step:1},description:`Format code starting at a given character offset.
-The range will extend backwards to the start of the first line containing the selected statement.`,cliCategory:"Editor"},requirePragma:{category:"Special",type:"boolean",default:!1,description:`Require either '@prettier' or '@format' to be present in the file's first docblock comment
-in order for it to be formatted.`,cliCategory:"Other"},tabWidth:{type:"int",category:"Global",default:2,description:"Number of spaces per indentation level.",range:{start:0,end:1/0,step:1}},useTabs:{category:"Global",type:"boolean",default:!1,description:"Indent with tabs instead of spaces."},embeddedLanguageFormatting:{category:"Global",type:"choice",default:"auto",description:"Control how Prettier formats quoted code embedded in the file.",choices:[{value:"auto",description:"Format embedded code if Prettier can automatically identify it."},{value:"off",description:"Never automatically format embedded code."}]}};function ot({plugins:e=[],showDeprecated:t=!1}={}){let r=e.flatMap(o=>o.languages??[]),n=[];for(let o of standalone_lo(Object.assign({},...e.map(({options:u})=>u),rn)))!t&&o.deprecated||(Array.isArray(o.choices)&&(t||(o.choices=o.choices.filter(u=>!u.deprecated)),o.name==="parser"&&(o.choices=[...o.choices,...standalone_Do(o.choices,r,e)])),o.pluginDefaults=Object.fromEntries(e.filter(u=>{var i;return((i=u.defaultOptions)==null?void 0:i[o.name])!==void 0}).map(u=>[u.name,u.defaultOptions[o.name]])),n.push(o));return{languages:r,options:n}}function*standalone_Do(e,t,r){let n=new Set(e.map(o=>o.value));for(let o of t)if(o.parsers){for(let u of o.parsers)if(!n.has(u)){n.add(u);let i=r.find(a=>a.parsers&&Object.prototype.hasOwnProperty.call(a.parsers,u)),s=o.name;i!=null&&i.name&&(s+=` (plugin: ${i.name})`),yield{value:u,description:s}}}}function standalone_lo(e){let t=[];for(let[r,n]of Object.entries(e)){let o={name:r,...n};Array.isArray(o.default)&&(o.default=y(!1,o.default,-1).value),t.push(o)}return t}var co=e=>String(e).split(/[/\\]/u).pop();function nn(e,t){if(!t)return;let r=co(t).toLowerCase();return e.find(({filenames:n})=>n==null?void 0:n.some(o=>o.toLowerCase()===r))??e.find(({extensions:n})=>n==null?void 0:n.some(o=>r.endsWith(o)))}function fo(e,t){if(t)return e.find(({name:r})=>r.toLowerCase()===t)??e.find(({aliases:r})=>r==null?void 0:r.includes(t))??e.find(({extensions:r})=>r==null?void 0:r.includes(`.${t}`))}function po(e,t){let r=e.plugins.flatMap(o=>o.languages??[]),n=fo(r,t.language)??nn(r,t.physicalFile)??nn(r,t.file)??(t.physicalFile,void 0);return n==null?void 0:n.parsers[0]}var un=po;var ie={key:e=>/^[$_a-zA-Z][$_a-zA-Z0-9]*$/.test(e)?e:JSON.stringify(e),value(e){if(e===null||typeof e!="object")return JSON.stringify(e);if(Array.isArray(e))return`[${e.map(r=>ie.value(r)).join(", ")}]`;let t=Object.keys(e);return t.length===0?"{}":`{ ${t.map(r=>`${ie.key(r)}: ${ie.value(e[r])}`).join(", ")} }`},pair:({key:e,value:t})=>ie.value({[e]:t})};var Yt=standalone_Me(it(),1),an=(e,t,{descriptor:r})=>{let n=[`${Yt.default.yellow(typeof e=="string"?r.key(e):r.pair(e))} is deprecated`];return t&&n.push(`we now treat it as ${Yt.default.blue(typeof t=="string"?r.key(t):r.pair(t))}`),n.join("; ")+"."};var standalone_le=standalone_Me(it(),1);var st=Symbol.for("vnopts.VALUE_NOT_EXIST"),he=Symbol.for("vnopts.VALUE_UNCHANGED");var Dn=" ".repeat(2),cn=(e,t,r)=>{let{text:n,list:o}=r.normalizeExpectedResult(r.schemas[e].expected(r)),u=[];return n&&u.push(ln(e,t,n,r.descriptor)),o&&u.push([ln(e,t,o.title,r.descriptor)].concat(o.values.map(i=>fn(i,r.loggerPrintWidth))).join(`
-`)),pn(u,r.loggerPrintWidth)};function ln(e,t,r,n){return[`Invalid ${standalone_le.default.red(n.key(e))} value.`,`Expected ${standalone_le.default.blue(r)},`,`but received ${t===st?standalone_le.default.gray("nothing"):standalone_le.default.red(n.value(t))}.`].join(" ")}function fn({text:e,list:t},r){let n=[];return e&&n.push(`- ${standalone_le.default.blue(e)}`),t&&n.push([`- ${standalone_le.default.blue(t.title)}:`].concat(t.values.map(o=>fn(o,r-Dn.length).replace(/^|\n/g,`$&${Dn}`))).join(`
-`)),pn(n,r)}function pn(e,t){if(e.length===1)return e[0];let[r,n]=e,[o,u]=e.map(i=>i.split(`
-`,1)[0].length);return o>t&&o>u?n:r}var Wt=standalone_Me(it(),1);var jt=[],standalone_dn=[];function Ht(e,t){if(e===t)return 0;let r=e;e.length>t.length&&(e=t,t=r);let n=e.length,o=t.length;for(;n>0&&e.charCodeAt(~-n)===t.charCodeAt(~-o);)n--,o--;let u=0;for(;u<n&&e.charCodeAt(u)===t.charCodeAt(u);)u++;if(n-=u,o-=u,n===0)return o;let i,s,a,D,l=0,d=0;for(;l<n;)standalone_dn[l]=e.charCodeAt(u+l),jt[l]=++l;for(;d<o;)for(i=t.charCodeAt(u+d),a=d++,s=d,l=0;l<n;l++)D=i===standalone_dn[l]?a:a+1,a=jt[l],s=jt[l]=a>s?D>s?s+1:D:D>a?a+1:D;return s}var at=(e,t,{descriptor:r,logger:n,schemas:o})=>{let u=[`Ignored unknown option ${Wt.default.yellow(r.pair({key:e,value:t}))}.`],i=Object.keys(o).sort().find(s=>Ht(e,s)<3);i&&u.push(`Did you mean ${Wt.default.blue(r.key(i))}?`),n.warn(u.join(" "))};var standalone_Fo=["default","expected","validate","deprecated","forward","redirect","overlap","preprocess","postprocess"];function mo(e,t){let r=new e(t),n=Object.create(r);for(let o of standalone_Fo)o in t&&(n[o]=Eo(t[o],r,O.prototype[o].length));return n}var O=class{static create(t){return mo(this,t)}constructor(t){this.name=t.name}default(t){}expected(t){return"nothing"}validate(t,r){return!1}deprecated(t,r){return!1}forward(t,r){}redirect(t,r){}overlap(t,r,n){return t}preprocess(t,r){return t}postprocess(t,r){return he}};function Eo(e,t,r){return typeof e=="function"?(...n)=>e(...n.slice(0,r-1),t,...n.slice(r-1)):()=>e}var standalone_Dt=class extends O{constructor(t){super(t),this._sourceName=t.sourceName}expected(t){return t.schemas[this._sourceName].expected(t)}validate(t,r){return r.schemas[this._sourceName].validate(t,r)}redirect(t,r){return this._sourceName}};var lt=class extends O{expected(){return"anything"}validate(){return!0}};var ct=class extends O{constructor({valueSchema:t,name:r=t.name,...n}){super({...n,name:r}),this._valueSchema=t}expected(t){let{text:r,list:n}=t.normalizeExpectedResult(this._valueSchema.expected(t));return{text:r&&`an array of ${r}`,list:n&&{title:"an array of the following values",values:[{list:n}]}}}validate(t,r){if(!Array.isArray(t))return!1;let n=[];for(let o of t){let u=r.normalizeValidateResult(this._valueSchema.validate(o,r),o);u!==!0&&n.push(u.value)}return n.length===0?!0:{value:n}}deprecated(t,r){let n=[];for(let o of t){let u=r.normalizeDeprecatedResult(this._valueSchema.deprecated(o,r),o);u!==!1&&n.push(...u.map(({value:i})=>({value:[i]})))}return n}forward(t,r){let n=[];for(let o of t){let u=r.normalizeForwardResult(this._valueSchema.forward(o,r),o);n.push(...u.map(Fn))}return n}redirect(t,r){let n=[],o=[];for(let u of t){let i=r.normalizeRedirectResult(this._valueSchema.redirect(u,r),u);"remain"in i&&n.push(i.remain),o.push(...i.redirect.map(Fn))}return n.length===0?{redirect:o}:{redirect:o,remain:n}}overlap(t,r){return t.concat(r)}};function Fn({from:e,to:t}){return{from:[e],to:t}}var standalone_ft=class extends O{expected(){return"true or false"}validate(t){return typeof t=="boolean"}};function En(e,t){let r=Object.create(null);for(let n of e){let o=n[t];if(r[o])throw new Error(`Duplicate ${t} ${JSON.stringify(o)}`);r[o]=n}return r}function hn(e,t){let r=new Map;for(let n of e){let o=n[t];if(r.has(o))throw new Error(`Duplicate ${t} ${JSON.stringify(o)}`);r.set(o,n)}return r}function Cn(){let e=Object.create(null);return t=>{let r=JSON.stringify(t);return e[r]?!0:(e[r]=!0,!1)}}function gn(e,t){let r=[],n=[];for(let o of e)t(o)?r.push(o):n.push(o);return[r,n]}function standalone_yn(e){return e===Math.floor(e)}function An(e,t){if(e===t)return 0;let r=typeof e,n=typeof t,o=["undefined","object","boolean","number","string"];return r!==n?o.indexOf(r)-o.indexOf(n):r!=="string"?Number(e)-Number(t):e.localeCompare(t)}function Bn(e){return(...t)=>{let r=e(...t);return typeof r=="string"?new Error(r):r}}function standalone_Mt(e){return e===void 0?{}:e}function standalone_$t(e){if(typeof e=="string")return{text:e};let{text:t,list:r}=e;return ho((t||r)!==void 0,"Unexpected `expected` result, there should be at least one field."),r?{text:t,list:{title:r.title,values:r.values.map(standalone_$t)}}:{text:t}}function Vt(e,t){return e===!0?!0:e===!1?{value:t}:e}function Ut(e,t,r=!1){return e===!1?!1:e===!0?r?!0:[{value:t}]:"value"in e?[e]:e.length===0?!1:e}function mn(e,t){return typeof e=="string"||"key"in e?{from:t,to:e}:"from"in e?{from:e.from,to:e.to}:{from:t,to:e.to}}function standalone_pt(e,t){return e===void 0?[]:Array.isArray(e)?e.map(r=>mn(r,t)):[mn(e,t)]}function zt(e,t){let r=standalone_pt(typeof e=="object"&&"redirect"in e?e.redirect:e,t);return r.length===0?{remain:t,redirect:r}:typeof e=="object"&&"remain"in e?{remain:e.remain,redirect:r}:{redirect:r}}function ho(e,t){if(!e)throw new Error(t)}var standalone_dt=class extends O{constructor(t){super(t),this._choices=hn(t.choices.map(r=>r&&typeof r=="object"?r:{value:r}),"value")}expected({descriptor:t}){let r=Array.from(this._choices.keys()).map(i=>this._choices.get(i)).filter(({hidden:i})=>!i).map(i=>i.value).sort(An).map(t.value),n=r.slice(0,-2),o=r.slice(-2);return{text:n.concat(o.join(" or ")).join(", "),list:{title:"one of the following values",values:r}}}validate(t){return this._choices.has(t)}deprecated(t){let r=this._choices.get(t);return r&&r.deprecated?{value:t}:!1}forward(t){let r=this._choices.get(t);return r?r.forward:void 0}redirect(t){let r=this._choices.get(t);return r?r.redirect:void 0}};var standalone_Ft=class extends O{expected(){return"a number"}validate(t,r){return typeof t=="number"}};var standalone_mt=class extends standalone_Ft{expected(){return"an integer"}validate(t,r){return r.normalizeValidateResult(super.validate(t,r),t)===!0&&standalone_yn(t)}};var standalone_Re=class extends O{expected(){return"a string"}validate(t){return typeof t=="string"}};var wn=ie,xn=at,_n=cn,vn=an;var standalone_Et=class{constructor(t,r){let{logger:n=console,loggerPrintWidth:o=80,descriptor:u=wn,unknown:i=xn,invalid:s=_n,deprecated:a=vn,missing:D=()=>!1,required:l=()=>!1,preprocess:d=p=>p,postprocess:f=()=>he}=r||{};this._utils={descriptor:u,logger:n||{warn:()=>{}},loggerPrintWidth:o,schemas:En(t,"name"),normalizeDefaultResult:standalone_Mt,normalizeExpectedResult:standalone_$t,normalizeDeprecatedResult:Ut,normalizeForwardResult:standalone_pt,normalizeRedirectResult:zt,normalizeValidateResult:Vt},this._unknownHandler=i,this._invalidHandler=Bn(s),this._deprecatedHandler=a,this._identifyMissing=(p,c)=>!(p in c)||D(p,c),this._identifyRequired=l,this._preprocess=d,this._postprocess=f,this.cleanHistory()}cleanHistory(){this._hasDeprecationWarned=Cn()}normalize(t){let r={},o=[this._preprocess(t,this._utils)],u=()=>{for(;o.length!==0;){let i=o.shift(),s=this._applyNormalization(i,r);o.push(...s)}};u();for(let i of Object.keys(this._utils.schemas)){let s=this._utils.schemas[i];if(!(i in r)){let a=standalone_Mt(s.default(this._utils));"value"in a&&o.push({[i]:a.value})}}u();for(let i of Object.keys(this._utils.schemas)){if(!(i in r))continue;let s=this._utils.schemas[i],a=r[i],D=s.postprocess(a,this._utils);D!==he&&(this._applyValidation(D,i,s),r[i]=D)}return this._applyPostprocess(r),this._applyRequiredCheck(r),r}_applyNormalization(t,r){let n=[],{knownKeys:o,unknownKeys:u}=this._partitionOptionKeys(t);for(let i of o){let s=this._utils.schemas[i],a=s.preprocess(t[i],this._utils);this._applyValidation(a,i,s);let D=({from:p,to:c})=>{n.push(typeof c=="string"?{[c]:p}:{[c.key]:c.value})},l=({value:p,redirectTo:c})=>{let F=Ut(s.deprecated(p,this._utils),a,!0);if(F!==!1)if(F===!0)this._hasDeprecationWarned(i)||this._utils.logger.warn(this._deprecatedHandler(i,c,this._utils));else for(let{value:m}of F){let E={key:i,value:m};if(!this._hasDeprecationWarned(E)){let A=typeof c=="string"?{key:c,value:m}:c;this._utils.logger.warn(this._deprecatedHandler(E,A,this._utils))}}};standalone_pt(s.forward(a,this._utils),a).forEach(D);let f=zt(s.redirect(a,this._utils),a);if(f.redirect.forEach(D),"remain"in f){let p=f.remain;r[i]=i in r?s.overlap(r[i],p,this._utils):p,l({value:p})}for(let{from:p,to:c}of f.redirect)l({value:p,redirectTo:c})}for(let i of u){let s=t[i];this._applyUnknownHandler(i,s,r,(a,D)=>{n.push({[a]:D})})}return n}_applyRequiredCheck(t){for(let r of Object.keys(this._utils.schemas))if(this._identifyMissing(r,t)&&this._identifyRequired(r))throw this._invalidHandler(r,st,this._utils)}_partitionOptionKeys(t){let[r,n]=gn(Object.keys(t).filter(o=>!this._identifyMissing(o,t)),o=>o in this._utils.schemas);return{knownKeys:r,unknownKeys:n}}_applyValidation(t,r,n){let o=Vt(n.validate(t,this._utils),t);if(o!==!0)throw this._invalidHandler(r,o.value,this._utils)}_applyUnknownHandler(t,r,n,o){let u=this._unknownHandler(t,r,this._utils);if(u)for(let i of Object.keys(u)){if(this._identifyMissing(i,u))continue;let s=u[i];i in this._utils.schemas?o(i,s):n[i]=s}}_applyPostprocess(t){let r=this._postprocess(t,this._utils);if(r!==he){if(r.delete)for(let n of r.delete)delete t[n];if(r.override){let{knownKeys:n,unknownKeys:o}=this._partitionOptionKeys(r.override);for(let u of n){let i=r.override[u];this._applyValidation(i,u,this._utils.schemas[u]),t[u]=i}for(let u of o){let i=r.override[u];this._applyUnknownHandler(u,i,t,(s,a)=>{let D=this._utils.schemas[s];this._applyValidation(a,s,D),t[s]=a})}}}}};var Gt;function go(e,t,{logger:r=!1,isCLI:n=!1,passThrough:o=!1,FlagSchema:u,descriptor:i}={}){if(n){if(!u)throw new Error("'FlagSchema' option is required.");if(!i)throw new Error("'descriptor' option is required.")}else i=ie;let s=o?Array.isArray(o)?(f,p)=>o.includes(f)?{[f]:p}:void 0:(f,p)=>({[f]:p}):(f,p,c)=>{let{_:F,...m}=c.schemas;return at(f,p,{...c,schemas:m})},a=standalone_yo(t,{isCLI:n,FlagSchema:u}),D=new standalone_Et(a,{logger:r,unknown:s,descriptor:i}),l=r!==!1;l&&Gt&&(D._hasDeprecationWarned=Gt);let d=D.normalize(e);return l&&(Gt=D._hasDeprecationWarned),d}function standalone_yo(e,{isCLI:t,FlagSchema:r}){let n=[];t&&n.push(lt.create({name:"_"}));for(let o of e)n.push(Ao(o,{isCLI:t,optionInfos:e,FlagSchema:r})),o.alias&&t&&n.push(standalone_Dt.create({name:o.alias,sourceName:o.name}));return n}function Ao(e,{isCLI:t,optionInfos:r,FlagSchema:n}){let{name:o}=e,u={name:o},i,s={};switch(e.type){case"int":i=standalone_mt,t&&(u.preprocess=Number);break;case"string":i=standalone_Re;break;case"choice":i=standalone_dt,u.choices=e.choices.map(a=>a!=null&&a.redirect?{...a,redirect:{to:{key:e.name,value:a.redirect}}}:a);break;case"boolean":i=standalone_ft;break;case"flag":i=n,u.flags=r.flatMap(a=>[a.alias,a.description&&a.name,a.oppositeDescription&&`no-${a.name}`].filter(Boolean));break;case"path":i=standalone_Re;break;default:throw new Error(`Unexpected type ${e.type}`)}if(e.exception?u.validate=(a,D,l)=>e.exception(a)||D.validate(a,l):u.validate=(a,D,l)=>a===void 0||D.validate(a,l),e.redirect&&(s.redirect=a=>a?{to:typeof e.redirect=="string"?e.redirect:{key:e.redirect.option,value:e.redirect.value}}:void 0),e.deprecated&&(s.deprecated=!0),t&&!e.array){let a=u.preprocess||(D=>D);u.preprocess=(D,l,d)=>l.preprocess(a(Array.isArray(D)?y(!1,D,-1):D),d)}return e.array?ct.create({...t?{preprocess:a=>Array.isArray(a)?a:[a]}:{},...s,valueSchema:i.create(u)}):i.create({...u,...s})}var bn=go;var standalone_Bo=(e,t,r)=>{if(!(e&&t==null)){if(t.findLast)return t.findLast(r);for(let n=t.length-1;n>=0;n--){let o=t[n];if(r(o,n,t))return o}}},Kt=standalone_Bo;function qt(e,t){if(!t)throw new Error("parserName is required.");let r=Kt(!1,e,o=>o.parsers&&Object.prototype.hasOwnProperty.call(o.parsers,t));if(r)return r;let n=`Couldn't resolve parser "${t}".`;throw n+=" Plugins must be explicitly added to the standalone bundle.",new standalone_Pe(n)}function standalone_On(e,t){if(!t)throw new Error("astFormat is required.");let r=Kt(!1,e,o=>o.printers&&Object.prototype.hasOwnProperty.call(o.printers,t));if(r)return r;let n=`Couldn't find plugin for AST format "${t}".`;throw n+=" Plugins must be explicitly added to the standalone bundle.",new standalone_Pe(n)}function standalone_ht({plugins:e,parser:t}){let r=qt(e,t);return Jt(r,t)}function Jt(e,t){let r=e.parsers[t];return typeof r=="function"?r():r}function standalone_Sn(e,t){let r=e.printers[t];return typeof r=="function"?r():r}var standalone_Nn={astFormat:"estree",printer:{},originalText:void 0,locStart:null,locEnd:null};async function wo(e,t={}){var d;let r={...e};if(!r.parser)if(r.filepath){if(r.parser=un(r,{physicalFile:r.filepath}),!r.parser)throw new standalone_Ie(`No parser could be inferred for file "${r.filepath}".`)}else throw new standalone_Ie("No parser and no file path given, couldn't infer a parser.");let n=ot({plugins:e.plugins,showDeprecated:!0}).options,o={...standalone_Nn,...Object.fromEntries(n.filter(f=>f.default!==void 0).map(f=>[f.name,f.default]))},u=qt(r.plugins,r.parser),i=await Jt(u,r.parser);r.astFormat=i.astFormat,r.locEnd=i.locEnd,r.locStart=i.locStart;let s=(d=u.printers)!=null&&d[i.astFormat]?u:standalone_On(r.plugins,i.astFormat),a=await standalone_Sn(s,i.astFormat);r.printer=a;let D=s.defaultOptions?Object.fromEntries(Object.entries(s.defaultOptions).filter(([,f])=>f!==void 0)):{},l={...o,...D};for(let[f,p]of Object.entries(l))(r[f]===null||r[f]===void 0)&&(r[f]=p);return r.parser==="json"&&(r.trailingComma="none"),bn(r,n,{passThrough:Object.keys(standalone_Nn),...t})}var standalone_se=wo;var standalone_Vn=standalone_Me(standalone_$n(),1);async function ko(e,t){let r=await standalone_ht(t),n=r.preprocess?r.preprocess(e,t):e;t.originalText=n;let o;try{o=await r.parse(n,t,t)}catch(u){Lo(u,e)}return{text:n,ast:o}}function Lo(e,t){let{loc:r}=e;if(r){let n=(0,standalone_Vn.codeFrameColumns)(t,r,{highlightCode:!0});throw e.message+=`
-`+n,e.codeFrame=n,e}throw e}var standalone_ce=ko;async function standalone_Un(e,t,r,n,o){let{embeddedLanguageFormatting:u,printer:{embed:i,hasPrettierIgnore:s=()=>!1,getVisitorKeys:a}}=r;if(!i||u!=="auto")return;if(i.length>2)throw new Error("printer.embed has too many parameters. The API changed in Prettier v3. Please update your plugin. See https://prettier.io/docs/en/plugins.html#optional-embed");let D=standalone_X(i.getVisitorKeys??a),l=[];p();let d=e.stack;for(let{print:c,node:F,pathStack:m}of l)try{e.stack=m;let E=await c(f,t,e,r);E&&o.set(F,E)}catch(E){if(globalThis.PRETTIER_DEBUG)throw E}e.stack=d;function f(c,F){return Po(c,F,r,n)}function p(){let{node:c}=e;if(c===null||typeof c!="object"||s(e))return;for(let m of D(c))Array.isArray(c[m])?e.each(p,m):e.call(p,m);let F=i(e,r);if(F){if(typeof F=="function"){l.push({print:F,node:c,pathStack:[...e.stack]});return}o.set(c,F)}}}async function Po(e,t,r,n){let o=await standalone_se({...r,...t,parentParser:r.parser,originalText:e},{passThrough:!0}),{ast:u}=await standalone_ce(e,o),i=await n(u,o);return standalone_Ze(i)}function Io(e,t){let{originalText:r,[Symbol.for("comments")]:n,locStart:o,locEnd:u,[Symbol.for("printedComments")]:i}=t,{node:s}=e,a=o(s),D=u(s);for(let l of n)o(l)>=a&&u(l)<=D&&i.add(l);return r.slice(a,D)}var standalone_zn=Io;async function Ye(e,t){({ast:e}=await standalone_Qt(e,t));let r=new Map,n=new Mr(e),o=standalone_tn(t),u=new Map;await standalone_Un(n,s,t,Ye,u);let i=await standalone_Gn(n,t,s,void 0,u);return en(t),i;function s(D,l){return D===void 0||D===n?a(l):Array.isArray(D)?n.call(()=>a(l),...D):n.call(()=>a(l),D)}function a(D){o(n);let l=n.node;if(l==null)return"";let d=l&&typeof l=="object"&&D===void 0;if(d&&r.has(l))return r.get(l);let f=standalone_Gn(n,t,s,D,u);return d&&r.set(l,f),f}}function standalone_Gn(e,t,r,n,o){var a;let{node:u}=e,{printer:i}=t,s;return(a=i.hasPrettierIgnore)!=null&&a.call(i,e)?s=standalone_zn(e,t):o.has(u)?s=o.get(u):s=i.print(e,t,r,n),u===t.cursorNode&&(s=Qe(s,D=>[standalone_ve,D,standalone_ve])),i.printComment&&(!i.willPrintOwnComments||!i.willPrintOwnComments(e,t))&&(s=Qr(e,s,t)),s}async function standalone_Qt(e,t){let r=e.comments??[];t[Symbol.for("comments")]=r,t[Symbol.for("tokens")]=e.tokens??[],t[Symbol.for("printedComments")]=new Set,Jr(e,t);let{printer:{preprocess:n}}=t;return e=n?await n(e,t):e,{ast:e,comments:r}}function Ro(e,t){let{cursorOffset:r,locStart:n,locEnd:o}=t,u=standalone_X(t.printer.getVisitorKeys),i=a=>n(a)<=r&&o(a)>=r,s=e;for(let a of Ur(e,{getVisitorKeys:u,filter:i}))s=a;return s}var standalone_Kn=Ro;function Yo(e,t){let{printer:{massageAstNode:r,getVisitorKeys:n}}=t;if(!r)return e;let o=standalone_X(n),u=r.ignoredProperties??new Set;return i(e);function i(s,a){if(!(s!==null&&typeof s=="object"))return s;if(Array.isArray(s))return s.map(f=>i(f,a)).filter(Boolean);let D={},l=new Set(o(s));for(let f in s)!Object.prototype.hasOwnProperty.call(s,f)||u.has(f)||(l.has(f)?D[f]=i(s[f],s):D[f]=s[f]);let d=r(s,D,a);if(d!==null)return d??D}}var qn=Yo;var jo=(e,t,r)=>{if(!(e&&t==null)){if(t.findLastIndex)return t.findLastIndex(r);for(let n=t.length-1;n>=0;n--){let o=t[n];if(r(o,n,t))return n}return-1}},standalone_Jn=jo;var Ho=({parser:e})=>e==="json"||e==="json5"||e==="jsonc"||e==="json-stringify";function Wo(e,t){let r=[e.node,...e.parentNodes],n=new Set([t.node,...t.parentNodes]);return r.find(o=>standalone_Qn.has(o.type)&&n.has(o))}function standalone_Xn(e){let t=standalone_Jn(!1,e,r=>r.type!=="Program"&&r.type!=="File");return t===-1?e:e.slice(0,t+1)}function standalone_Mo(e,t,{locStart:r,locEnd:n}){let o=e.node,u=t.node;if(o===u)return{startNode:o,endNode:u};let i=r(e.node);for(let a of standalone_Xn(t.parentNodes))if(r(a)>=i)u=a;else break;let s=n(t.node);for(let a of standalone_Xn(e.parentNodes)){if(n(a)<=s)o=a;else break;if(o===u)break}return{startNode:o,endNode:u}}function standalone_er(e,t,r,n,o=[],u){let{locStart:i,locEnd:s}=r,a=i(e),D=s(e);if(!(t>D||t<a||u==="rangeEnd"&&t===a||u==="rangeStart"&&t===D)){for(let l of ut(e,r)){let d=standalone_er(l,t,r,n,[e,...o],u);if(d)return d}if(!n||n(e,o[0]))return{node:e,parentNodes:o}}}function $o(e,t){return t!=="DeclareExportDeclaration"&&e!=="TypeParameterDeclaration"&&(e==="Directive"||e==="TypeAlias"||e==="TSExportAssignment"||e.startsWith("Declare")||e.startsWith("TSDeclare")||e.endsWith("Statement")||e.endsWith("Declaration"))}var standalone_Qn=new Set(["JsonRoot","ObjectExpression","ArrayExpression","StringLiteral","NumericLiteral","BooleanLiteral","NullLiteral","UnaryExpression","TemplateLiteral"]),standalone_Vo=new Set(["OperationDefinition","FragmentDefinition","VariableDefinition","TypeExtensionDefinition","ObjectTypeDefinition","FieldDefinition","DirectiveDefinition","EnumTypeDefinition","EnumValueDefinition","InputValueDefinition","InputObjectTypeDefinition","SchemaDefinition","OperationTypeDefinition","InterfaceTypeDefinition","UnionTypeDefinition","ScalarTypeDefinition"]);function standalone_Zn(e,t,r){if(!t)return!1;switch(e.parser){case"flow":case"babel":case"babel-flow":case"babel-ts":case"typescript":case"acorn":case"espree":case"meriyah":case"__babel_estree":return $o(t.type,r==null?void 0:r.type);case"json":case"json5":case"jsonc":case"json-stringify":return standalone_Qn.has(t.type);case"graphql":return standalone_Vo.has(t.kind);case"vue":return t.tag!=="root"}return!1}function eu(e,t,r){let{rangeStart:n,rangeEnd:o,locStart:u,locEnd:i}=t;ke.ok(o>n);let s=e.slice(n,o).search(/\S/u),a=s===-1;if(!a)for(n+=s;o>n&&!/\S/u.test(e[o-1]);--o);let D=standalone_er(r,n,t,(p,c)=>standalone_Zn(t,p,c),[],"rangeStart"),l=a?D:standalone_er(r,o,t,p=>standalone_Zn(t,p),[],"rangeEnd");if(!D||!l)return{rangeStart:0,rangeEnd:0};let d,f;if(Ho(t)){let p=Wo(D,l);d=p,f=p}else({startNode:d,endNode:f}=standalone_Mo(D,l,t));return{rangeStart:Math.min(u(d),u(f)),rangeEnd:Math.max(i(d),i(f))}}var standalone_uu="\uFEFF",tu=Symbol("cursor");async function standalone_ou(e,t,r=0){if(!e||e.trim().length===0)return{formatted:"",cursorOffset:-1,comments:[]};let{ast:n,text:o}=await standalone_ce(e,t);t.cursorOffset>=0&&(t.cursorNode=standalone_Kn(n,t));let u=await Ye(n,t,r);r>0&&(u=Je([q,u],r,t.tabWidth));let i=Fe(u,t);if(r>0){let a=i.formatted.trim();i.cursorNodeStart!==void 0&&(i.cursorNodeStart-=i.formatted.indexOf(a)),i.formatted=a+standalone_Be(t.endOfLine)}let s=t[Symbol.for("comments")];if(t.cursorOffset>=0){let a,D,l,d,f;if(t.cursorNode&&i.cursorNodeText?(a=t.locStart(t.cursorNode),D=o.slice(a,t.locEnd(t.cursorNode)),l=t.cursorOffset-a,d=i.cursorNodeStart,f=i.cursorNodeText):(a=0,D=o,l=t.cursorOffset,d=0,f=i.formatted),D===f)return{formatted:i.formatted,cursorOffset:d+l,comments:s};let p=D.split("");p.splice(l,0,tu);let c=f.split(""),F=dr(p,c),m=d;for(let E of F)if(E.removed){if(E.value.includes(tu))break}else m+=E.count;return{formatted:i.formatted,cursorOffset:m,comments:s}}return{formatted:i.formatted,cursorOffset:-1,comments:s}}async function Uo(e,t){let{ast:r,text:n}=await standalone_ce(e,t),{rangeStart:o,rangeEnd:u}=eu(n,t,r),i=n.slice(o,u),s=Math.min(o,n.lastIndexOf(`
-`,o)+1),a=n.slice(s,o).match(/^\s*/u)[0],D=me(a,t.tabWidth),l=await standalone_ou(i,{...t,rangeStart:0,rangeEnd:Number.POSITIVE_INFINITY,cursorOffset:t.cursorOffset>o&&t.cursorOffset<=u?t.cursorOffset-o:-1,endOfLine:"lf"},D),d=l.formatted.trimEnd(),{cursorOffset:f}=t;f>u?f+=d.length-i.length:l.cursorOffset>=0&&(f=l.cursorOffset+o);let p=n.slice(0,o)+d+n.slice(u);if(t.endOfLine!=="lf"){let c=standalone_Be(t.endOfLine);f>=0&&c===`\r
-`&&(f+=wt(p.slice(0,f),`
-`)),p=standalone_ne(!1,p,`
-`,c)}return{formatted:p,cursorOffset:f,comments:l.comments}}function standalone_tr(e,t,r){return typeof t!="number"||Number.isNaN(t)||t<0||t>e.length?r:t}function standalone_ru(e,t){let{cursorOffset:r,rangeStart:n,rangeEnd:o}=t;return r=standalone_tr(e,r,-1),n=standalone_tr(e,n,0),o=standalone_tr(e,o,e.length),{...t,cursorOffset:r,rangeStart:n,rangeEnd:o}}function iu(e,t){let{cursorOffset:r,rangeStart:n,rangeEnd:o,endOfLine:u}=standalone_ru(e,t),i=e.charAt(0)===standalone_uu;if(i&&(e=e.slice(1),r--,n--,o--),u==="auto"&&(u=Fr(e)),e.includes("\r")){let s=a=>wt(e.slice(0,Math.max(a,0)),`\r
-`);r-=s(r),n-=s(n),o-=s(o),e=mr(e)}return{hasBOM:i,text:e,options:standalone_ru(e,{...t,cursorOffset:r,rangeStart:n,rangeEnd:o,endOfLine:u})}}async function standalone_nu(e,t){let r=await standalone_ht(t);return!r.hasPragma||r.hasPragma(e)}async function standalone_rr(e,t){let{hasBOM:r,text:n,options:o}=iu(e,await standalone_se(t));if(o.rangeStart>=o.rangeEnd&&n!==""||o.requirePragma&&!await standalone_nu(n,o))return{formatted:e,cursorOffset:t.cursorOffset,comments:[]};let u;return o.rangeStart>0||o.rangeEnd<n.length?u=await Uo(n,o):(!o.requirePragma&&o.insertPragma&&o.printer.insertPragma&&!await standalone_nu(n,o)&&(n=o.printer.insertPragma(n)),u=await standalone_ou(n,o)),r&&(u.formatted=standalone_uu+u.formatted,u.cursorOffset>=0&&u.cursorOffset++),u}async function su(e,t,r){let{text:n,options:o}=iu(e,await standalone_se(t)),u=await standalone_ce(n,o);return r&&(r.preprocessForPrint&&(u.ast=await standalone_Qt(u.ast,o)),r.massage&&(u.ast=qn(u.ast,o))),u}async function standalone_au(e,t){t=await standalone_se(t);let r=await Ye(e,t);return Fe(r,t)}async function Du(e,t){let r=standalone_Or(e),{formatted:n}=await standalone_rr(r,{...t,parser:"__js_expression"});return n}async function standalone_lu(e,t){t=await standalone_se(t);let{ast:r}=await standalone_ce(e,t);return Ye(r,t)}async function cu(e,t){return Fe(e,await standalone_se(t))}var standalone_nr={};We(standalone_nr,{builders:()=>Go,printer:()=>Ko,utils:()=>qo});var Go={join:standalone_be,line:Ke,softline:vr,hardline:q,literalline:standalone_qe,group:_t,conditionalGroup:Ar,fill:Ge,lineSuffix:xe,lineSuffixBoundary:standalone_xr,cursor:standalone_ve,breakParent:de,ifBreak:standalone_Br,trim:standalone_r,indent:standalone_De,indentIfBreak:standalone_wr,align:ae,addAlignmentToDoc:Je,markAsRoot:gr,dedentToRoot:Cr,dedent:yr,hardlineWithoutBreakParent:standalone_e,literallineWithoutBreakParent:standalone_vt,label:br,concat:e=>e},Ko={printDocToString:Fe},qo={willBreak:standalone_Ir,traverseDoc:we,findInDoc:Xe,mapDoc:standalone_Ne,removeLines:Yr,stripTrailingHardline:standalone_Ze,replaceEndOfLine:jr,canBreak:standalone_Hr};var fu="3.3.3";var standalone_or={};We(standalone_or,{addDanglingComment:()=>standalone_re,addLeadingComment:()=>standalone_ue,addTrailingComment:()=>standalone_oe,getAlignmentSize:()=>me,getIndentSize:()=>standalone_pu,getMaxContinuousCount:()=>standalone_du,getNextNonSpaceNonCommentCharacter:()=>standalone_Fu,getNextNonSpaceNonCommentCharacterIndex:()=>standalone_si,getStringWidth:()=>standalone_Oe,hasNewline:()=>standalone_V,hasNewlineInRange:()=>mu,hasSpaces:()=>Eu,isNextLineEmpty:()=>standalone_ci,isNextLineEmptyAfterIndex:()=>standalone_gt,isPreviousLineEmpty:()=>standalone_Di,makeString:()=>hu,skip:()=>standalone_Ee,skipEverythingButNewLine:()=>nt,skipInlineComment:()=>standalone_Ce,skipNewline:()=>standalone_M,skipSpaces:()=>T,skipToLineEnd:()=>rt,skipTrailingComment:()=>standalone_ge,skipWhitespace:()=>zr});function Jo(e,t){if(t===!1)return!1;if(e.charAt(t)==="/"&&e.charAt(t+1)==="*"){for(let r=t+2;r<e.length;++r)if(e.charAt(r)==="*"&&e.charAt(r+1)==="/")return r+2}return t}var standalone_Ce=Jo;function Xo(e,t){return t===!1?!1:e.charAt(t)==="/"&&e.charAt(t+1)==="/"?nt(e,t):t}var standalone_ge=Xo;function Zo(e,t){let r=null,n=t;for(;n!==r;)r=n,n=T(e,n),n=standalone_Ce(e,n),n=standalone_ge(e,n),n=standalone_M(e,n);return n}var je=Zo;function standalone_Qo(e,t){let r=null,n=t;for(;n!==r;)r=n,n=rt(e,n),n=standalone_Ce(e,n),n=T(e,n);return n=standalone_ge(e,n),n=standalone_M(e,n),n!==!1&&standalone_V(e,n)}var standalone_gt=standalone_Qo;function standalone_ei(e,t){let r=e.lastIndexOf(`
-`);return r===-1?0:me(e.slice(r+1).match(/^[\t ]*/u)[0],t)}var standalone_pu=standalone_ei;function standalone_ur(e){if(typeof e!="string")throw new TypeError("Expected a string");return e.replace(/[|\\{}()[\]^$+*?.]/g,"\\$&").replace(/-/g,"\\x2d")}function standalone_ti(e,t){let r=e.match(new RegExp(`(${standalone_ur(t)})+`,"gu"));return r===null?0:r.reduce((n,o)=>Math.max(n,o.length/t.length),0)}var standalone_du=standalone_ti;function standalone_ri(e,t){let r=je(e,t);return r===!1?"":e.charAt(r)}var standalone_Fu=standalone_ri;function standalone_ni(e,t,r){for(let n=t;n<r;++n)if(e.charAt(n)===`
-`)return!0;return!1}var mu=standalone_ni;function standalone_ui(e,t,r={}){return T(e,r.backwards?t-1:t,r)!==t}var Eu=standalone_ui;function standalone_oi(e,t,r){let n=t==='"'?"'":'"',u=standalone_ne(!1,e,/\\(.)|(["'])/gsu,(i,s,a)=>s===n?s:a===t?"\\"+a:a||(r&&/^[^\n\r"'0-7\\bfnrt-vx\u2028\u2029]$/u.test(s)?s:"\\"+s));return t+u+t}var hu=standalone_oi;function standalone_ii(e,t,r){return je(e,r(t))}function standalone_si(e,t){return arguments.length===2||typeof t=="number"?je(e,t):standalone_ii(...arguments)}function standalone_ai(e,t,r){return standalone_Le(e,r(t))}function standalone_Di(e,t){return arguments.length===2||typeof t=="number"?standalone_Le(e,t):standalone_ai(...arguments)}function standalone_li(e,t,r){return standalone_gt(e,r(t))}function standalone_ci(e,t){return arguments.length===2||typeof t=="number"?standalone_gt(e,t):standalone_li(...arguments)}function standalone_fe(e,t=1){return async(...r)=>{let n=r[t]??{},o=n.plugins??[];return r[t]={...n,plugins:Array.isArray(o)?o:Object.values(o)},e(...r)}}var Cu=standalone_fe(standalone_rr);async function gu(e,t){let{formatted:r}=await Cu(e,{...t,cursorOffset:-1});return r}async function standalone_fi(e,t){return await gu(e,t)===e}var standalone_pi=standalone_fe(ot,0),standalone_di={parse:standalone_fe(su),formatAST:standalone_fe(standalone_au),formatDoc:standalone_fe(Du),printToDoc:standalone_fe(standalone_lu),printDocToString:standalone_fe(cu)};var fc=(/* unused pure expression or super */ null && (standalone_ir));
+The range will extend backwards to the start of the first line containing the selected statement.`,cliCategory:"Editor"},requirePragma:{category:"Special",type:"boolean",default:!1,description:"Require either '@prettier' or '@format' to be present in the file's first docblock comment in order for it to be formatted.",cliCategory:"Other"},tabWidth:{type:"int",category:"Global",default:2,description:"Number of spaces per indentation level.",range:{start:0,end:1/0,step:1}},useTabs:{category:"Global",type:"boolean",default:!1,description:"Indent with tabs instead of spaces."},embeddedLanguageFormatting:{category:"Global",type:"choice",default:"auto",description:"Control how Prettier formats quoted code embedded in the file.",choices:[{value:"auto",description:"Format embedded code if Prettier can automatically identify it."},{value:"off",description:"Never automatically format embedded code."}]}};function it({plugins:e=[],showDeprecated:t=!1}={}){let u=e.flatMap(o=>o.languages??[]),r=[];for(let o of Go(Object.assign({},...e.map(({options:n})=>n),standalone_Sr)))!t&&o.deprecated||(Array.isArray(o.choices)&&(t||(o.choices=o.choices.filter(n=>!n.deprecated)),o.name==="parser"&&(o.choices=[...o.choices,...Ko(o.choices,u,e)])),o.pluginDefaults=Object.fromEntries(e.filter(n=>n.defaultOptions?.[o.name]!==void 0).map(n=>[n.name,n.defaultOptions[o.name]])),r.push(o));return{languages:u,options:r}}function*Ko(e,t,u){let r=new Set(e.map(o=>o.value));for(let o of t)if(o.parsers){for(let n of o.parsers)if(!r.has(n)){r.add(n);let a=u.find(i=>i.parsers&&Object.prototype.hasOwnProperty.call(i.parsers,n)),s=o.name;a?.name&&(s+=` (plugin: ${a.name})`),yield{value:n,description:s}}}}function Go(e){let t=[];for(let[u,r]of Object.entries(e)){let o={name:u,...r};Array.isArray(o.default)&&(o.default=b(0,o.default,-1).value),t.push(o)}return t}var standalone_zo=Array.prototype.toReversed??function(){return[...this].reverse()},standalone_Jo=standalone_X("toReversed",function(){if(Array.isArray(this))return standalone_zo}),wr=standalone_Jo;function Ho(){let e=globalThis,t=e.Deno?.build?.os;return typeof t=="string"?t==="windows":e.navigator?.platform?.startsWith("Win")??e.process?.platform?.startsWith("win")??!1}var Xo=Ho();function standalone_Or(e){if(e=e instanceof URL?e:new URL(e),e.protocol!=="file:")throw new TypeError(`URL must be a file URL: received "${e.protocol}"`);return e}function qo(e){return e=standalone_Or(e),decodeURIComponent(e.pathname.replace(/%(?![0-9A-Fa-f]{2})/g,"%25"))}function Qo(e){e=standalone_Or(e);let t=decodeURIComponent(e.pathname.replace(/\//g,"\\").replace(/%(?![0-9A-Fa-f]{2})/g,"%25")).replace(/^\\*([A-Za-z]:)(\\|$)/,"$1\\");return e.hostname!==""&&(t=`\\\\${e.hostname}${t}`),t}function ru(e){return Xo?Qo(e):qo(e)}var standalone_Pr=e=>String(e).split(/[/\\]/u).pop(),standalone_Ir=e=>String(e).startsWith("file:");function kr(e,t){if(!t)return;let u=standalone_Pr(t).toLowerCase();return e.find(({filenames:r})=>r?.some(o=>o.toLowerCase()===u))??e.find(({extensions:r})=>r?.some(o=>u.endsWith(o)))}function Zo(e,t){if(t)return e.find(({name:u})=>u.toLowerCase()===t)??e.find(({aliases:u})=>u?.includes(t))??e.find(({extensions:u})=>u?.includes(`.${t}`))}var standalone_ea=void 0;function vr(e,t){if(t){if(standalone_Ir(t))try{t=ru(t)}catch{return}if(typeof t=="string")return e.find(({isSupported:u})=>u?.({filepath:t}))}}function ta(e,t){let u=wr(0,e.plugins).flatMap(o=>o.languages??[]);return(Zo(u,t.language)??kr(u,t.physicalFile)??kr(u,t.file)??vr(u,t.physicalFile)??vr(u,t.file)??standalone_ea?.(u,t.physicalFile))?.parsers[0]}var st=ta;var ie={key:e=>/^[$_a-zA-Z][$_a-zA-Z0-9]*$/.test(e)?e:JSON.stringify(e),value(e){if(e===null||typeof e!="object")return JSON.stringify(e);if(Array.isArray(e))return`[${e.map(u=>ie.value(u)).join(", ")}]`;let t=Object.keys(e);return t.length===0?"{}":`{ ${t.map(u=>`${ie.key(u)}: ${ie.value(e[u])}`).join(", ")} }`},pair:({key:e,value:t})=>ie.value({[e]:t})};var nu=new Proxy(String,{get:()=>nu}),standalone_$=nu,ou=()=>nu;var standalone_Rr=(e,t,{descriptor:u})=>{let r=[`${standalone_$.yellow(typeof e=="string"?u.key(e):u.pair(e))} is deprecated`];return t&&r.push(`we now treat it as ${standalone_$.blue(typeof t=="string"?u.key(t):u.pair(t))}`),r.join("; ")+"."};var Dt=Symbol.for("vnopts.VALUE_NOT_EXIST"),Ae=Symbol.for("vnopts.VALUE_UNCHANGED");var standalone_Lr=" ".repeat(2),standalone_Yr=(e,t,u)=>{let{text:r,list:o}=u.normalizeExpectedResult(u.schemas[e].expected(u)),n=[];return r&&n.push(standalone_Mr(e,t,r,u.descriptor)),o&&n.push([standalone_Mr(e,t,o.title,u.descriptor)].concat(o.values.map(a=>jr(a,u.loggerPrintWidth))).join(`
+`)),standalone_Ur(n,u.loggerPrintWidth)};function standalone_Mr(e,t,u,r){return[`Invalid ${standalone_$.red(r.key(e))} value.`,`Expected ${standalone_$.blue(u)},`,`but received ${t===Dt?standalone_$.gray("nothing"):standalone_$.red(r.value(t))}.`].join(" ")}function jr({text:e,list:t},u){let r=[];return e&&r.push(`- ${standalone_$.blue(e)}`),t&&r.push([`- ${standalone_$.blue(t.title)}:`].concat(t.values.map(o=>jr(o,u-standalone_Lr.length).replace(/^|\n/g,`$&${standalone_Lr}`))).join(`
+`)),standalone_Ur(r,u)}function standalone_Ur(e,t){if(e.length===1)return e[0];let[u,r]=e,[o,n]=e.map(a=>a.split(`
+`,1)[0].length);return o>t&&o>n?r:u}var standalone_e=[],au=[];function ct(e,t,u){if(e===t)return 0;let r=u?.maxDistance,o=e;e.length>t.length&&(e=t,t=o);let n=e.length,a=t.length;for(;n>0&&e.charCodeAt(~-n)===t.charCodeAt(~-a);)n--,a--;let s=0;for(;s<n&&e.charCodeAt(s)===t.charCodeAt(s);)s++;if(n-=s,a-=s,r!==void 0&&a-n>r)return r;if(n===0)return r!==void 0&&a>r?r:a;let i,D,f,l,d=0,c=0;for(;d<n;)au[d]=e.charCodeAt(s+d),standalone_e[d]=++d;for(;c<a;){for(i=t.charCodeAt(s+c),f=c++,D=c,d=0;d<n;d++)l=i===au[d]?f:f+1,f=standalone_e[d],D=standalone_e[d]=f>D?l>D?D+1:l:l>f?f+1:l;if(r!==void 0){let p=D;for(d=0;d<n;d++)standalone_e[d]<p&&(p=standalone_e[d]);if(p>r)return r}}return standalone_e.length=n,au.length=n,r!==void 0&&D>r?r:D}function Wr(e,t,u){if(!Array.isArray(t)||t.length===0)return;let r=u?.maxDistance,o=e.length;for(let i of t)if(i===e)return i;if(r===0)return;let n,a=Number.POSITIVE_INFINITY,s=new Set;for(let i of t){if(s.has(i))continue;s.add(i);let D=Math.abs(i.length-o);if(D>=a||r!==void 0&&D>r)continue;let f=Number.isFinite(a)?r===void 0?a:Math.min(a,r):r,l=f===void 0?ct(e,i):ct(e,i,{maxDistance:f});if(r!==void 0&&l>r)continue;let d=l;if(f!==void 0&&l===f&&f===r&&(d=ct(e,i)),d<a&&(a=d,n=i,a===0))break}if(!(r!==void 0&&a>r))return n}var ft=(e,t,{descriptor:u,logger:r,schemas:o})=>{let n=[`Ignored unknown option ${standalone_$.yellow(u.pair({key:e,value:t}))}.`],a=Wr(e,Object.keys(o),{maxDistance:3});a&&n.push(`Did you mean ${standalone_$.blue(u.key(a))}?`),r.warn(n.join(" "))};var standalone_ua=["default","expected","validate","deprecated","forward","redirect","overlap","preprocess","postprocess"];function ra(e,t){let u=new e(t),r=Object.create(u);for(let o of standalone_ua)o in t&&(r[o]=standalone_na(t[o],u,S.prototype[o].length));return r}var S=class{static create(t){return ra(this,t)}constructor(t){this.name=t.name}default(t){}expected(t){return"nothing"}validate(t,u){return!1}deprecated(t,u){return!1}forward(t,u){}redirect(t,u){}overlap(t,u,r){return t}preprocess(t,u){return t}postprocess(t,u){return Ae}};function standalone_na(e,t,u){return typeof e=="function"?(...r)=>e(...r.slice(0,u-1),t,...r.slice(u-1)):()=>e}var lt=class extends S{constructor(t){super(t),this._sourceName=t.sourceName}expected(t){return t.schemas[this._sourceName].expected(t)}validate(t,u){return u.schemas[this._sourceName].validate(t,u)}redirect(t,u){return this._sourceName}};var dt=class extends S{expected(){return"anything"}validate(){return!0}};var pt=class extends S{constructor({valueSchema:t,name:u=t.name,...r}){super({...r,name:u}),this._valueSchema=t}expected(t){let{text:u,list:r}=t.normalizeExpectedResult(this._valueSchema.expected(t));return{text:u&&`an array of ${u}`,list:r&&{title:"an array of the following values",values:[{list:r}]}}}validate(t,u){if(!Array.isArray(t))return!1;let r=[];for(let o of t){let n=u.normalizeValidateResult(this._valueSchema.validate(o,u),o);n!==!0&&r.push(n.value)}return r.length===0?!0:{value:r}}deprecated(t,u){let r=[];for(let o of t){let n=u.normalizeDeprecatedResult(this._valueSchema.deprecated(o,u),o);n!==!1&&r.push(...n.map(({value:a})=>({value:[a]})))}return r}forward(t,u){let r=[];for(let o of t){let n=u.normalizeForwardResult(this._valueSchema.forward(o,u),o);r.push(...n.map($r))}return r}redirect(t,u){let r=[],o=[];for(let n of t){let a=u.normalizeRedirectResult(this._valueSchema.redirect(n,u),n);"remain"in a&&r.push(a.remain),o.push(...a.redirect.map($r))}return r.length===0?{redirect:o}:{redirect:o,remain:r}}overlap(t,u){return t.concat(u)}};function $r({from:e,to:t}){return{from:[e],to:t}}var standalone_Ft=class extends S{expected(){return"true or false"}validate(t){return typeof t=="boolean"}};function Kr(e,t){let u=Object.create(null);for(let r of e){let o=r[t];if(u[o])throw new Error(`Duplicate ${t} ${JSON.stringify(o)}`);u[o]=r}return u}function standalone_Gr(e,t){let u=new Map;for(let r of e){let o=r[t];if(u.has(o))throw new Error(`Duplicate ${t} ${JSON.stringify(o)}`);u.set(o,r)}return u}function standalone_zr(){let e=Object.create(null);return t=>{let u=JSON.stringify(t);return e[u]?!0:(e[u]=!0,!1)}}function Jr(e,t){let u=[],r=[];for(let o of e)t(o)?u.push(o):r.push(o);return[u,r]}function Hr(e){return e===Math.floor(e)}function Xr(e,t){if(e===t)return 0;let u=typeof e,r=typeof t,o=["undefined","object","boolean","number","string"];return u!==r?o.indexOf(u)-o.indexOf(r):u!=="string"?Number(e)-Number(t):e.localeCompare(t)}function standalone_qr(e){return(...t)=>{let u=e(...t);return typeof u=="string"?new Error(u):u}}function iu(e){return e===void 0?{}:e}function su(e){if(typeof e=="string")return{text:e};let{text:t,list:u}=e;return oa((t||u)!==void 0,"Unexpected `expected` result, there should be at least one field."),u?{text:t,list:{title:u.title,values:u.values.map(su)}}:{text:t}}function standalone_Du(e,t){return e===!0?!0:e===!1?{value:t}:e}function cu(e,t,u=!1){return e===!1?!1:e===!0?u?!0:[{value:t}]:"value"in e?[e]:e.length===0?!1:e}function Vr(e,t){return typeof e=="string"||"key"in e?{from:t,to:e}:"from"in e?{from:e.from,to:e.to}:{from:t,to:e.to}}function mt(e,t){return e===void 0?[]:Array.isArray(e)?e.map(u=>Vr(u,t)):[Vr(e,t)]}function fu(e,t){let u=mt(typeof e=="object"&&"redirect"in e?e.redirect:e,t);return u.length===0?{remain:t,redirect:u}:typeof e=="object"&&"remain"in e?{remain:e.remain,redirect:u}:{redirect:u}}function oa(e,t){if(!e)throw new Error(t)}var standalone_Et=class extends S{constructor(t){super(t),this._choices=standalone_Gr(t.choices.map(u=>u&&typeof u=="object"?u:{value:u}),"value")}expected({descriptor:t}){let u=Array.from(this._choices.keys()).map(a=>this._choices.get(a)).filter(({hidden:a})=>!a).map(a=>a.value).sort(Xr).map(t.value),r=u.slice(0,-2),o=u.slice(-2);return{text:r.concat(o.join(" or ")).join(", "),list:{title:"one of the following values",values:u}}}validate(t){return this._choices.has(t)}deprecated(t){let u=this._choices.get(t);return u&&u.deprecated?{value:t}:!1}forward(t){let u=this._choices.get(t);return u?u.forward:void 0}redirect(t){let u=this._choices.get(t);return u?u.redirect:void 0}};var standalone_Ct=class extends S{expected(){return"a number"}validate(t,u){return typeof t=="number"}};var ht=class extends standalone_Ct{expected(){return"an integer"}validate(t,u){return u.normalizeValidateResult(super.validate(t,u),t)===!0&&Hr(t)}};var je=class extends S{expected(){return"a string"}validate(t){return typeof t=="string"}};var Qr=ie,standalone_Zr=ft,en=standalone_Yr,tn=standalone_Rr;var standalone_gt=class{constructor(t,u){let{logger:r=console,loggerPrintWidth:o=80,descriptor:n=Qr,unknown:a=standalone_Zr,invalid:s=en,deprecated:i=tn,missing:D=()=>!1,required:f=()=>!1,preprocess:l=c=>c,postprocess:d=()=>Ae}=u||{};this._utils={descriptor:n,logger:r||{warn:()=>{}},loggerPrintWidth:o,schemas:Kr(t,"name"),normalizeDefaultResult:iu,normalizeExpectedResult:su,normalizeDeprecatedResult:cu,normalizeForwardResult:mt,normalizeRedirectResult:fu,normalizeValidateResult:standalone_Du},this._unknownHandler=a,this._invalidHandler=standalone_qr(s),this._deprecatedHandler=i,this._identifyMissing=(c,p)=>!(c in p)||D(c,p),this._identifyRequired=f,this._preprocess=l,this._postprocess=d,this.cleanHistory()}cleanHistory(){this._hasDeprecationWarned=standalone_zr()}normalize(t){let u={},o=[this._preprocess(t,this._utils)],n=()=>{for(;o.length!==0;){let a=o.shift(),s=this._applyNormalization(a,u);o.push(...s)}};n();for(let a of Object.keys(this._utils.schemas)){let s=this._utils.schemas[a];if(!(a in u)){let i=iu(s.default(this._utils));"value"in i&&o.push({[a]:i.value})}}n();for(let a of Object.keys(this._utils.schemas)){if(!(a in u))continue;let s=this._utils.schemas[a],i=u[a],D=s.postprocess(i,this._utils);D!==Ae&&(this._applyValidation(D,a,s),u[a]=D)}return this._applyPostprocess(u),this._applyRequiredCheck(u),u}_applyNormalization(t,u){let r=[],{knownKeys:o,unknownKeys:n}=this._partitionOptionKeys(t);for(let a of o){let s=this._utils.schemas[a],i=s.preprocess(t[a],this._utils);this._applyValidation(i,a,s);let D=({from:c,to:p})=>{r.push(typeof p=="string"?{[p]:c}:{[p.key]:p.value})},f=({value:c,redirectTo:p})=>{let F=cu(s.deprecated(c,this._utils),i,!0);if(F!==!1)if(F===!0)this._hasDeprecationWarned(a)||this._utils.logger.warn(this._deprecatedHandler(a,p,this._utils));else for(let{value:C}of F){let y={key:a,value:C};if(!this._hasDeprecationWarned(y)){let m=typeof p=="string"?{key:p,value:C}:p;this._utils.logger.warn(this._deprecatedHandler(y,m,this._utils))}}};mt(s.forward(i,this._utils),i).forEach(D);let d=fu(s.redirect(i,this._utils),i);if(d.redirect.forEach(D),"remain"in d){let c=d.remain;u[a]=a in u?s.overlap(u[a],c,this._utils):c,f({value:c})}for(let{from:c,to:p}of d.redirect)f({value:c,redirectTo:p})}for(let a of n){let s=t[a];this._applyUnknownHandler(a,s,u,(i,D)=>{r.push({[i]:D})})}return r}_applyRequiredCheck(t){for(let u of Object.keys(this._utils.schemas))if(this._identifyMissing(u,t)&&this._identifyRequired(u))throw this._invalidHandler(u,Dt,this._utils)}_partitionOptionKeys(t){let[u,r]=Jr(Object.keys(t).filter(o=>!this._identifyMissing(o,t)),o=>o in this._utils.schemas);return{knownKeys:u,unknownKeys:r}}_applyValidation(t,u,r){let o=standalone_Du(r.validate(t,this._utils),t);if(o!==!0)throw this._invalidHandler(u,o.value,this._utils)}_applyUnknownHandler(t,u,r,o){let n=this._unknownHandler(t,u,this._utils);if(n)for(let a of Object.keys(n)){if(this._identifyMissing(a,n))continue;let s=n[a];a in this._utils.schemas?o(a,s):r[a]=s}}_applyPostprocess(t){let u=this._postprocess(t,this._utils);if(u!==Ae){if(u.delete)for(let r of u.delete)delete t[r];if(u.override){let{knownKeys:r,unknownKeys:o}=this._partitionOptionKeys(u.override);for(let n of r){let a=u.override[n];this._applyValidation(a,n,this._utils.schemas[n]),t[n]=a}for(let n of o){let a=u.override[n];this._applyUnknownHandler(n,a,t,(s,i)=>{let D=this._utils.schemas[s];this._applyValidation(i,s,D),t[s]=i})}}}}};var standalone_lu;function ia(e,t,{logger:u=!1,isCLI:r=!1,passThrough:o=!1,FlagSchema:n,descriptor:a}={}){if(r){if(!n)throw new Error("'FlagSchema' option is required.");if(!a)throw new Error("'descriptor' option is required.")}else a=ie;let s=o?Array.isArray(o)?(d,c)=>o.includes(d)?{[d]:c}:void 0:(d,c)=>({[d]:c}):(d,c,p)=>{let{_:F,...C}=p.schemas;return ft(d,c,{...p,schemas:C})},i=standalone_sa(t,{isCLI:r,FlagSchema:n}),D=new standalone_gt(i,{logger:u,unknown:s,descriptor:a}),f=u!==!1;f&&standalone_lu&&(D._hasDeprecationWarned=standalone_lu);let l=D.normalize(e);return f&&(standalone_lu=D._hasDeprecationWarned),l}function standalone_sa(e,{isCLI:t,FlagSchema:u}){let r=[];t&&r.push(dt.create({name:"_"}));for(let o of e)r.push(Da(o,{isCLI:t,optionInfos:e,FlagSchema:u})),o.alias&&t&&r.push(lt.create({name:o.alias,sourceName:o.name}));return r}function Da(e,{isCLI:t,optionInfos:u,FlagSchema:r}){let{name:o}=e,n={name:o},a,s={};switch(e.type){case"int":a=ht,t&&(n.preprocess=Number);break;case"string":a=je;break;case"choice":a=standalone_Et,n.choices=e.choices.map(i=>i?.redirect?{...i,redirect:{to:{key:e.name,value:i.redirect}}}:i);break;case"boolean":a=standalone_Ft;break;case"flag":a=r,n.flags=u.flatMap(i=>[i.alias,i.description&&i.name,i.oppositeDescription&&`no-${i.name}`].filter(Boolean));break;case"path":a=je;break;default:throw new Error(`Unexpected type ${e.type}`)}if(e.exception?n.validate=(i,D,f)=>e.exception(i)||D.validate(i,f):n.validate=(i,D,f)=>i===void 0||D.validate(i,f),e.redirect&&(s.redirect=i=>i?{to:typeof e.redirect=="string"?e.redirect:{key:e.redirect.option,value:e.redirect.value}}:void 0),e.deprecated&&(s.deprecated=!0),t&&!e.array){let i=n.preprocess||(D=>D);n.preprocess=(D,f,l)=>f.preprocess(i(Array.isArray(D)?b(0,D,-1):D),l)}return e.array?pt.create({...t?{preprocess:i=>Array.isArray(i)?i:[i]}:{},...s,valueSchema:a.create(n)}):a.create({...n,...s})}var un=ia;var ca=Array.prototype.findLast??function(e){for(let t=this.length-1;t>=0;t--){let u=this[t];if(e(u,t,this))return u}},standalone_fa=standalone_X("findLast",function(){if(Array.isArray(this))return ca}),du=standalone_fa;var rn=Symbol.for("PRETTIER_IS_FRONT_MATTER"),pu=[];function la(e){return!!e?.[rn]}var standalone_de=la;var standalone_nn=new Set(["yaml","toml"]),standalone_Ue=({node:e})=>standalone_de(e)&&standalone_nn.has(e.language);async function standalone_Fu(e,t,u,r){let{node:o}=u,{language:n}=o;if(!standalone_nn.has(n))return;let a=o.value.trim(),s;if(a){let i=n==="yaml"?n:st(r,{language:n});if(!i)return;s=a?await e(a,{parser:i}):""}else s=a;return et([o.startDelimiter,o.explicitLanguage??"",standalone_V,s,s?standalone_V:"",o.endDelimiter])}function da(e,t){return standalone_Ue({node:e})&&(delete t.end,delete t.raw,delete t.value),t}var mu=da;function standalone_pa({node:e}){return e.raw}var standalone_Eu=standalone_pa;var on=new Set(["tokens","comments","parent","enclosingNode","precedingNode","followingNode"]),standalone_Fa=e=>Object.keys(e).filter(t=>!on.has(t));function ma(e,t){let u=e?r=>e(r,on):standalone_Fa;return t?new Proxy(u,{apply:(r,o,n)=>standalone_de(n[0])?pu:Reflect.apply(r,o,n)}):u}var Cu=ma;function gu(e,t){if(!t)throw new Error("parserName is required.");let u=du(0,e,o=>o.parsers&&Object.prototype.hasOwnProperty.call(o.parsers,t));if(u)return u;let r=`Couldn't resolve parser "${t}".`;throw r+=" Plugins must be explicitly added to the standalone bundle.",new standalone_Me(r)}function an(e,t){if(!t)throw new Error("astFormat is required.");let u=du(0,e,o=>o.printers&&Object.prototype.hasOwnProperty.call(o.printers,t));if(u)return u;let r=`Couldn't find plugin for AST format "${t}".`;throw r+=" Plugins must be explicitly added to the standalone bundle.",new standalone_Me(r)}function standalone_We({plugins:e,parser:t}){let u=gu(e,t);return standalone_yu(u,t)}function standalone_yu(e,t){let u=e.parsers[t];return typeof u=="function"?u():u}async function sn(e,t){let u=e.printers[t],r=typeof u=="function"?await u():u;return standalone_Ea(r)}var standalone_hu=new WeakMap,q0=Symbol("PRINTER_NORMALIZED_MARK");function standalone_Ea(e){if(standalone_hu.has(e))return standalone_hu.get(e);let{features:t,getVisitorKeys:u,embed:r,massageAstNode:o,print:n,...a}=e;t=ya(t);let s=t.experimental_frontMatterSupport;u=Cu(u,s.massageAstNode||s.embed||s.print);let i=o;o&&s.massageAstNode&&(i=new Proxy(o,{apply(d,c,p){return mu(...p),Reflect.apply(d,c,p)}}));let D=r;if(r){let d;D=new Proxy(r,{get(c,p,F){return p==="getVisitorKeys"?(d??(d=r.getVisitorKeys?Cu(r.getVisitorKeys,s.massageAstNode||s.embed):u),d):Reflect.get(c,p,F)},apply:(c,p,F)=>s.embed&&standalone_Ue(...F)?standalone_Fu:Reflect.apply(c,p,F)})}let f=n;s.print&&(f=new Proxy(n,{apply(d,c,p){let[F]=p;return standalone_de(F.node)?standalone_Eu(F):Reflect.apply(d,c,p)}}));let l={features:t,getVisitorKeys:u,embed:D,massageAstNode:i,print:f,...a};return standalone_hu.set(e,l),l}var Ca=["clean","embed","print"],ha=Object.fromEntries(Ca.map(e=>[e,!1]));function ga(e){return{...ha,...e}}function ya(e){return{experimental_avoidAstMutation:!1,...e,experimental_frontMatterSupport:ga(e?.experimental_frontMatterSupport)}}var Dn={astFormat:"estree",printer:{},originalText:void 0,locStart:null,locEnd:null,getVisitorKeys:null};async function ba(e,t={}){let u={...e};if(!u.parser)if(u.filepath){if(u.parser=st(u,{physicalFile:u.filepath}),!u.parser)throw new standalone_Ye(`No parser could be inferred for file "${u.filepath}".`)}else throw new standalone_Ye("No parser and no file path given, couldn't infer a parser.");let r=it({plugins:e.plugins,showDeprecated:!0}).options,o={...Dn,...Object.fromEntries(r.filter(l=>l.default!==void 0).map(l=>[l.name,l.default]))},n=gu(u.plugins,u.parser),a=await standalone_yu(n,u.parser);u.astFormat=a.astFormat,u.locEnd=a.locEnd,u.locStart=a.locStart;let s=n.printers?.[a.astFormat]?n:an(u.plugins,a.astFormat),i=await sn(s,a.astFormat);u.printer=i,u.getVisitorKeys=i.getVisitorKeys;let D=s.defaultOptions?Object.fromEntries(Object.entries(s.defaultOptions).filter(([,l])=>l!==void 0)):{},f={...o,...D};for(let[l,d]of Object.entries(f))(u[l]===null||u[l]===void 0)&&(u[l]=d);return u.parser==="json"&&(u.trailingComma="none"),un(u,r,{passThrough:Object.keys(Dn),...t})}var standalone_se=ba;var standalone_pf=ao(dn(),1);var Au="\xAA\xB5\xBA\xC0-\xD6\xD8-\xF6\xF8-\u02C1\u02C6-\u02D1\u02E0-\u02E4\u02EC\u02EE\u0370-\u0374\u0376\u0377\u037A-\u037D\u037F\u0386\u0388-\u038A\u038C\u038E-\u03A1\u03A3-\u03F5\u03F7-\u0481\u048A-\u052F\u0531-\u0556\u0559\u0560-\u0588\u05D0-\u05EA\u05EF-\u05F2\u0620-\u064A\u066E\u066F\u0671-\u06D3\u06D5\u06E5\u06E6\u06EE\u06EF\u06FA-\u06FC\u06FF\u0710\u0712-\u072F\u074D-\u07A5\u07B1\u07CA-\u07EA\u07F4\u07F5\u07FA\u0800-\u0815\u081A\u0824\u0828\u0840-\u0858\u0860-\u086A\u0870-\u0887\u0889-\u088F\u08A0-\u08C9\u0904-\u0939\u093D\u0950\u0958-\u0961\u0971-\u0980\u0985-\u098C\u098F\u0990\u0993-\u09A8\u09AA-\u09B0\u09B2\u09B6-\u09B9\u09BD\u09CE\u09DC\u09DD\u09DF-\u09E1\u09F0\u09F1\u09FC\u0A05-\u0A0A\u0A0F\u0A10\u0A13-\u0A28\u0A2A-\u0A30\u0A32\u0A33\u0A35\u0A36\u0A38\u0A39\u0A59-\u0A5C\u0A5E\u0A72-\u0A74\u0A85-\u0A8D\u0A8F-\u0A91\u0A93-\u0AA8\u0AAA-\u0AB0\u0AB2\u0AB3\u0AB5-\u0AB9\u0ABD\u0AD0\u0AE0\u0AE1\u0AF9\u0B05-\u0B0C\u0B0F\u0B10\u0B13-\u0B28\u0B2A-\u0B30\u0B32\u0B33\u0B35-\u0B39\u0B3D\u0B5C\u0B5D\u0B5F-\u0B61\u0B71\u0B83\u0B85-\u0B8A\u0B8E-\u0B90\u0B92-\u0B95\u0B99\u0B9A\u0B9C\u0B9E\u0B9F\u0BA3\u0BA4\u0BA8-\u0BAA\u0BAE-\u0BB9\u0BD0\u0C05-\u0C0C\u0C0E-\u0C10\u0C12-\u0C28\u0C2A-\u0C39\u0C3D\u0C58-\u0C5A\u0C5C\u0C5D\u0C60\u0C61\u0C80\u0C85-\u0C8C\u0C8E-\u0C90\u0C92-\u0CA8\u0CAA-\u0CB3\u0CB5-\u0CB9\u0CBD\u0CDC-\u0CDE\u0CE0\u0CE1\u0CF1\u0CF2\u0D04-\u0D0C\u0D0E-\u0D10\u0D12-\u0D3A\u0D3D\u0D4E\u0D54-\u0D56\u0D5F-\u0D61\u0D7A-\u0D7F\u0D85-\u0D96\u0D9A-\u0DB1\u0DB3-\u0DBB\u0DBD\u0DC0-\u0DC6\u0E01-\u0E30\u0E32\u0E33\u0E40-\u0E46\u0E81\u0E82\u0E84\u0E86-\u0E8A\u0E8C-\u0EA3\u0EA5\u0EA7-\u0EB0\u0EB2\u0EB3\u0EBD\u0EC0-\u0EC4\u0EC6\u0EDC-\u0EDF\u0F00\u0F40-\u0F47\u0F49-\u0F6C\u0F88-\u0F8C\u1000-\u102A\u103F\u1050-\u1055\u105A-\u105D\u1061\u1065\u1066\u106E-\u1070\u1075-\u1081\u108E\u10A0-\u10C5\u10C7\u10CD\u10D0-\u10FA\u10FC-\u1248\u124A-\u124D\u1250-\u1256\u1258\u125A-\u125D\u1260-\u1288\u128A-\u128D\u1290-\u12B0\u12B2-\u12B5\u12B8-\u12BE\u12C0\u12C2-\u12C5\u12C8-\u12D6\u12D8-\u1310\u1312-\u1315\u1318-\u135A\u1380-\u138F\u13A0-\u13F5\u13F8-\u13FD\u1401-\u166C\u166F-\u167F\u1681-\u169A\u16A0-\u16EA\u16EE-\u16F8\u1700-\u1711\u171F-\u1731\u1740-\u1751\u1760-\u176C\u176E-\u1770\u1780-\u17B3\u17D7\u17DC\u1820-\u1878\u1880-\u18A8\u18AA\u18B0-\u18F5\u1900-\u191E\u1950-\u196D\u1970-\u1974\u1980-\u19AB\u19B0-\u19C9\u1A00-\u1A16\u1A20-\u1A54\u1AA7\u1B05-\u1B33\u1B45-\u1B4C\u1B83-\u1BA0\u1BAE\u1BAF\u1BBA-\u1BE5\u1C00-\u1C23\u1C4D-\u1C4F\u1C5A-\u1C7D\u1C80-\u1C8A\u1C90-\u1CBA\u1CBD-\u1CBF\u1CE9-\u1CEC\u1CEE-\u1CF3\u1CF5\u1CF6\u1CFA\u1D00-\u1DBF\u1E00-\u1F15\u1F18-\u1F1D\u1F20-\u1F45\u1F48-\u1F4D\u1F50-\u1F57\u1F59\u1F5B\u1F5D\u1F5F-\u1F7D\u1F80-\u1FB4\u1FB6-\u1FBC\u1FBE\u1FC2-\u1FC4\u1FC6-\u1FCC\u1FD0-\u1FD3\u1FD6-\u1FDB\u1FE0-\u1FEC\u1FF2-\u1FF4\u1FF6-\u1FFC\u2071\u207F\u2090-\u209C\u2102\u2107\u210A-\u2113\u2115\u2118-\u211D\u2124\u2126\u2128\u212A-\u2139\u213C-\u213F\u2145-\u2149\u214E\u2160-\u2188\u2C00-\u2CE4\u2CEB-\u2CEE\u2CF2\u2CF3\u2D00-\u2D25\u2D27\u2D2D\u2D30-\u2D67\u2D6F\u2D80-\u2D96\u2DA0-\u2DA6\u2DA8-\u2DAE\u2DB0-\u2DB6\u2DB8-\u2DBE\u2DC0-\u2DC6\u2DC8-\u2DCE\u2DD0-\u2DD6\u2DD8-\u2DDE\u3005-\u3007\u3021-\u3029\u3031-\u3035\u3038-\u303C\u3041-\u3096\u309B-\u309F\u30A1-\u30FA\u30FC-\u30FF\u3105-\u312F\u3131-\u318E\u31A0-\u31BF\u31F0-\u31FF\u3400-\u4DBF\u4E00-\uA48C\uA4D0-\uA4FD\uA500-\uA60C\uA610-\uA61F\uA62A\uA62B\uA640-\uA66E\uA67F-\uA69D\uA6A0-\uA6EF\uA717-\uA71F\uA722-\uA788\uA78B-\uA7DC\uA7F1-\uA801\uA803-\uA805\uA807-\uA80A\uA80C-\uA822\uA840-\uA873\uA882-\uA8B3\uA8F2-\uA8F7\uA8FB\uA8FD\uA8FE\uA90A-\uA925\uA930-\uA946\uA960-\uA97C\uA984-\uA9B2\uA9CF\uA9E0-\uA9E4\uA9E6-\uA9EF\uA9FA-\uA9FE\uAA00-\uAA28\uAA40-\uAA42\uAA44-\uAA4B\uAA60-\uAA76\uAA7A\uAA7E-\uAAAF\uAAB1\uAAB5\uAAB6\uAAB9-\uAABD\uAAC0\uAAC2\uAADB-\uAADD\uAAE0-\uAAEA\uAAF2-\uAAF4\uAB01-\uAB06\uAB09-\uAB0E\uAB11-\uAB16\uAB20-\uAB26\uAB28-\uAB2E\uAB30-\uAB5A\uAB5C-\uAB69\uAB70-\uABE2\uAC00-\uD7A3\uD7B0-\uD7C6\uD7CB-\uD7FB\uF900-\uFA6D\uFA70-\uFAD9\uFB00-\uFB06\uFB13-\uFB17\uFB1D\uFB1F-\uFB28\uFB2A-\uFB36\uFB38-\uFB3C\uFB3E\uFB40\uFB41\uFB43\uFB44\uFB46-\uFBB1\uFBD3-\uFD3D\uFD50-\uFD8F\uFD92-\uFDC7\uFDF0-\uFDFB\uFE70-\uFE74\uFE76-\uFEFC\uFF21-\uFF3A\uFF41-\uFF5A\uFF66-\uFFBE\uFFC2-\uFFC7\uFFCA-\uFFCF\uFFD2-\uFFD7\uFFDA-\uFFDC",pn="\xB7\u0300-\u036F\u0387\u0483-\u0487\u0591-\u05BD\u05BF\u05C1\u05C2\u05C4\u05C5\u05C7\u0610-\u061A\u064B-\u0669\u0670\u06D6-\u06DC\u06DF-\u06E4\u06E7\u06E8\u06EA-\u06ED\u06F0-\u06F9\u0711\u0730-\u074A\u07A6-\u07B0\u07C0-\u07C9\u07EB-\u07F3\u07FD\u0816-\u0819\u081B-\u0823\u0825-\u0827\u0829-\u082D\u0859-\u085B\u0897-\u089F\u08CA-\u08E1\u08E3-\u0903\u093A-\u093C\u093E-\u094F\u0951-\u0957\u0962\u0963\u0966-\u096F\u0981-\u0983\u09BC\u09BE-\u09C4\u09C7\u09C8\u09CB-\u09CD\u09D7\u09E2\u09E3\u09E6-\u09EF\u09FE\u0A01-\u0A03\u0A3C\u0A3E-\u0A42\u0A47\u0A48\u0A4B-\u0A4D\u0A51\u0A66-\u0A71\u0A75\u0A81-\u0A83\u0ABC\u0ABE-\u0AC5\u0AC7-\u0AC9\u0ACB-\u0ACD\u0AE2\u0AE3\u0AE6-\u0AEF\u0AFA-\u0AFF\u0B01-\u0B03\u0B3C\u0B3E-\u0B44\u0B47\u0B48\u0B4B-\u0B4D\u0B55-\u0B57\u0B62\u0B63\u0B66-\u0B6F\u0B82\u0BBE-\u0BC2\u0BC6-\u0BC8\u0BCA-\u0BCD\u0BD7\u0BE6-\u0BEF\u0C00-\u0C04\u0C3C\u0C3E-\u0C44\u0C46-\u0C48\u0C4A-\u0C4D\u0C55\u0C56\u0C62\u0C63\u0C66-\u0C6F\u0C81-\u0C83\u0CBC\u0CBE-\u0CC4\u0CC6-\u0CC8\u0CCA-\u0CCD\u0CD5\u0CD6\u0CE2\u0CE3\u0CE6-\u0CEF\u0CF3\u0D00-\u0D03\u0D3B\u0D3C\u0D3E-\u0D44\u0D46-\u0D48\u0D4A-\u0D4D\u0D57\u0D62\u0D63\u0D66-\u0D6F\u0D81-\u0D83\u0DCA\u0DCF-\u0DD4\u0DD6\u0DD8-\u0DDF\u0DE6-\u0DEF\u0DF2\u0DF3\u0E31\u0E34-\u0E3A\u0E47-\u0E4E\u0E50-\u0E59\u0EB1\u0EB4-\u0EBC\u0EC8-\u0ECE\u0ED0-\u0ED9\u0F18\u0F19\u0F20-\u0F29\u0F35\u0F37\u0F39\u0F3E\u0F3F\u0F71-\u0F84\u0F86\u0F87\u0F8D-\u0F97\u0F99-\u0FBC\u0FC6\u102B-\u103E\u1040-\u1049\u1056-\u1059\u105E-\u1060\u1062-\u1064\u1067-\u106D\u1071-\u1074\u1082-\u108D\u108F-\u109D\u135D-\u135F\u1369-\u1371\u1712-\u1715\u1732-\u1734\u1752\u1753\u1772\u1773\u17B4-\u17D3\u17DD\u17E0-\u17E9\u180B-\u180D\u180F-\u1819\u18A9\u1920-\u192B\u1930-\u193B\u1946-\u194F\u19D0-\u19DA\u1A17-\u1A1B\u1A55-\u1A5E\u1A60-\u1A7C\u1A7F-\u1A89\u1A90-\u1A99\u1AB0-\u1ABD\u1ABF-\u1ADD\u1AE0-\u1AEB\u1B00-\u1B04\u1B34-\u1B44\u1B50-\u1B59\u1B6B-\u1B73\u1B80-\u1B82\u1BA1-\u1BAD\u1BB0-\u1BB9\u1BE6-\u1BF3\u1C24-\u1C37\u1C40-\u1C49\u1C50-\u1C59\u1CD0-\u1CD2\u1CD4-\u1CE8\u1CED\u1CF4\u1CF7-\u1CF9\u1DC0-\u1DFF\u200C\u200D\u203F\u2040\u2054\u20D0-\u20DC\u20E1\u20E5-\u20F0\u2CEF-\u2CF1\u2D7F\u2DE0-\u2DFF\u302A-\u302F\u3099\u309A\u30FB\uA620-\uA629\uA66F\uA674-\uA67D\uA69E\uA69F\uA6F0\uA6F1\uA802\uA806\uA80B\uA823-\uA827\uA82C\uA880\uA881\uA8B4-\uA8C5\uA8D0-\uA8D9\uA8E0-\uA8F1\uA8FF-\uA909\uA926-\uA92D\uA947-\uA953\uA980-\uA983\uA9B3-\uA9C0\uA9D0-\uA9D9\uA9E5\uA9F0-\uA9F9\uAA29-\uAA36\uAA43\uAA4C\uAA4D\uAA50-\uAA59\uAA7B-\uAA7D\uAAB0\uAAB2-\uAAB4\uAAB7\uAAB8\uAABE\uAABF\uAAC1\uAAEB-\uAAEF\uAAF5\uAAF6\uABE3-\uABEA\uABEC\uABED\uABF0-\uABF9\uFB1E\uFE00-\uFE0F\uFE20-\uFE2F\uFE33\uFE34\uFE4D-\uFE4F\uFF10-\uFF19\uFF3F\uFF65",standalone_af=new RegExp("["+Au+"]"),standalone_sf=new RegExp("["+Au+pn+"]");Au=pn=null;var _u={keyword:["break","case","catch","continue","debugger","default","do","else","finally","for","function","if","return","switch","throw","try","var","const","while","with","new","this","super","class","extends","export","import","null","true","false","in","instanceof","typeof","void","delete"],strict:["implements","interface","let","package","private","protected","public","static","yield"],strictBind:["eval","arguments"]},standalone_Df=new Set(_u.keyword),standalone_cf=new Set(_u.strict),standalone_ff=new Set(_u.strictBind);var standalone_It=(e,t)=>u=>e(t(u));function mn(e){return{keyword:e.cyan,capitalized:e.yellow,jsxIdentifier:e.yellow,punctuator:e.yellow,number:e.magenta,string:e.green,regex:e.magenta,comment:e.gray,invalid:standalone_It(standalone_It(e.white,e.bgRed),e.bold),gutter:e.gray,marker:standalone_It(e.red,e.bold),message:standalone_It(e.red,e.bold),reset:e.reset}}var standalone_hf=mn(ou(!0)),standalone_gf=mn(ou(!1));function _a(){return new Proxy({},{get:()=>e=>e})}var Fn=/\r\n|[\n\r\u2028\u2029]/;function standalone_xa(e,t,u){let r=Object.assign({column:0,line:-1},e.start),o=Object.assign({},r,e.end),{linesAbove:n=2,linesBelow:a=3}=u||{},s=r.line,i=r.column,D=o.line,f=o.column,l=Math.max(s-(n+1),0),d=Math.min(t.length,D+a);s===-1&&(l=0),D===-1&&(d=t.length);let c=D-s,p={};if(c)for(let F=0;F<=c;F++){let C=F+s;if(!i)p[C]=!0;else if(F===0){let y=t[C-1].length;p[C]=[i,y-i+1]}else if(F===c)p[C]=[0,f];else{let y=t[C-F].length;p[C]=[0,y]}}else i===f?i?p[s]=[i,0]:p[s]=!0:p[s]=[i,f-i];return{start:l,end:d,markerLines:p}}function En(e,t,u={}){let o=_a(!1),n=e.split(Fn),{start:a,end:s,markerLines:i}=standalone_xa(t,n,u),D=t.start&&typeof t.start.column=="number",f=String(s).length,d=e.split(Fn,s).slice(a,s).map((c,p)=>{let F=a+1+p,y=` ${` ${F}`.slice(-f)} |`,m=i[F],h=!i[F+1];if(m){let E="";if(Array.isArray(m)){let g=c.slice(0,Math.max(m[0]-1,0)).replace(/[^\t]/g," "),A=m[1]||1;E=[`
+ `,o.gutter(y.replace(/\d/g," "))," ",g,o.marker("^").repeat(A)].join(""),h&&u.message&&(E+=" "+o.message(u.message))}return[o.marker(">"),o.gutter(y),c.length>0?` ${c}`:"",E].join("")}else return` ${o.gutter(y)}${c.length>0?` ${c}`:""}`}).join(`
+`);return u.message&&!D&&(d=`${" ".repeat(f+1)}${u.message}
+${d}`),d}async function Ba(e,t){let u=await standalone_We(t),r=u.preprocess?await u.preprocess(e,t):e;t.originalText=r;let o;try{o=await u.parse(r,t,t)}catch(n){Ta(n,e)}return{text:r,ast:o}}function Ta(e,t){let{loc:u}=e;if(u){let r=En(t,u,{highlightCode:!0});throw e.message+=`
+`+r,e.codeFrame=r,e}throw e}var standalone_Fe=Ba;async function Cn(e,t,u,r,o){if(u.embeddedLanguageFormatting!=="auto")return;let{printer:n}=u,{embed:a}=n;if(!a)return;if(a.length>2)throw new Error("printer.embed has too many parameters. The API changed in Prettier v3. Please update your plugin. See https://prettier.io/docs/plugins#optional-embed");let{hasPrettierIgnore:s}=n,{getVisitorKeys:i}=a,D=[];d();let f=e.stack;for(let{print:c,node:p,pathStack:F}of D)try{e.stack=F;let C=await c(l,t,e,u);C&&o.set(p,C)}catch(C){if(globalThis.PRETTIER_DEBUG)throw C}e.stack=f;function l(c,p){return Na(c,p,u,r)}function d(){let{node:c}=e;if(c===null||typeof c!="object"||s?.(e))return;for(let F of i(c))Array.isArray(c[F])?e.each(d,F):e.call(d,F);let p=a(e,u);if(p){if(typeof p=="function"){D.push({print:p,node:c,pathStack:[...e.stack]});return}o.set(c,p)}}}async function Na(e,t,u,r){let o=await standalone_se({...u,...t,parentParser:u.parser,originalText:e,cursorOffset:void 0,rangeStart:void 0,rangeEnd:void 0},{passThrough:!0}),{ast:n}=await standalone_Fe(e,o),a=await r(n,o);return standalone_qe(a)}function Sa(e,t,u,r){let{originalText:o,[Symbol.for("comments")]:n,locStart:a,locEnd:s,[Symbol.for("printedComments")]:i}=t,{node:D}=e,f=a(D),l=s(D);for(let c of n)a(c)>=f&&s(c)<=l&&i.add(c);let{printPrettierIgnored:d}=t.printer;return d?d(e,t,u,r):o.slice(f,l)}var standalone_hn=Sa;async function standalone_Ge(e,t){({ast:e}=await standalone_xu(e,t));let u=new Map,r=new pr(e),o=standalone_Nr(t),n=new Map;await Cn(r,s,t,standalone_Ge,n);let a=await gn(r,t,s,void 0,n);if(standalone_Tr(t),t.cursorOffset>=0){if(t.nodeAfterCursor&&!t.nodeBeforeCursor)return[standalone_ee,a];if(t.nodeBeforeCursor&&!t.nodeAfterCursor)return[a,standalone_ee]}return a;function s(D,f){return D===void 0||D===r?i(f):Array.isArray(D)?r.call(()=>i(f),...D):r.call(()=>i(f),D)}function i(D){o(r);let f=r.node;if(f==null)return"";let l=ge(f)&&D===void 0;if(l&&u.has(f))return u.get(f);let d=gn(r,t,s,D,n);return l&&u.set(f,d),d}}function gn(e,t,u,r,o){let{node:n}=e,{printer:a}=t,s;switch(a.hasPrettierIgnore?.(e)?s=standalone_hn(e,t,u,r):o.has(n)?s=o.get(n):s=a.print(e,t,u,r),n){case t.cursorNode:s=Ee(s,i=>[standalone_ee,i,standalone_ee]);break;case t.nodeBeforeCursor:s=Ee(s,i=>[i,standalone_ee]);break;case t.nodeAfterCursor:s=Ee(s,i=>[standalone_ee,i]);break}return a.printComment&&!a.willPrintOwnComments?.(e,t)&&(s=standalone_Br(e,s,t)),s}async function standalone_xu(e,t){let u=e.comments??[];t[Symbol.for("comments")]=u,t[Symbol.for("printedComments")]=new Set,Ar(e,t);let{printer:{preprocess:r}}=t;return e=r?await r(e,t):e,{ast:e,comments:u}}function standalone_wa(e,t){let{cursorOffset:u,locStart:r,locEnd:o,getVisitorKeys:n}=t,a=c=>r(c)<=u&&o(c)>=u,s=e,i=[e];for(let c of Cr(e,{getVisitorKeys:n,filter:a}))i.push(c),s=c;if(hr(s,{getVisitorKeys:n}))return{cursorNode:s};let D,f,l=-1,d=Number.POSITIVE_INFINITY;for(;i.length>0&&(D===void 0||f===void 0);){s=i.pop();let c=D!==void 0,p=f!==void 0;for(let F of standalone_be(s,{getVisitorKeys:n})){if(!c){let C=o(F);C<=u&&C>l&&(D=F,l=C)}if(!p){let C=r(F);C>=u&&C<d&&(f=F,d=C)}}}return{nodeBeforeCursor:D,nodeAfterCursor:f}}var Bu=standalone_wa;function standalone_Oa(e,t){let{printer:u}=t,r=u.massageAstNode;if(!r)return e;let{getVisitorKeys:o}=u,{ignoredProperties:n}=r;return a(e);function a(s,i){if(!ge(s))return s;if(Array.isArray(s))return s.map(d=>a(d,i)).filter(Boolean);let D={},f=new Set(o(s));for(let d in s)!Object.prototype.hasOwnProperty.call(s,d)||n?.has(d)||(f.has(d)?D[d]=a(s[d],s):D[d]=s[d]);let l=r(s,D,i);if(l!==null)return l??D}}var standalone_yn=standalone_Oa;var standalone_Pa=Array.prototype.findLastIndex??function(e){for(let t=this.length-1;t>=0;t--){let u=this[t];if(e(u,t,this))return t}return-1},Ia=standalone_X("findLastIndex",function(){if(Array.isArray(this))return standalone_Pa}),bn=Ia;var ka=({parser:e})=>e==="json"||e==="json5"||e==="jsonc"||e==="json-stringify";function standalone_va(e,t){return t=new Set(t),e.find(u=>xn.has(u.type)&&t.has(u))}function An(e){let t=bn(0,e,u=>u.type!=="Program"&&u.type!=="File");return t===-1?e:e.slice(0,t+1)}function Ra(e,t,{locStart:u,locEnd:r}){let[o,...n]=e,[a,...s]=t;if(o===a)return[o,a];let i=u(o);for(let f of An(s))if(u(f)>=i)a=f;else break;let D=r(a);for(let f of An(n)){if(r(f)<=D)o=f;else break;if(o===a)break}return[o,a]}function standalone_Tu(e,t,u,r,o=[],n){let{locStart:a,locEnd:s}=u,i=a(e),D=s(e);if(t>D||t<i||n==="rangeEnd"&&t===i||n==="rangeStart"&&t===D)return;let f=[e,...o],l=at(e,f,{cache:standalone_uu,locStart:a,locEnd:s,getVisitorKeys:u.getVisitorKeys,filter:u.printer.canAttachComment,getChildren:u.printer.getCommentChildNodes});for(let d of l){let c=standalone_Tu(d,t,u,r,f,n);if(c)return c}if(r(e,o[0]))return f}function La(e,t){return t!=="DeclareExportDeclaration"&&e!=="TypeParameterDeclaration"&&(e==="Directive"||e==="TypeAlias"||e==="TSExportAssignment"||e.startsWith("Declare")||e.startsWith("TSDeclare")||e.endsWith("Statement")||e.endsWith("Declaration"))}var xn=new Set(["JsonRoot","ObjectExpression","ArrayExpression","StringLiteral","NumericLiteral","BooleanLiteral","NullLiteral","UnaryExpression","TemplateLiteral"]),Ma=new Set(["OperationDefinition","FragmentDefinition","VariableDefinition","TypeExtensionDefinition","ObjectTypeDefinition","FieldDefinition","DirectiveDefinition","EnumTypeDefinition","EnumValueDefinition","InputValueDefinition","InputObjectTypeDefinition","SchemaDefinition","OperationTypeDefinition","InterfaceTypeDefinition","UnionTypeDefinition","ScalarTypeDefinition"]);function _n(e,t,u){if(!t)return!1;switch(e.parser){case"flow":case"hermes":case"babel":case"babel-flow":case"babel-ts":case"typescript":case"acorn":case"espree":case"meriyah":case"oxc":case"oxc-ts":case"__babel_estree":return La(t.type,u?.type);case"json":case"json5":case"jsonc":case"json-stringify":return xn.has(t.type);case"graphql":return Ma.has(t.kind);case"vue":return t.tag!=="root"}return!1}function Bn(e,t,u){let{rangeStart:r,rangeEnd:o,locStart:n,locEnd:a}=t;P(o>r);let s=e.slice(r,o).search(/\S/u),i=s===-1;if(!i)for(r+=s;o>r&&!/\S/u.test(e[o-1]);--o);let D=standalone_Tu(u,r,t,(c,p)=>_n(t,c,p),[],"rangeStart");if(!D)return;let f=i?D:standalone_Tu(u,o,t,c=>_n(t,c),[],"rangeEnd");if(!f)return;let l,d;if(ka(t)){let c=standalone_va(D,f);l=c,d=c}else[l,d]=Ra(D,f,t);return[Math.min(n(l),n(d)),Math.max(a(l),a(d))]}var wn="\uFEFF",Tn=Symbol("cursor");async function On(e,t,u=0){if(!e||e.trim().length===0)return{formatted:"",cursorOffset:-1,comments:[]};let{ast:r,text:o}=await standalone_Fe(e,t);t.cursorOffset>=0&&(t={...t,...Bu(r,t)});let n=await standalone_Ge(r,t,u);u>0&&(n=tt([standalone_V,n],u,t.tabWidth));let a=Ce(n,t);if(u>0){let i=a.formatted.trim();a.cursorNodeStart!==void 0&&(a.cursorNodeStart-=a.formatted.indexOf(i),a.cursorNodeStart<0&&(a.cursorNodeStart=0,a.cursorNodeText=a.cursorNodeText.trimStart()),a.cursorNodeStart+a.cursorNodeText.length>i.length&&(a.cursorNodeText=a.cursorNodeText.trimEnd())),a.formatted=i+standalone_Se(t.endOfLine)}let s=t[Symbol.for("comments")];if(t.cursorOffset>=0){let i,D,f,l;if((t.cursorNode||t.nodeBeforeCursor||t.nodeAfterCursor)&&a.cursorNodeText)if(f=a.cursorNodeStart,l=a.cursorNodeText,t.cursorNode)i=t.locStart(t.cursorNode),D=o.slice(i,t.locEnd(t.cursorNode));else{if(!t.nodeBeforeCursor&&!t.nodeAfterCursor)throw new Error("Cursor location must contain at least one of cursorNode, nodeBeforeCursor, nodeAfterCursor");i=t.nodeBeforeCursor?t.locEnd(t.nodeBeforeCursor):0;let y=t.nodeAfterCursor?t.locStart(t.nodeAfterCursor):o.length;D=o.slice(i,y)}else i=0,D=o,f=0,l=a.formatted;let d=t.cursorOffset-i;if(D===l)return{formatted:a.formatted,cursorOffset:f+d,comments:s};let c=D.split("");c.splice(d,0,Tn);let p=l.split(""),F=Ut(c,p),C=f;for(let y of F)if(y.removed){if(y.value.includes(Tn))break}else C+=y.count;return{formatted:a.formatted,cursorOffset:C,comments:s}}return{formatted:a.formatted,cursorOffset:-1,comments:s}}async function Ya(e,t){let{ast:u,text:r}=await standalone_Fe(e,t),[o,n]=Bn(r,t,u)??[0,0],a=r.slice(o,n),s=Math.min(o,r.lastIndexOf(`
+`,o)+1),i=r.slice(s,o).match(/^\s*/u)[0],D=standalone_he(i,t.tabWidth),f=await On(a,{...t,rangeStart:0,rangeEnd:Number.POSITIVE_INFINITY,cursorOffset:t.cursorOffset>o&&t.cursorOffset<=n?t.cursorOffset-o:-1,endOfLine:"lf"},D),l=f.formatted.trimEnd(),{cursorOffset:d}=t;d>n?d+=l.length-a.length:f.cursorOffset>=0&&(d=f.cursorOffset+o);let c=r.slice(0,o)+l+r.slice(n);if(t.endOfLine!=="lf"){let p=standalone_Se(t.endOfLine);d>=0&&p===`\r
+`&&(d+=$t(c.slice(0,d),`
+`)),c=oe(0,c,`
+`,p)}return{formatted:c,cursorOffset:d,comments:f.comments}}function Nu(e,t,u){return typeof t!="number"||Number.isNaN(t)||t<0||t>e.length?u:t}function Nn(e,t){let{cursorOffset:u,rangeStart:r,rangeEnd:o}=t;return u=Nu(e,u,-1),r=Nu(e,r,0),o=Nu(e,o,e.length),{...t,cursorOffset:u,rangeStart:r,rangeEnd:o}}function standalone_Pn(e,t){let{cursorOffset:u,rangeStart:r,rangeEnd:o,endOfLine:n}=Nn(e,t),a=e.charAt(0)===wn;if(a&&(e=e.slice(1),u--,r--,o--),n==="auto"&&(n=Yu(e)),e.includes("\r")){let s=i=>$t(e.slice(0,Math.max(i,0)),`\r
+`);u-=s(u),r-=s(r),o-=s(o),e=ju(e)}return{hasBOM:a,text:e,options:Nn(e,{...t,cursorOffset:u,rangeStart:r,rangeEnd:o,endOfLine:n})}}async function Sn(e,t){let u=await standalone_We(t);return!u.hasPragma||u.hasPragma(e)}async function standalone_ja(e,t){return(await standalone_We(t)).hasIgnorePragma?.(e)}async function Su(e,t){let{hasBOM:u,text:r,options:o}=standalone_Pn(e,await standalone_se(t));if(o.rangeStart>=o.rangeEnd&&r!==""||o.requirePragma&&!await Sn(r,o)||o.checkIgnorePragma&&await standalone_ja(r,o))return{formatted:e,cursorOffset:t.cursorOffset,comments:[]};let n;return o.rangeStart>0||o.rangeEnd<r.length?n=await Ya(r,o):(!o.requirePragma&&o.insertPragma&&o.printer.insertPragma&&!await Sn(r,o)&&(r=o.printer.insertPragma(r)),n=await On(r,o)),u&&(n.formatted=wn+n.formatted,n.cursorOffset>=0&&n.cursorOffset++),n}async function In(e,t,u){let{text:r,options:o}=standalone_Pn(e,await standalone_se(t)),n=await standalone_Fe(r,o);return u&&(u.preprocessForPrint&&(n.ast=await standalone_xu(n.ast,o)),u.massage&&(n.ast=standalone_yn(n.ast,o))),n}async function kn(e,t){t=await standalone_se(t);let u=await standalone_Ge(e,t);return Ce(u,t)}async function vn(e,t){let u=standalone_sr(e),{formatted:r}=await Su(u,{...t,parser:"__js_expression"});return r}async function Rn(e,t){t=await standalone_se(t);let{ast:u}=await standalone_Fe(e,t);return t.cursorOffset>=0&&(t={...t,...Bu(u,t)}),standalone_Ge(u,t)}async function Ln(e,t){return Ce(e,await standalone_se(t))}var wu={};Yt(wu,{builders:()=>Wa,printer:()=>$a,utils:()=>Va});var Wa={join:standalone_Ie,line:ut,softline:standalone_or,hardline:standalone_V,literalline:Qe,group:standalone_Kt,conditionalGroup:standalone_tr,fill:er,lineSuffix:ve,lineSuffixBoundary:standalone_ar,cursor:standalone_ee,breakParent:ce,ifBreak:standalone_ur,trim:standalone_ir,indent:standalone_ae,indentIfBreak:rr,align:standalone_De,addAlignmentToDoc:tt,markAsRoot:et,dedentToRoot:Qu,dedent:Zu,hardlineWithoutBreakParent:ke,literallineWithoutBreakParent:Gt,label:standalone_nr,concat:e=>e},$a={printDocToString:Ce},Va={willBreak:Ku,traverseDoc:we,findInDoc:Xe,mapDoc:standalone_Pe,removeLines:zu,stripTrailingHardline:standalone_qe,replaceEndOfLine:standalone_Ju,canBreak:Hu};var Mn="3.8.2";var Pu={};Yt(Pu,{addDanglingComment:()=>standalone_ue,addLeadingComment:()=>standalone_fe,addTrailingComment:()=>le,getAlignmentSize:()=>standalone_he,getIndentSize:()=>Yn,getMaxContinuousCount:()=>jn,getNextNonSpaceNonCommentCharacter:()=>Un,getNextNonSpaceNonCommentCharacterIndex:()=>standalone_ni,getPreferredQuote:()=>standalone_Vn,getStringWidth:()=>standalone_Re,hasNewline:()=>standalone_z,hasNewlineInRange:()=>standalone_Kn,hasSpaces:()=>Gn,isNextLineEmpty:()=>standalone_Di,isNextLineEmptyAfterIndex:()=>standalone_kt,isPreviousLineEmpty:()=>standalone_ai,makeString:()=>standalone_si,skip:()=>standalone_ye,skipEverythingButNewLine:()=>ot,skipInlineComment:()=>standalone_xe,skipNewline:()=>K,skipSpaces:()=>Y,skipToLineEnd:()=>nt,skipTrailingComment:()=>standalone_Be,skipWhitespace:()=>Fr});function Ka(e,t){if(t===!1)return!1;if(e.charAt(t)==="/"&&e.charAt(t+1)==="*"){for(let u=t+2;u<e.length;++u)if(e.charAt(u)==="*"&&e.charAt(u+1)==="/")return u+2}return t}var standalone_xe=Ka;function Ga(e,t){return t===!1?!1:e.charAt(t)==="/"&&e.charAt(t+1)==="/"?ot(e,t):t}var standalone_Be=Ga;function standalone_za(e,t){let u=null,r=t;for(;r!==u;)u=r,r=Y(e,r),r=standalone_xe(e,r),r=standalone_Be(e,r),r=K(e,r);return r}var standalone_ze=standalone_za;function standalone_Ja(e,t){let u=null,r=t;for(;r!==u;)u=r,r=nt(e,r),r=standalone_xe(e,r),r=Y(e,r);return r=standalone_Be(e,r),r=K(e,r),r!==!1&&standalone_z(e,r)}var standalone_kt=standalone_Ja;function Ha(e,t){let u=e.lastIndexOf(`
+`);return u===-1?0:standalone_he(e.slice(u+1).match(/^[\t ]*/u)[0],t)}var Yn=Ha;function standalone_Ou(e){if(typeof e!="string")throw new TypeError("Expected a string");return e.replace(/[|\\{}()[\]^$+*?.]/g,"\\$&").replace(/-/g,"\\x2d")}function Xa(e,t){let u=e.matchAll(new RegExp(`(?:${standalone_Ou(t)})+`,"gu"));return u.reduce||(u=[...u]),u.reduce((r,[o])=>Math.max(r,o.length),0)/t.length}var jn=Xa;function qa(e,t){let u=standalone_ze(e,t);return u===!1?"":e.charAt(u)}var Un=qa;var standalone_Wn=Object.freeze({character:"'",codePoint:39}),standalone_$n=Object.freeze({character:'"',codePoint:34}),Qa=Object.freeze({preferred:standalone_Wn,alternate:standalone_$n}),Za=Object.freeze({preferred:standalone_$n,alternate:standalone_Wn});function standalone_ei(e,t){let{preferred:u,alternate:r}=t===!0||t==="'"?Qa:Za,{length:o}=e,n=0,a=0;for(let s=0;s<o;s++){let i=e.charCodeAt(s);i===u.codePoint?n++:i===r.codePoint&&a++}return(n>a?r:u).character}var standalone_Vn=standalone_ei;function standalone_ti(e,t,u){for(let r=t;r<u;++r)if(e.charAt(r)===`
+`)return!0;return!1}var standalone_Kn=standalone_ti;function standalone_ui(e,t,u={}){return Y(e,u.backwards?t-1:t,u)!==t}var Gn=standalone_ui;function standalone_ri(e,t,u){return standalone_ze(e,u(t))}function standalone_ni(e,t){return arguments.length===2||typeof t=="number"?standalone_ze(e,t):standalone_ri(...arguments)}function standalone_oi(e,t,u){return standalone_Le(e,u(t))}function standalone_ai(e,t){return arguments.length===2||typeof t=="number"?standalone_Le(e,t):standalone_oi(...arguments)}function standalone_ii(e,t,u){return standalone_kt(e,u(t))}function standalone_si(e,t,u){let r=t==='"'?"'":'"',n=oe(0,e,/\\(.)|(["'])/gsu,(a,s,i)=>s===r?s:i===t?"\\"+i:i||(u&&/^[^\n\r"'0-7\\bfnrt-vx\u2028\u2029]$/u.test(s)?s:"\\"+s));return t+n+t}function standalone_Di(e,t){return arguments.length===2||typeof t=="number"?standalone_kt(e,t):standalone_ii(...arguments)}function standalone_me(e,t=1){return async(...u)=>{let r=u[t]??{},o=r.plugins??[];return u[t]={...r,plugins:Array.isArray(o)?o:Object.values(o)},e(...u)}}var standalone_zn=standalone_me(Su);async function standalone_Jn(e,t){let{formatted:u}=await standalone_zn(e,{...t,cursorOffset:-1});return u}async function standalone_ci(e,t){return await standalone_Jn(e,t)===e}var standalone_fi=standalone_me(it,0),standalone_li={parse:standalone_me(In),formatAST:standalone_me(kn),formatDoc:standalone_me(vn),printToDoc:standalone_me(Rn),printDocToString:standalone_me(Ln)};
 
 ;// CONCATENATED MODULE: ./lib/package-operations.js
 
@@ -15763,7 +20136,7 @@ async function updatePackage(packageMetadata, updateSpecification, rootDir = WOR
  * @returns The formatted changelog.
  */
 async function formatChangelog(changelog) {
-    return await gu(changelog, {
+    return await standalone_Jn(changelog, {
         parser: 'markdown',
         plugins: [markdown_namespaceObject],
     });
@@ -15801,7 +20174,7 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
         console.warn(`Failed to read changelog in "${projectRootDirectory}".`);
         return undefined;
     }
-    const newChangelogContent = await (0,auto_changelog_dist.updateChangelog)({
+    const newChangelogContent = await updateChangelog({
         changelogContent,
         currentVersion: newVersion,
         isReleaseCandidate: true,
@@ -15821,12 +20194,13 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
 }
 /**
  * Checks if there are unreleased changes in the changelog.
+ *
  * @param changelogContent - The string formatted changelog.
  * @param repositoryUrl - The repository url.
  * @returns The boolean true if there are unreleased changes, otherwise false.
  */
 function hasUnreleasedChanges(changelogContent, repositoryUrl) {
-    const changelog = (0,auto_changelog_dist.parseChangelog)({
+    const changelog = parseChangelog({
         changelogContent,
         repoUrl: repositoryUrl,
         formatter: formatChangelog,
