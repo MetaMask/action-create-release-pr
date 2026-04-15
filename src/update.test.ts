@@ -1,45 +1,47 @@
 import * as actionsCore from '@actions/core';
 import * as actionUtils from '@metamask/action-utils';
+import type { Mock } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 
 import * as gitOperations from './git-operations';
 import * as packageOperations from './package-operations';
 import { performUpdate } from './update';
 import * as utils from './utils';
 
-jest.mock('@actions/core', () => {
+vi.mock('@actions/core', () => {
   return {
-    setOutput: jest.fn(),
+    setOutput: vi.fn(),
   };
 });
 
-jest.mock('@metamask/action-utils', () => {
-  const actualModule = jest.requireActual('@metamask/action-utils');
-  return {
-    ...actualModule,
-    getPackageManifest: jest.fn(),
-  };
-});
-
-jest.mock('./git-operations', () => {
-  return {
-    getRepositoryHttpsUrl: jest.fn(),
-    getTags: jest.fn(),
-  };
-});
-
-jest.mock('./package-operations', () => {
-  const actualModule = jest.requireActual('./package-operations');
+vi.mock(import('@metamask/action-utils'), async (importOriginal) => {
+  const actualModule = await importOriginal();
   return {
     ...actualModule,
-    getMetadataForAllPackages: jest.fn(),
-    getPackagesToUpdate: jest.fn(),
-    updatePackage: jest.fn(),
-    updatePackages: jest.fn(),
+    getPackageManifest: vi.fn(),
   };
 });
 
-jest.mock('./utils', () => {
-  const actualModule = jest.requireActual('./utils');
+vi.mock(import('./git-operations.js'), () => {
+  return {
+    getRepositoryHttpsUrl: vi.fn(),
+    getTags: vi.fn(),
+  };
+});
+
+vi.mock(import('./package-operations.js'), async (importOriginal) => {
+  const actualModule = await importOriginal();
+  return {
+    ...actualModule,
+    getMetadataForAllPackages: vi.fn(),
+    getPackagesToUpdate: vi.fn(),
+    updatePackage: vi.fn(),
+    updatePackages: vi.fn(),
+  };
+});
+
+vi.mock(import('./utils.js'), async (importOriginal) => {
+  const actualModule = await importOriginal();
   return {
     ...actualModule,
     WORKSPACE_ROOT: 'rootDir',
@@ -49,22 +51,22 @@ jest.mock('./utils', () => {
 describe('performUpdate', () => {
   const mockRepoUrl = 'https://fake';
 
-  let getRepositoryHttpsUrlMock: jest.SpyInstance;
-  let getTagsMock: jest.SpyInstance;
-  let consoleLogMock: jest.SpyInstance;
-  let getPackageManifestMock: jest.SpyInstance;
-  let setActionOutputMock: jest.SpyInstance;
+  let getRepositoryHttpsUrlMock: Mock;
+  let getTagsMock: Mock;
+  let consoleLogMock: Mock;
+  let getPackageManifestMock: Mock;
+  let setActionOutputMock: Mock;
 
   beforeEach(() => {
-    getRepositoryHttpsUrlMock = jest
+    getRepositoryHttpsUrlMock = vi
       .spyOn(gitOperations, 'getRepositoryHttpsUrl')
       .mockImplementationOnce(async () => mockRepoUrl);
-    getTagsMock = jest.spyOn(gitOperations, 'getTags');
-    consoleLogMock = jest
+    getTagsMock = vi.spyOn(gitOperations, 'getTags');
+    consoleLogMock = vi
       .spyOn(console, 'log')
       .mockImplementation(() => undefined);
-    getPackageManifestMock = jest.spyOn(actionUtils, 'getPackageManifest');
-    setActionOutputMock = jest.spyOn(actionsCore, 'setOutput');
+    getPackageManifestMock = vi.spyOn(actionUtils, 'getPackageManifest');
+    setActionOutputMock = vi.spyOn(actionsCore, 'setOutput');
   });
 
   it('updates a polyrepo with release-version input', async () => {
@@ -162,13 +164,13 @@ describe('performUpdate', () => {
       };
     });
 
-    const getPackagesMetadataMock = jest
+    const getPackagesMetadataMock = vi
       .spyOn(packageOperations, 'getMetadataForAllPackages')
       .mockImplementationOnce(async () => {
         return { a: {}, b: {}, c: {} } as any;
       });
 
-    const getPackagesToUpdateMock = jest
+    const getPackagesToUpdateMock = vi
       .spyOn(packageOperations, 'getPackagesToUpdate')
       .mockImplementationOnce(async () => new Set(workspaces));
 
@@ -245,13 +247,13 @@ describe('performUpdate', () => {
       };
     });
 
-    const getPackagesMetadataMock = jest
+    const getPackagesMetadataMock = vi
       .spyOn(packageOperations, 'getMetadataForAllPackages')
       .mockImplementationOnce(async () => {
         return { a: {}, b: {}, c: {} } as any;
       });
 
-    const getPackagesToUpdateMock = jest
+    const getPackagesToUpdateMock = vi
       .spyOn(packageOperations, 'getPackagesToUpdate')
       .mockImplementationOnce(async () => new Set(workspaces));
 
@@ -328,13 +330,13 @@ describe('performUpdate', () => {
       };
     });
 
-    const getPackagesMetadataMock = jest
+    const getPackagesMetadataMock = vi
       .spyOn(packageOperations, 'getMetadataForAllPackages')
       .mockImplementationOnce(async () => {
         return { a: {}, b: {}, c: {} } as any;
       });
 
-    const getPackagesToUpdateMock = jest
+    const getPackagesToUpdateMock = vi
       .spyOn(packageOperations, 'getPackagesToUpdate')
       .mockImplementationOnce(async () => new Set(workspaces));
 

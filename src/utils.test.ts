@@ -1,13 +1,15 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import {
   AcceptedSemverReleaseTypes,
   getActionInputs,
   InputKeys,
 } from './utils';
 
-jest.mock('fs', () => ({
+vi.mock('fs', () => ({
   promises: {
-    readFile: jest.fn(),
-    writeFile: jest.fn(),
+    readFile: vi.fn(),
+    writeFile: vi.fn(),
   },
 }));
 

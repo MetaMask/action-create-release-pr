@@ -1,41 +1,42 @@
 import * as actionsCore from '@actions/core';
+import { describe, expect, it, vi } from 'vitest';
 
 import * as actionModule from './update';
 import * as utils from './utils';
 
-jest.mock('@actions/core', () => {
+vi.mock('@actions/core', () => {
   return {
-    error: jest.fn(),
-    setFailed: jest.fn(),
+    error: vi.fn(),
+    setFailed: vi.fn(),
   };
 });
 
-jest.mock('./update', () => {
+vi.mock(import('./update.js'), () => {
   return {
-    performUpdate: jest.fn(),
+    performUpdate: vi.fn(),
   };
 });
 
-jest.mock('./utils', () => {
+vi.mock(import('./utils.js'), () => {
   return {
-    getActionInputs: jest.fn(),
+    getActionInputs: vi.fn(),
   };
 });
 
 describe('main entry file', () => {
   it('calls performUpdate and catches thrown errors', async () => {
-    const getActionInputsMock = jest
+    const getActionInputsMock = vi
       .spyOn(utils, 'getActionInputs')
       .mockImplementationOnce(() => {
         return { ReleaseType: null, ReleaseVersion: '1.0.0' };
       });
-    const performUpdateMock = jest
+    const performUpdateMock = vi
       .spyOn(actionModule, 'performUpdate')
       .mockImplementationOnce(async () => {
         throw new Error('error');
       });
-    const logErrorMock = jest.spyOn(actionsCore, 'error');
-    const setFailedMock = jest.spyOn(actionsCore, 'setFailed');
+    const logErrorMock = vi.spyOn(actionsCore, 'error');
+    const setFailedMock = vi.spyOn(actionsCore, 'setFailed');
 
     await import('.');
     await new Promise<void>((resolve) => {

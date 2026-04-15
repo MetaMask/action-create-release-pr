@@ -3,6 +3,7 @@
 process.env.GITHUB_WORKSPACE = 'root';
 
 import execa from 'execa';
+import { vi, describe, it, expect } from 'vitest';
 
 import {
   didPackageChange,
@@ -11,8 +12,8 @@ import {
 } from './git-operations';
 import type { PackageMetadata } from './package-operations';
 
-jest.mock('execa');
-const execaMock: jest.Mock = execa as any;
+vi.mock('execa');
+const execaMock = vi.mocked(execa);
 
 enum VERSIONS {
   First = '1.0.0',
@@ -47,6 +48,7 @@ describe('getRepositoryHttpsUrl', () => {
   it('gets the repository https url (already https)', async () => {
     const repoHttpsUrl = 'https://github.com/Foo/Bar';
     // execa('git', ['config', '--get', ...])
+    // @ts-expect-error: Partial mock.
     execaMock.mockImplementationOnce(async () => {
       return { stdout: repoHttpsUrl };
     });
@@ -59,6 +61,7 @@ describe('getRepositoryHttpsUrl', () => {
     const repoHttpsUrl = 'https://github.com/Foo/Bar';
     const repoSshUrl = 'git@github.com:Foo/Bar.git';
     // execa('git', ['config', '--get', ...])
+    // @ts-expect-error: Partial mock.
     execaMock.mockImplementationOnce(async () => {
       return { stdout: repoSshUrl };
     });
@@ -70,18 +73,23 @@ describe('getRepositoryHttpsUrl', () => {
   it('throws on unrecognized urls', async () => {
     // execa('git', ['config', '--get', ...])
     execaMock
+      // @ts-expect-error: Partial mock.
       .mockImplementationOnce(async () => {
         return { stdout: 'foo' };
       })
+      // @ts-expect-error: Partial mock.
       .mockImplementationOnce(async () => {
         return { stdout: 'http://github.com/Foo/Bar' };
       })
+      // @ts-expect-error: Partial mock.
       .mockImplementationOnce(async () => {
         return { stdout: 'https://gitbar.foo/Foo/Bar' };
       })
+      // @ts-expect-error: Partial mock.
       .mockImplementationOnce(async () => {
         return { stdout: 'git@gitbar.foo:Foo/Bar.git' };
       })
+      // @ts-expect-error: Partial mock.
       .mockImplementationOnce(async () => {
         return { stdout: 'git@github.com:Foo/Bar.foo' };
       });
@@ -97,6 +105,7 @@ describe('getRepositoryHttpsUrl', () => {
 describe('getTags', () => {
   it('successfully parses tags', async () => {
     // execa('git', ['tag', ...])
+    // @ts-expect-error: Partial mock.
     execaMock.mockImplementationOnce(async () => {
       return { stdout: RAW_MOCK_TAGS };
     });
@@ -106,7 +115,8 @@ describe('getTags', () => {
   });
 
   it('succeeds if repo has complete history and no tags', async () => {
-    execaMock.mockImplementation(async (...args) => {
+    // @ts-expect-error: Partial mock.
+    execaMock.mockImplementation(async (...args: string[][]) => {
       const gitCommand = args[1][0];
       if (gitCommand === 'tag') {
         return { stdout: '' };
@@ -121,7 +131,8 @@ describe('getTags', () => {
   });
 
   it('throws if repo has incomplete history and no tags', async () => {
-    execaMock.mockImplementation(async (...args) => {
+    // @ts-expect-error: Partial mock.
+    execaMock.mockImplementation(async (...args: string[][]) => {
       const gitCommand = args[1][0];
       if (gitCommand === 'tag') {
         return { stdout: '' };
@@ -137,6 +148,7 @@ describe('getTags', () => {
 
   it('throws if repo has invalid tags', async () => {
     // execa('git', ['tag', ...])
+    // @ts-expect-error: Partial mock.
     execaMock.mockImplementationOnce(async () => {
       return { stdout: 'foo\nbar\n' };
     });
@@ -146,7 +158,8 @@ describe('getTags', () => {
   });
 
   it('throws if git rev-parse returns unrecognized value', async () => {
-    execaMock.mockImplementation(async (...args) => {
+    // @ts-expect-error: Partial mock.
+    execaMock.mockImplementation(async (...args: string[][]) => {
       const gitCommand = args[1][0];
       if (gitCommand === 'tag') {
         return { stdout: '' };
@@ -170,6 +183,7 @@ describe('didPackageChange', () => {
   });
 
   it('calls "git diff" with expected tag', async () => {
+    // @ts-expect-error: Partial mock.
     execaMock.mockImplementationOnce(async () => {
       return { stdout: RAW_DIFFS[TAGS.First] };
     });
@@ -207,6 +221,7 @@ describe('didPackageChange', () => {
   });
 
   it('only returns true for packages that actually changed', async () => {
+    // @ts-expect-error: Partial mock.
     execaMock.mockImplementationOnce(async () => {
       return { stdout: RAW_DIFFS[TAGS.Second] };
     });
