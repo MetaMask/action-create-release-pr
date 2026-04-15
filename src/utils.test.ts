@@ -4,10 +4,12 @@ import {
   InputKeys,
 } from './utils';
 
-jest.mock('fs', () => ({
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('fs', () => ({
   promises: {
-    readFile: jest.fn(),
-    writeFile: jest.fn(),
+    readFile: vi.fn(),
+    writeFile: vi.fn(),
   },
 }));
 

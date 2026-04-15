@@ -1,12 +1,13 @@
-import type {
+import {
   ManifestDependencyFieldNames,
   PackageManifest,
+  getPackageManifest,
+  getWorkspaceLocations,
+  writeJsonFile,
 } from '@metamask/action-utils';
-import * as actionUtils from '@metamask/action-utils';
 import { ManifestFieldNames } from '@metamask/action-utils';
 import * as autoChangelog from '@metamask/auto-changelog';
-import fs from 'fs';
-import glob from 'glob';
+import { promises as fs } from 'fs';
 import cloneDeep from 'lodash.clonedeep';
 
 import * as gitOps from './git-operations';
@@ -18,46 +19,45 @@ import {
   updatePackages,
 } from './package-operations';
 
-jest.mock('fs', () => ({
+import { beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
+
+vi.mock('fs', () => ({
+  default: {},
   promises: {
-    lstat: jest.fn(),
-    readdir: jest.fn(),
-    readFile: jest.fn(),
-    writeFile: jest.fn(),
+    lstat: vi.fn(),
+    readdir: vi.fn(),
+    readFile: vi.fn(),
+    writeFile: vi.fn(),
   },
-  // eslint-disable-next-line n/no-sync
-  existsSync: jest.fn(),
 }));
 
-jest.mock('glob');
-
-jest.mock('@metamask/action-utils/dist/file-utils', () => {
-  const actualModule = jest.requireActual(
-    '@metamask/action-utils/dist/file-utils',
-  );
+vi.mock(import('@metamask/action-utils'), async (importOriginal) => {
+  const actualModule = await importOriginal();
   return {
     ...actualModule,
-    readJsonObjectFile: jest.fn(),
+    getPackageManifest: vi.fn(),
+    getWorkspaceLocations: vi.fn(),
+    writeJsonFile: vi.fn(),
   };
 });
 
-jest.mock('@metamask/auto-changelog', () => {
+vi.mock('@metamask/auto-changelog', () => {
   return {
-    updateChangelog: jest.fn(),
-    parseChangelog: jest.fn(),
+    updateChangelog: vi.fn(),
+    parseChangelog: vi.fn(),
   };
 });
 
-jest.mock('./git-operations', () => {
-  const actualModule = jest.requireActual('./git-operations');
+vi.mock(import('./git-operations.js'), async (importOriginal) => {
+  const actualModule = await importOriginal();
   return {
     ...actualModule,
-    didPackageChange: jest.fn(),
+    didPackageChange: vi.fn(),
   };
 });
 
-jest.mock('./utils', () => {
-  const actualModule = jest.requireActual('./utils');
+vi.mock(import('./utils.js'), async (importOriginal) => {
+  const actualModule = await importOriginal();
   return {
     ...actualModule,
     WORKSPACE_ROOT: 'root',
@@ -103,26 +103,8 @@ describe('package-operations', () => {
       };
     };
 
-    /**
-     * Returns a mock implementation for `readJsonObjectFile` which is used to
-     * obtain a mock manifest for a package used within the tests in this test
-     * group.
-     *
-     * @returns A function that returns a mock manifest.
-     */
-    function getMockReadJsonFile() {
-      let mockIndex = -1;
-      return async (): Promise<Record<string, unknown>> => {
-        mockIndex += 1;
-        return getMockManifest(names[mockIndex], version) as unknown as Record<
-          string,
-          unknown
-        >;
-      };
-    }
-
     beforeEach(() => {
-      jest.spyOn(fs.promises, 'lstat').mockImplementation((async (
+      vi.spyOn(fs, 'lstat').mockImplementation((async (
         path: string,
       ) => {
         return path.endsWith(SOME_FILE)
@@ -132,23 +114,17 @@ describe('package-operations', () => {
     });
 
     it('does not throw', async () => {
-      (glob as jest.MockedFunction<any>).mockImplementation(
-        (
-          _pattern: string,
-          _options: unknown,
-          callback: (error: null, data: string[]) => void,
-        ) =>
-          callback(null, [
-            'packages/dir1',
-            'packages/dir2',
-            'packages/dir3',
-            'packages/someFile',
-          ]),
-      );
+      vi.mocked(getWorkspaceLocations).mockResolvedValueOnce([
+        'packages/dir1',
+        'packages/dir2',
+        'packages/dir3',
+        'packages/someFile',
+      ]);
 
-      jest
-        .spyOn(actionUtils, 'readJsonObjectFile')
-        .mockImplementation(getMockReadJsonFile());
+      vi.mocked(getPackageManifest)
+        .mockResolvedValueOnce(getMockManifest(names[0], version) as any)
+        .mockResolvedValueOnce(getMockManifest(names[1], version) as any)
+        .mockResolvedValueOnce(getMockManifest(names[2], version) as any);
 
       expect(await getMetadataForAllPackages(['packages/*'])).toStrictEqual({
         [names[0]]: getMockPackageMetadata(0),
@@ -158,36 +134,17 @@ describe('package-operations', () => {
     });
 
     it('resolves recursive workspaces', async () => {
-      (glob as jest.MockedFunction<any>)
-        .mockImplementationOnce(
-          (
-            _pattern: string,
-            _options: unknown,
-            callback: (error: null, data: string[]) => void,
-          ) => callback(null, ['packages/dir1']),
-        )
-        .mockImplementationOnce(
-          (
-            _pattern: string,
-            _options: unknown,
-            callback: (error: null, data: string[]) => void,
-          ) => callback(null, ['packages/dir2']),
-        );
+      vi.mocked(getWorkspaceLocations)
+        .mockResolvedValueOnce(['packages/dir1'])
+        .mockResolvedValueOnce(['packages/dir2']);
 
-      jest
-        .spyOn(actionUtils, 'readJsonObjectFile')
-        .mockImplementationOnce(async () => ({
+      vi.mocked(getPackageManifest)
+        .mockResolvedValueOnce({
           ...getMockManifest(names[0], version),
           private: true,
           workspaces: ['packages/*'],
-        }))
-        .mockImplementationOnce(
-          async () =>
-            getMockManifest(names[1], version) as unknown as Record<
-              string,
-              unknown
-            >,
-        );
+        } as any)
+        .mockResolvedValueOnce(getMockManifest(names[1], version) as any);
 
       expect(await getMetadataForAllPackages(['packages/*'])).toStrictEqual({
         [names[0]]: {
@@ -206,22 +163,14 @@ describe('package-operations', () => {
     });
 
     it('throws if a sub-workspace does not have a name', async () => {
-      (glob as jest.MockedFunction<any>).mockImplementationOnce(
-        (
-          _pattern: string,
-          _options: unknown,
-          callback: (error: null, data: string[]) => void,
-        ) => callback(null, ['packages/dir1']),
-      );
+      vi.mocked(getWorkspaceLocations).mockResolvedValueOnce(['packages/dir1']);
 
-      jest
-        .spyOn(actionUtils, 'readJsonObjectFile')
-        .mockImplementationOnce(async () => ({
-          ...getMockManifest(names[0], version),
-          private: true,
-          workspaces: ['packages/*'],
-          name: undefined,
-        }));
+      vi.mocked(getPackageManifest).mockResolvedValueOnce({
+        ...getMockManifest(names[0], version),
+        private: true,
+        workspaces: ['packages/*'],
+        name: undefined,
+      } as any);
 
       await expect(getMetadataForAllPackages(['packages/*'])).rejects.toThrow(
         'Expected sub-workspace in "packages/dir1" to have a name.',
@@ -230,7 +179,7 @@ describe('package-operations', () => {
   });
 
   describe('getPackagesToUpdate', () => {
-    let didPackageChangeMock: jest.SpyInstance;
+    let didPackageChangeMock: MockInstance;
 
     const packageNames = ['name1', 'name2', 'name3'];
 
@@ -241,7 +190,7 @@ describe('package-operations', () => {
     };
 
     beforeEach(() => {
-      didPackageChangeMock = jest.spyOn(gitOps, 'didPackageChange');
+      didPackageChangeMock = vi.spyOn(gitOps, 'didPackageChange');
     });
 
     it('returns all packages if synchronizeVersions is true', async () => {
@@ -274,13 +223,13 @@ describe('package-operations', () => {
   });
 
   describe('Updating packages', () => {
-    const writeFileMock = jest
-      .spyOn(fs.promises, 'writeFile')
+    const writeFileMock = vi
+      .spyOn(fs, 'writeFile')
       .mockImplementation(async () => Promise.resolve());
-    const readFileMock = jest.spyOn(fs.promises, 'readFile');
+    const readFileMock = vi.spyOn(fs, 'readFile');
 
-    const updateChangelogMock = jest.spyOn(autoChangelog, 'updateChangelog');
-    const parseChangelogMock = jest.spyOn(autoChangelog, 'parseChangelog');
+    const updateChangelogMock = vi.spyOn(autoChangelog, 'updateChangelog');
+    const parseChangelogMock = vi.spyOn(autoChangelog, 'parseChangelog');
 
     const getMockPackageMetadata = (
       dirPath: string,
@@ -316,13 +265,13 @@ describe('package-operations', () => {
         };
 
         await updatePackage(packageMetadata, updateSpecification);
-        expect(writeFileMock).toHaveBeenCalledTimes(1);
-        expect(writeFileMock).toHaveBeenCalledWith(
+        expect(writeJsonFile).toHaveBeenCalledTimes(1);
+        expect(writeJsonFile).toHaveBeenCalledWith(
           getMockWritePath(dir, 'package.json'),
-          jsonStringify({
+          {
             ...cloneDeep(manifest),
             [ManifestFieldNames.Version]: newVersion,
-          }),
+          },
         );
         expect(updateChangelogMock).not.toHaveBeenCalled();
       });
@@ -351,14 +300,14 @@ describe('package-operations', () => {
         };
 
         await updatePackage(packageMetadata, updateSpecification);
-        expect(writeFileMock).toHaveBeenCalledTimes(2);
-        expect(writeFileMock).toHaveBeenNthCalledWith(
+        expect(writeJsonFile).toHaveBeenCalledTimes(1);
+        expect(writeJsonFile).toHaveBeenNthCalledWith(
           1,
           getMockWritePath(dir, 'package.json'),
-          jsonStringify({
+          {
             ...cloneDeep(manifest),
             [ManifestFieldNames.Version]: newVersion,
-          }),
+          },
         );
         expect(updateChangelogMock).toHaveBeenCalledTimes(1);
         expect(updateChangelogMock).toHaveBeenCalledWith({
@@ -370,8 +319,9 @@ describe('package-operations', () => {
           formatter: expect.any(Function),
         });
 
+        expect(writeFileMock).toHaveBeenCalledOnce();
         expect(writeFileMock).toHaveBeenNthCalledWith(
-          2,
+          1,
           getMockWritePath(dir, 'CHANGELOG.md'),
           mockNewChangelog,
         );
@@ -398,7 +348,7 @@ describe('package-operations', () => {
           synchronizeVersions: false,
         };
 
-        const consoleErrorSpy = jest
+        const consoleErrorSpy = vi
           .spyOn(console, 'error')
           .mockImplementationOnce(() => undefined);
 
@@ -435,7 +385,7 @@ describe('package-operations', () => {
           synchronizeVersions: false,
         };
 
-        const consoleWarnSpy = jest
+        const consoleWarnSpy = vi
           .spyOn(console, 'warn')
           .mockImplementationOnce(() => undefined);
 
@@ -461,9 +411,11 @@ describe('package-operations', () => {
 
         // no new changelog content and no unreleased changes will cause an error
         updateChangelogMock.mockImplementation(async () => '');
-        const actualChangelog = jest.requireActual(
+        const actualChangelog = await vi.importActual<typeof import('@metamask/auto-changelog')>(
           '@metamask/auto-changelog/dist/changelog',
         );
+
+        // @ts-expect-error: Partial mock.
         parseChangelogMock.mockImplementationOnce(() => {
           return {
             ...actualChangelog,
@@ -487,14 +439,14 @@ describe('package-operations', () => {
         ).rejects.toThrow(
           '"updateChangelog" returned an empty value for package "name1".',
         );
-        expect(writeFileMock).toHaveBeenCalledTimes(1);
-        expect(writeFileMock).toHaveBeenNthCalledWith(
+        expect(writeJsonFile).toHaveBeenCalledTimes(1);
+        expect(writeJsonFile).toHaveBeenNthCalledWith(
           1,
           getMockWritePath(dir, 'package.json'),
-          jsonStringify({
+          {
             ...cloneDeep(manifest),
             [ManifestFieldNames.Version]: newVersion,
-          }),
+          },
         );
         expect(updateChangelogMock).toHaveBeenCalledTimes(1);
         expect(updateChangelogMock).toHaveBeenCalledWith({
@@ -525,9 +477,11 @@ describe('package-operations', () => {
         readFileMock.mockImplementationOnce(async () => changelogContent);
 
         updateChangelogMock.mockImplementation(async () => '');
-        const actualChangelog = jest.requireActual(
-          '@metamask/auto-changelog/dist/changelog',
-        );
+        const actualChangelog = await vi.importActual<
+          typeof import('@metamask/auto-changelog')
+        >('@metamask/auto-changelog/dist/changelog');
+
+        // @ts-expect-error: Partial mock.
         parseChangelogMock.mockImplementationOnce(() => {
           return {
             ...actualChangelog,
@@ -549,14 +503,13 @@ describe('package-operations', () => {
         };
 
         await updatePackage(packageMetadata, updateSpecification);
-        expect(writeFileMock).toHaveBeenCalledTimes(1);
-        expect(writeFileMock).toHaveBeenNthCalledWith(
+        expect(writeJsonFile).toHaveBeenNthCalledWith(
           1,
           getMockWritePath(dir, 'package.json'),
-          jsonStringify({
+          {
             ...cloneDeep(manifest),
             [ManifestFieldNames.Version]: newVersion,
-          }),
+          },
         );
         expect(updateChangelogMock).toHaveBeenCalledTimes(1);
         expect(updateChangelogMock).toHaveBeenCalledWith({
@@ -589,9 +542,11 @@ describe('package-operations', () => {
 
         // no new changelog content and no unreleased changes will cause an error
         updateChangelogMock.mockImplementation(async () => '');
-        const actualChangelog = jest.requireActual(
-          '@metamask/auto-changelog/dist/changelog',
-        );
+        const actualChangelog = await vi.importActual<
+          typeof import('@metamask/auto-changelog')
+        >('@metamask/auto-changelog/dist/changelog');
+
+        // @ts-expect-error: Partial mock.
         parseChangelogMock.mockImplementationOnce(() => {
           return {
             ...actualChangelog,
@@ -615,14 +570,14 @@ describe('package-operations', () => {
         ).rejects.toThrow(
           '"updateChangelog" returned an empty value for package at "root/dir1".',
         );
-        expect(writeFileMock).toHaveBeenCalledTimes(1);
-        expect(writeFileMock).toHaveBeenNthCalledWith(
+        expect(writeJsonFile).toHaveBeenCalledTimes(1);
+        expect(writeJsonFile).toHaveBeenNthCalledWith(
           1,
           getMockWritePath(dir, 'package.json'),
-          jsonStringify({
+          {
             ...cloneDeep(manifest),
             [ManifestFieldNames.Version]: newVersion,
-          }),
+          },
         );
         expect(updateChangelogMock).toHaveBeenCalledTimes(1);
         expect(updateChangelogMock).toHaveBeenCalledWith({
@@ -660,13 +615,13 @@ describe('package-operations', () => {
         };
 
         await updatePackage(packageMetadata, updateSpecification);
-        expect(writeFileMock).toHaveBeenCalledTimes(1);
-        expect(writeFileMock).toHaveBeenCalledWith(
+        expect(writeJsonFile).toHaveBeenCalledTimes(1);
+        expect(writeJsonFile).toHaveBeenCalledWith(
           getMockWritePath(dir, 'package.json'),
-          jsonStringify({
+          {
             ...cloneDeep(manifest),
             [ManifestFieldNames.Version]: newVersion,
-          }),
+          },
         );
         expect(updateChangelogMock).not.toHaveBeenCalled();
       });
@@ -705,12 +660,10 @@ describe('package-operations', () => {
         };
 
         await updatePackage(packageMetadata, updateSpecification);
-        expect(writeFileMock).toHaveBeenCalledTimes(1);
-        expect(writeFileMock).toHaveBeenCalledWith(
+        expect(writeJsonFile).toHaveBeenCalledTimes(1);
+        expect(writeJsonFile).toHaveBeenCalledWith(
           getMockWritePath(dir, 'package.json'),
-          jsonStringify(
-            getMockManifest(name, newVersion, expectedDependencies),
-          ),
+          getMockManifest(name, newVersion, expectedDependencies),
         );
         expect(updateChangelogMock).not.toHaveBeenCalled();
       });
@@ -744,23 +697,23 @@ describe('package-operations', () => {
         };
 
         await updatePackages(allPackages, updateSpecification);
-        expect(writeFileMock).toHaveBeenCalledTimes(2);
-        expect(writeFileMock).toHaveBeenNthCalledWith(
+        expect(writeJsonFile).toHaveBeenCalledTimes(2);
+        expect(writeJsonFile).toHaveBeenNthCalledWith(
           1,
           getMockWritePath(dir1, 'package.json'),
-          jsonStringify({
+          {
             ...cloneDeep(manifest1),
             [ManifestFieldNames.Version]: newVersion,
-          }),
+          },
         );
 
-        expect(writeFileMock).toHaveBeenNthCalledWith(
+        expect(writeJsonFile).toHaveBeenNthCalledWith(
           2,
           getMockWritePath(dir2, 'package.json'),
-          jsonStringify({
+          {
             ...cloneDeep(manifest2),
             [ManifestFieldNames.Version]: newVersion,
-          }),
+          },
         );
       });
     });

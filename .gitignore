@@ -58,3 +58,6 @@ build/Release
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Vitest
+coverage
