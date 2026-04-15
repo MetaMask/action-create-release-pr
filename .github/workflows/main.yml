@@ -110,6 +110,4 @@ jobs:
       contents: write
     uses: ./.github/workflows/publish-release.yml
     secrets:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      PUBLISH_DOCS_TOKEN: ${{ secrets.PUBLISH_DOCS_TOKEN }}
       SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
