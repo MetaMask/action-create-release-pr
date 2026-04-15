@@ -9,13 +9,11 @@
   "main": "lib/index.js",
   "engines": {
     "node": "^20 || ^22 || >=24",
-    "yarn": "^1.22.22"
+    "yarn": "^4.13.0"
   },
   "scripts": {
-    "setup": "yarn install && yarn setup:postinstall",
-    "setup:postinstall": "yarn allow-scripts",
     "lint:eslint": "yarn eslint . --cache --ext js,ts",
-    "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' --ignore-path .gitignore",
+    "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' '!.yarnrc.yml' --ignore-path .gitignore",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
     "build:clean": "yarn rimraf 'lib/*' 'dist/*'",
@@ -86,5 +84,5 @@
       "@lavamoat/preinstall-always-fail": false
     }
   },
-  "packageManager": "yarn@1.22.22"
+  "packageManager": "yarn@4.13.0"
 }
