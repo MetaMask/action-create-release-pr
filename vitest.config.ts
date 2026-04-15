@@ -10,6 +10,14 @@ export default defineConfig({
     // every test (equivalent to calling vi.clearAllMocks() before each test).
     clearMocks: true,
 
+    // Automatically reset mock state before every test (equivalent to calling
+    // vi.resetAllMocks() before each test).
+    mockReset: true,
+
+    // Automatically restore mock state and implementation before every test
+    // (equivalent to calling vi.restoreAllMocks() before each test).
+    restoreMocks: true,
+
     // The files to include in the test run.
     include: ['src/**/*.test.ts'],
 
