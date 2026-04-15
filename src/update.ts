@@ -12,20 +12,20 @@ import {
   validatePackageManifestVersion,
 } from '@metamask/action-utils';
 import type { ReleaseType as SemverReleaseType } from 'semver';
-import semverDiff from 'semver/functions/diff';
-import semverGt from 'semver/functions/gt';
-import semverIncrement from 'semver/functions/inc';
-import semverMajor from 'semver/functions/major';
+import semverDiff from 'semver/functions/diff.js';
+import semverGt from 'semver/functions/gt.js';
+import semverIncrement from 'semver/functions/inc.js';
+import semverMajor from 'semver/functions/major.js';
 
-import { getRepositoryHttpsUrl, getTags } from './git-operations';
+import { getRepositoryHttpsUrl, getTags } from './git-operations.js';
 import {
   getMetadataForAllPackages,
   getPackagesToUpdate,
   updatePackage,
   updatePackages,
-} from './package-operations';
-import type { ActionInputs } from './utils';
-import { WORKSPACE_ROOT } from './utils';
+} from './package-operations.js';
+import type { ActionInputs } from './utils.js';
+import { WORKSPACE_ROOT } from './utils.js';
 
 /**
  * Action entry function. Gets git tags, reads the work space root package.json,

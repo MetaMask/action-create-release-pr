@@ -1,8 +1,8 @@
 import * as actionsCore from '@actions/core';
 import { describe, expect, it, vi } from 'vitest';
 
-import * as actionModule from './update';
-import * as utils from './utils';
+import * as actionModule from './update.js';
+import * as utils from './utils.js';
 
 vi.mock('@actions/core', () => {
   return {
@@ -38,7 +38,7 @@ describe('main entry file', () => {
     const logErrorMock = vi.spyOn(actionsCore, 'error');
     const setFailedMock = vi.spyOn(actionsCore, 'setFailed');
 
-    await import('.');
+    await import('./index.js');
     await new Promise<void>((resolve) => {
       setImmediate(() => {
         expect(getActionInputsMock).toHaveBeenCalledTimes(1);

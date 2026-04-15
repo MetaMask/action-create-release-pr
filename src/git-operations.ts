@@ -1,9 +1,9 @@
+import { getExecOutput } from '@actions/exec';
 import { isValidSemver } from '@metamask/action-utils';
-import execa from 'execa';
-import semverClean from 'semver/functions/clean';
+import semverClean from 'semver/functions/clean.js';
 
-import type { PackageMetadata } from './package-operations';
-import { WORKSPACE_ROOT } from './utils';
+import type { PackageMetadata } from './package-operations.js';
+import { WORKSPACE_ROOT } from './utils.js';
 
 const HEAD = 'HEAD';
 
@@ -203,7 +203,7 @@ async function performGitOperation(
   ...args: string[]
 ): Promise<string> {
   return (
-    await execa('git', [command, ...args], { cwd: WORKSPACE_ROOT })
+    await getExecOutput('git', [command, ...args], { cwd: WORKSPACE_ROOT })
   ).stdout.trim();
 }
 
