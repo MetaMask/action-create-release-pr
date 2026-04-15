@@ -20,7 +20,7 @@ if git show-ref --tags "$MAJOR_VERSION_TAG" --quiet; then
   echo "Tag \"${MAJOR_VERSION_TAG}\" exists, attempting to delete it."
   git tag --delete "$MAJOR_VERSION_TAG"
   git push --delete origin "$MAJOR_VERSION_TAG"
-else 
+else
   echo "Tag \"${MAJOR_VERSION_TAG}\" does not exist, creating it from scratch."
 fi
 
