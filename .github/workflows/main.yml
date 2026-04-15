@@ -59,6 +59,9 @@ jobs:
   build-lint-test:
     name: Build, lint, and test
     uses: ./.github/workflows/build-lint-test.yml
+    permissions:
+      contents: read
+      checks: write
 
   all-jobs-completed:
     name: All jobs completed
