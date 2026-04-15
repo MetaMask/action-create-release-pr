@@ -416,7 +416,7 @@ describe('package-operations', () => {
         const actualChangelog = await vi.importActual<
           // eslint-disable-next-line @typescript-eslint/consistent-type-imports
           typeof import('@metamask/auto-changelog')
-        >('@metamask/auto-changelog/dist/changelog');
+        >('@metamask/auto-changelog');
 
         // @ts-expect-error: Partial mock.
         parseChangelogMock.mockImplementationOnce(() => {
@@ -483,7 +483,7 @@ describe('package-operations', () => {
         const actualChangelog = await vi.importActual<
           // eslint-disable-next-line @typescript-eslint/consistent-type-imports
           typeof import('@metamask/auto-changelog')
-        >('@metamask/auto-changelog/dist/changelog');
+        >('@metamask/auto-changelog');
 
         // @ts-expect-error: Partial mock.
         parseChangelogMock.mockImplementationOnce(() => {
@@ -549,7 +549,7 @@ describe('package-operations', () => {
         const actualChangelog = await vi.importActual<
           // eslint-disable-next-line @typescript-eslint/consistent-type-imports
           typeof import('@metamask/auto-changelog')
-        >('@metamask/auto-changelog/dist/changelog');
+        >('@metamask/auto-changelog');
 
         // @ts-expect-error: Partial mock.
         parseChangelogMock.mockImplementationOnce(() => {
