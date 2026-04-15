@@ -27,13 +27,6 @@ module.exports = {
         'import-x/unambiguous': 'off',
       },
     },
-    {
-      files: ['**/*.test.js', '**/*.test.ts'],
-      extends: ['@metamask/eslint-config-jest'],
-      rules: {
-        '@typescript-eslint/restrict-template-expressions': 'off',
-      },
-    },
   ],
 
   ignorePatterns: ['!.eslintrc.js', 'lib/', 'dist/'],

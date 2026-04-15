@@ -1,14 +1,24 @@
-import {
+import type {
   ManifestDependencyFieldNames,
   PackageManifest,
+} from '@metamask/action-utils';
+import {
   getPackageManifest,
   getWorkspaceLocations,
   writeJsonFile,
+  ManifestFieldNames,
 } from '@metamask/action-utils';
-import { ManifestFieldNames } from '@metamask/action-utils';
 import * as autoChangelog from '@metamask/auto-changelog';
 import { promises as fs } from 'fs';
 import cloneDeep from 'lodash.clonedeep';
+import {
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+  type MockInstance,
+} from 'vitest';
 
 import * as gitOps from './git-operations';
 import {
@@ -18,8 +28,6 @@ import {
   updatePackage,
   updatePackages,
 } from './package-operations';
-
-import { beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 
 vi.mock('fs', () => ({
   default: {},
@@ -70,10 +78,6 @@ type DependencyFieldsDict = Partial<
   Record<ManifestDependencyFieldNames, Record<string, string>>
 >;
 
-// Convenience method to match behavior of utils.writeJsonFile
-const jsonStringify = (value: unknown): string =>
-  `${JSON.stringify(value, null, 2)}\n`;
-
 const getMockManifest = (
   name: string,
   version: string,
@@ -104,9 +108,7 @@ describe('package-operations', () => {
     };
 
     beforeEach(() => {
-      vi.spyOn(fs, 'lstat').mockImplementation((async (
-        path: string,
-      ) => {
+      vi.spyOn(fs, 'lstat').mockImplementation((async (path: string) => {
         return path.endsWith(SOME_FILE)
           ? { isDirectory: (): boolean => false }
           : { isDirectory: (): boolean => true };
@@ -411,9 +413,10 @@ describe('package-operations', () => {
 
         // no new changelog content and no unreleased changes will cause an error
         updateChangelogMock.mockImplementation(async () => '');
-        const actualChangelog = await vi.importActual<typeof import('@metamask/auto-changelog')>(
-          '@metamask/auto-changelog/dist/changelog',
-        );
+        const actualChangelog = await vi.importActual<
+          // eslint-disable-next-line @typescript-eslint/consistent-type-imports
+          typeof import('@metamask/auto-changelog')
+        >('@metamask/auto-changelog/dist/changelog');
 
         // @ts-expect-error: Partial mock.
         parseChangelogMock.mockImplementationOnce(() => {
@@ -478,6 +481,7 @@ describe('package-operations', () => {
 
         updateChangelogMock.mockImplementation(async () => '');
         const actualChangelog = await vi.importActual<
+          // eslint-disable-next-line @typescript-eslint/consistent-type-imports
           typeof import('@metamask/auto-changelog')
         >('@metamask/auto-changelog/dist/changelog');
 
@@ -543,6 +547,7 @@ describe('package-operations', () => {
         // no new changelog content and no unreleased changes will cause an error
         updateChangelogMock.mockImplementation(async () => '');
         const actualChangelog = await vi.importActual<
+          // eslint-disable-next-line @typescript-eslint/consistent-type-imports
           typeof import('@metamask/auto-changelog')
         >('@metamask/auto-changelog/dist/changelog');
 

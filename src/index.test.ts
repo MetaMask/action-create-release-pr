@@ -1,9 +1,8 @@
 import * as actionsCore from '@actions/core';
+import { describe, expect, it, vi } from 'vitest';
 
 import * as actionModule from './update';
 import * as utils from './utils';
-
-import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@actions/core', () => {
   return {

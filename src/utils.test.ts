@@ -1,10 +1,10 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
 import {
   AcceptedSemverReleaseTypes,
   getActionInputs,
   InputKeys,
 } from './utils';
-
-import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('fs', () => ({
   promises: {
