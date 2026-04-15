@@ -1,27 +1,100 @@
 name: Build, Lint, and Test
 
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
 
 jobs:
-  build-lint-test:
+  prepare:
+    name: Prepare
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x, 24.x]
     steps:
       - name: Checkout and setup environment
         uses: MetaMask/action-checkout-and-setup@v3
         with:
           is-high-risk-environment: false
-      - run: yarn build
-      # below step will fail if there're still changes to commit after "yarn build"
-      # see if dist/index.js modified after "yarn build".
-      - run: git diff --quiet || { echo 'working directory dirty after "yarn build"'; exit 1; }
-      - run: yarn lint
-      - run: yarn test
+          node-version: ${{ matrix.node-version }}
+          cache-node-modules: ${{ matrix.node-version == '24.x' }}
 
-  all-tests-pass:
+  build:
+    name: Build
+    needs: prepare
     runs-on: ubuntu-latest
-    needs: build-lint-test
+    strategy:
+      matrix:
+        node-version: [24.x]
     steps:
-      - run: echo "Great success"
+      - name: Checkout and setup environment
+        uses: MetaMask/action-checkout-and-setup@v3
+        with:
+          is-high-risk-environment: false
+          node-version: ${{ matrix.node-version }}
+      - run: yarn build
+      - name: Require clean working directory
+        shell: bash
+        run: |
+          if ! git diff --exit-code; then
+            echo "Working tree dirty at end of job"
+            exit 1
+          fi
+
+  lint:
+    name: Lint
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [24.x]
+    permissions:
+      checks: write
+    steps:
+      - name: Checkout and setup environment
+        uses: MetaMask/action-checkout-and-setup@v3
+        with:
+          is-high-risk-environment: false
+          node-version: ${{ matrix.node-version }}
+      - run: yarn lint
+      - name: Shellcheck
+        uses: fearphage/shellcheck-action@95d2a3d34d381a7314c286ea1725ca8cce3b51fd
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate RC changelog
+        if: ${{ startsWith(github.head_ref, 'release/') }}
+        run: yarn lint:changelog --rc
+      - name: Validate changelog
+        if: ${{ !startsWith(github.head_ref, 'release/') }}
+        run: yarn lint:changelog
+      - name: Require clean working directory
+        shell: bash
+        run: |
+          if ! git diff --exit-code; then
+            echo "Working tree dirty at end of job"
+            exit 1
+          fi
+
+  test:
+    name: Test
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x, 22.x, 24.x]
+    steps:
+      - name: Checkout and setup environment
+        uses: MetaMask/action-checkout-and-setup@v3
+        with:
+          is-high-risk-environment: false
+          node-version: ${{ matrix.node-version }}
+      - run: yarn test
+      - name: Require clean working directory
+        shell: bash
+        run: |
+          if ! git diff --exit-code; then
+            echo "Working tree dirty at end of job"
+            exit 1
+          fi

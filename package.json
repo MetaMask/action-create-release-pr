@@ -12,10 +12,11 @@
     "yarn": "^4.13.0"
   },
   "scripts": {
-    "lint:eslint": "yarn eslint . --cache --ext js,ts",
-    "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' '!.yarnrc.yml' --ignore-path .gitignore",
     "lint": "yarn lint:eslint && yarn lint:misc --check",
+    "lint:changelog": "auto-changelog validate --prettier",
+    "lint:eslint": "yarn eslint . --cache --ext js,ts",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
+    "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' '!.yarnrc.yml' --ignore-path .gitignore",
     "build:clean": "yarn rimraf 'lib/*' 'dist/*'",
     "build:tsc": "tsc --project tsconfig.build.json",
     "build:ncc": "ncc build lib/index.js --out dist",
