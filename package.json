@@ -45,13 +45,13 @@
   },
   "homepage": "https://github.com/MetaMask/action-create-release-pr#readme",
   "dependencies": {
+    "@lavamoat/allow-scripts": "^2.5.1",
     "oxfmt": "^0.44.0",
     "prettier": "^3.3.3"
   },
   "devDependencies": {
     "@actions/core": "^3.0.0",
     "@actions/exec": "^3.0.0",
-    "@lavamoat/allow-scripts": "^2.5.1",
     "@lavamoat/preinstall-always-fail": "^3.0.0",
     "@metamask/action-utils": "^1.1.1",
     "@metamask/auto-changelog": "^6.1.0",
