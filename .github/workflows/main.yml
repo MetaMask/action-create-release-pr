@@ -5,10 +5,15 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   check-workflows:
     name: Check workflows
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout and setup environment
         uses: MetaMask/action-checkout-and-setup@v3
@@ -66,6 +71,7 @@ jobs:
   all-jobs-completed:
     name: All jobs completed
     runs-on: ubuntu-latest
+    permissions: {}
     needs:
       - check-workflows
       - analyse-code
@@ -81,6 +87,7 @@ jobs:
     name: All jobs pass
     if: ${{ always() }}
     runs-on: ubuntu-latest
+    permissions: {}
     needs: all-jobs-completed
     steps:
       - name: Check that all jobs have passed
