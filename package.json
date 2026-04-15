@@ -21,7 +21,7 @@
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' '!.yarnrc.yml' --ignore-path .gitignore",
     "build:clean": "yarn rimraf 'lib/*' 'dist/*'",
     "build:tsc": "tsc --project tsconfig.build.json",
-    "build:ncc": "ncc build lib/index.js --out dist --target es2024 --external undici --external @actions/http-client --external @octokit/rest",
+    "build:ncc": "ncc build lib/index.js --out dist --target es2024",
     "build": "yarn build:clean && yarn build:tsc && yarn build:ncc",
     "test": "vitest",
     "test:watch": "vitest --watch",
