@@ -16,7 +16,7 @@ vi.mock('@actions/exec', () => ({
   getExecOutput: vi.fn(),
 }));
 
-const execaMock = vi.mocked(getExecOutput);
+const execMock = vi.mocked(getExecOutput);
 
 enum VERSIONS {
   First = '1.0.0',
@@ -52,12 +52,12 @@ describe('getRepositoryHttpsUrl', () => {
     const repoHttpsUrl = 'https://github.com/Foo/Bar';
     // execa('git', ['config', '--get', ...])
     // @ts-expect-error: Partial mock.
-    execaMock.mockImplementationOnce(async () => {
+    execMock.mockImplementationOnce(async () => {
       return { stdout: repoHttpsUrl, stderr: '', exitCode: 0 };
     });
 
     expect(await getRepositoryHttpsUrl()).toStrictEqual(repoHttpsUrl);
-    expect(execaMock).toHaveBeenCalledTimes(1);
+    expect(execMock).toHaveBeenCalledTimes(1);
   });
 
   it('gets the repository https url (ssh)', async () => {
@@ -65,17 +65,17 @@ describe('getRepositoryHttpsUrl', () => {
     const repoSshUrl = 'git@github.com:Foo/Bar.git';
     // execa('git', ['config', '--get', ...])
     // @ts-expect-error: Partial mock.
-    execaMock.mockImplementationOnce(async () => {
+    execMock.mockImplementationOnce(async () => {
       return { stdout: repoSshUrl, stderr: '', exitCode: 0 };
     });
 
     expect(await getRepositoryHttpsUrl()).toStrictEqual(repoHttpsUrl);
-    expect(execaMock).toHaveBeenCalledTimes(1);
+    expect(execMock).toHaveBeenCalledTimes(1);
   });
 
   it('throws on unrecognized urls', async () => {
     // execa('git', ['config', '--get', ...])
-    execaMock
+    execMock
       // @ts-expect-error: Partial mock.
       .mockImplementationOnce(async () => {
         return { stdout: 'foo', stderr: '', exitCode: 0 };
@@ -121,17 +121,17 @@ describe('getTags', () => {
   it('successfully parses tags', async () => {
     // execa('git', ['tag', ...])
     // @ts-expect-error: Partial mock.
-    execaMock.mockImplementationOnce(async () => {
+    execMock.mockImplementationOnce(async () => {
       return { stdout: RAW_MOCK_TAGS, stderr: '', exitCode: 0 };
     });
 
     expect(await getTags()).toStrictEqual([PARSED_MOCK_TAGS, TAGS.Third]);
-    expect(execaMock).toHaveBeenCalledTimes(1);
+    expect(execMock).toHaveBeenCalledTimes(1);
   });
 
   it('succeeds if repo has complete history and no tags', async () => {
     // @ts-expect-error: Partial mock.
-    execaMock.mockImplementation(async (...args: string[][]) => {
+    execMock.mockImplementation(async (...args: string[][]) => {
       const gitCommand = args[1][0];
       if (gitCommand === 'tag') {
         return { stdout: '', stderr: '', exitCode: 0 };
@@ -142,12 +142,12 @@ describe('getTags', () => {
     });
 
     expect(await getTags()).toStrictEqual([new Set(), null]);
-    expect(execaMock).toHaveBeenCalledTimes(2);
+    expect(execMock).toHaveBeenCalledTimes(2);
   });
 
   it('throws if repo has incomplete history and no tags', async () => {
     // @ts-expect-error: Partial mock.
-    execaMock.mockImplementation(async (...args: string[][]) => {
+    execMock.mockImplementation(async (...args: string[][]) => {
       const gitCommand = args[1][0];
       if (gitCommand === 'tag') {
         return { stdout: '', stderr: '', exitCode: 0 };
@@ -158,23 +158,23 @@ describe('getTags', () => {
     });
 
     await expect(getTags()).rejects.toThrow(/^"git tag" returned no tags/u);
-    expect(execaMock).toHaveBeenCalledTimes(2);
+    expect(execMock).toHaveBeenCalledTimes(2);
   });
 
   it('throws if repo has invalid tags', async () => {
     // execa('git', ['tag', ...])
     // @ts-expect-error: Partial mock.
-    execaMock.mockImplementationOnce(async () => {
+    execMock.mockImplementationOnce(async () => {
       return { stdout: 'foo\nbar\n', stderr: '', exitCode: 0 };
     });
 
     await expect(getTags()).rejects.toThrow(/^Invalid latest tag/u);
-    expect(execaMock).toHaveBeenCalledTimes(1);
+    expect(execMock).toHaveBeenCalledTimes(1);
   });
 
   it('throws if git rev-parse returns unrecognized value', async () => {
     // @ts-expect-error: Partial mock.
-    execaMock.mockImplementation(async (...args: string[][]) => {
+    execMock.mockImplementation(async (...args: string[][]) => {
       const gitCommand = args[1][0];
       if (gitCommand === 'tag') {
         return { stdout: '', stderr: '', exitCode: 0 };
@@ -187,19 +187,19 @@ describe('getTags', () => {
     await expect(getTags()).rejects.toThrow(
       /^"git rev-parse --is-shallow-repository" returned unrecognized/u,
     );
-    expect(execaMock).toHaveBeenCalledTimes(2);
+    expect(execMock).toHaveBeenCalledTimes(2);
   });
 });
 
 describe('didPackageChange', () => {
   it('returns true if there are no tags', async () => {
     expect(await didPackageChange(new Set(), {} as any)).toBe(true);
-    expect(execaMock).not.toHaveBeenCalled();
+    expect(execMock).not.toHaveBeenCalled();
   });
 
   it('calls "git diff" with expected tag', async () => {
     // @ts-expect-error: Partial mock.
-    execaMock.mockImplementationOnce(async () => {
+    execMock.mockImplementationOnce(async () => {
       return { stdout: RAW_DIFFS[TAGS.First], stderr: '', exitCode: 0 };
     });
 
@@ -220,7 +220,7 @@ describe('didPackageChange', () => {
         dirPath: `packages/${PACKAGES.B.dir}`,
       }),
     ).toBe(true);
-    expect(execaMock).toHaveBeenCalledTimes(1);
+    expect(execMock).toHaveBeenCalledTimes(1);
   });
 
   it('repeat call for tag retrieves result from cache', async () => {
@@ -232,12 +232,12 @@ describe('didPackageChange', () => {
         dirPath: `packages/${PACKAGES.A.dir}`,
       }),
     ).toBe(true);
-    expect(execaMock).not.toHaveBeenCalled();
+    expect(execMock).not.toHaveBeenCalled();
   });
 
   it('only returns true for packages that actually changed', async () => {
     // @ts-expect-error: Partial mock.
-    execaMock.mockImplementationOnce(async () => {
+    execMock.mockImplementationOnce(async () => {
       return { stdout: RAW_DIFFS[TAGS.Second], stderr: '', exitCode: 0 };
     });
 
@@ -258,7 +258,7 @@ describe('didPackageChange', () => {
         dirPath: `packages/${PACKAGES.B.dir}`,
       }),
     ).toBe(false);
-    expect(execaMock).toHaveBeenCalledTimes(1);
+    expect(execMock).toHaveBeenCalledTimes(1);
   });
 
   it('throws if package manifest specifies version without tag', async () => {
@@ -270,7 +270,7 @@ describe('didPackageChange', () => {
         dirPath: `packages/${PACKAGES.A.dir}`,
       }),
     ).rejects.toThrow(/no corresponding tag/u);
-    expect(execaMock).not.toHaveBeenCalled();
+    expect(execMock).not.toHaveBeenCalled();
   });
 
   it('throws if metadata is empty', async () => {
@@ -281,6 +281,6 @@ describe('didPackageChange', () => {
         dirPath: `packages/${PACKAGES.A.dir}`,
       } as PackageMetadata),
     ).rejects.toThrow(/undefined.*vundefined/u);
-    expect(execaMock).not.toHaveBeenCalled();
+    expect(execMock).not.toHaveBeenCalled();
   });
 });
