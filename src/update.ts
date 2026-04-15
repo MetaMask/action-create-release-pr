@@ -24,7 +24,7 @@ import {
   updatePackage,
   updatePackages,
 } from './package-operations.js';
-import type { ActionInputs } from './utils.js';
+import type { ActionInputs, Formatter } from './utils.js';
 import { WORKSPACE_ROOT } from './utils.js';
 
 /**
@@ -76,6 +76,7 @@ export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
       validateMonorepoPackageManifest(rootManifest, WORKSPACE_ROOT),
       repositoryUrl,
       tags,
+      actionInputs.Formatter,
     );
   } else {
     console.log(
@@ -86,6 +87,7 @@ export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
       newVersion,
       validatePackageManifestName(rootManifest, WORKSPACE_ROOT),
       repositoryUrl,
+      actionInputs.Formatter,
     );
   }
   setActionOutput('NEW_VERSION', newVersion);
@@ -98,15 +100,18 @@ export async function performUpdate(actionInputs: ActionInputs): Promise<void> {
  * @param newVersion - The package's new version.
  * @param manifest - The package's parsed package.json file.
  * @param repositoryUrl - The HTTPS URL of the repository.
+ * @param formatter - The formatter to use for formatting the changelog.
  */
 async function updatePolyrepo(
   newVersion: string,
   manifest: PolyrepoPackageManifest,
   repositoryUrl: string,
+  formatter: Formatter,
 ): Promise<void> {
   await updatePackage(
     { dirPath: './', manifest },
     { newVersion, repositoryUrl, shouldUpdateChangelog: true },
+    formatter,
   );
 }
 
@@ -124,6 +129,7 @@ async function updatePolyrepo(
  * @param repositoryUrl - The HTTPS URL of the repository.
  * @param tags - All tags reachable from the current git HEAD, as from "git
  * tag --merged".
+ * @param formatter - The formatter to use for formatting the changelog.
  */
 async function updateMonorepo(
   newVersion: string,
@@ -131,6 +137,7 @@ async function updateMonorepo(
   rootManifest: MonorepoPackageManifest,
   repositoryUrl: string,
   tags: ReadonlySet<string>,
+  formatter: Formatter,
 ): Promise<void> {
   // If the version bump is major or the new major version is still "0", we
   // synchronize the versions of all monorepo packages, meaning the "version"
@@ -157,10 +164,11 @@ async function updateMonorepo(
   // Finally, bump the version of all packages and the root manifest, update the
   // changelogs of all updated packages, and add the new version as an output of
   // this Action.
-  await updatePackages(allPackages, updateSpecification);
+  await updatePackages(allPackages, updateSpecification, formatter);
   await updatePackage(
     { dirPath: './', manifest: rootManifest },
     { ...updateSpecification, shouldUpdateChangelog: false },
+    formatter,
   );
 }
 

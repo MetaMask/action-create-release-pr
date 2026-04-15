@@ -28,8 +28,13 @@ describe('main entry file', () => {
     const getActionInputsMock = vi
       .spyOn(utils, 'getActionInputs')
       .mockImplementationOnce(() => {
-        return { ReleaseType: null, ReleaseVersion: '1.0.0' };
+        return {
+          ReleaseType: null,
+          ReleaseVersion: '1.0.0',
+          Formatter: 'prettier',
+        };
       });
+
     const performUpdateMock = vi
       .spyOn(actionModule, 'performUpdate')
       .mockImplementationOnce(async () => {

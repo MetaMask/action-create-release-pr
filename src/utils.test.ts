@@ -16,9 +16,11 @@ vi.mock('fs', () => ({
 const mockProcessEnv = ({
   releaseType,
   releaseVersion,
+  formatter = 'prettier',
 }: {
   releaseType?: string;
   releaseVersion?: string;
+  formatter?: string;
 }): void => {
   if (releaseType !== undefined) {
     process.env[InputKeys.ReleaseType] = releaseType;
@@ -26,6 +28,10 @@ const mockProcessEnv = ({
 
   if (releaseVersion !== undefined) {
     process.env[InputKeys.ReleaseVersion] = releaseVersion;
+  }
+
+  if (formatter !== undefined) {
+    process.env[InputKeys.Formatter] = formatter;
   }
 };
 
@@ -44,6 +50,7 @@ describe('getActionInputs', () => {
       expect(getActionInputs()).toStrictEqual({
         ReleaseType: releaseType,
         ReleaseVersion: null,
+        Formatter: 'prettier',
       });
     }
   });
@@ -55,6 +62,7 @@ describe('getActionInputs', () => {
       expect(getActionInputs()).toStrictEqual({
         ReleaseType: null,
         ReleaseVersion: releaseVersion,
+        Formatter: 'prettier',
       });
     }
   });

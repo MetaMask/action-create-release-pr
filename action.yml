@@ -19,6 +19,10 @@ inputs:
     default: 'draft'
     description: 'The status of the pull request when created. Allowed options are "draft" and "open"'
     required: true
+  formatter:
+    description: 'The formatter to use when updating CHANGELOG.md files. Allowed options are "oxfmt" and "prettier".'
+    default: 'prettier'
+    required: false
 
 runs:
   using: 'composite'
@@ -29,6 +33,7 @@ runs:
       env:
         RELEASE_TYPE: ${{ inputs.release-type }}
         RELEASE_VERSION: ${{ inputs.release-version }}
+        FORMATTER: ${{ inputs.formatter }}
     - id: create-release-pr
       shell: bash
       run: |

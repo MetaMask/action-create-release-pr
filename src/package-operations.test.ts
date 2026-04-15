@@ -22,7 +22,7 @@ import {
 
 import * as gitOps from './git-operations.js';
 import {
-  formatChangelog,
+  getFormatter,
   getMetadataForAllPackages,
   getPackagesToUpdate,
   updatePackage,
@@ -53,6 +53,8 @@ vi.mock('@metamask/auto-changelog', () => {
   return {
     updateChangelog: vi.fn(),
     parseChangelog: vi.fn(),
+    prettier: vi.fn(),
+    oxfmt: vi.fn(),
   };
 });
 
@@ -266,7 +268,7 @@ describe('package-operations', () => {
           synchronizeVersions: false,
         };
 
-        await updatePackage(packageMetadata, updateSpecification);
+        await updatePackage(packageMetadata, updateSpecification, 'prettier');
         expect(writeJsonFile).toHaveBeenCalledTimes(1);
         expect(writeJsonFile).toHaveBeenCalledWith(
           getMockWritePath(dir, 'package.json'),
@@ -301,7 +303,7 @@ describe('package-operations', () => {
           synchronizeVersions: false,
         };
 
-        await updatePackage(packageMetadata, updateSpecification);
+        await updatePackage(packageMetadata, updateSpecification, 'prettier');
         expect(writeJsonFile).toHaveBeenCalledTimes(1);
         expect(writeJsonFile).toHaveBeenNthCalledWith(
           1,
@@ -356,7 +358,7 @@ describe('package-operations', () => {
           .mockImplementationOnce(() => undefined);
 
         await expect(
-          updatePackage(packageMetadata, updateSpecification),
+          updatePackage(packageMetadata, updateSpecification, 'prettier'),
         ).rejects.toThrow(new Error('readError'));
         expect(updateChangelogMock).not.toHaveBeenCalled();
         expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
@@ -392,7 +394,7 @@ describe('package-operations', () => {
           .spyOn(console, 'warn')
           .mockImplementationOnce(() => undefined);
 
-        await updatePackage(packageMetadata, updateSpecification);
+        await updatePackage(packageMetadata, updateSpecification, 'prettier');
 
         expect(updateChangelogMock).not.toHaveBeenCalled();
         expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
@@ -439,7 +441,7 @@ describe('package-operations', () => {
         };
 
         await expect(
-          updatePackage(packageMetadata, updateSpecification),
+          updatePackage(packageMetadata, updateSpecification, 'prettier'),
         ).rejects.toThrow(
           '"updateChangelog" returned an empty value for package "name1".',
         );
@@ -508,7 +510,7 @@ describe('package-operations', () => {
           synchronizeVersions: false,
         };
 
-        await updatePackage(packageMetadata, updateSpecification);
+        await updatePackage(packageMetadata, updateSpecification, 'prettier');
         expect(writeJsonFile).toHaveBeenNthCalledWith(
           1,
           getMockWritePath(dir, 'package.json'),
@@ -574,7 +576,7 @@ describe('package-operations', () => {
         };
 
         await expect(
-          updatePackage(packageMetadata, updateSpecification),
+          updatePackage(packageMetadata, updateSpecification, 'prettier'),
         ).rejects.toThrow(
           '"updateChangelog" returned an empty value for package at "root/dir1".',
         );
@@ -623,7 +625,7 @@ describe('package-operations', () => {
           shouldUpdateChangelog: false,
         };
 
-        await updatePackage(packageMetadata, updateSpecification);
+        await updatePackage(packageMetadata, updateSpecification, 'prettier');
         expect(writeJsonFile).toHaveBeenCalledTimes(1);
         expect(writeJsonFile).toHaveBeenCalledWith(
           getMockWritePath(dir, 'package.json'),
@@ -668,7 +670,7 @@ describe('package-operations', () => {
           shouldUpdateChangelog: false,
         };
 
-        await updatePackage(packageMetadata, updateSpecification);
+        await updatePackage(packageMetadata, updateSpecification, 'prettier');
         expect(writeJsonFile).toHaveBeenCalledTimes(1);
         expect(writeJsonFile).toHaveBeenCalledWith(
           getMockWritePath(dir, 'package.json'),
@@ -705,7 +707,7 @@ describe('package-operations', () => {
           shouldUpdateChangelog: false,
         };
 
-        await updatePackages(allPackages, updateSpecification);
+        await updatePackages(allPackages, updateSpecification, 'prettier');
         expect(writeJsonFile).toHaveBeenCalledTimes(2);
         expect(writeJsonFile).toHaveBeenNthCalledWith(
           1,
@@ -728,30 +730,22 @@ describe('package-operations', () => {
     });
   });
 
-  describe('formatChangelog', () => {
-    it('formats a changelog', async () => {
-      const unformattedChangelog = `#  Changelog
-##     1.0.0
+  describe('getFormatter', () => {
+    it('returns the Oxfmt formatter', async () => {
+      const formatter = getFormatter('oxfmt');
+      expect(formatter).toBe(autoChangelog.oxfmt);
+    });
 
- - Some change
-## 0.0.1
+    it('returns the Prettier formatter', async () => {
+      const formatter = getFormatter('prettier');
+      expect(formatter).toBe(autoChangelog.prettier);
+    });
 
-- Some other change
-`;
-
-      expect(await formatChangelog(unformattedChangelog))
-        .toMatchInlineSnapshot(`
-        "# Changelog
-
-        ## 1.0.0
-
-        - Some change
-
-        ## 0.0.1
-
-        - Some other change
-        "
-      `);
+    it('throws if an unknown formatter name is given', async () => {
+      // @ts-expect-error: Invalid formatter name for testing purposes.
+      expect(() => getFormatter('some-unknown-formatter')).toThrow(
+        'Unsupported formatter: "some-unknown-formatter".',
+      );
     });
   });
 });

@@ -12,13 +12,17 @@ import {
   validatePolyrepoPackageManifest,
   writeJsonFile,
 } from '@metamask/action-utils';
-import { parseChangelog, updateChangelog } from '@metamask/auto-changelog';
+import {
+  oxfmt,
+  parseChangelog,
+  prettier,
+  updateChangelog,
+} from '@metamask/auto-changelog';
 import { promises as fs } from 'fs';
 import pathUtils from 'path';
-import * as markdown from 'prettier/plugins/markdown';
-import { format } from 'prettier/standalone';
 
 import { didPackageChange } from './git-operations.js';
+import type { Formatter } from './utils.js';
 import { WORKSPACE_ROOT, isErrorWithCode } from './utils.js';
 
 export interface PackageMetadata {
@@ -171,15 +175,17 @@ export async function getPackagesToUpdate(
  *
  * @param allPackages - The metadata of all monorepo packages.
  * @param updateSpecification - The update specification.
+ * @param formatter - The formatter to use for formatting the changelog.
  */
 export async function updatePackages(
   allPackages: Record<string, Pick<PackageMetadata, 'dirPath' | 'manifest'>>,
   updateSpecification: MonorepoUpdateSpecification,
+  formatter: Formatter,
 ): Promise<void> {
   const { packagesToUpdate } = updateSpecification;
   await Promise.all(
     Array.from(packagesToUpdate.keys()).map(async (packageName) =>
-      updatePackage(allPackages[packageName], updateSpecification),
+      updatePackage(allPackages[packageName], updateSpecification, formatter),
     ),
   );
 }
@@ -200,11 +206,13 @@ export async function updatePackages(
  * file for the package.
  * @param updateSpecification - The update specification, which determines how
  * the update is performed.
+ * @param formatter - The formatter to use for formatting the changelog.
  * @param rootDir - The full path to the project.
  */
 export async function updatePackage(
   packageMetadata: { dirPath: string; manifest: Partial<PackageManifest> },
   updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
+  formatter: Formatter,
   rootDir: string = WORKSPACE_ROOT,
 ): Promise<void> {
   await Promise.all([
@@ -213,27 +221,30 @@ export async function updatePackage(
       getUpdatedManifest(packageMetadata.manifest, updateSpecification),
     ),
     updateSpecification.shouldUpdateChangelog
-      ? updatePackageChangelog(packageMetadata, updateSpecification)
+      ? updatePackageChangelog(packageMetadata, updateSpecification, formatter)
       : Promise.resolve(),
   ]);
 }
 
 /**
- * Format the given changelog using Prettier. This is extracted into a separate
- * function for coverage purposes.
+ * Get the formatting function for the given formatter name.
  *
- * @param changelog - The changelog to format.
- * @returns The formatted changelog.
+ * @param formatter - The name of the formatter.
+ * @returns The formatting function.
  */
-export async function formatChangelog(changelog: string): Promise<string> {
-  // TypeScript is loading Jest's `@types/prettier`, which uses Prettier 2
-  // (non-async). This function will be removed in a future refactor, so
-  // ignoring the type error for now.
-  // eslint-disable-next-line @typescript-eslint/await-thenable
-  return await format(changelog, {
-    parser: 'markdown',
-    plugins: [markdown],
-  });
+export function getFormatter(
+  formatter: 'oxfmt' | 'prettier',
+): (changelog: string) => Promise<string> {
+  switch (formatter) {
+    case 'oxfmt':
+      return oxfmt;
+
+    case 'prettier':
+      return prettier;
+
+    default:
+      throw new Error(`Unsupported formatter: "${String(formatter)}".`);
+  }
 }
 
 /**
@@ -248,12 +259,14 @@ export async function formatChangelog(changelog: string): Promise<string> {
  * file for the package.
  * @param updateSpecification - The update specification, which determines how
  * the update is performed.
+ * @param formatter - The formatter to use for formatting the changelog.
  * @param rootDir - The full path to the project.
  * @returns The result of writing to the changelog.
  */
 async function updatePackageChangelog(
   packageMetadata: { dirPath: string; manifest: Partial<PackageManifest> },
   updateSpecification: UpdateSpecification | MonorepoUpdateSpecification,
+  formatter: Formatter,
   rootDir: string = WORKSPACE_ROOT,
 ): Promise<number | void> {
   const { dirPath: projectRootDirectory } = packageMetadata;
@@ -282,15 +295,20 @@ async function updatePackageChangelog(
     isReleaseCandidate: true,
     projectRootDirectory,
     repoUrl: repositoryUrl,
-    formatter: formatChangelog,
     autoCategorize: true,
+    formatter: getFormatter(formatter),
   });
 
   if (newChangelogContent) {
     return await fs.writeFile(changelogPath, newChangelogContent);
   }
 
-  const hasUnReleased = hasUnreleasedChanges(changelogContent, repositoryUrl);
+  const hasUnReleased = hasUnreleasedChanges(
+    changelogContent,
+    repositoryUrl,
+    formatter,
+  );
+
   if (!hasUnReleased) {
     const packageName = packageMetadata.manifest.name;
     throw new Error(
@@ -308,16 +326,18 @@ async function updatePackageChangelog(
  *
  * @param changelogContent - The string formatted changelog.
  * @param repositoryUrl - The repository url.
+ * @param formatter - The formatter to use for formatting the changelog.
  * @returns The boolean true if there are unreleased changes, otherwise false.
  */
 function hasUnreleasedChanges(
   changelogContent: string,
   repositoryUrl: string,
+  formatter: Formatter,
 ): boolean {
   const changelog = parseChangelog({
     changelogContent,
     repoUrl: repositoryUrl,
-    formatter: formatChangelog,
+    formatter: getFormatter(formatter),
   });
 
   return Object.keys(changelog.getUnreleasedChanges()).length !== 0;
