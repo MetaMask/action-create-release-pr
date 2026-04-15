@@ -2,18 +2,21 @@
 // This must be set before the import, so that the default root workspace is set
 process.env.GITHUB_WORKSPACE = 'root';
 
-import execa from 'execa';
+import { getExecOutput } from '@actions/exec';
 import { vi, describe, it, expect } from 'vitest';
 
 import {
   didPackageChange,
   getRepositoryHttpsUrl,
   getTags,
-} from './git-operations';
-import type { PackageMetadata } from './package-operations';
+} from './git-operations.js';
+import type { PackageMetadata } from './package-operations.js';
 
-vi.mock('execa');
-const execaMock = vi.mocked(execa);
+vi.mock('@actions/exec', () => ({
+  getExecOutput: vi.fn(),
+}));
+
+const execaMock = vi.mocked(getExecOutput);
 
 enum VERSIONS {
   First = '1.0.0',
@@ -50,7 +53,7 @@ describe('getRepositoryHttpsUrl', () => {
     // execa('git', ['config', '--get', ...])
     // @ts-expect-error: Partial mock.
     execaMock.mockImplementationOnce(async () => {
-      return { stdout: repoHttpsUrl };
+      return { stdout: repoHttpsUrl, stderr: '', exitCode: 0 };
     });
 
     expect(await getRepositoryHttpsUrl()).toStrictEqual(repoHttpsUrl);
@@ -63,7 +66,7 @@ describe('getRepositoryHttpsUrl', () => {
     // execa('git', ['config', '--get', ...])
     // @ts-expect-error: Partial mock.
     execaMock.mockImplementationOnce(async () => {
-      return { stdout: repoSshUrl };
+      return { stdout: repoSshUrl, stderr: '', exitCode: 0 };
     });
 
     expect(await getRepositoryHttpsUrl()).toStrictEqual(repoHttpsUrl);
@@ -75,23 +78,35 @@ describe('getRepositoryHttpsUrl', () => {
     execaMock
       // @ts-expect-error: Partial mock.
       .mockImplementationOnce(async () => {
-        return { stdout: 'foo' };
+        return { stdout: 'foo', stderr: '', exitCode: 0 };
       })
       // @ts-expect-error: Partial mock.
       .mockImplementationOnce(async () => {
-        return { stdout: 'http://github.com/Foo/Bar' };
+        return { stdout: 'http://github.com/Foo/Bar', stderr: '', exitCode: 0 };
       })
       // @ts-expect-error: Partial mock.
       .mockImplementationOnce(async () => {
-        return { stdout: 'https://gitbar.foo/Foo/Bar' };
+        return {
+          stdout: 'https://gitbar.foo/Foo/Bar',
+          stderr: '',
+          exitCode: 0,
+        };
       })
       // @ts-expect-error: Partial mock.
       .mockImplementationOnce(async () => {
-        return { stdout: 'git@gitbar.foo:Foo/Bar.git' };
+        return {
+          stdout: 'git@gitbar.foo:Foo/Bar.git',
+          stderr: '',
+          exitCode: 0,
+        };
       })
       // @ts-expect-error: Partial mock.
       .mockImplementationOnce(async () => {
-        return { stdout: 'git@github.com:Foo/Bar.foo' };
+        return {
+          stdout: 'git@github.com:Foo/Bar.foo',
+          stderr: '',
+          exitCode: 0,
+        };
       });
 
     await expect(getRepositoryHttpsUrl()).rejects.toThrow(/^Unrecognized URL/u);
@@ -107,7 +122,7 @@ describe('getTags', () => {
     // execa('git', ['tag', ...])
     // @ts-expect-error: Partial mock.
     execaMock.mockImplementationOnce(async () => {
-      return { stdout: RAW_MOCK_TAGS };
+      return { stdout: RAW_MOCK_TAGS, stderr: '', exitCode: 0 };
     });
 
     expect(await getTags()).toStrictEqual([PARSED_MOCK_TAGS, TAGS.Third]);
@@ -119,9 +134,9 @@ describe('getTags', () => {
     execaMock.mockImplementation(async (...args: string[][]) => {
       const gitCommand = args[1][0];
       if (gitCommand === 'tag') {
-        return { stdout: '' };
+        return { stdout: '', stderr: '', exitCode: 0 };
       } else if (gitCommand === 'rev-parse') {
-        return { stdout: 'false' };
+        return { stdout: 'false', stderr: '', exitCode: 0 };
       }
       throw new Error(`Unrecognized git command: ${gitCommand}`);
     });
@@ -135,9 +150,9 @@ describe('getTags', () => {
     execaMock.mockImplementation(async (...args: string[][]) => {
       const gitCommand = args[1][0];
       if (gitCommand === 'tag') {
-        return { stdout: '' };
+        return { stdout: '', stderr: '', exitCode: 0 };
       } else if (gitCommand === 'rev-parse') {
-        return { stdout: 'true' };
+        return { stdout: 'true', stderr: '', exitCode: 0 };
       }
       throw new Error(`Unrecognized git command: ${gitCommand}`);
     });
@@ -150,7 +165,7 @@ describe('getTags', () => {
     // execa('git', ['tag', ...])
     // @ts-expect-error: Partial mock.
     execaMock.mockImplementationOnce(async () => {
-      return { stdout: 'foo\nbar\n' };
+      return { stdout: 'foo\nbar\n', stderr: '', exitCode: 0 };
     });
 
     await expect(getTags()).rejects.toThrow(/^Invalid latest tag/u);
@@ -162,9 +177,9 @@ describe('getTags', () => {
     execaMock.mockImplementation(async (...args: string[][]) => {
       const gitCommand = args[1][0];
       if (gitCommand === 'tag') {
-        return { stdout: '' };
+        return { stdout: '', stderr: '', exitCode: 0 };
       } else if (gitCommand === 'rev-parse') {
-        return { stdout: 'foo' };
+        return { stdout: 'foo', stderr: '', exitCode: 0 };
       }
       throw new Error(`Unrecognized git command: ${gitCommand}`);
     });
@@ -185,7 +200,7 @@ describe('didPackageChange', () => {
   it('calls "git diff" with expected tag', async () => {
     // @ts-expect-error: Partial mock.
     execaMock.mockImplementationOnce(async () => {
-      return { stdout: RAW_DIFFS[TAGS.First] };
+      return { stdout: RAW_DIFFS[TAGS.First], stderr: '', exitCode: 0 };
     });
 
     expect(
@@ -223,7 +238,7 @@ describe('didPackageChange', () => {
   it('only returns true for packages that actually changed', async () => {
     // @ts-expect-error: Partial mock.
     execaMock.mockImplementationOnce(async () => {
-      return { stdout: RAW_DIFFS[TAGS.Second] };
+      return { stdout: RAW_DIFFS[TAGS.Second], stderr: '', exitCode: 0 };
     });
 
     expect(

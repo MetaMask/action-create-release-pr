@@ -5,6 +5,9 @@ module.exports = {
 
   rules: {
     'n/no-process-env': 'off',
+
+    'import-x/extensions': ['error', 'ignorePackages'],
+    'import-x/no-useless-path-segments': ['error', { noUselessIndex: false }],
   },
 
   overrides: [

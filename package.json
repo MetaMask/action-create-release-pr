@@ -2,6 +2,8 @@
   "name": "action-create-release-pr",
   "private": true,
   "version": "4.0.0",
+  "type": "module",
+  "sideEffects": false,
   "description": "A GitHub Action for creating a release PR. Monorepo-compatible.",
   "files": [
     "lib/"
@@ -19,7 +21,7 @@
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '**/*.yml' '!.yarnrc.yml' --ignore-path .gitignore",
     "build:clean": "yarn rimraf 'lib/*' 'dist/*'",
     "build:tsc": "tsc --project tsconfig.build.json",
-    "build:ncc": "ncc build lib/index.js --out dist",
+    "build:ncc": "ncc build lib/index.js --out dist --target es2024 --external undici --external @actions/http-client --external @octokit/rest",
     "build": "yarn build:clean && yarn build:tsc && yarn build:ncc",
     "test": "vitest",
     "test:watch": "vitest --watch",
@@ -43,10 +45,10 @@
   },
   "homepage": "https://github.com/MetaMask/action-create-release-pr#readme",
   "dependencies": {
-    "@actions/core": "^1.10.0",
-    "@metamask/action-utils": "^1.0.0",
-    "@metamask/auto-changelog": "^4.0.0",
-    "execa": "^4.1.0",
+    "@actions/core": "^3.0.0",
+    "@actions/exec": "^3.0.0",
+    "@metamask/action-utils": "^1.1.1",
+    "@metamask/auto-changelog": "^6.1.0",
     "glob": "^7.1.7",
     "prettier": "^3.3.3",
     "semver": "^7.3.5"
@@ -63,7 +65,7 @@
     "@types/semver": "^7.3.4",
     "@typescript-eslint/eslint-plugin": "^8.1.0",
     "@typescript-eslint/parser": "^8.1.0",
-    "@vercel/ncc": "^0.38.1",
+    "@vercel/ncc": "^0.38.4",
     "@vitest/coverage-istanbul": "4.1.4",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^8.5.0",

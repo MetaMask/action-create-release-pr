@@ -18,8 +18,8 @@ import pathUtils from 'path';
 import * as markdown from 'prettier/plugins/markdown';
 import { format } from 'prettier/standalone';
 
-import { didPackageChange } from './git-operations';
-import { WORKSPACE_ROOT, isErrorWithCode } from './utils';
+import { didPackageChange } from './git-operations.js';
+import { WORKSPACE_ROOT, isErrorWithCode } from './utils.js';
 
 export interface PackageMetadata {
   readonly dirName: string;

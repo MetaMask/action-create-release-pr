@@ -3,8 +3,8 @@ import {
   setFailed as setActionToFailed,
 } from '@actions/core';
 
-import { performUpdate } from './update';
-import { getActionInputs } from './utils';
+import { performUpdate } from './update.js';
+import { getActionInputs } from './utils.js';
 
 performUpdate(getActionInputs()).catch((error) => {
   // istanbul ignore else

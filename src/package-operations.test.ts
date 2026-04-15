@@ -20,14 +20,14 @@ import {
   type MockInstance,
 } from 'vitest';
 
-import * as gitOps from './git-operations';
+import * as gitOps from './git-operations.js';
 import {
   formatChangelog,
   getMetadataForAllPackages,
   getPackagesToUpdate,
   updatePackage,
   updatePackages,
-} from './package-operations';
+} from './package-operations.js';
 
 vi.mock('fs', () => ({
   default: {},

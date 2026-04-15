@@ -3,10 +3,10 @@ import * as actionUtils from '@metamask/action-utils';
 import type { Mock } from 'vitest';
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 
-import * as gitOperations from './git-operations';
-import * as packageOperations from './package-operations';
-import { performUpdate } from './update';
-import * as utils from './utils';
+import * as gitOperations from './git-operations.js';
+import * as packageOperations from './package-operations.js';
+import { performUpdate } from './update.js';
+import * as utils from './utils.js';
 
 vi.mock('@actions/core', () => {
   return {

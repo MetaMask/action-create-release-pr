@@ -4,7 +4,7 @@ import {
   AcceptedSemverReleaseTypes,
   getActionInputs,
   InputKeys,
-} from './utils';
+} from './utils.js';
 
 vi.mock('fs', () => ({
   promises: {
