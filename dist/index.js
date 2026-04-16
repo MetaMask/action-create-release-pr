@@ -46058,6 +46058,7 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, form
         isReleaseCandidate: true,
         projectRootDirectory,
         repoUrl: repositoryUrl,
+        autoCategorize: true,
         formatter: getFormatter(formatter),
     });
     if (newChangelogContent) {
