@@ -4,6 +4,7 @@ import { isValidSemver, tabs } from '@metamask/action-utils';
 export enum InputKeys {
   ReleaseType = 'RELEASE_TYPE',
   ReleaseVersion = 'RELEASE_VERSION',
+  Formatter = 'FORMATTER',
 }
 
 /**
@@ -38,9 +39,12 @@ export enum InputNames {
   ReleaseVersion = 'release-version',
 }
 
+export type Formatter = 'oxfmt' | 'prettier';
+
 export interface ActionInputs {
   readonly ReleaseType: AcceptedSemverReleaseTypes | null;
   readonly ReleaseVersion: string | null;
+  readonly Formatter: Formatter;
 }
 
 export const WORKSPACE_ROOT = process.env.GITHUB_WORKSPACE;
@@ -59,6 +63,7 @@ export function getActionInputs(): ActionInputs {
         InputKeys.ReleaseType,
       ) as AcceptedSemverReleaseTypes) || null,
     ReleaseVersion: getProcessEnvValue(InputKeys.ReleaseVersion) || null,
+    Formatter: getProcessEnvValue(InputKeys.Formatter) as Formatter,
   };
   validateActionInputs(inputs);
   return inputs;

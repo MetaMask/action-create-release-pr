@@ -86,7 +86,11 @@ describe('performUpdate', () => {
       };
     });
 
-    await performUpdate({ ReleaseType: null, ReleaseVersion: newVersion });
+    await performUpdate({
+      ReleaseType: null,
+      ReleaseVersion: newVersion,
+      Formatter: 'prettier',
+    });
     expect(getRepositoryHttpsUrlMock).toHaveBeenCalledTimes(1);
     expect(getTagsMock).toHaveBeenCalledTimes(1);
     expect(consoleLogMock).toHaveBeenCalledTimes(1);
@@ -100,6 +104,7 @@ describe('performUpdate', () => {
         manifest: { name: packageName, version: oldVersion },
       },
       { newVersion, repositoryUrl: mockRepoUrl, shouldUpdateChangelog: true },
+      'prettier',
     );
     expect(setActionOutputMock).toHaveBeenCalledTimes(1);
     expect(setActionOutputMock).toHaveBeenCalledWith('NEW_VERSION', newVersion);
@@ -125,6 +130,7 @@ describe('performUpdate', () => {
     await performUpdate({
       ReleaseType: utils.AcceptedSemverReleaseTypes.Major,
       ReleaseVersion: null,
+      Formatter: 'prettier',
     });
     expect(getRepositoryHttpsUrlMock).toHaveBeenCalledTimes(1);
     expect(getTagsMock).toHaveBeenCalledTimes(1);
@@ -139,6 +145,7 @@ describe('performUpdate', () => {
         manifest: { name: packageName, version: oldVersion },
       },
       { newVersion, repositoryUrl: mockRepoUrl, shouldUpdateChangelog: true },
+      'prettier',
     );
     expect(setActionOutputMock).toHaveBeenCalledTimes(1);
     expect(setActionOutputMock).toHaveBeenCalledWith('NEW_VERSION', newVersion);
@@ -174,7 +181,11 @@ describe('performUpdate', () => {
       .spyOn(packageOperations, 'getPackagesToUpdate')
       .mockImplementationOnce(async () => new Set(workspaces));
 
-    await performUpdate({ ReleaseType: null, ReleaseVersion: newVersion });
+    await performUpdate({
+      ReleaseType: null,
+      ReleaseVersion: newVersion,
+      Formatter: 'prettier',
+    });
 
     expect(getRepositoryHttpsUrlMock).toHaveBeenCalledTimes(1);
     expect(getTagsMock).toHaveBeenCalledTimes(1);
@@ -201,6 +212,7 @@ describe('performUpdate', () => {
         shouldUpdateChangelog: true,
         synchronizeVersions: true,
       },
+      'prettier',
     );
 
     expect(packageOperations.updatePackage).toHaveBeenCalledTimes(1);
@@ -221,6 +233,7 @@ describe('performUpdate', () => {
         shouldUpdateChangelog: false,
         synchronizeVersions: true,
       },
+      'prettier',
     );
 
     expect(setActionOutputMock).toHaveBeenCalledTimes(1);
@@ -257,7 +270,11 @@ describe('performUpdate', () => {
       .spyOn(packageOperations, 'getPackagesToUpdate')
       .mockImplementationOnce(async () => new Set(workspaces));
 
-    await performUpdate({ ReleaseType: null, ReleaseVersion: newVersion });
+    await performUpdate({
+      ReleaseType: null,
+      ReleaseVersion: newVersion,
+      Formatter: 'prettier',
+    });
 
     expect(getRepositoryHttpsUrlMock).toHaveBeenCalledTimes(1);
     expect(getTagsMock).toHaveBeenCalledTimes(1);
@@ -284,6 +301,7 @@ describe('performUpdate', () => {
         shouldUpdateChangelog: true,
         synchronizeVersions: false,
       },
+      'prettier',
     );
 
     expect(packageOperations.updatePackage).toHaveBeenCalledTimes(1);
@@ -304,6 +322,7 @@ describe('performUpdate', () => {
         shouldUpdateChangelog: false,
         synchronizeVersions: false,
       },
+      'prettier',
     );
 
     expect(setActionOutputMock).toHaveBeenCalledTimes(1);
@@ -340,7 +359,11 @@ describe('performUpdate', () => {
       .spyOn(packageOperations, 'getPackagesToUpdate')
       .mockImplementationOnce(async () => new Set(workspaces));
 
-    await performUpdate({ ReleaseType: null, ReleaseVersion: newVersion });
+    await performUpdate({
+      ReleaseType: null,
+      ReleaseVersion: newVersion,
+      Formatter: 'prettier',
+    });
 
     expect(getRepositoryHttpsUrlMock).toHaveBeenCalledTimes(1);
     expect(getTagsMock).toHaveBeenCalledTimes(1);
@@ -367,6 +390,7 @@ describe('performUpdate', () => {
         shouldUpdateChangelog: true,
         synchronizeVersions: true,
       },
+      'prettier',
     );
 
     expect(packageOperations.updatePackage).toHaveBeenCalledTimes(1);
@@ -387,6 +411,7 @@ describe('performUpdate', () => {
         shouldUpdateChangelog: false,
         synchronizeVersions: true,
       },
+      'prettier',
     );
 
     expect(setActionOutputMock).toHaveBeenCalledTimes(1);
@@ -411,7 +436,11 @@ describe('performUpdate', () => {
     });
 
     await expect(
-      performUpdate({ ReleaseType: null, ReleaseVersion: newVersion }),
+      performUpdate({
+        ReleaseType: null,
+        ReleaseVersion: newVersion,
+        Formatter: 'prettier',
+      }),
     ).rejects.toThrow(/^The new version "1\.0\.0" is not greater than/u);
   });
 
@@ -433,7 +462,11 @@ describe('performUpdate', () => {
     });
 
     await expect(
-      performUpdate({ ReleaseType: null, ReleaseVersion: newVersion }),
+      performUpdate({
+        ReleaseType: null,
+        ReleaseVersion: newVersion,
+        Formatter: 'prettier',
+      }),
     ).rejects.toThrow(/^The new version "1\.1\.0" is not greater than/u);
   });
 
@@ -455,7 +488,11 @@ describe('performUpdate', () => {
     });
 
     await expect(
-      performUpdate({ ReleaseType: null, ReleaseVersion: newVersion }),
+      performUpdate({
+        ReleaseType: null,
+        ReleaseVersion: newVersion,
+        Formatter: 'prettier',
+      }),
     ).rejects.toThrow(
       /^Tag "v2\.0\.0" for new version "2\.0\.0" already exists\.$/u,
     );
