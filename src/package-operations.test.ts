@@ -317,6 +317,7 @@ describe('package-operations', () => {
           currentVersion: newVersion,
           isReleaseCandidate: true,
           projectRootDirectory: dir,
+          autoCategorize: true,
           repoUrl,
           formatter: expect.any(Function),
         });
@@ -457,6 +458,7 @@ describe('package-operations', () => {
           currentVersion: newVersion,
           isReleaseCandidate: true,
           projectRootDirectory: dir,
+          autoCategorize: true,
           repoUrl,
           formatter: expect.any(Function),
         });
@@ -521,6 +523,7 @@ describe('package-operations', () => {
           currentVersion: newVersion,
           isReleaseCandidate: true,
           projectRootDirectory: dir,
+          autoCategorize: true,
           repoUrl,
           formatter: expect.any(Function),
         });
@@ -590,6 +593,7 @@ describe('package-operations', () => {
           currentVersion: newVersion,
           isReleaseCandidate: true,
           projectRootDirectory: dir,
+          autoCategorize: true,
           repoUrl,
           formatter: expect.any(Function),
         });

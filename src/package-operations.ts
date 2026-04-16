@@ -283,6 +283,7 @@ async function updatePackageChangelog(
     projectRootDirectory,
     repoUrl: repositoryUrl,
     formatter: formatChangelog,
+    autoCategorize: true,
   });
 
   if (newChangelogContent) {
