@@ -46103,6 +46103,7 @@ async function updatePackageChangelog(packageMetadata, updateSpecification, root
         projectRootDirectory,
         repoUrl: repositoryUrl,
         formatter: formatChangelog,
+        autoCategorize: true,
     });
     if (newChangelogContent) {
         return await external_fs_.promises.writeFile(changelogPath, newChangelogContent);
