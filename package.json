@@ -1,7 +1,7 @@
 {
   "name": "action-create-release-pr",
   "private": true,
-  "version": "4.0.0",
+  "version": "5.0.0",
   "type": "module",
   "sideEffects": false,
   "description": "A GitHub Action for creating a release PR. Monorepo-compatible.",

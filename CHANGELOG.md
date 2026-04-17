@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.0.0]
+
+### Added
+
+- **BREAKING:** Automatically categorize changelog entries with conventional commit type ([#160](https://github.com/MetaMask/action-create-release-pr/pull/160))
+  - This changes the order of changelogs for commits with a conventional commit type (`feat:`, `fix:`, etc.).
+- Add option to use Oxfmt for formatting changelog ([#156](https://github.com/MetaMask/action-create-release-pr/pull/156))
+  - The action now accepts an optional `formatter` option which can be set to either "oxfmt" or "prettier" (default).
+
+### Changed
+
+- **BREAKING:** Bump minimum Node.js version to `^20` ([#151](https://github.com/MetaMask/action-create-release-pr/pull/151))
+
 ## [4.0.0]
 
 ### Changed
@@ -188,7 +201,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v5.0.0...HEAD
+[5.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v4.0.0...v5.0.0
 [4.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v3.0.1...v4.0.0
 [3.0.1]: https://github.com/MetaMask/action-create-release-pr/compare/v3.0.0...v3.0.1
 [3.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v2.0.0...v3.0.0
