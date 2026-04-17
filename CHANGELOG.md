@@ -9,14 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.0.0]
 
-### Uncategorized
+### Added
 
-- chore: Convert action to ESM ([#158](https://github.com/MetaMask/action-create-release-pr/pull/158))
-- chore: Replace Jest with Vitest ([#157](https://github.com/MetaMask/action-create-release-pr/pull/157))
-- chore: Bump Yarn to v4 ([#154](https://github.com/MetaMask/action-create-release-pr/pull/154))
-- chore!: Bump minimum Node.js version, ESLint, and related dependencies ([#151](https://github.com/MetaMask/action-create-release-pr/pull/151))
-- chore: Update codeowners to `MetaMask/core-platform` ([#152](https://github.com/MetaMask/action-create-release-pr/pull/152))
-- chore: add workflow_dispatch to security-code-scanner ([#145](https://github.com/MetaMask/action-create-release-pr/pull/145))
+- **BREAKING:** Automatically categorize changelog entries with conventional commit type ([#160](https://github.com/MetaMask/action-create-release-pr/pull/160))
+  - This changes the order of changelogs for commits with a conventional commit type (`feat:`, `fix:`, etc.).
+- Add option to use Oxfmt for formatting changelog ([#156](https://github.com/MetaMask/action-create-release-pr/pull/156))
+  - The action now accepts an optional `formatter` option which can be set to either "oxfmt" or "prettier" (default).
+
+### Changed
+
+- **BREAKING:** Bump minimum Node.js version to `^20` ([#151](https://github.com/MetaMask/action-create-release-pr/pull/151))
 
 ## [4.0.0]
 
