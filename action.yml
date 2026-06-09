@@ -42,6 +42,10 @@ runs:
         RELEASE_TYPE: ${{ inputs.release-type }}
         RELEASE_VERSION: ${{ inputs.release-version }}
         FORMATTER: ${{ inputs.formatter }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GIT_CONFIG_COUNT: 1
+        GIT_CONFIG_KEY_0: credential.https://github.com.helper
+        GIT_CONFIG_VALUE_0: "!f() { echo username=x-access-token; echo password=${GITHUB_TOKEN}; }; f"
     - id: create-release-pr
       shell: bash
       env:
