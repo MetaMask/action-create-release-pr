@@ -42,6 +42,9 @@ runs:
         RELEASE_VERSION: ${{ inputs.release-version }}
         FORMATTER: ${{ inputs.formatter }}
         GIT_TOKEN: ${{ inputs.github-token || env.GITHUB_TOKEN || github.token }}
+        # This is needed to support `auto-changlog` when credentials are not
+        # persisted by the checkout action.
+        # See: https://github.com/MetaMask/auto-changelog/issues/291.
         GIT_CONFIG_COUNT: 1
         GIT_CONFIG_KEY_0: credential.https://github.com.helper
         GIT_CONFIG_VALUE_0: '!f() { echo username=x-access-token; echo password=${GIT_TOKEN}; }; f'
