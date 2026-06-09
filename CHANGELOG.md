@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [5.1.0]
+
+### Added
+
+- feat: support Git operations with GitHub token ([#170](https://github.com/MetaMask/action-create-release-pr/pull/170))
+
 ## [5.0.0]
 
 ### Added
@@ -201,7 +207,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - First semi-stable release. Polyrepos only.
 
-[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v5.0.0...HEAD
+[Unreleased]: https://github.com/MetaMask/action-create-release-pr/compare/v5.1.0...HEAD
+[5.1.0]: https://github.com/MetaMask/action-create-release-pr/compare/v5.0.0...v5.1.0
 [5.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v4.0.0...v5.0.0
 [4.0.0]: https://github.com/MetaMask/action-create-release-pr/compare/v3.0.1...v4.0.0
 [3.0.1]: https://github.com/MetaMask/action-create-release-pr/compare/v3.0.0...v3.0.1
