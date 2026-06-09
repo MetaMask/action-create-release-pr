@@ -304,6 +304,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@eslint/js@npm:^9.11.0":
+  version: 9.39.4
+  resolution: "@eslint/js@npm:9.39.4"
+  checksum: 10/0a7ab4c4108cf2cadf66849ebd20f5957cc53052b88d8807d0b54e489dbf6ffcaf741e144e7f9b187c395499ce2e6ddc565dbfa4f60c6df455cf2b30bcbdc5a3
+  languageName: node
+  linkType: hard
+
 "@gar/promise-retry@npm:^1.0.0":
   version: 1.0.3
   resolution: "@gar/promise-retry@npm:1.0.3"
@@ -477,14 +484,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/eslint-config-nodejs@npm:^13.0.0":
-  version: 13.0.0
-  resolution: "@metamask/eslint-config-nodejs@npm:13.0.0"
+"@metamask/eslint-config-nodejs@npm:^15.0.0":
+  version: 15.0.0
+  resolution: "@metamask/eslint-config-nodejs@npm:15.0.0"
+  dependencies:
+    "@eslint/js": "npm:^9.11.0"
+    globals: "npm:^15.9.0"
   peerDependencies:
-    "@metamask/eslint-config": ^13.0.0
-    eslint: ^8.57.0
-    eslint-plugin-n: ^16.6.2
-  checksum: 10/cb5a9842d366a397839bd23c84d68c92df504094b7467ee31a8846126024bd3f31036372d311df106932ce1b4ba44f982d21f7de06b81f82dac9c34d13cd475f
+    "@metamask/eslint-config": ^15.0.0
+    eslint: ^9.11.0
+    eslint-plugin-n: ^17.10.3
+  checksum: 10/541a2df5a21e3e73abd8b5b175fd2c3604bfa8694d7e8e7e48891f01d38396267f1cf92cb88cb181ddd7931dee3c7bf39de59d2cb1f30971a245551d575674a1
   languageName: node
   linkType: hard
 
@@ -1454,7 +1464,7 @@ __metadata:
     "@metamask/action-utils": "npm:^1.1.1"
     "@metamask/auto-changelog": "npm:^6.1.0"
     "@metamask/eslint-config": "npm:^13.0.0"
-    "@metamask/eslint-config-nodejs": "npm:^13.0.0"
+    "@metamask/eslint-config-nodejs": "npm:^15.0.0"
     "@metamask/eslint-config-typescript": "npm:^13.0.0"
     "@types/lodash.clonedeep": "npm:^4.5.6"
     "@types/node": "npm:^20.19.39"
@@ -2953,6 +2963,13 @@ __metadata:
   dependencies:
     type-fest: "npm:^0.20.2"
   checksum: 10/62c5b1997d06674fc7191d3e01e324d3eda4d65ac9cc4e78329fa3b5c4fd42a0e1c8722822497a6964eee075255ce21ccf1eec2d83f92ef3f06653af4d0ee28e
+  languageName: node
+  linkType: hard
+
+"globals@npm:^15.9.0":
+  version: 15.15.0
+  resolution: "globals@npm:15.15.0"
+  checksum: 10/7f561c87b2fd381b27fc2db7df8a4ea7a9bb378667b8a7193e61fd2ca3a876479174e2a303a74345fbea6e1242e16db48915c1fd3bf35adcf4060a795b425e18
   languageName: node
   linkType: hard
 
