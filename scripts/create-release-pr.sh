@@ -52,7 +52,7 @@ then
     exit 1
 fi
 
-git push --set-upstream origin "${RELEASE_BRANCH_NAME}"
+git push --set-upstream "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "${RELEASE_BRANCH_NAME}"
 
 if [[ "$CREATED_PR_STATUS" = "draft" ]]; then
   gh pr create \
