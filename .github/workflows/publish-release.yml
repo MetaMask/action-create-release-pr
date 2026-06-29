@@ -19,6 +19,9 @@ on:
       SLACK_WEBHOOK_URL:
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   announce-release:
     name: Announce release
@@ -65,7 +68,8 @@ jobs:
     environment: action-publish
     needs: announce-release
     permissions:
-      contents: write
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -75,12 +79,23 @@ jobs:
           # need for updating the shorthand major version tag.
           fetch-depth: 0
           ref: ${{ github.sha }}
+
+      - name: Get token
+        id: get-token
+        uses: MetaMask/github-tools/.github/actions/get-token@v1
+        with:
+          token-exchange-url: ${{ vars.TOKEN_EXCHANGE_URL }}
+          permissions: |
+            contents: write
+
       - name: Publish release
         uses: MetaMask/action-publish-release@v3
         id: publish-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
+
       - name: Update shorthand major version tag
-        run: |
-          ./.github/workflows/scripts/update-major-version-tag.sh \
-            ${{ steps.publish-release.outputs.release-version }}
+        uses: MetaMask/github-tools/.github/actions/update-major-version-tag@v1
+        with:
+          release-version: ${{ steps.publish-release.outputs.release-version }}
+          github-token: ${{ steps.get-token.outputs.token }}
