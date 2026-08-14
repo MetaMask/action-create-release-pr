@@ -27,7 +27,7 @@ jobs:
     name: Announce release
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
       - id: name-hash
         name: Get Slack name and hash
         shell: bash
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           # This is to guarantee that the most recent tag is fetched, which we
           # need for updating the shorthand major version tag.
@@ -82,20 +82,20 @@ jobs:
 
       - name: Get token
         id: get-token
-        uses: MetaMask/github-tools/.github/actions/get-token@v1
+        uses: MetaMask/github-tools/.github/actions/get-token@8a343dd29c95b8478e0e92d8eed915ad50dcfaf0 # v1.18.0
         with:
           token-exchange-url: ${{ vars.TOKEN_EXCHANGE_URL }}
           permissions: |
             contents: write
 
       - name: Publish release
-        uses: MetaMask/action-publish-release@v3
+        uses: MetaMask/action-publish-release@f01f1be110d60fb07d86c880ce3d6bdb353524d3 # v3.3.1
         id: publish-release
         env:
           GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}
 
       - name: Update shorthand major version tag
-        uses: MetaMask/github-tools/.github/actions/update-major-version-tag@v1
+        uses: MetaMask/github-tools/.github/actions/update-major-version-tag@8a343dd29c95b8478e0e92d8eed915ad50dcfaf0 # v1.18.0
         with:
           release-version: ${{ steps.publish-release.outputs.release-version }}
           github-token: ${{ steps.get-token.outputs.token }}
